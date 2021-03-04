@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html>
+<body>
+
+<h1> Simple With Javascript </h1>
+
+<script>
+function myFunction() {
+  document.getElementById('demo').innerHTML = Date();
+}
+
+function get_trackstring(tnum) {
+  return "track"+((tnum<10)?"0":"")+String(tnum);
+}
+
+function get_track(tnum) {
+  let trackID = get_trackstring(tnum);
+  return document.getElementById(trackID);
+}
+
+let tracknum = 1;
+let trackstring = get_trackstring(tracknum);
+
+function pause_track(trackID) {
+  let track=document.getElementById(trackID);
+  track.pause();
+}
+
+function play_track(trackID) {
+  let track=document.getElementById(trackID);
+  if (track.paused) {
+    track.play();
+    document.getElementById('pp').innerHTML = "Click here to pause track";} 
+  else {
+    track.pause(); 
+    document.getElementById('pp').innerHTML = "Click here to play track";}
+}
+function advance_track(increment) {
+  let current_track = get_track(tracknum);
+  let new_track = get_track(tracknum+increment);
+  tracknum = tracknum + increment;
+  if (!current_track.paused) { current_track.pause(); }
+  new_track.play()}
+ 
+</script>
+
+<button type="button" onclick = "myFunction()"> Click here to display the Date and time. </button>
+<button type="button" onclick = "play_track(trackstring)"> <p id="pp"> Click here to play track. </p> </button>
+<button type="button" onclick = "advance_track(1)"> <p id="pp"> Click here to advance track. </p> </button>
+
+<p id="demo"></p>
+
+<br>
+  01 <audio id="track01" controls>
+    <source src="https://archive.org/download/gd1974-10-17.sbd.smith.gems.99032.flac24/gd1974-10-17.GEMS.2496.track01.mp3" type="audio/mp3" />
+  </audio>
+<br>
+  02 <audio id="track02" controls>
+    <source src="https://archive.org/download/gd1974-10-17.sbd.smith.gems.99032.flac24/gd1974-10-17.GEMS.2496.track02.mp3" type="audio/mp3" />
+  </audio>
+<br>
+  03 <audio id="track03" controls>
+    <source src="https://archive.org/download/gd1974-10-17.sbd.smith.gems.99032.flac24/gd1974-10-17.GEMS.2496.track03.mp3" type="audio/mp3" />
+  </audio>
+<br>
+  04 <audio id="track04" controls>
+    <source src="https://archive.org/download/gd1974-10-17.sbd.smith.gems.99032.flac24/gd1974-10-17.GEMS.2496.track04.mp3" type="audio/mp3" />
+  </audio>
+<br>
+  05 <audio id="track05" controls>
+    <source src="https://archive.org/download/gd1974-10-17.sbd.smith.gems.99032.flac24/gd1974-10-17.GEMS.2496.track05.mp3" type="audio/mp3" />
+  </audio>
+<br>
+  06 <audio id="track06" controls>
+    <source src="https://archive.org/download/gd1974-10-17.sbd.smith.gems.99032.flac24/gd1974-10-17.GEMS.2496.track06.mp3" type="audio/mp3" />
+  </audio>
+<br>
+  07 <audio id="track07" controls>
+    <source src="https://archive.org/download/gd1974-10-17.sbd.smith.gems.99032.flac24/gd1974-10-17.GEMS.2496.track07.mp3" type="audio/mp3" />
+  </audio>
+<br>
+  08 <audio id="track08" controls>
+    <source src="https://archive.org/download/gd1974-10-17.sbd.smith.gems.99032.flac24/gd1974-10-17.GEMS.2496.track08.mp3" type="audio/mp3" />
+  </audio>
+<br>
+  09 <audio id="track09" controls>
+    <source src="https://archive.org/download/gd1974-10-17.sbd.smith.gems.99032.flac24/gd1974-10-17.GEMS.2496.track09.mp3" type="audio/mp3" />
+  </audio>
+<br>
+  10 <audio id="track10" controls>
+    <source src="https://archive.org/download/gd1974-10-17.sbd.smith.gems.99032.flac24/gd1974-10-17.GEMS.2496.track10.ogg" type="audio/ogg" />
+  </audio>
+<br>
+
+</body>
+
+</html> 
+
+
