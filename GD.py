@@ -2,8 +2,61 @@ import requests
 import json
 import os
 import pdb
-import datetime
+import datetime,time
 from importlib import reload
+
+class GDArchive:
+  """ The Grateful Dead Collection on Archive.org """
+  def __init__(self,url='https://archive.org',dbpath='/home/steve/projects/dead_vault/data'):
+    self.url = url
+    self.dbpath = dbpath
+    self.id_path = os.path.join(os.getenv('HOME'),'projects','dead_vault','data','ids.json')
+    
+    self.url_scrape = self.url + '/services/search/v1/scrape'
+    self.scrape_parms = {'debug':'false','xvar':'production','total_only':'false','count':'10000','sorts':'date asc,avg_rating desc,num_favorites desc,downloads desc','fields':'identifier,date,avg_rating,num_reviews,num_favorites,stars,downloads,files_count,format,collection,source,subject,type'}
+    self.ids = self.load_ids()
+
+  def write_ids(self,ids):
+    os.makedirs(os.path.dirname(self.id_path),exist_ok=True)
+    json.dump(ids,open(self.id_path,'w'))
+
+  def load_ids(self,force=False):
+    if (not force) and os.path.exists(self.id_path):
+      ids = json.load(open(self.id_path,'r'))
+    else:
+      ids = []
+      for year in range(1965,1996,1):
+        ids.extend(self.get_ids(year))
+      self.write_ids(ids)
+    return ids
+
+  def get_ids(self,year):
+    current_rows = 0
+    ids = []
+    r = self.get_chunk(year)
+    j = r.json()
+    total = j['total']
+    print ("total rows {}".format(total))
+    current_rows += j['count']
+    ids=j['items']
+    while current_rows < total:  
+      cursor = j['cursor']
+      r = self.get_chunk(year,cursor)
+      j = r.json()
+      cursor = j['cursor']
+      current_rows += j['count']
+      ids.extend(j['items'])
+    return ids
+
+  def get_chunk(self,year,cursor=None):
+    parms = self.scrape_parms.copy()
+    if cursor!=None: parms['cursor'] = cursor
+    query = 'collection:GratefulDead AND year:'+str(year)
+    parms['q'] = query
+    r = requests.get(self.url_scrape,params=parms)
+    print("url is {}".format(r.url))
+    if r.status_code != 200: print ("error collecting data"); raise Exception('Download','Error {} collection'.format(r.status_code))
+    return r
 
 class GDTape:
   """ A Grateful Dead Tape from Archive.org """
@@ -95,3 +148,4 @@ class GDTrack:
     d['url'] = 'https://archive.org/download/'+self.parent_id+'/'+d['name']
     self.files.append(d)
   # method to play(), pause(). 
+
