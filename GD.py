@@ -7,22 +7,22 @@ from importlib import reload
 
 class GDArchive:
   """ The Grateful Dead Collection on Archive.org """
-  def __init__(self,url='https://archive.org',dbpath='/home/steve/projects/dead_vault/data'):
+  def __init__(self,dbpath,url='https://archive.org',force_reload=False):
     self.url = url
     self.dbpath = dbpath
-    self.id_path = os.path.join(os.getenv('HOME'),'projects','dead_vault','data','ids.json')
+    self.idpath = os.path.join(self.dbpath,'ids.json')
     
     self.url_scrape = self.url + '/services/search/v1/scrape'
     self.scrape_parms = {'debug':'false','xvar':'production','total_only':'false','count':'10000','sorts':'date asc,avg_rating desc,num_favorites desc,downloads desc','fields':'identifier,date,avg_rating,num_reviews,num_favorites,stars,downloads,files_count,format,collection,source,subject,type'}
-    self.ids = self.load_ids()
+    self.ids = self.load_ids(force_reload)
 
   def write_ids(self,ids):
-    os.makedirs(os.path.dirname(self.id_path),exist_ok=True)
-    json.dump(ids,open(self.id_path,'w'))
+    os.makedirs(os.path.dirname(self.idpath),exist_ok=True)
+    json.dump(ids,open(self.idpath,'w'))
 
-  def load_ids(self,force=False):
-    if (not force) and os.path.exists(self.id_path):
-      ids = json.load(open(self.id_path,'r'))
+  def load_ids(self,force_reload=False):
+    if (not force_reload) and os.path.exists(self.idpath):
+      ids = json.load(open(self.idpath,'r'))
     else:
       ids = []
       for year in range(1965,1996,1):
@@ -96,7 +96,6 @@ class GDTape:
     else:
       orig = tdict['original']
     trackindex = None
-    print ("handling track ")
     for i,t in enumerate(self.tracks):
       if orig == t.original:  # add in alternate formats
         trackindex = i
@@ -129,7 +128,7 @@ class GDTrack:
        if k in attribs: setattr(self,k,v)
     # if these don't exist, i'll throw an error!
     if tdict['source'] == 'original': self.original = tdict['name']
-    self.track = int(self.track)
+    self.track = int(self.track) if 'track' in dir(self) else 0
     self.files = []
     self.add_file(tdict)
 
