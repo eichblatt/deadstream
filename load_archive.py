@@ -4,18 +4,19 @@ import GD
 
 parser = optparse.OptionParser()
 parser.add_option('--dbpath',dest='dbpath',default=os.path.join(os.getenv('HOME'),'projects/dead_vault/data'))
-parser.add_option('--force_reload',dest='force_reload',default=False)
+parser.add_option('--reload_ids',dest='reload_ids',default=False)
 parser.add_option('--verbose',dest='verbose',default=False)
 parser.add_option('--debug',dest='debug',default=True)
 
 parms,remainder = parser.parse_args()
 
 def main(parms):
-  a = GD.GDArchive(parms.dbpath,force_reload=parms.force_reload)
+  a = GD.GDArchive(parms.dbpath,reload_ids=parms.reload_ids)
   tapes = []
-  for t in a.ids[10000:10100]: 
-     tapes.append(GD.GDTape(t)) 
-
+  for t in a.ids[:1000]: 
+     tapes.append(GD.GDTape(parms.dbpath,t)) 
+  datelist = GD.GDDateList(tapes)
+  
 if (not parms.debug) and __name__ == "__main__":
    main(parms)
 

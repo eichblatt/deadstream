@@ -2,26 +2,27 @@ import requests
 import json
 import os
 import pdb
-import datetime,time
+import datetime,time,math
 from importlib import reload
+from operator import attrgetter,methodcaller
 
 class GDArchive:
   """ The Grateful Dead Collection on Archive.org """
-  def __init__(self,dbpath,url='https://archive.org',force_reload=False):
+  def __init__(self,dbpath,url='https://archive.org',reload_ids=False):
     self.url = url
     self.dbpath = dbpath
     self.idpath = os.path.join(self.dbpath,'ids.json')
     
     self.url_scrape = self.url + '/services/search/v1/scrape'
     self.scrape_parms = {'debug':'false','xvar':'production','total_only':'false','count':'10000','sorts':'date asc,avg_rating desc,num_favorites desc,downloads desc','fields':'identifier,date,avg_rating,num_reviews,num_favorites,stars,downloads,files_count,format,collection,source,subject,type'}
-    self.ids = self.load_ids(force_reload)
+    self.ids = self.load_ids(reload_ids)
 
   def write_ids(self,ids):
     os.makedirs(os.path.dirname(self.idpath),exist_ok=True)
     json.dump(ids,open(self.idpath,'w'))
 
-  def load_ids(self,force_reload=False):
-    if (not force_reload) and os.path.exists(self.idpath):
+  def load_ids(self,reload_ids=False):
+    if (not reload_ids) and os.path.exists(self.idpath):
       ids = json.load(open(self.idpath,'r'))
     else:
       ids = []
@@ -60,9 +61,10 @@ class GDArchive:
 
 class GDTape:
   """ A Grateful Dead Tape from Archive.org """
-  def __init__(self,raw_json):
+  def __init__(self,dbpath,raw_json):
+    self.dbpath = dbpath
     self.raw_json = raw_json
-    attribs = ['date','identifier','avg_rating','format']
+    attribs = ['date','identifier','avg_rating','format','collection','num_reviews','downloads']
     for k,v in raw_json.items():
        if k in attribs: setattr(self,k,v)
     self.date = (datetime.datetime.strptime(raw_json['date'] ,'%Y-%m-%dT%H:%M:%SZ')).date() # there must be a better way!!!
@@ -72,7 +74,8 @@ class GDTape:
     self.url = 'https://archive.org/details/'+self.identifier
     self._playable_formats = ['Ogg Vorbis','VBR MP3','Shorten','Flac','MP3']
     self.tracks = []
-    self.page_meta = self.get_page_metadata()
+    self.page_meta = pm = self.get_page_metadata()
+    self.description = pm['metadata']['description'] if 'description' in pm['metadata'].keys() else ''
  
   def __str__(self):
     retstr = 'ID {}\nDate {}. {} tracks, URL {}\n'.format(self.identifier,self.date,len(self.tracks),self.url)
@@ -82,14 +85,13 @@ class GDTape:
     retstr = 'ID {}\nDate {}. {} tracks, URL {}\n'.format(self.identifier,self.date,len(self.tracks),self.url)
     return retstr
 
-
   def stream_only(self):
     return 'stream_only' in self.collection 
 
   def contains_sound(self):
     return len(list(set(self._playable_formats) & set(self.format)))>0
 
-  def handle_track(self,tdict):
+  def get_track(self,tdict):
     source = tdict['source']
     if source == 'original':
       orig = tdict['name']
@@ -105,19 +107,34 @@ class GDTape:
     self.tracks.append(GDTrack(tdict,self.identifier))
 
   def get_page_metadata(self):
-    r = requests.get(self.url_endpoint)
-    print("url is {}".format(r.url))
-    if r.status_code != 200: print ("error pulling data for {}".format(self.identifier)); raise Exception('Download','Error {} url {}'.format(r.status_code,self.url_endpoint))
-    page_meta = r.json()
+    meta_path = os.path.join(self.dbpath,str(self.date.year),str(self.date.month),self.identifier+'.json')
+    if os.path.exists(meta_path): 
+      page_meta = json.load(open(meta_path,'r'))
+    else:
+      r = requests.get(self.url_endpoint)
+      print("url is {}".format(r.url))
+      if r.status_code != 200: print ("error pulling data for {}".format(self.identifier)); raise Exception('Download','Error {} url {}'.format(r.status_code,self.url_endpoint))
+      page_meta = r.json()
+
     self.reviews = page_meta['reviews'] if 'reviews' in page_meta.keys() else []
     for ifile in page_meta['files']:
        try:
          if ifile['format'] in self._playable_formats:
-           self.handle_track(ifile)
+           self.get_track(ifile)
        except KeyError: pass
        except Exception as e:   # TODO handle this!!!
          raise (e)
+    os.makedirs(os.path.dirname(meta_path),exist_ok=True)
+    json.dump(page_meta,open(meta_path,'w'))
     return page_meta
+
+  def compute_score(self):
+    """ compute a score for sorting the tape. High score means it should be played first """    
+    score = 0
+    if self.stream_only(): score = score + 1000
+    score = score + math.log(self.downloads)
+    score = score + self.avg_rating * 10
+    return score
 
 class GDTrack:
   """ A track from a GDTape recording """
@@ -128,7 +145,10 @@ class GDTrack:
        if k in attribs: setattr(self,k,v)
     # if these don't exist, i'll throw an error!
     if tdict['source'] == 'original': self.original = tdict['name']
-    self.track = int(self.track) if 'track' in dir(self) else 0
+    try:
+      self.track = int(self.track) if 'track' in dir(self) else None
+    except ValueError:
+      self.track = None 
     self.files = []
     self.add_file(tdict)
 
@@ -147,4 +167,25 @@ class GDTrack:
     d['url'] = 'https://archive.org/download/'+self.parent_id+'/'+d['name']
     self.files.append(d)
   # method to play(), pause(). 
+
+class GDDateList:
+  """ A Date object containing Grateful Dead events """
+  def __init__(self,tapelist = None):
+    self.dates = {}
+    if tapelist != None: [self.add_tape(t) for t in tapelist]
+ 
+  def __str__(self):
+    retstr = ""
+    for k in self.dates.keys(): 
+      retstr += ", " + k
+    return retstr
+
+  def add_tape(self,tape):
+    date = tape.date
+    if str(date) in self.dates.keys():
+      l = set(self.dates[str(date)] + [tape])   # use set to make it unique
+      l = sorted(l,key=methodcaller('compute_score'),reverse=True)
+      self.dates[str(date)] = l
+    else:
+      self.dates[str(date)] = [tape]
 
