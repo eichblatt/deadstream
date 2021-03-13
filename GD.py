@@ -19,7 +19,6 @@ class GDArchive:
     self.tape_dates = self.get_tape_dates()
     self.dates = self.tape_dates.keys()
     if load_meta: 
-      import pdb; pdb.set_trace()
       for d in self.dates:
          self.tape_dates[d][0].get_metadata()
  
