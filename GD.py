@@ -17,11 +17,17 @@ class GDArchive:
     self.scrape_parms = {'debug':'false','xvar':'production','total_only':'false','count':'10000','sorts':'date asc,avg_rating desc,num_favorites desc,downloads desc','fields':'identifier,date,avg_rating,num_reviews,num_favorites,stars,downloads,files_count,format,collection,source,subject,type'}
     self.tapes = self.load_tapes(reload_ids)
     self.tape_dates = self.get_tape_dates()
-    self.dates = self.tape_dates.keys()
+    self.dates = sorted(self.tape_dates.keys())
     if load_meta: 
       for d in self.dates:
          self.tape_dates[d][0].get_metadata()
  
+  def best_tape(self,date):
+    if not date in self.dates: 
+      print ("No Tape for date {}".format(date))
+      return None
+    return self.tape_dates[date][0]
+     
   def get_tape_dates(self):
     tape_dates = {}
     for tape in self.tapes:
@@ -97,7 +103,7 @@ class GDTape:
 
   def __repr__(self):
     tag = "SBD" if self.stream_only() else "aud"
-    retstr = '{} - {} - {}\n'.format(self.date,tag,self.identifier)
+    retstr = '{} - {} - {:5.2f} - {}\n'.format(self.date,tag,self.avg_rating,self.identifier)
     return retstr
 
   def stream_only(self):
