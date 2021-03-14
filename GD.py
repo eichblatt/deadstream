@@ -18,10 +18,22 @@ class GDArchive:
     self.tapes = self.load_tapes(reload_ids)
     self.tape_dates = self.get_tape_dates()
     self.dates = sorted(self.tape_dates.keys())
-    if load_meta: 
-      for d in self.dates:
-         self.tape_dates[d][0].get_metadata()
- 
+    self.meta_loaded = False
+    if load_meta: self.load_metadata()
+
+  def __str__(self):
+    return self.__repr__()
+
+  def __repr__(self):
+    retstr = F"Grateful Dead Archive with {len(self.tapes)} tapes on {len(self.dates)} dates from {self.dates[0]} to {self.dates[-1]} "
+    if not self.meta_loaded: retstr += F"Metadata NOT loaded"
+    return retstr
+  
+  def load_metadata(self):
+    for d in self.dates:
+       self.tape_dates[d][0].get_metadata()
+    self.meta_loaded = True
+
   def best_tape(self,date):
     if not date in self.dates: 
       print ("No Tape for date {}".format(date))
@@ -184,8 +196,7 @@ class GDTrack:
     self.add_file(tdict)
 
   def __str__(self):
-    retstr = 'track {}. {}'.format(self.track,self.title)
-    return retstr
+    return self.__repr__()
 
   def __repr__(self):
     retstr = 'track {}. {}'.format(self.track,self.title)
