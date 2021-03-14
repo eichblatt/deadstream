@@ -26,7 +26,7 @@ class GDArchive:
 
   def __repr__(self):
     retstr = F"Grateful Dead Archive with {len(self.tapes)} tapes on {len(self.dates)} dates from {self.dates[0]} to {self.dates[-1]} "
-    if not self.meta_loaded: retstr += F"Metadata NOT loaded"
+    if self.meta_loaded: retstr += F"with track-level metadata. "
     return retstr
   
   def load_metadata(self):
