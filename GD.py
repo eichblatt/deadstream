@@ -2,9 +2,10 @@ import requests
 import json
 import os
 import pdb
+import csv
 import datetime,time,math
-from importlib import reload
 from operator import attrgetter,methodcaller
+from importlib import reload
 
 class GDArchive:
   """ The Grateful Dead Collection on Archive.org """
@@ -15,6 +16,7 @@ class GDArchive:
     
     self.url_scrape = self.url + '/services/search/v1/scrape'
     self.scrape_parms = {'debug':'false','xvar':'production','total_only':'false','count':'10000','sorts':'date asc,avg_rating desc,num_favorites desc,downloads desc','fields':'identifier,date,avg_rating,num_reviews,num_favorites,stars,downloads,files_count,format,collection,source,subject,type'}
+    self.set_data = GDSet(self.dbpath)
     self.tapes = self.load_tapes(reload_ids)
     self.tape_dates = self.get_tape_dates()
     self.dates = sorted(self.tape_dates.keys())
@@ -66,7 +68,7 @@ class GDArchive:
       for year in range(1965,1996,1):
         tapes.extend(self.get_tapes(year))
       self.write_tapes(tapes)
-    return [GDTape(self.dbpath,tape) for tape in tapes]
+    return [GDTape(self.dbpath,tape,self.set_data) for tape in tapes]
 
   def get_tapes(self,year):
     current_rows = 0
@@ -98,7 +100,7 @@ class GDArchive:
 
 class GDTape:
   """ A Grateful Dead Identifier Item -- does not contain tracks """
-  def __init__(self,dbpath,raw_json):
+  def __init__(self,dbpath,raw_json,set_data):
     self.dbpath = dbpath
     self._playable_formats = ['Ogg Vorbis','VBR MP3','Shorten','Flac','MP3']
     attribs = ['date','identifier','avg_rating','format','collection','num_reviews','downloads']
@@ -107,6 +109,7 @@ class GDTape:
     self.url_metadata = 'https://archive.org/metadata/'+self.identifier
     self.url_details = 'https://archive.org/details/'+self.identifier
     self.date = str((datetime.datetime.strptime(raw_json['date'] ,'%Y-%m-%dT%H:%M:%SZ')).date()) 
+    self.set_data = set_data.get(self.date)
     if 'avg_rating' in raw_json.keys(): self.avg_rating = float(self.avg_rating)
     else: self.avg_rating = 2.0
 
@@ -210,4 +213,66 @@ class GDTrack:
     self.files.append(d)
   # method to play(), pause(). 
 
+class GDSet:
+  """ Set Information from a Grateful Dead date """
+  def __init__(self,dbpath):
+    set_data = {}
+    prevsong = None;
+    setbreak_path = os.path.join(dbpath,'set_breaks.csv')
+    r = [r for r in  csv.reader(open(setbreak_path,'r'))]                                                                                                                                         
+    headers = r[0] 
+    for row in r[1:]:
+      d = dict(zip(headers,row))
+      date = d['date']; song = d['song'];
+      if not date in set_data.keys(): set_data[date] = {}
+      if int(d['ievent'])==1: set_data[date]['location'] = (d['venue'],d['city'],d['state']); prevsong = song;
+      if int(d['ievent'])==2: set_data[date]['location2'] = (d['venue'],d['city'],d['state']); set_data[date]['locationbreak'] = prevsong
+      if d['break_length']=='long':
+         try: set_data[date]['longbreaks'].append(song)
+         except KeyError: set_data[date]['longbreaks'] = [song]
+      if d['break_length']=='short':
+         try: set_data[date]['shortbreaks'].append(song)
+         except KeyError: set_data[date]['shortbreaks'] = [song]
+     
+    self.set_data = set_data
+    """
+    for k,v in set_data.items():
+       setattr(self,k,v)
+    """ 
+  def get(self,date):
+    return self.set_data[date] if date in self.set_data.keys() else None
+
+  def multi_location(self,date):
+    d = self.get(date)
+    return 'location2' in d.keys()
+    
+  def location(self,date):
+    d = self.get(date)
+    return d['location']
+
+  def shortbreaks(self,date):
+    d = self.get(date)
+    return d['shortbreaks'] 
+
+  def longbreaks(self,date):
+    d = self.get(date)
+    return d['longbreaks'] 
+
+  def location2(self,date):
+    d = self.get(date)
+    if self.multi_location(date): return d['location2']
+    else: return None
+
+  def locationbreaks(self,date):
+    d = self.get(date)
+    if self.multi_location(date): return d['locationbreak'] 
+    else: return None
+
+  def __str__(self):
+    return self.__repr__()
+
+  def __repr__(self):
+    retstr = F"Grateful Dead set data"
+    return retstr
+  
 
