@@ -3,6 +3,7 @@ import json
 import os
 import pdb
 import csv
+import difflib
 import datetime,time,math
 from operator import attrgetter,methodcaller
 from importlib import reload
@@ -182,6 +183,38 @@ class GDTape:
         return t
     self.tracks.append(GDTrack(tdict,self.identifier))
 
+  def venue(self,tracknum=0):
+    """return the venue, city, state"""
+    # Note, if tracknum > 0, this could be a second show...check after running insert_breaks 
+    # 1970-02-14 is an example with 2 shows.
+    sd = self.set_data
+    if sd == None: return self.identifier
+    lb,sb,locb = self.insert_breaks()
+    venue_string = ""
+    if not sd == None:
+      l = sd['location']
+      if (len(locb)>0) and (tracknum > locb[0]): l = sd['location2']
+      venue_string = F"{l[0]}, {l[1]}, {l[2]}"
+    return venue_string 
+
+  def insert_breaks(self):
+    tlist = [x.title for x in self.tracks]
+    sd = self.set_data
+    lb = sd['longbreaks'] if 'longbreaks' in sd.keys() else []
+    sb = sd['shortbreaks'] if 'shortbreaks' in sd.keys() else []
+    locb = sd['locationbreak'] if 'locationbreak' in sd.keys() else []
+    long_breaks = [difflib.get_close_matches(x,tlist)[0] for x in lb]
+    short_breaks = [difflib.get_close_matches(x,tlist)[0] for x in sb]
+    location_breaks = [difflib.get_close_matches(x,tlist)[0] for x in locb]
+    lb_locations = []; sb_locations = []; locb_locations = [];
+    lb_locations = [j+1 for j,t in enumerate(tlist) if t in long_breaks] 
+    sb_locations = [j+1 for j,t in enumerate(tlist) if t in short_breaks]
+    locb_locations = [j+1 for j,t in enumerate(tlist) if t in location_breaks]
+    # At this point, i need to add "longbreak" and "shortbreak" tracks to the tape.
+    # This will require creating special GDTracks, I guess.
+    # for now, return the location indices.
+    return (lb_locations,sb_locations,locb_locations)
+
 class GDTrack:
   """ A track from a GDTape recording """
   def __init__(self,tdict,parent_id):
@@ -226,7 +259,7 @@ class GDSet:
       date = d['date']; song = d['song'];
       if not date in set_data.keys(): set_data[date] = {}
       if int(d['ievent'])==1: set_data[date]['location'] = (d['venue'],d['city'],d['state']); prevsong = song;
-      if int(d['ievent'])==2: set_data[date]['location2'] = (d['venue'],d['city'],d['state']); set_data[date]['locationbreak'] = prevsong
+      if int(d['ievent'])==2: set_data[date]['location2'] = (d['venue'],d['city'],d['state']); set_data[date]['locationbreak'] = [prevsong]
       if d['break_length']=='long':
          try: set_data[date]['longbreaks'].append(song)
          except KeyError: set_data[date]['longbreaks'] = [song]
