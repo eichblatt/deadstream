@@ -104,7 +104,7 @@ class GDTape:
   """ A Grateful Dead Identifier Item -- does not contain tracks """
   def __init__(self,dbpath,raw_json,set_data):
     self.dbpath = dbpath
-    self._playable_formats = ['Ogg Vorbis','VBR MP3','Shorten','Flac','MP3']
+    self._playable_formats = ['Ogg Vorbis','VBR MP3','Shorten','MP3']  # had to remove Flac because mpv can't play them!!!
     attribs = ['date','identifier','avg_rating','format','collection','num_reviews','downloads']
     for k,v in raw_json.items():
        if k in attribs: setattr(self,k,v)
@@ -316,7 +316,6 @@ class GDPlayer(MPV):
     self._set_property('audio-buffer',10.0)  ## This allows to play directly from the html without a gap!
     self.tape = tape
     self.create_playlist()
-    self._playable_formats = ['Ogg Vorbis','VBR MP3','Shorten','MP3'] # NOTE: Flac missing!!! Shorten???
 
   def __str__(self):
     return __repr__()
@@ -330,7 +329,7 @@ class GDPlayer(MPV):
     urls = [] 
     for y in [x.files for x in tape.tracks]: 
       for f in y: 
-        if f['format'] in self._playable_formats: urls.append(f['url']); break 
+        if f['format'] in tape._playable_formats: urls.append(f['url']); break 
     return urls
   
   def create_playlist(self):
@@ -347,6 +346,10 @@ class GDPlayer(MPV):
 
   def pause(self):
     self._set_property('pause',True)
+
+  def stop(self): 
+    self.playlist_pos = 0
+    self.pause()
 
   def next(self): self.command('playlist-next') # jump to next track
   def prev(self): self.command('playlist-prev') # jump to previous track
