@@ -6,6 +6,7 @@ import csv
 import difflib
 import datetime,time,math
 from operator import attrgetter,methodcaller
+from mpv import MPV
 from importlib import reload
 
 class GDArchive:
@@ -308,4 +309,53 @@ class GDSet:
     retstr = F"Grateful Dead set data"
     return retstr
   
+class GDPlayer(MPV):
+  """ A media player to play a GDTape """
+  def __init__(self,tape):
+    super().__init__()
+    self._set_property('audio-buffer',10.0)  ## This allows to play directly from the html without a gap!
+    self.tape = tape
+    self.create_playlist()
+    self._playable_formats = ['Ogg Vorbis','VBR MP3','Shorten','MP3'] # NOTE: Flac missing!!! Shorten???
+
+  def __str__(self):
+    return __repr__()
+    
+  def __repr__(self):
+    retstr = str(self.playlist)
+    return retstr
+    
+  def extract_urls(self,tape):  ## NOTE this should also give a list of backup URL's.
+    tape.get_metadata()
+    urls = [] 
+    for y in [x.files for x in tape.tracks]: 
+      for f in y: 
+        if f['format'] in self._playable_formats: urls.append(f['url']); break 
+    return urls
+  
+  def create_playlist(self):
+    urls = self.extract_urls(self.tape);
+    _ = [self.command('loadfile',x,'append') for x in urls]
+    self.playlist_pos = 0 
+    self.pause()
+    print (F"Playlist {self.playlist}")
+    return
+
+  def play(self): 
+    self._set_property('pause',False)
+    self.wait_until_playing()
+
+  def pause(self):
+    self._set_property('pause',True)
+
+  def next(self): self.command('playlist-next') # jump to next track
+  def prev(self): self.command('playlist-prev') # jump to previous track
+
+  def track_status(self):
+    if self.playlist_pos == None: print (F"Playlist not started"); return None
+    print (F"Playlist at track {self.playlist[self.playlist_pos]}")
+    if self.raw.time_pos == None: print (F"Track not started"); return None
+    print(F"time: {datetime.timedelta(seconds=int(self.raw.time_pos))}, time remaining: {datetime.timedelta(seconds=int(self.raw.time_remaining))}")
+
+  def close(self): self.terminate()
 
