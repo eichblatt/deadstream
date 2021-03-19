@@ -228,7 +228,7 @@ class GDTape:
     if not self.meta_loaded: self.get_metadata()
     if self._breaks_added: return
     breaks = self._compute_breaks()
-    breakd = {'track':-1,'original':'setbreak','title':'Set Break','format':'Ogg Vorbis','size':1,'source':'original','path':'/home/steve/projects/deadstream/'}
+    breakd = {'track':-1,'original':'setbreak','title':'Set Break','format':'Ogg Vorbis','size':1,'source':'original','path':self.dbpath}
     lbreakd =dict(list(breakd.items()) + [('title','Set Break'),('name','silence600.ogg')])
     sbreakd =dict(list(breakd.items()) + [('title','Encore Break'),('name','silence300.ogg')])
     locbreakd =dict(list(breakd.items()) + [('title','Location Break'),('name','silence600.ogg')])
