@@ -1,3 +1,14 @@
 *mp3
 *ogg
 *wav
+
+# python binaries
+__pycache__/
+*.pyc
+*.pyo
+
+# python virtualenv
+/env/
+
+# IDE files
+/.vscode/

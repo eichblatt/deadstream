@@ -2,7 +2,9 @@
 
 A raspberry pi controller with year, month, date knobs to stream any Grateful Dead show on archive.org.
 
-A Simple example:
+It's also a simple, command-line-interface to the Greatful Dead collection on archive.org, which can be used to see what's available and play a given tape.
+
+A Simple example for the python script:
 
 ``` python
 import GD
