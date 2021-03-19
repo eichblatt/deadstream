@@ -58,6 +58,7 @@ class GDArchive:
     if (not reload_ids) and os.path.exists(self.idpath):
       tapes = json.load(open(self.idpath,'r'))
     else:
+      print ("Loading Tapes from the Archive...this will take a few minutes")
       tapes = []
       for year in range(1965,1996,1):
         tapes.extend(self.get_tapes(year))
