@@ -11,7 +11,7 @@ from importlib import reload
 
 class GDArchive:
   """ The Grateful Dead Collection on Archive.org """
-  def __init__(self,dbpath,url='https://archive.org',reload_ids=False,load_meta=False):
+  def __init__(self,dbpath,url='https://archive.org',reload_ids=False):
     self.url = url
     self.dbpath = dbpath
     self.idpath = os.path.join(self.dbpath,'ids.json')
@@ -22,22 +22,14 @@ class GDArchive:
     self.tapes = self.load_tapes(reload_ids)
     self.tape_dates = self.get_tape_dates()
     self.dates = sorted(self.tape_dates.keys())
-    self.meta_loaded = False
-    if load_meta: self.load_metadata()
 
   def __str__(self):
     return self.__repr__()
 
   def __repr__(self):
     retstr = F"Grateful Dead Archive with {len(self.tapes)} tapes on {len(self.dates)} dates from {self.dates[0]} to {self.dates[-1]} "
-    if self.meta_loaded: retstr += F"with track-level metadata. "
     return retstr
   
-  def load_metadata(self):
-    for d in self.dates:
-       self.tape_dates[d][0].get_metadata()
-    self.meta_loaded = True
-
   def best_tape(self,date):
     if not date in self.dates: 
       print ("No Tape for date {}".format(date))
@@ -105,6 +97,8 @@ class GDTape:
   def __init__(self,dbpath,raw_json,set_data):
     self.dbpath = dbpath
     self._playable_formats = ['Ogg Vorbis','VBR MP3','Shorten','MP3']  # had to remove Flac because mpv can't play them!!!
+    self._breaks_added = False
+    self.meta_loaded = False
     attribs = ['date','identifier','avg_rating','format','collection','num_reviews','downloads']
     for k,v in raw_json.items():
        if k in attribs: setattr(self,k,v)
@@ -137,6 +131,14 @@ class GDTape:
   def contains_sound(self):
     return len(list(set(self._playable_formats) & set(self.format)))>0
 
+  def tracklist(self):
+    for i,t in enumerate(self.tracks):
+      print(i)
+    
+  def track(self,n):
+    if not self.meta_loaded: self.get_metadata()
+    return self.tracks[1+n]
+ 
   def get_metadata(self):
     self.tracks = []
     date = datetime.datetime.strptime(self.date,'%Y-%m-%d').date() 
@@ -166,7 +168,9 @@ class GDTape:
          raise (e)
     os.makedirs(os.path.dirname(meta_path),exist_ok=True)
     json.dump(page_meta,open(meta_path,'w'))
+    self.meta_loaded = True
     #return page_meta
+    self.insert_breaks()
     return self.tracks
 
   def append_track(self,tdict):
@@ -198,7 +202,8 @@ class GDTape:
       venue_string = F"{l[0]}, {l[1]}, {l[2]}"
     return venue_string 
 
-  def insert_breaks(self):
+  def _compute_breaks(self):
+    if not self.meta_loaded: self.get_metadata()
     tlist = [x.title for x in self.tracks]
     sd = self.set_data
     lb = sd['longbreaks'] if 'longbreaks' in sd.keys() else []
@@ -214,11 +219,34 @@ class GDTape:
     # At this point, i need to add "longbreak" and "shortbreak" tracks to the tape.
     # This will require creating special GDTracks, I guess.
     # for now, return the location indices.
-    return (lb_locations,sb_locations,locb_locations)
+    return {'long':lb_locations,'short':sb_locations,'location':locb_locations}
+
+
+  def insert_breaks(self):
+    if not self.meta_loaded: self.get_metadata()
+    if self._breaks_added: return
+    breaks = self._compute_breaks()
+    breakd = {'track':-1,'original':'setbreak','title':'Set Break','format':'Ogg Vorbis','size':1,'source':'original','path':'/home/steve/projects/deadstream/'}
+    lbreakd =dict(list(breakd.items()) + [('title','Set Break'),('name','silence600.ogg')])
+    sbreakd =dict(list(breakd.items()) + [('title','Encore Break'),('name','silence300.ogg')])
+    locbreakd =dict(list(breakd.items()) + [('title','Location Break'),('name','silence600.ogg')])
+    
+    # make the tracks
+    newtracks = []
+    for i,t in enumerate(self.tracks):
+       for j in breaks['long']:
+         if i==j: newtracks.append(GDTrack(lbreakd,'',True))
+       for j in breaks['short']:
+         if i==j: newtracks.append(GDTrack(sbreakd,'',True))
+       for j in breaks['location']:
+         if i==j: newtracks.append(GDTrack(locbreakd,'',True))
+       newtracks.append(t)
+    self._breaks_added = True
+    self.tracks = newtracks
 
 class GDTrack:
   """ A track from a GDTape recording """
-  def __init__(self,tdict,parent_id):
+  def __init__(self,tdict,parent_id,break_track=False):
     self.parent_id = parent_id
     attribs = ['track','original','title']
     for k,v in tdict.items():
@@ -230,7 +258,7 @@ class GDTrack:
     except ValueError:
       self.track = None 
     self.files = []
-    self.add_file(tdict)
+    self.add_file(tdict,break_track)
 
   def __str__(self):
     return self.__repr__()
@@ -239,11 +267,12 @@ class GDTrack:
     retstr = 'track {}. {}'.format(self.track,self.title)
     return retstr
       
-  def add_file(self,tdict):
-    attribs = ['name','format','size','source']
+  def add_file(self,tdict,break_track=False):
+    attribs = ['name','format','size','source','path']
     d = {k:v for (k,v) in tdict.items() if k in attribs}
     d['size'] = int(d['size'])
-    d['url'] = 'https://archive.org/download/'+self.parent_id+'/'+d['name']
+    if not break_track: d['url'] = 'https://archive.org/download/'+self.parent_id+'/'+d['name']
+    else :              d['url'] = 'file://'+os.path.join(d['path'],d['name'])
     self.files.append(d)
   # method to play(), pause(). 
 
