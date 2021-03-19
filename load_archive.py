@@ -12,10 +12,10 @@ parms,remainder = parser.parse_args()
 
 def main(parms):
   a = GD.GDArchive(parms.dbpath)
-  tapes = []
-  for t in a.ids[:8000]: 
-     tapes.append(GD.GDTape(parms.dbpath,t)) 
-  datelist = GD.GDDateList(tapes)
+#  tapes = []
+#  for t in a.ids[:8000]: 
+#     tapes.append(GD.GDTape(parms.dbpath,t)) 
+#  datelist = GD.GDDateList(tapes)
   
 if (not parms.debug) and __name__ == "__main__":
    main(parms)
