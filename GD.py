@@ -141,6 +141,7 @@ class GDTape:
     return self.tracks[1+n]
  
   def get_metadata(self):
+    if self.meta_loaded: return
     self.tracks = []
     date = datetime.datetime.strptime(self.date,'%Y-%m-%d').date() 
     meta_path = os.path.join(self.dbpath,str(date.year),str(date.month),self.identifier+'.json')
@@ -172,7 +173,7 @@ class GDTape:
     self.meta_loaded = True
     #return page_meta
     self.insert_breaks()
-    return self.tracks
+    return 
 
   def append_track(self,tdict):
     source = tdict['source']
@@ -195,7 +196,7 @@ class GDTape:
     # 1970-02-14 is an example with 2 shows.
     sd = self.set_data
     if sd == None: return self.identifier
-    lb,sb,locb = self.insert_breaks()
+    lb,sb,locb = self._compute_breaks()
     venue_string = ""
     if not sd == None:
       l = sd['location']
@@ -243,7 +244,7 @@ class GDTape:
          if i==j: newtracks.append(GDTrack(locbreakd,'',True))
        newtracks.append(t)
     self._breaks_added = True
-    self.tracks = newtracks
+    self.tracks = newtracks.copy()
 
 class GDTrack:
   """ A track from a GDTape recording """
@@ -381,8 +382,8 @@ class GDPlayer(MPV):
     self.playlist_pos = 0
     self.pause()
 
-  def next(self): self.command('playlist-next') # jump to next track
-  def prev(self): self.command('playlist-prev') # jump to previous track
+  def next(self): self.command('playlist-next'); self.wait_until_playing() # jump to next track
+  def prev(self): self.command('playlist-prev'); self.wait_until_playing() # jump to previous track
 
   def track_status(self):
     if self.playlist_pos == None: print (F"Playlist not started"); return None
