@@ -2,14 +2,17 @@
 from RPi import GPIO
 from time import sleep
 import datetime
+import logging
+
+logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.DEBUG)
 
 class knob:
-  def __init__(self,pins,name,values,init=None):
+  def __init__(self,pins,name,values,init=None,bouncetime=300):
     self.cl, self.dt, self.sw = pins
     self.name = name
-    self.direction = None
     self._values = values 
     self.value = min(values) if init == None else init
+    self.bouncetime = bouncetime
 
   def __str__(self):
     return self.__repr__()
@@ -20,41 +23,45 @@ class knob:
   def setup(self):
     GPIO.setmode(GPIO.BCM)
     _ = [GPIO.setup(x,GPIO.IN,pull_up_down=GPIO.PUD_DOWN) for x in [self.cl,self.dt,self.sw]]
-    GPIO.add_event_detect(self.sw,GPIO.BOTH, callback = self.sw_callback, bouncetime = 300) 
-    GPIO.add_event_detect(self.dt,GPIO.BOTH, callback = self.dt_callback, bouncetime = 300) 
-    GPIO.add_event_detect(self.cl,GPIO.FALLING, callback = self.cl_callback, bouncetime = 300) 
+    GPIO.add_event_detect(self.sw,GPIO.BOTH, callback = self.sw_callback, bouncetime = self.bouncetime) 
+    GPIO.add_event_detect(self.dt,GPIO.FALLING, callback = self.dt_callback, bouncetime = self.bouncetime) 
+    GPIO.add_event_detect(self.cl,GPIO.FALLING, callback = self.cl_callback, bouncetime = self.bouncetime) 
     return None 
 
-  def pin_states(self,msg): 
-    print(F"{self.name} {msg}: State of cl:{GPIO.input(self.cl)}, dt:{GPIO.input(self.dt)}, sw:{GPIO.input(self.sw)}")
-  
+  def show_pin_states(self,msg): 
+    logging.debug (F"{self.name} {msg}: State of cl:{GPIO.input(self.cl)}, dt:{GPIO.input(self.dt)}, sw:{GPIO.input(self.sw)}")
+    return 
+ 
   def cl_callback(self,channel):
-    self.pin_states("cl")
-    if GPIO.input(self.dt) == 0: self.direction = -1
-    else: self.direction = 1
-    self.set_value(self.value + self.direction)
-    print(F"incrementing {self.name} by {self.direction}. {self.value}")
-    #sleep(0.3)
+    self.show_pin_states("cl")
+    dt0 = GPIO.input(self.dt) 
+    sleep(0.005)
+    dt1 = GPIO.input(self.dt)
+    if (dt0 == 1) and (dt1 == 1): 
+      self.set_value(self.value + 1)
+      logging.debug (F"incrementing {self.name}.  {self.value}")
+    return
 
   def dt_callback(self,channel):
-    #self.pin_states("dt")
-    #sleep(0.3)
-    pass
+    self.show_pin_states("dt")
+    cl0 = GPIO.input(self.cl)
+    sleep(0.005)
+    cl1 = GPIO.input(self.cl)
+    if (cl0 == 1) and (cl1 == 1): 
+      self.set_value(self.value -1)
+      logging.debug (F"DEcrementing {self.name}. {self.value}")
+    return
 
   def sw_callback(self,channel):
     print(F"Pushed button {self.name}")
     #sleep(0.3)
 
-  def set_value(self,value): self.value = min(max(value,min(self._values)),max(self._values))
-  def get_value(self): return self.value 
-  
-  def cleanup(self): GPIO.cleanup()
-     
-y = knob((23,22,24),"year",range(1965,1996),1979)
-m = knob((18,27,17),"month",range(1,13),11)
-d = knob((15,14,4),"day",range(1,32),2)
-
-_ = [x.setup() for x in [y,m,d]]
+  def set_value(self,value): 
+    self.value = min(max(value,min(self._values)),max(self._values))
+  def get_value(self): 
+    return self.value 
+  def cleanup(self): 
+    GPIO.cleanup()
 
 class date_reader:
   def __init__(self,y,m,d):
@@ -67,5 +74,12 @@ class date_reader:
       d.set_value(d.value-1)
       self.date = datetime.date(y.value,m.value,d.value)
  
-  
+      
+y = knob((23,22,24),"year",range(1965,1996),1979)
+m = knob((18,27,17),"month",range(1,13),11)
+d = knob((15,14,4),"day",range(1,32),2,bouncetime=100)
+
+_ = [x.setup() for x in [y,m,d]]
+
+ 
 
