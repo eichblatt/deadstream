@@ -56,13 +56,16 @@ d = knob((15,14,4),"day",range(1,32),2)
 
 _ = [x.setup() for x in [y,m,d]]
 
-class date:
+class date_reader:
   def __init__(self,y,m,d):
-  maxd = [31,29,31,30,31,30,31,31,30,31,30,31] ## max days in a month.
-  if d.value > maxd[m-1]: d.set_value(maxd[m-1])
-  try:
-    self.date = datetime.date(y.value,m.value,d.value)
-  except ValueError:
-    d.set_value(d.value-1)
-    self.date = datetime.date(y.value,m.value,d.value)
+    maxd = [31,29,31,30,31,30,31,31,30,31,30,31] ## max days in a month.
+    if d.value > maxd[m.value-1]: d.set_value(maxd[m.value-1])
+    self.date = None
+    try:
+      self.date = datetime.date(y.value,m.value,d.value)
+    except ValueError:
+      d.set_value(d.value-1)
+      self.date = datetime.date(y.value,m.value,d.value)
+ 
   
+
