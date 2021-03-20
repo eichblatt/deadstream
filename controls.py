@@ -4,7 +4,7 @@ from time import sleep
 import datetime
 import logging
 
-logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.DEBUG)
+logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.INFO)
 
 class knob:
   def __init__(self,pins,name,values,init=None,bouncetime=300):
@@ -63,7 +63,7 @@ class knob:
   def cleanup(self): 
     GPIO.cleanup()
 
-class date_reader:
+class date_knob_reader:
   def __init__(self,y,m,d):
     maxd = [31,29,31,30,31,30,31,31,30,31,30,31] ## max days in a month.
     if d.value > maxd[m.value-1]: d.set_value(maxd[m.value-1])
@@ -74,12 +74,28 @@ class date_reader:
       d.set_value(d.value-1)
       self.date = datetime.date(y.value,m.value,d.value)
  
-      
+  def __str__(self):  
+    return self.__repr__()
+
+  def __repr__(self):
+      return F'Date Knob Says: {self.date.strftime("%Y-%m-%d")}'
+
+  def tape_available(self):
+      return None
+
 y = knob((23,22,24),"year",range(1965,1996),1979)
 m = knob((18,27,17),"month",range(1,13),11)
 d = knob((15,14,4),"day",range(1,32),2,bouncetime=100)
 
 _ = [x.setup() for x in [y,m,d]]
 
- 
+staged_date = date_knob_reader(y,m,d)
+print (staged_date)
+d0 = staged_date.date
 
+while True:
+  staged_date = date_knob_reader(y,m,d)
+  if staged_date.date != d0: 
+    print (staged_date)
+    d0 = staged_date.date
+  sleep(.01)
