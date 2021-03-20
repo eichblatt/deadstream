@@ -6,9 +6,17 @@
 __pycache__/
 *.pyc
 *.pyo
+*.egg-info
 
 # python virtualenv
 /env/
 
 # IDE files
 /.vscode/
+
+# python setuptools build dir
+/build/
+
+# test framework
+.tox/
+.pytest_cache/

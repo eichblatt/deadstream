@@ -5,6 +5,8 @@ import pdb
 import csv
 import difflib
 import datetime,time,math
+import pkg_resources
+import codecs
 from operator import attrgetter,methodcaller
 from mpv import MPV
 from importlib import reload
@@ -18,7 +20,7 @@ class GDArchive:
     
     self.url_scrape = self.url + '/services/search/v1/scrape'
     self.scrape_parms = {'debug':'false','xvar':'production','total_only':'false','count':'10000','sorts':'date asc,avg_rating desc,num_favorites desc,downloads desc','fields':'identifier,date,avg_rating,num_reviews,num_favorites,stars,downloads,files_count,format,collection,source,subject,type'}
-    self.set_data = GDSet(self.dbpath)
+    self.set_data = GDSet()
     self.tapes = self.load_tapes(reload_ids)
     self.tape_dates = self.get_tape_dates()
     self.dates = sorted(self.tape_dates.keys())
@@ -280,11 +282,12 @@ class GDTrack:
 
 class GDSet:
   """ Set Information from a Grateful Dead date """
-  def __init__(self,dbpath):
+  def __init__(self):
     set_data = {}
     prevsong = None;
-    setbreak_path = os.path.join(dbpath,'set_breaks.csv')
-    r = [r for r in  csv.reader(open(setbreak_path,'r'))]                                                                                                                                         
+    set_breaks = pkg_resources.resource_stream(__name__,"set_breaks.csv")
+    utf8_reader = codecs.getreader("utf-8")
+    r = [r for r in  csv.reader(utf8_reader(set_breaks))]                                                                                                                                         
     headers = r[0] 
     for row in r[1:]:
       d = dict(zip(headers,row))
@@ -349,7 +352,7 @@ class GDPlayer(MPV):
     self.create_playlist()
 
   def __str__(self):
-    return __repr__()
+    return self.__repr__()
     
   def __repr__(self):
     retstr = str(self.playlist)

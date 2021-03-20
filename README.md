@@ -32,3 +32,51 @@ player.stop()
 
 ```
 
+# Install the module
+
+```
+pip install .
+```
+
+or
+
+```
+python setup.py install
+```
+
+# Uninstall the module
+
+```
+pip uninstall deadstream
+```
+
+# Build without installing
+
+This will put the module in `build/lib`.
+
+```
+python setup.py build
+```
+
+# Run unit tests
+
+To be able to run unit tests, install the requirements.
+
+```
+pip install -r requirements
+```
+
+## Run tests with pytest
+
+```
+python -m pytest
+```
+
+## Run tests with tox
+
+Using tox will test the whole build pipeline using setup.py
+and run the unit tests using pytest.
+
+```
+tox
+```
