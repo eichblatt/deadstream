@@ -134,17 +134,21 @@ class GDTape:
   def contains_sound(self):
     return len(list(set(self._playable_formats) & set(self.format)))>0
 
+  def tracks(self):
+    self.get_metadata()
+    return self._tracks
+
   def tracklist(self):
-    for i,t in enumerate(self.tracks):
+    for i,t in enumerate(self._tracks):
       print(i)
     
   def track(self,n):
     if not self.meta_loaded: self.get_metadata()
-    return self.tracks[1+n]
+    return self._tracks[n-1]
  
   def get_metadata(self):
     if self.meta_loaded: return
-    self.tracks = []
+    self._tracks = []
     date = datetime.datetime.strptime(self.date,'%Y-%m-%d').date() 
     meta_path = os.path.join(self.dbpath,str(date.year),str(date.month),self.identifier+'.json')
     if os.path.exists(meta_path): 
@@ -184,13 +188,13 @@ class GDTape:
     else:
       orig = tdict['original']
     trackindex = None
-    for i,t in enumerate(self.tracks):
+    for i,t in enumerate(self._tracks):
       if orig == t.original:  # add in alternate formats
         trackindex = i
         # make sure that this isn't a duplicate!!!
         t.add_file(tdict)
         return t
-    self.tracks.append(GDTrack(tdict,self.identifier))
+    self._tracks.append(GDTrack(tdict,self.identifier))
 
   def venue(self,tracknum=0):
     """return the venue, city, state"""
@@ -198,17 +202,17 @@ class GDTape:
     # 1970-02-14 is an example with 2 shows.
     sd = self.set_data
     if sd == None: return self.identifier
-    lb,sb,locb = self._compute_breaks()
+    breaks = self._compute_breaks()
     venue_string = ""
     if not sd == None:
       l = sd['location']
-      if (len(locb)>0) and (tracknum > locb[0]): l = sd['location2']
+      if (len(breaks['location'])>0) and (tracknum > breaks['location'][0]): l = sd['location2']
       venue_string = F"{l[0]}, {l[1]}, {l[2]}"
     return venue_string 
 
   def _compute_breaks(self):
     if not self.meta_loaded: self.get_metadata()
-    tlist = [x.title for x in self.tracks]
+    tlist = [x.title for x in self._tracks]
     sd = self.set_data
     lb = sd['longbreaks'] if 'longbreaks' in sd.keys() else []
     sb = sd['shortbreaks'] if 'shortbreaks' in sd.keys() else []
@@ -237,7 +241,7 @@ class GDTape:
     
     # make the tracks
     newtracks = []
-    for i,t in enumerate(self.tracks):
+    for i,t in enumerate(self._tracks):
        for j in breaks['long']:
          if i==j: newtracks.append(GDTrack(lbreakd,'',True))
        for j in breaks['short']:
@@ -246,7 +250,7 @@ class GDTape:
          if i==j: newtracks.append(GDTrack(locbreakd,'',True))
        newtracks.append(t)
     self._breaks_added = True
-    self.tracks = newtracks.copy()
+    self._tracks = newtracks.copy()
 
 class GDTrack:
   """ A track from a GDTape recording """
@@ -361,7 +365,7 @@ class GDPlayer(MPV):
   def extract_urls(self,tape):  ## NOTE this should also give a list of backup URL's.
     tape.get_metadata()
     urls = [] 
-    for y in [x.files for x in tape.tracks]: 
+    for y in [x.files for x in tape.tracks()]: 
       for f in y: 
         if f['format'] in tape._playable_formats: urls.append(f['url']); break 
     return urls
