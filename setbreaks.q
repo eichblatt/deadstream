@@ -1,7 +1,7 @@
 
 c:.opts.addopt[`;`debug;1b;"debug"];
 c:.opts.addopt[c;`csvpath;`:/home/steve/projects/jerrybase/data/songlist.csv;"file path"];
-c:.opts.addopt[c;`outpath;`:/home/steve/projects/dead_vault/metadata/set_breaks.csv;"output file path"];
+c:.opts.addopt[c;`outpath;`:/home/steve/projects/deadstream/metadata/set_breaks.csv;"output file path"];
 parms:.opts.get_opts c;
 
 main:{[parms]
