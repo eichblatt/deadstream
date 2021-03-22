@@ -3,6 +3,12 @@ from RPi import GPIO
 from time import sleep
 import datetime
 import logging
+import digitalio
+import board
+import adafruit_rgb_display.st7735 as st7735
+from adafruit_rgb_display import color565
+from PIL import Image, ImageDraw, ImageFont
+
 
 logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.INFO)
 
@@ -83,6 +89,65 @@ class date_knob_reader:
   def tape_available(self):
       return None
 
+
+class screen:
+  def __init__(self):
+    cs_pin= digitalio.DigitalInOut(board.CE0)
+    dc_pin= digitalio.DigitalInOut(board.D24)
+    reset_pin= digitalio.DigitalInOut(board.D25)
+    BAUDRATE= 2400000
+    BAUDRATE= 40000000
+    spi= board.SPI()
+    self.disp= st7735.ST7735R(spi,rotation=270,cs=cs_pin,dc=dc_pin,rst=reset_pin,baudrate=BAUDRATE)
+
+    # --- swap width/height, if
+    if self.disp.rotation % 180 == 90: height,width= self.disp.width,self.disp.height
+    else: width,height= self.disp.width,self.disp.height
+    self.width, self.height = width, height
+
+    border= 2
+
+    self.image= Image.new("RGB",(width,height))
+    self.draw= ImageDraw.Draw(self.image)
+    self.draw.rectangle((0,0,width,height), outline=0,fill=(0,0,0))
+    self.disp.image(self.image)
+    print(' ---> disp ',self.disp.width,self.disp.height)
+
+    self.draw.rectangle((0,0,width,height), outline=128,fill=(120,10,10))
+    self.draw.rectangle((border,border,width-border-1, height-border-1),outline=0,fill=(0,0,0))
+
+    self.font= ImageFont.truetype("FreeMono.ttf",14)
+    #self.font= ImageFont.truetype("FreeMono.ttf",10)
+
+  def show(self):
+    self.disp.image(self.image)
+
+  def black(self):
+    self.disp.init()
+
+  def clear(self):
+    self.image= Image.new("RGB",(self.width,self.height))
+    self.disp.reset()
+    self.disp.init()
+
+  def show_text(self,text):
+    (fw,fh)= self.font.getsize(text)
+    text+= " ---> \n Grateful \n Dead \n Stream"
+    (font_width,font_height)= self.font.getsize(text)
+    print(' ---> hey ',font_width,font_height)
+    self.draw.text((30,10), text, font=self.font,fill=(50,210,210))
+    self.show()
+
+  def show_year(self,year):
+    (fw,fh)= self.font.getsize(text)
+    self.draw.rectangle((30,10,fw+30,fh+10),outline=0,fill=(0,0,0))
+    text= 'Year: %4i ' % ctr
+    print(' ---> year ',text,'  tmp %5.1fC'%cpuTemp)
+    self.draw.text((30,10), text, font=self.font,fill=(50,210,210))
+     # ------
+    self.disp.image(self.image)
+ 
+
 y = knob((13,19,26),"year",range(1965,1996),1979)
 m = knob((16,20,21),"month",range(1,13),11)
 d = knob((12,5,6)  ,"day",range(1,32),2,bouncetime=100)
@@ -92,6 +157,11 @@ _ = [x.setup() for x in [y,m,d]]
 staged_date = date_knob_reader(y,m,d)
 print (staged_date)
 d0 = staged_date.date
+
+scr = screen()
+scr.clear()
+scr.disp.fill(color565(0,100,200)) ## blue, green, red
+scr.show_text("Grateful Dead \n Streamer")
 
 while True:
   staged_date = date_knob_reader(y,m,d)
