@@ -51,7 +51,7 @@ print(' ---> disp ',disp.width,disp.height)
 
 from RPi import GPIO
 
-cl0,dt0,sw0= 4,22,23
+cl0,dt0,sw0= 13,19,26
 
 GPIO.setmode(GPIO.BCM)
 GPIO.setup(cl0,GPIO.IN,pull_up_down=GPIO.PUD_DOWN)
@@ -77,17 +77,17 @@ fot= ImageFont.truetype("FreeMono.ttf",10)
 
 text= "Year: 1966 \n"
 (fw,fh)= font.getsize(text)
-text+= " ---> \n Greatful \n Dead "
+text+= " ---> \n Grateful \n Dead \n Stream"
 (font_width,font_height)= font.getsize(text)
 print(' ---> hey ',font_width,font_height)
 draw.text((30,10), text, font=font,fill=(50,210,210))
 
 ## --ae--
 
-text= " oxoxoxo "
-(font_width,font_height)= font.getsize(text)
-draw.text((30,80), text, font=font,fill=(70,70,200))
-disp.image(image)
+#text= " oxoxoxo "
+#(font_width,font_height)= font.getsize(text)
+#draw.text((30,80), text, font=font,fill=(70,70,200))
+#disp.image(image)
  
 ### ---
 
