@@ -83,9 +83,9 @@ class date_knob_reader:
   def tape_available(self):
       return None
 
-y = knob((23,22,24),"year",range(1965,1996),1979)
-m = knob((18,27,17),"month",range(1,13),11)
-d = knob((15,14,4),"day",range(1,32),2,bouncetime=100)
+y = knob((13,19,26),"year",range(1965,1996),1979)
+m = knob((16,20,21),"month",range(1,13),11)
+d = knob((12,5,6)  ,"day",range(1,32),2,bouncetime=100)
 
 _ = [x.setup() for x in [y,m,d]]
 
