@@ -91,37 +91,38 @@ class date_knob_reader:
 
 
 class seven_segment:
-  def __init__(self,disp,loc,size,color=(0,0,255),bgcolor=(0,0,0)):
+  def __init__(self,disp,loc,size,thickness=3,color=(0,100,255),bgcolor=(0,0,0)):
     self.disp = disp
     self.x,self.y = loc
     self.w,self.h = size
+    self.thickness = thickness
     self.color = color565(color)
     self.bgcolor = color565(bgcolor)
     
     self.segments = [(0,0,0), (0,.5,0),(0,1,0),(0,0,1),(1,0,1),(0,.5,1),(1,.5,1)]  # x location, y location, vertical?
-    self.digits = [(0,2,3,4,5,6),(4,6),(0,1,2,3,6),(0,1,2,4,6),(1,4,5,6),(0,1,2,4,5),(0,1,2,3,4,5),(2,6,4),(0,1,2,3,4,5,6),(1,2,4,5,6)] # which segments on.
+    self.digits = [[0,2,3,4,5,6],[4,6],[0,1,2,3,6],[0,1,2,4,6],[1,4,5,6],[0,1,2,4,5],[0,1,2,3,4,5],[2,6,4],[0,1,2,3,4,5,6],[1,2,4,5,6],[1],[]] # which segments on.
     
   def draw_background(self):
-    self.disp.fill_rectangle(self.x,self.y,self.h+1,self.w+1,self.bgcolor)  # background
+    self.disp.fill_rectangle(self.y,self.x,self.h,self.w,self.bgcolor)  # background
     #[self.draw_segment(x,True) for x in self.segments]
 
   def draw_segment(self,seg,bgcolor=False):
     color = self.color if not bgcolor else self.bgcolor
     if seg[2]: # vertical
-      #line_width = divmod(self.w,10)[0]
-      line_width = 1
+      line_width = self.thickness
       line_height = divmod(self.h,2)[0]
     else: 
       line_width = self.w
-      #line_height = divmod(self.w,10)[0]
-      line_height = 1
-    x,y = (self.x + int(seg[0]*self.w),self.y + int(seg[1]*self.h))
-    #self.disp.fill_rectangle(x,y,line_width,line_height,color)
+      line_height = self.thickness
+    x,y = (self.x + int(seg[0]*self.w - seg[0]*self.thickness),self.y + int(seg[1]*self.h - seg[1]*self.thickness))
     self.disp.fill_rectangle(y,x,line_height,line_width,color)
-    print (F"drawing rectangle {y},{x},{line_height},{line_width},color {color}")
+    logging.debug(F"drawing rectangle {y},{x},{line_height},{line_width},color {color}")
  
   def draw(self,digit):
-    if not (digit>=0) and (digit<=9): raise ValueError
+    if digit == '-': digit = 10
+    if digit == ' ': digit = 11
+    if type(digit) == str: digit = int(digit)
+    if not (digit>=0) and (digit<=11): raise ValueError
     self.draw_background()
     pattern = [self.segments[x] for x in self.digits[digit]] 
     [self.draw_segment(x) for x in pattern]
@@ -191,7 +192,18 @@ class screen:
      # ------
     self.disp.image(self.image)
  
-
+  def show_date(self,date):
+    x0 = 0; y0 = 40; segwidth = 20; segheight = 40; separation=5
+    size = (segwidth,segheight); y1 = y0+segheight+separation
+    ss = []
+    ss = [seven_segment(scr.disp,(x0 + i*(segwidth + separation),y1),size) for i in range(5)]
+    ss = ss + [seven_segment(scr.disp,(x0 + i*(segwidth + separation),y0),size) for i in range(4)]
+    monthlist = [c for c in str(date.month).rjust(2)]
+    dash = ['-']
+    daylist = [c for c in str(date.day).rjust(2)]
+    yearlist = [c for c in str(date.year).rjust(4)]
+    for i,v in enumerate(monthlist + dash + daylist + yearlist): ss[i].draw(v)
+ 
 y = knob((13,19,26),"year",range(1965,1996),1979)
 m = knob((16,20,21),"month",range(1,13),11)
 d = knob((12,5,6)  ,"day",range(1,32),2,bouncetime=100)
@@ -207,18 +219,10 @@ scr.clear()
 scr.disp.fill(color565(0,100,200)) ## blue, green, red
 scr.show_text("Grateful Dead \n Streamer")
 
-ss = []
-ss.append(seven_segment(scr.disp,(0,0),(20,40)))
-ss.append(seven_segment(scr.disp,(25,0),(20,40)))
-ss.append(seven_segment(scr.disp,(55,0),(20,40)))
-ss.append(seven_segment(scr.disp,(80,0),(20,40)))
-ss.append(seven_segment(scr.disp,(110,0),(20,40)))
-ss.append(seven_segment(scr.disp,(135,0),(20,40)))
-
-
 while True:
   staged_date = date_knob_reader(y,m,d)
   if staged_date.date != d0: 
     print (staged_date)
     d0 = staged_date.date
+    scr.show_date(staged_date.date)
   sleep(.01)
