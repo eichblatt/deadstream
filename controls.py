@@ -1,6 +1,7 @@
 #!/usr/bin/python3
 from RPi import GPIO
 from time import sleep
+import GD
 import datetime
 import logging
 import digitalio
@@ -70,10 +71,11 @@ class knob:
     GPIO.cleanup()
 
 class date_knob_reader:
-  def __init__(self,y,m,d):
+  def __init__(self,y,m,d,archive=None):
     maxd = [31,29,31,30,31,30,31,31,30,31,30,31] ## max days in a month.
     if d.value > maxd[m.value-1]: d.set_value(maxd[m.value-1])
     self.date = None
+    self.archive = archive
     try:
       self.date = datetime.date(y.value,m.value,d.value)
     except ValueError:
@@ -84,14 +86,20 @@ class date_knob_reader:
     return self.__repr__()
 
   def __repr__(self):
-      return F'Date Knob Says: {self.date.strftime("%Y-%m-%d")}'
+    avail = "Tape Available" if self.tape_available() else ""
+    return F'Date Knob Says: {self.date.strftime("%Y-%m-%d")}. {avail}'
+
+  def fmtdate(self):
+    if self.date == None: return None
+    return self.date.strftime('%Y-%m-%d')
 
   def tape_available(self):
-      return None
+    if self.archive == None: return False
+    return self.fmtdate() in self.archive.dates   
 
 
 class seven_segment:
-  def __init__(self,disp,loc,size,thickness=3,color=(0,100,255),bgcolor=(0,0,0)):
+  def __init__(self,disp,loc,size,thickness=3,color=(0,0,255),bgcolor=(0,0,0)):
     self.disp = disp
     self.x,self.y = loc
     self.w,self.h = size
@@ -136,7 +144,8 @@ class screen:
     BAUDRATE= 40000000
     spi= board.SPI()
     self.disp= st7735.ST7735R(spi,rotation=270,cs=cs_pin,dc=dc_pin,rst=reset_pin,baudrate=BAUDRATE)
-
+   
+    self.bgcolor = color565(0,0,0)
     # --- swap width/height, if
     if self.disp.rotation % 180 == 90: height,width= self.disp.width,self.disp.height
     else: width,height= self.disp.width,self.disp.height
@@ -192,7 +201,7 @@ class screen:
      # ------
     self.disp.image(self.image)
  
-  def show_date(self,date):
+  def show_date(self,date,tape=False):
     x0 = 0; y0 = 40; segwidth = 20; segheight = 40; separation=5
     size = (segwidth,segheight); y1 = y0+segheight+separation
     ss = []
@@ -203,6 +212,8 @@ class screen:
     daylist = [c for c in str(date.day).rjust(2)]
     yearlist = [c for c in str(date.year).rjust(4)]
     for i,v in enumerate(monthlist + dash + daylist + yearlist): ss[i].draw(v)
+    if tape: self.disp.fill_rectangle(0,0,30,30,color565(255,255,255))  
+    else: self.disp.fill_rectangle(0,0,30,30,self.bgcolor)  
  
 y = knob((13,19,26),"year",range(1965,1996),1979)
 m = knob((16,20,21),"month",range(1,13),11)
@@ -210,7 +221,11 @@ d = knob((12,5,6)  ,"day",range(1,32),2,bouncetime=100)
 
 _ = [x.setup() for x in [y,m,d]]
 
-staged_date = date_knob_reader(y,m,d)
+logging.info ("Loading GD Archive")
+a = GD.GDArchive('/home/steve/projects/deadstream/metadata')
+logging.info ("Done ")
+
+staged_date = date_knob_reader(y,m,d,a)
 print (staged_date)
 d0 = staged_date.date
 
@@ -219,10 +234,13 @@ scr.clear()
 scr.disp.fill(color565(0,100,200)) ## blue, green, red
 scr.show_text("Grateful Dead \n Streamer")
 
+scr.show_date(staged_date.date,staged_date.tape_available())
+
 while True:
-  staged_date = date_knob_reader(y,m,d)
+  staged_date = date_knob_reader(y,m,d,a)
+  staged_date_fmt = staged_date.date.strftime('%Y-%m-%d')
   if staged_date.date != d0: 
     print (staged_date)
     d0 = staged_date.date
-    scr.show_date(staged_date.date)
+    scr.show_date(staged_date.date,staged_date.tape_available())
   sleep(.01)
