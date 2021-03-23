@@ -213,12 +213,12 @@ class screen:
      # ------
     self.disp.image(self.image)
  
-  def show_date(self,date,loc=(0,40),size=20,tape=False):
+  def show_date(self,date,loc=(0,40),size=20,color=(0,0,255),tape=False):
     x0,y0 = loc; segwidth = size; segheight = 2*size; separation=5
     size = (segwidth,segheight); y1 = y0+segheight+separation
     ss = []
-    ss = [seven_segment(scr.disp,(x0 + i*(segwidth + separation),y1),size) for i in range(5)]
-    ss = ss + [seven_segment(scr.disp,(x0 + i*(segwidth + separation),y0),size) for i in range(4)]
+    ss = [seven_segment(scr.disp,(x0 + i*(segwidth + separation),y1),size,color=color) for i in range(5)]
+    ss = ss + [seven_segment(scr.disp,(x0 + i*(segwidth + separation),y0),size,color=color) for i in range(4)]
     monthlist = [c for c in str(date.month).rjust(2)]
     dash = ['-']
     daylist = [c for c in str(date.day).rjust(2)]
@@ -260,16 +260,17 @@ while True:
     if staged_date.tape_available():
        DATE = staged_date.date 
        logging.info(F"Setting DATE to {DATE.strftime('%Y-%m-%d')}")
-       scr.show_date(DATE,loc=(50,0),size=10)
+       scr.show_date(DATE,loc=(60,0),size=10,color=(255,255,255),tape=True)
     SELECT_DATE = False
   if PLAY_STATE and not play_state:  # start playing
      date_fmt = DATE.strftime('%Y-%m-%d')
      tape = a.best_tape(date_fmt)
-     player = GD.GDPlayer(tape)
+     #player = GD.GDPlayer(tape)
      logging.info(F"Playing {date_fmt} on player")
-     player.play()
+     #player.play()
   if not PLAY_STATE and play_state:  # pause playing
-     player.pause()
+     logging.info(F"Pausing {date_fmt} on player")
+     #player.pause()
   play_state = PLAY_STATE
 
   sleep(.01)
