@@ -34,7 +34,7 @@ class knob:
   def setup(self):
     GPIO.setmode(GPIO.BCM)
     _ = [GPIO.setup(x,GPIO.IN,pull_up_down=GPIO.PUD_DOWN) for x in [self.cl,self.dt,self.sw]]
-    GPIO.add_event_detect(self.sw,GPIO.BOTH, callback = self.sw_callback, bouncetime = self.bouncetime) 
+    GPIO.add_event_detect(self.sw,GPIO.RISING, callback = self.sw_callback, bouncetime = self.bouncetime) 
     GPIO.add_event_detect(self.dt,GPIO.FALLING, callback = self.dt_callback, bouncetime = self.bouncetime) 
     GPIO.add_event_detect(self.cl,GPIO.FALLING, callback = self.cl_callback, bouncetime = self.bouncetime) 
     return None 
@@ -213,7 +213,7 @@ class screen:
      # ------
     self.disp.image(self.image)
  
-  def show_date(self,date,loc=(0,40),size=20,color=(0,0,255),tape=False):
+  def show_date(self,date,loc=(0,44),size=18,color=(0,0,255),tape=False):
     x0,y0 = loc; segwidth = size; segheight = 2*size; separation=5
     size = (segwidth,segheight); y1 = y0+segheight+separation
     ss = []
