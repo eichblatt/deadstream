@@ -90,6 +90,42 @@ class date_knob_reader:
       return None
 
 
+class seven_segment:
+  def __init__(self,disp,loc,size,color=(0,0,255),bgcolor=(0,0,0)):
+    self.disp = disp
+    self.x,self.y = loc
+    self.w,self.h = size
+    self.color = color565(color)
+    self.bgcolor = color565(bgcolor)
+    
+    self.segments = [(0,0,0), (0,.5,0),(0,1,0),(0,0,1),(1,0,1),(0,.5,1),(1,.5,1)]  # x location, y location, vertical?
+    self.digits = [(0,2,3,4,5,6),(4,6),(0,1,2,3,6),(0,1,2,4,6),(1,4,5,6),(0,1,2,4,5),(0,1,2,3,4,5),(2,6,4),(0,1,2,3,4,5,6),(1,2,4,5,6)] # which segments on.
+    
+  def draw_background(self):
+    self.disp.fill_rectangle(self.x,self.y,self.h+1,self.w+1,self.bgcolor)  # background
+    #[self.draw_segment(x,True) for x in self.segments]
+
+  def draw_segment(self,seg,bgcolor=False):
+    color = self.color if not bgcolor else self.bgcolor
+    if seg[2]: # vertical
+      #line_width = divmod(self.w,10)[0]
+      line_width = 1
+      line_height = divmod(self.h,2)[0]
+    else: 
+      line_width = self.w
+      #line_height = divmod(self.w,10)[0]
+      line_height = 1
+    x,y = (self.x + int(seg[0]*self.w),self.y + int(seg[1]*self.h))
+    #self.disp.fill_rectangle(x,y,line_width,line_height,color)
+    self.disp.fill_rectangle(y,x,line_height,line_width,color)
+    print (F"drawing rectangle {y},{x},{line_height},{line_width},color {color}")
+ 
+  def draw(self,digit):
+    if not (digit>=0) and (digit<=9): raise ValueError
+    self.draw_background()
+    pattern = [self.segments[x] for x in self.digits[digit]] 
+    [self.draw_segment(x) for x in pattern]
+
 class screen:
   def __init__(self):
     cs_pin= digitalio.DigitalInOut(board.CE0)
@@ -118,6 +154,14 @@ class screen:
 
     self.font= ImageFont.truetype("FreeMono.ttf",14)
     #self.font= ImageFont.truetype("FreeMono.ttf",10)
+
+  def rectangle(self,loc,size,color=(0,0,255)):
+    x,y = loc; w,h = size;
+    self.disp.fill_rectangle(x,y,w,h,color565(color))
+
+  def set_pixel(self,loc,color=(0,0,255)):
+    x,y = loc
+    self.disp.pixel(x,y,color565(color))
 
   def show(self):
     self.disp.image(self.image)
@@ -162,6 +206,15 @@ scr = screen()
 scr.clear()
 scr.disp.fill(color565(0,100,200)) ## blue, green, red
 scr.show_text("Grateful Dead \n Streamer")
+
+ss = []
+ss.append(seven_segment(scr.disp,(0,0),(20,40)))
+ss.append(seven_segment(scr.disp,(25,0),(20,40)))
+ss.append(seven_segment(scr.disp,(55,0),(20,40)))
+ss.append(seven_segment(scr.disp,(80,0),(20,40)))
+ss.append(seven_segment(scr.disp,(110,0),(20,40)))
+ss.append(seven_segment(scr.disp,(135,0),(20,40)))
+
 
 while True:
   staged_date = date_knob_reader(y,m,d)
