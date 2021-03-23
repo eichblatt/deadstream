@@ -13,6 +13,10 @@ from PIL import Image, ImageDraw, ImageFont
 
 logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.INFO)
 
+SELECT_DATE = False
+PLAY_STATE = False
+DATE = None
+
 class knob:
   def __init__(self,pins,name,values,init=None,bouncetime=300):
     self.cl, self.dt, self.sw = pins
@@ -60,7 +64,15 @@ class knob:
     return
 
   def sw_callback(self,channel):
-    print(F"Pushed button {self.name}")
+    global SELECT_DATE 
+    global PLAY_STATE
+    logging.info(F"Pushed button {self.name}")
+    if self.name == 'year':
+       SELECT_DATE = True 
+       logging.info(F"Setting SELECT_DATE to {SELECT_DATE}")
+    if self.name == 'day':
+       PLAY_STATE = not PLAY_STATE  
+       logging.info(F"Setting PLAY_STATE to {PLAY_STATE}")
     #sleep(0.3)
 
   def set_value(self,value): 
@@ -201,8 +213,8 @@ class screen:
      # ------
     self.disp.image(self.image)
  
-  def show_date(self,date,tape=False):
-    x0 = 0; y0 = 40; segwidth = 20; segheight = 40; separation=5
+  def show_date(self,date,loc=(0,40),size=20,tape=False):
+    x0,y0 = loc; segwidth = size; segheight = 2*size; separation=5
     size = (segwidth,segheight); y1 = y0+segheight+separation
     ss = []
     ss = [seven_segment(scr.disp,(x0 + i*(segwidth + separation),y1),size) for i in range(5)]
@@ -226,6 +238,7 @@ a = GD.GDArchive('/home/steve/projects/deadstream/metadata')
 logging.info ("Done ")
 
 staged_date = date_knob_reader(y,m,d,a)
+selected_date = None
 print (staged_date)
 d0 = staged_date.date
 
@@ -234,13 +247,29 @@ scr.clear()
 scr.disp.fill(color565(0,100,200)) ## blue, green, red
 scr.show_text("Grateful Dead \n Streamer")
 
-scr.show_date(staged_date.date,staged_date.tape_available())
+scr.show_date(staged_date.date,tape=staged_date.tape_available())
+play_state = PLAY_STATE
 
 while True:
   staged_date = date_knob_reader(y,m,d,a)
-  staged_date_fmt = staged_date.date.strftime('%Y-%m-%d')
   if staged_date.date != d0: 
     print (staged_date)
     d0 = staged_date.date
-    scr.show_date(staged_date.date,staged_date.tape_available())
+    scr.show_date(staged_date.date,tape=staged_date.tape_available())
+  if SELECT_DATE:
+    if staged_date.tape_available():
+       DATE = staged_date.date 
+       logging.info(F"Setting DATE to {DATE.strftime('%Y-%m-%d')}")
+       scr.show_date(DATE,loc=(50,0),size=10)
+    SELECT_DATE = False
+  if PLAY_STATE and not play_state:  # start playing
+     date_fmt = DATE.strftime('%Y-%m-%d')
+     tape = a.best_tape(date_fmt)
+     player = GD.GDPlayer(tape)
+     logging.info(F"Playing {date_fmt} on player")
+     player.play()
+  if not PLAY_STATE and play_state:  # pause playing
+     player.pause()
+  play_state = PLAY_STATE
+
   sleep(.01)
