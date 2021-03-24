@@ -213,17 +213,35 @@ class screen:
      # ------
     self.disp.image(self.image)
  
-  def show_date(self,date,loc=(0,44),size=18,color=(0,0,255),tape=False):
-    x0,y0 = loc; segwidth = size; segheight = 2*size; separation=5
-    size = (segwidth,segheight); y1 = y0+segheight+separation
+  def show_playstate(self,playstate,loc=(146,6),color=(100,100,255)):
+    y,x = loc; color = color565(color);
+    logging.debug("showing playstate {playstate}")
+    if playstate == 'playing':  
+       self.disp.fill_rectangle(x,y,9,9,color)  
+    if playstate == 'paused' :  
+       self.disp.fill_rectangle(x,y+3,9,3,self.bgcolor)   # draw black stripe
+    if playstate == 'stopped' :  
+       self.disp.fill_rectangle(x,y,9,9,self.bgcolor)  
+
+  def show_date(self,date,loc=(0,96),size=16,separation=4,color=(0,200,255),stack=False,tape=False):
+    x0,y0 = loc; segwidth = size; segheight = 2*size; 
+    size = (segwidth,segheight)
     ss = []
-    ss = [seven_segment(scr.disp,(x0 + i*(segwidth + separation),y1),size,color=color) for i in range(5)]
-    ss = ss + [seven_segment(scr.disp,(x0 + i*(segwidth + separation),y0),size,color=color) for i in range(4)]
     monthlist = [c for c in str(date.month).rjust(2)]
     dash = ['-']
     daylist = [c for c in str(date.day).rjust(2)]
-    yearlist = [c for c in str(date.year).rjust(4)]
-    for i,v in enumerate(monthlist + dash + daylist + yearlist): ss[i].draw(v)
+
+    if stack:
+      y1 = y0+segheight+separation
+      ss = [seven_segment(scr.disp,(x0 + i*(segwidth + separation),y1),size,color=color) for i in range(5)]
+      ss = ss + [seven_segment(scr.disp,(x0 + i*(segwidth + separation),y0),size,color=color) for i in range(4)]
+      yearlist = [c for c in str(date.year).rjust(4)]
+      for i,v in enumerate(monthlist + dash + daylist + yearlist): ss[i].draw(v)
+    else:
+      ss = [seven_segment(scr.disp,(x0 + i*(segwidth + separation),y0),size,color=color) for i in range(8)]
+      yearlist = [c for c in str(divmod(date.year,100)[1]).rjust(2)]
+      for i,v in enumerate(monthlist + dash + daylist + dash + yearlist): ss[i].draw(v)
+
     if tape: self.disp.fill_rectangle(0,0,30,30,color565(255,255,255))  
     else: self.disp.fill_rectangle(0,0,30,30,self.bgcolor)  
  
@@ -235,6 +253,7 @@ _ = [x.setup() for x in [y,m,d]]
 
 logging.info ("Loading GD Archive")
 a = GD.GDArchive('/home/steve/projects/deadstream/metadata')
+#a = None
 logging.info ("Done ")
 
 staged_date = date_knob_reader(y,m,d,a)
@@ -260,7 +279,7 @@ while True:
     if staged_date.tape_available():
        DATE = staged_date.date 
        logging.info(F"Setting DATE to {DATE.strftime('%Y-%m-%d')}")
-       scr.show_date(DATE,loc=(60,0),size=10,color=(255,255,255),tape=True)
+       scr.show_date(DATE,loc=(85,0),size=10,color=(255,255,255),stack=True,tape=True)
     SELECT_DATE = False
   if PLAY_STATE and not play_state:  # start playing
      date_fmt = DATE.strftime('%Y-%m-%d')
@@ -268,9 +287,11 @@ while True:
      #player = GD.GDPlayer(tape)
      logging.info(F"Playing {date_fmt} on player")
      #player.play()
+     scr.show_playstate('playing')
   if not PLAY_STATE and play_state:  # pause playing
      logging.info(F"Pausing {date_fmt} on player")
      #player.pause()
+     scr.show_playstate('paused')
   play_state = PLAY_STATE
 
   sleep(.01)
