@@ -217,8 +217,11 @@ class screen:
     y,x = loc; color = color565(color);
     logging.debug("showing playstate {playstate}")
     if playstate == 'playing':  
-       self.disp.fill_rectangle(x,y,9,9,color)  
+       self.disp.fill_rectangle(x,y,9,9,self.bgcolor)  
+       for i in range(9):
+         self.disp.hline(x+int(i/2),y+i,9-i,color)  
     if playstate == 'paused' :  
+       self.disp.fill_rectangle(x,y,9,9,color)  
        self.disp.fill_rectangle(x,y+3,9,3,self.bgcolor)   # draw black stripe
     if playstate == 'stopped' :  
        self.disp.fill_rectangle(x,y,9,9,self.bgcolor)  
