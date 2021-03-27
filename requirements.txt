@@ -2,3 +2,5 @@
 
 tox
 pytest
+aiohttp
+python-mpv

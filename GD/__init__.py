@@ -11,9 +11,19 @@ from operator import attrgetter,methodcaller
 from mpv import MPV
 from importlib import reload
 
+from GD.tapes import AsyncTapeDownloader, TapeDownloader
 class GDArchive:
   """ The Grateful Dead Collection on Archive.org """
-  def __init__(self,dbpath,url='https://archive.org',reload_ids=False):
+  def __init__(self,dbpath,url='https://archive.org',reload_ids=False, sync=False):
+    """Create a new GDArchive.
+
+    Parameters:
+
+      dbpath: Path to filesystem location where data are stored
+      url: URL for the internet archive
+      reload_ids: If True, force re-download of tape data
+      sync: If True use the slower synchronous downloader
+    """
     self.url = url
     self.dbpath = dbpath
     self.idpath = os.path.join(self.dbpath,'ids.json')
@@ -21,6 +31,7 @@ class GDArchive:
     self.url_scrape = self.url + '/services/search/v1/scrape'
     self.scrape_parms = {'debug':'false','xvar':'production','total_only':'false','count':'10000','sorts':'date asc,avg_rating desc,num_favorites desc,downloads desc','fields':'identifier,date,avg_rating,num_reviews,num_favorites,stars,downloads,files_count,format,collection,source,subject,type'}
     self.set_data = GDSet()
+    self.downloader = (TapeDownloader if sync else AsyncTapeDownloader)(url)
     self.tapes = self.load_tapes(reload_ids)
     self.tape_dates = self.get_tape_dates()
     self.dates = sorted(self.tape_dates.keys())
@@ -61,9 +72,7 @@ class GDArchive:
       tapes = json.load(open(self.idpath,'r'))
     else:
       print ("Loading Tapes from the Archive...this will take a few minutes")
-      tapes = []
-      for year in range(1965,1996,1):
-        tapes.extend(self.get_tapes(year))
+      tapes = self.downloader.get_tapes(list(range(1965, 1996, 1)))
       self.write_tapes(tapes)
     return [GDTape(self.dbpath,tape,self.set_data) for tape in tapes]
 
