@@ -200,6 +200,7 @@ class GDTape:
     """return the venue, city, state"""
     # Note, if tracknum > 0, this could be a second show...check after running insert_breaks 
     # 1970-02-14 is an example with 2 shows.
+    self.get_metadata()
     sd = self.set_data
     if sd == None: return self.identifier
     breaks = self._compute_breaks()
@@ -217,9 +218,13 @@ class GDTape:
     lb = sd['longbreaks'] if 'longbreaks' in sd.keys() else []
     sb = sd['shortbreaks'] if 'shortbreaks' in sd.keys() else []
     locb = sd['locationbreak'] if 'locationbreak' in sd.keys() else []
-    long_breaks = [difflib.get_close_matches(x,tlist)[0] for x in lb]
-    short_breaks = [difflib.get_close_matches(x,tlist)[0] for x in sb]
-    location_breaks = [difflib.get_close_matches(x,tlist)[0] for x in locb]
+    long_breaks = []; short_breaks = []; location_breaks = []
+    try:
+      long_breaks = [difflib.get_close_matches(x,tlist)[0] for x in lb]
+      short_breaks = [difflib.get_close_matches(x,tlist)[0] for x in sb]
+      location_breaks = [difflib.get_close_matches(x,tlist)[0] for x in locb]
+    except:
+      pass
     lb_locations = []; sb_locations = []; locb_locations = [];
     lb_locations = [j+1 for j,t in enumerate(tlist) if t in long_breaks] 
     sb_locations = [j+1 for j,t in enumerate(tlist) if t in short_breaks]
