@@ -105,6 +105,13 @@ class date_knob_reader:
     if self.date == None: return None
     return self.date.strftime('%Y-%m-%d')
 
+  def venue(self):
+    if self.tape_available: 
+      t = self.archive.best_tape(self.fmtdate())
+      t.get_metadata()
+      return t.venue()
+    return ""
+
   def tape_available(self):
     if self.archive == None: return False
     return self.fmtdate() in self.archive.dates   
@@ -152,7 +159,7 @@ class screen:
     cs_pin= digitalio.DigitalInOut(board.CE0)
     dc_pin= digitalio.DigitalInOut(board.D24)
     reset_pin= digitalio.DigitalInOut(board.D25)
-    BAUDRATE= 2400000
+    #BAUDRATE= 2400000
     BAUDRATE= 40000000
     spi= board.SPI()
     self.disp= st7735.ST7735R(spi,rotation=270,cs=cs_pin,dc=dc_pin,rst=reset_pin,baudrate=BAUDRATE)
@@ -163,19 +170,12 @@ class screen:
     else: width,height= self.disp.width,self.disp.height
     self.width, self.height = width, height
 
-    border= 2
 
-    self.image= Image.new("RGB",(width,height))
-    self.draw= ImageDraw.Draw(self.image)
-    self.draw.rectangle((0,0,width,height), outline=0,fill=(0,0,0))
+    self.image = Image.new("RGB",(160,96))
+    self.draw = ImageDraw.Draw(self.image)
     self.disp.image(self.image)
     print(' ---> disp ',self.disp.width,self.disp.height)
-
-    self.draw.rectangle((0,0,width,height), outline=128,fill=(120,10,10))
-    self.draw.rectangle((border,border,width-border-1, height-border-1),outline=0,fill=(0,0,0))
-
-    self.font= ImageFont.truetype("FreeMono.ttf",14)
-    #self.font= ImageFont.truetype("FreeMono.ttf",10)
+    self.font= ImageFont.truetype("FreeMono.ttf",20)
 
   def rectangle(self,loc,size,color=(0,0,255)):
     x,y = loc; w,h = size;
@@ -185,34 +185,20 @@ class screen:
     x,y = loc
     self.disp.pixel(x,y,color565(color))
 
-  def show(self):
-    self.disp.image(self.image)
-
   def black(self):
+    self.disp.fill()
     self.disp.init()
 
   def clear(self):
-    self.image= Image.new("RGB",(self.width,self.height))
     self.disp.reset()
-    self.disp.init()
+    self.black()
 
-  def show_text(self,text):
-    (fw,fh)= self.font.getsize(text)
-    text+= " ---> \n Grateful \n Dead \n Stream"
+  def show_text(self,text,loc=(0,0),color=(255,255,255)):
     (font_width,font_height)= self.font.getsize(text)
-    print(' ---> hey ',font_width,font_height)
-    self.draw.text((30,10), text, font=self.font,fill=(50,210,210))
-    self.show()
-
-  def show_year(self,year):
-    (fw,fh)= self.font.getsize(text)
-    self.draw.rectangle((30,10,fw+30,fh+10),outline=0,fill=(0,0,0))
-    text= 'Year: %4i ' % ctr
-    print(' ---> year ',text,'  tmp %5.1fC'%cpuTemp)
-    self.draw.text((30,10), text, font=self.font,fill=(50,210,210))
-     # ------
+    print(F' ---> font_size {font_width},{font_height}')
+    self.draw.text(loc, text, font=self.font,fill=color)
     self.disp.image(self.image)
- 
+
   def show_playstate(self,playstate,loc=(146,6),color=(100,100,255)):
     y,x = loc; color = color565(color);
     logging.debug("showing playstate {playstate}")
@@ -236,21 +222,25 @@ class screen:
 
     if stack:
       y1 = y0+segheight+separation
-      ss = [seven_segment(scr.disp,(x0 + i*(segwidth + separation),y1),size,color=color) for i in range(5)]
-      ss = ss + [seven_segment(scr.disp,(x0 + i*(segwidth + separation),y0),size,color=color) for i in range(4)]
+      ss = [seven_segment(self.disp,(x0 + i*(segwidth + separation),y1),size,color=color) for i in range(5)]
+      ss = ss + [seven_segment(self.disp,(x0 + i*(segwidth + separation),y0),size,color=color) for i in range(4)]
       yearlist = [c for c in str(date.year).rjust(4)]
       for i,v in enumerate(monthlist + dash + daylist + yearlist): ss[i].draw(v)
     else:
-      ss = [seven_segment(scr.disp,(x0 + i*(segwidth + separation),y0),size,color=color) for i in range(8)]
+      ss = [seven_segment(self.disp,(x0 + i*(segwidth + separation),y0),size,color=color) for i in range(8)]
       yearlist = [c for c in str(divmod(date.year,100)[1]).rjust(2)]
       for i,v in enumerate(monthlist + dash + daylist + dash + yearlist): ss[i].draw(v)
 
     if tape: self.disp.fill_rectangle(0,0,30,30,color565(255,255,255))  
     else: self.disp.fill_rectangle(0,0,30,30,self.bgcolor)  
+
+logging.info ("Loading GD Archive")
+
  
-y = knob((13,19,26),"year",range(1965,1996),1979)
-m = knob((16,20,21),"month",range(1,13),11)
-d = knob((12,5,6)  ,"day",range(1,32),2,bouncetime=100)
+y = knob((13,26,23),"year",range(1965,1996),1979)   # cl, dt, sw
+m = knob((16,22,20),"month",range(1,13),11)
+#m = knob((16,14,10),"month",range(1,13),11)
+d = knob((12,6,5)  ,"day",range(1,32),2,bouncetime=100)
 
 _ = [x.setup() for x in [y,m,d]]
 
@@ -266,10 +256,9 @@ d0 = staged_date.date
 
 scr = screen()
 scr.clear()
-scr.disp.fill(color565(0,100,200)) ## blue, green, red
-scr.show_text("Grateful Dead \n Streamer")
-
+#scr.show_date(datetime.date(1977,11,2),tape=True)
 scr.show_date(staged_date.date,tape=staged_date.tape_available())
+#scr.show_text(staged_date.venue())
 play_state = PLAY_STATE
 
 while True:
@@ -278,6 +267,12 @@ while True:
     print (staged_date)
     d0 = staged_date.date
     scr.show_date(staged_date.date,tape=staged_date.tape_available())
+#    if staged_date.tape_available(): 
+#      venue = staged_date.venue()
+#      scr.show_text(venue)
+#    else:
+#      scr.draw.rectangle((0,0,160,32),outline=0,fill=(0,0,0)) # erase the venue
+#      scr.disp.image(scr.image)
   if SELECT_DATE:
     if staged_date.tape_available():
        DATE = staged_date.date 
@@ -287,14 +282,14 @@ while True:
   if PLAY_STATE and not play_state:  # start playing
      date_fmt = DATE.strftime('%Y-%m-%d')
      tape = a.best_tape(date_fmt)
-     #player = GD.GDPlayer(tape)
+     player = GD.GDPlayer(tape)
      logging.info(F"Playing {date_fmt} on player")
-     #player.play()
+     player.play()
      scr.show_playstate('playing')
   if not PLAY_STATE and play_state:  # pause playing
      logging.info(F"Pausing {date_fmt} on player")
-     #player.pause()
+     player.pause()
      scr.show_playstate('paused')
   play_state = PLAY_STATE
 
-  sleep(.01)
+  sleep(.1)
