@@ -8,7 +8,6 @@
 ### 
 
 
-from sys import exit
 from time import sleep
 
 import digitalio
@@ -72,8 +71,9 @@ print(' --> 0 ',cl0State,dt0State,sw0State)
 draw.rectangle((0,0,width,height), outline=128,fill=(120,10,10))
 draw.rectangle((border,border,width-border-1, height-border-1),outline=0,fill=(0,0,0))
 
-font= ImageFont.truetype("FreeMono.ttf",14)
-fot= ImageFont.truetype("FreeMono.ttf",10)
+font= ImageFont.truetype("FreeMono.ttf",20)
+#font= ImageFont.truetype("FreeMono.ttf",14)
+#fot= ImageFont.truetype("FreeMono.ttf",10)
 
 text= "Year: 1966 \n"
 (fw,fh)= font.getsize(text)
