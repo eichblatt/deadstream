@@ -111,9 +111,7 @@ class AsyncTapeDownloader(BaseTapeDownloader):
 
         Returns a list dictionaries of tape information
         """
-        loop = asyncio.get_event_loop()
-        tapes = loop.run_until_complete(self._get_tapes(years))
-        loop.close()
+        tapes = asyncio.run(self._get_tapes(years))
         return tapes
 
     async def _get_tapes(self, years):
