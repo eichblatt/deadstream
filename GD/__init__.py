@@ -27,9 +27,6 @@ class GDArchive:
     self.url = url
     self.dbpath = dbpath
     self.idpath = os.path.join(self.dbpath,'ids.json')
-    
-    self.url_scrape = self.url + '/services/search/v1/scrape'
-    self.scrape_parms = {'debug':'false','xvar':'production','total_only':'false','count':'10000','sorts':'date asc,avg_rating desc,num_favorites desc,downloads desc','fields':'identifier,date,avg_rating,num_reviews,num_favorites,stars,downloads,files_count,format,collection,source,subject,type'}
     self.set_data = GDSet()
     self.downloader = (TapeDownloader if sync else AsyncTapeDownloader)(url)
     self.tapes = self.load_tapes(reload_ids)
@@ -76,33 +73,6 @@ class GDArchive:
       self.write_tapes(tapes)
     return [GDTape(self.dbpath,tape,self.set_data) for tape in tapes]
 
-  def get_tapes(self,year):
-    current_rows = 0
-    tapes = []
-    r = self.get_chunk(year)
-    j = r.json()
-    total = j['total']
-    print ("total rows {}".format(total))
-    current_rows += j['count']
-    tapes=j['items']
-    while current_rows < total:  
-      cursor = j['cursor']
-      r = self.get_chunk(year,cursor)
-      j = r.json()
-      cursor = j['cursor']
-      current_rows += j['count']
-      tapes.extend(j['items'])
-    return tapes
-
-  def get_chunk(self,year,cursor=None):
-    parms = self.scrape_parms.copy()
-    if cursor!=None: parms['cursor'] = cursor
-    query = 'collection:GratefulDead AND year:'+str(year)
-    parms['q'] = query
-    r = requests.get(self.url_scrape,params=parms)
-    print("url is {}".format(r.url))
-    if r.status_code != 200: print ("error collecting data"); raise Exception('Download','Error {} collection'.format(r.status_code))
-    return r
 
 class GDTape:
   """ A Grateful Dead Identifier Item -- does not contain tracks """
