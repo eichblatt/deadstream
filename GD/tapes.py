@@ -15,13 +15,18 @@ class BaseTapeDownloader(abc.ABC):
 
     def __init__(self, url="https://archive.org"):
         self.url = url
-        self.url_scrape = f"{self.url}/services/search/v1/scrape"
-        self.scrape_parms = {'debug': 'false',
-                             'xvar': 'production',
-                             'total_only': 'false',
-                             'count': '10000',
-                             'sorts': 'date asc,avg_rating desc,num_favorites desc,downloads desc',
-                             'fields': 'identifier,date,avg_rating,num_reviews,num_favorites,stars,downloads,files_count,format,collection,source,subject,type'}
+        self.api = f"{self.url}/services/search/v1/scrape"
+        fields = ["identifier", "date", "avg_rating", "num_reviews",
+                  "num_favorites", "stars", "downloads", "files_count",
+                  "format", "collection", "source", "subject", "type"]
+        sorts = ["date asc", "avg_rating desc",
+                 "num_favorites desc", "downloads desc"]
+        self.parms = {'debug': 'false',
+                      'xvar': 'production',
+                      'total_only': 'false',
+                      'count': '10000',
+                      'sorts': ",".join(sorts),
+                      'fields': ",".join(fields)}
 
     @abc.abstractmethod
     def get_tapes(self, years):
@@ -85,12 +90,12 @@ class TapeDownloader(BaseTapeDownloader):
 
         Returns a list of dictionaries of tape information
         """
-        parms = self.scrape_parms.copy()
+        parms = self.parms.copy()
         if cursor is not None:
             parms['cursor'] = cursor
         query = 'collection:GratefulDead AND year:'+str(year)
         parms['q'] = query
-        r = requests.get(self.url_scrape, params=parms)
+        r = requests.get(self.api, params=parms)
         logger.debug(f"url is {r.url}")
         if r.status_code != 200:
             logger.error(f"Error {r.status_code} collecting data")
@@ -147,8 +152,8 @@ class AsyncTapeDownloader(BaseTapeDownloader):
         if cursor is not None:
             parms['cursor'] = cursor
 
-        async with session.get(self.url_scrape, params={**self.scrape_parms, **parms}) as r:
-            logger.debug(f"Chunk url: {r.url}")
+        async with session.get(self.api, params={**self.parms, **parms}) as r:
+            logger.debug(f"Year {year} chunk {cursor} url: {r.url}")
             json = await r.json()
             return json
 

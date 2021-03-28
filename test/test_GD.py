@@ -19,5 +19,6 @@ class TestGD(unittest.TestCase):
             # slow: initializes a new archive synchronously
             GD.GDArchive(directory, sync=True)
 
+
 if __name__ == '__main__':
     unittest.main()
