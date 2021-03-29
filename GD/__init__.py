@@ -21,7 +21,7 @@ logger = logging.getLogger(__name__)
 class BaseTapeDownloader(abc.ABC):
     """Abstract base class for a Grateful Dead tape downloader.
 
-    Use one of the base classes: TapeDownloader or AsyncTapeDownloader.
+    Use one of the subclasses: TapeDownloader or AsyncTapeDownloader.
     """
 
     def __init__(self, url="https://archive.org"):
