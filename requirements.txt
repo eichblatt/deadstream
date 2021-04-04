@@ -4,3 +4,4 @@ tox
 pytest
 aiohttp
 python-mpv
+pickle5
