@@ -551,6 +551,7 @@ class GDPlayer(MPV):
 
   def pause(self):
     self._set_property('pause',True)
+    self.wait_until_paused()
 
   def stop(self): 
     self.playlist_pos = 0

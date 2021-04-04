@@ -6,16 +6,13 @@ import datetime
 import logging
 import digitalio
 import board
+import config
 import adafruit_rgb_display.st7735 as st7735
 from adafruit_rgb_display import color565
 from PIL import Image, ImageDraw, ImageFont
 
 
 logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.INFO)
-
-SELECT_DATE = False
-PLAY_STATE = False
-DATE = None
 
 class knob:
   def __init__(self,pins,name,values,init=None,bouncetime=300):
@@ -64,15 +61,13 @@ class knob:
     return
 
   def sw_callback(self,channel):
-    global SELECT_DATE 
-    global PLAY_STATE
     logging.info(F"Pushed button {self.name}")
     if self.name == 'year':
-       SELECT_DATE = True 
-       logging.info(F"Setting SELECT_DATE to {SELECT_DATE}")
+       config.SELECT_DATE = True 
+       logging.info(F"Setting SELECT_DATE to {config.SELECT_DATE}")
     if self.name == 'day':
-       PLAY_STATE = not PLAY_STATE  
-       logging.info(F"Setting PLAY_STATE to {PLAY_STATE}")
+       config.PLAY_STATE = not config.PLAY_STATE  
+       logging.info(F"Setting PLAY_STATE to {config.PLAY_STATE}")
     #sleep(0.3)
 
   def set_value(self,value): 
@@ -234,13 +229,15 @@ class screen:
     if tape: self.disp.fill_rectangle(0,0,30,30,color565(255,255,255))  
     else: self.disp.fill_rectangle(0,0,30,30,self.bgcolor)  
 
-logging.info ("Loading GD Archive")
-
  
-y = knob((13,26,23),"year",range(1965,1996),1979)   # cl, dt, sw
-m = knob((16,22,20),"month",range(1,13),11)
-#m = knob((16,14,10),"month",range(1,13),11)
-d = knob((12,6,5)  ,"day",range(1,32),2,bouncetime=100)
+#y = knob((13,26,23),"year",range(1965,1996),1979)   # cl, dt, sw
+#m = knob((16,22,20),"month",range(1,13),11)
+#d = knob((12,6,5)  ,"day",range(1,32),2,bouncetime=100)
+
+y = knob((16,22,23),"year",range(1965,1996),1979)   # cl, dt, sw
+m = knob((13,17,27),"month",range(1,13),11)
+d = knob((12,5,6)  ,"day",range(1,32),2,bouncetime=100)
+
 
 _ = [x.setup() for x in [y,m,d]]
 
@@ -259,11 +256,13 @@ scr.clear()
 #scr.show_date(datetime.date(1977,11,2),tape=True)
 scr.show_date(staged_date.date,tape=staged_date.tape_available())
 #scr.show_text(staged_date.venue())
-play_state = PLAY_STATE
+play_state = config.PLAY_STATE
 
+"""
 while True:
   staged_date = date_knob_reader(y,m,d,a)
   if staged_date.date != d0: 
+    logging.info (F"DATE: {config.DATE}, SELECT_DATE: {config.SELECT_DATE}, PLAY_STATE: {config.PLAY_STATE}")
     print (staged_date)
     d0 = staged_date.date
     scr.show_date(staged_date.date,tape=staged_date.tape_available())
@@ -273,23 +272,25 @@ while True:
 #    else:
 #      scr.draw.rectangle((0,0,160,32),outline=0,fill=(0,0,0)) # erase the venue
 #      scr.disp.image(scr.image)
-  if SELECT_DATE:
+  if config.SELECT_DATE:
     if staged_date.tape_available():
-       DATE = staged_date.date 
-       logging.info(F"Setting DATE to {DATE.strftime('%Y-%m-%d')}")
-       scr.show_date(DATE,loc=(85,0),size=10,color=(255,255,255),stack=True,tape=True)
-    SELECT_DATE = False
-  if PLAY_STATE and not play_state:  # start playing
-     date_fmt = DATE.strftime('%Y-%m-%d')
+       config.DATE = staged_date.date 
+       logging.info(F"Setting DATE to {config.DATE.strftime('%Y-%m-%d')}")
+       scr.show_date(config.DATE,loc=(85,0),size=10,color=(255,255,255),stack=True,tape=True)
+    config.SELECT_DATE = False
+  if config.PLAY_STATE and not play_state:  # start playing
+     date_fmt = config.DATE.strftime('%Y-%m-%d')
      tape = a.best_tape(date_fmt)
      player = GD.GDPlayer(tape)
      logging.info(F"Playing {date_fmt} on player")
      player.play()
      scr.show_playstate('playing')
-  if not PLAY_STATE and play_state:  # pause playing
+  if not config.PLAY_STATE and play_state:  # pause playing
      logging.info(F"Pausing {date_fmt} on player")
      player.pause()
+
      scr.show_playstate('paused')
-  play_state = PLAY_STATE
+  play_state = config.PLAY_STATE
 
   sleep(.1)
+"""
