@@ -258,7 +258,6 @@ scr.show_date(staged_date.date,tape=staged_date.tape_available())
 #scr.show_text(staged_date.venue())
 play_state = config.PLAY_STATE
 
-"""
 while True:
   staged_date = date_knob_reader(y,m,d,a)
   if staged_date.date != d0: 
@@ -293,4 +292,3 @@ while True:
   play_state = config.PLAY_STATE
 
   sleep(.1)
-"""
