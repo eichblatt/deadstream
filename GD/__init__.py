@@ -10,6 +10,7 @@ import csv
 import difflib
 import datetime,time,math
 import pkg_resources
+import pickle5 as pickle
 import codecs
 from operator import attrgetter,methodcaller
 from mpv import MPV
@@ -210,6 +211,7 @@ class GDArchive:
     self.url = url
     self.dbpath = dbpath
     self.idpath = os.path.join(self.dbpath,'ids.json')
+    self.idpath_pkl = os.path.join(self.dbpath,'ids.pkl')
     self.set_data = GDSet()
     self.downloader = (TapeDownloader if sync else AsyncTapeDownloader)(url)
     self.tapes = self.load_tapes(reload_ids)
@@ -246,9 +248,13 @@ class GDArchive:
   def write_tapes(self,tapes):
     os.makedirs(os.path.dirname(self.idpath),exist_ok=True)
     json.dump(tapes,open(self.idpath,'w'))
+    pickle.dump(tapes,open(self.idpath_pkl,'wb'),pickle.HIGHEST_PROTOCOL)
+   
 
   def load_tapes(self,reload_ids=False):
-    if (not reload_ids) and os.path.exists(self.idpath):
+    if (not reload_ids) and os.path.exists(self.idpath_pkl):
+      tapes = pickle.load(open(self.idpath_pkl,'rb'))
+    elif (not reload_ids) and os.path.exists(self.idpath):
       tapes = json.load(open(self.idpath,'r'))
     else:
       print ("Loading Tapes from the Archive...this will take a few minutes")
