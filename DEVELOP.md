@@ -24,3 +24,14 @@ Once Fusion is enabled, install libmpv.
 ```bash
 dnf install mpv-libs-devel
 ```
+
+# Tox complaining about missing modules
+
+If you make a change that requires re-building the tox virtual environment(s),
+such as changing the `install_requires` in `setup.py`, use:
+
+```
+tox --recreate
+```
+
+This will force tox to rebuild its virtual environments.

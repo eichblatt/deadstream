@@ -8,15 +8,18 @@ __pycache__/
 *.pyo
 *.egg-info
 
+# python setuptools build dir
+/build/
+
 # python virtualenv
 /env/
 
-# IDE files
+# IDE files, jupyter notebooks
 /.vscode/
-
-# python setuptools build dir
-/build/
+.ipynb_checkpoints/
 
 # test framework
 .tox/
 .pytest_cache/
+# pytest profiler output
+/prof/
