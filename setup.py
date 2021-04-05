@@ -11,6 +11,6 @@ setup(
         'pickle5'
     ],
     package_data={
-        "GD": ["FreeMono.ttf", "set_breaks.csv"]
+        "deadstream": ["FreeMono.ttf", "set_breaks.csv"]
     }
 )
