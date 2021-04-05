@@ -65,8 +65,9 @@ class knob:
        config.SELECT_DATE = True 
        logging.info(F"Setting SELECT_DATE to {config.SELECT_DATE}")
     if self.name == 'day':
-       config.PLAY_STATE = not config.PLAY_STATE  
-       logging.info(F"Setting PLAY_STATE to {config.PLAY_STATE}")
+       if config.PLAY_STATE in [0,1,2]: config.PLAY_STATE = 3  # play if not playing
+       if config.PLAY_STATE in [3]: config.PLAY_STATE = 1   # Pause if playing
+       logging.info(F"Setting PLAY_STATE to {config.PLAY_STATES[config.PLAY_STATE]}")
     #sleep(0.3)
 
   def set_value(self,value): 
