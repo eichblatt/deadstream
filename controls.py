@@ -10,7 +10,7 @@ import config
 import adafruit_rgb_display.st7735 as st7735
 from adafruit_rgb_display import color565
 from PIL import Image, ImageDraw, ImageFont
-
+import pkg_resources
 
 logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.INFO)
 
@@ -170,7 +170,7 @@ class screen:
     self.draw = ImageDraw.Draw(self.image)
     self.disp.image(self.image)
     print(' ---> disp ',self.disp.width,self.disp.height)
-    self.font= ImageFont.truetype("FreeMono.ttf",20)
+    self.font= ImageFont.truetype(pkg_resources.resource_filename("GD", "FreeMono.ttf"), 20)
 
   def rectangle(self,loc,size,color=(0,0,255)):
     x,y = loc; w,h = size;

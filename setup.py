@@ -7,9 +7,10 @@ setup(
     install_requires=[
         'aiohttp',
         'requests',
-        'python-mpv'
+        'python-mpv',
+        'pickle5'
     ],
     package_data={
-        "GD": ["set_breaks.csv"]
+        "GD": ["FreeMono.ttf", "set_breaks.csv"]
     }
 )
