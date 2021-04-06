@@ -43,7 +43,7 @@ def meLoop(knobs,a,scr,player,maxN=None):
     d0 = (ctl.date_knob_reader(y,m,d,a)).date
     N = 0
 
-    while True and N<=(maxN if maxN != None else True):
+    while N<=maxN if maxN != None else True:
       staged_date = ctl.date_knob_reader(y,m,d,a)
       if staged_date.date != d0:  # Date knobs changed
         logging.info (F"DATE: {config.DATE}, SELECT_DATE: {config.SELECT_DATE}, PLAY_STATE: {config.PLAY_STATE}")
@@ -119,7 +119,8 @@ def main(parms):
     #scr.show_text(staged_date.venue())
     player = None
     try:
-      player = meLoop((y,m,d),a,scr,player,maxN=50)
+      player = meLoop((y,m,d),a,scr,player)   # ,maxN=50)
     finally:
       print("In Finally")
       [x.cleanup() for x in [y,m,d]] ## redundant, only one cleanup is needed!
+
