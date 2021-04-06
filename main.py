@@ -25,18 +25,11 @@ def meCustomHandler(signum,stack_frame):
 signal.signal(signal.SIGINT, meCustomHandler)
 
 def play_tape(tape):
-    if player != None: return player
     logging.info(F"Playing tape {tape}")
     player = GD.GDPlayer(tape)
     player.play()
     return player
 
-def pause_tape(player,tape):
-   logging.info(F"Pausing {date_fmt} on player")
-   player.pause()
-   play_state = False
-   scr.show_playstate('paused')
- 
 def meLoop(knobs,a,scr,player,maxN=None):
     y,m,d = knobs
     play_state = config.PLAY_STATE
