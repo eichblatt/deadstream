@@ -1,12 +1,13 @@
 
 # State variables
-READY = 0
-PAUSED = 1
-STOPPED = 2
-PLAYING = 3
-PLAY_STATES = ['Ready','Paused','Stopped','Playing']
+INIT = 0
+READY = 1
+PAUSED = 2
+STOPPED = 3
+PLAYING = 4
+PLAY_STATES = ['Init','Ready','Paused','Stopped','Playing']
 SELECT_DATE = False
-PLAY_STATE = READY
+PLAY_STATE = INIT
 DATE = None
 
 # Hardware pins

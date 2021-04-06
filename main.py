@@ -38,6 +38,9 @@ def meLoop(knobs,a,scr,player,maxN=None):
 
     while N<=maxN if maxN != None else True:
       staged_date = ctl.date_knob_reader(y,m,d,a)
+      if meInterrupt: return player,play_state
+      # deal with DATE changes
+      N = N+1
       if staged_date.date != d0:  # Date knobs changed
          logging.info (F"DATE: {config.DATE}, SELECT_DATE: {config.SELECT_DATE}, PLAY_STATE: {config.PLAY_STATE}")
          print (staged_date)
@@ -56,18 +59,24 @@ def meLoop(knobs,a,scr,player,maxN=None):
             config.PLAY_STATE = config.READY  #  eject current tape, insert new one in player
             scr.show_date(config.DATE,loc=(85,0),size=10,color=(255,255,255),stack=True,tape=True)
          config.SELECT_DATE = False
-      if (config.PLAY_STATE == config.READY) and (play_state != config.READY):  #  A new tape to be inserted
+
+      # Deal with PLAY_STATE changes
+
+      #PLAY_STATE = config.PLAY_STATE
+
+      if (config.PLAY_STATE == play_state): sleep(0.1); continue
+      if (config.PLAY_STATE == config.READY):  #  A new tape to be inserted
          player.eject_tape()
          tape = a.best_tape(config.DATE.strftime('%Y-%m-%d'))
          player.insert_tape(tape)
-         play_state = config.READY
-      if (config.PLAY_STATE == config.PLAYING) and (play_state < config.PLAYING):  #  Day Button was Pushed while not playing
+         config.PLAY_STATE = config.PLAYING
+      if (config.PLAY_STATE == config.PLAYING):  # Play tape 
          try:
            logging.info(F"Playing {config.DATE} on player")
            tape = a.best_tape(config.DATE.strftime('%Y-%m-%d'))
-           if len(player.playlist) == 0: player = play_tape(tape,player)
+           if len(player.playlist) == 0: player = play_tape(tape,player)  ## NOTE required?
            else: player.play()
-           play_state = 3
+           play_state = config.PLAYING
            scr.show_playstate('playing')
          except AttributeError:
            logging.info(F"Cannot play date {config.DATE}")
@@ -76,22 +85,15 @@ def meLoop(knobs,a,scr,player,maxN=None):
            raise 
          finally:
            config.PLAY_STATE = play_state
-      elif (config.PLAY_STATE in [config.PAUSED,config.STOPPED]) and (play_state == config.PLAYING):  # Day Button pushed while playing
-         try:
-           date_fmt = config.DATE.strftime('%Y-%m-%d')
-           logging.info(F"Pausing {date_fmt} on player")
-           player.pause()
-           play_state = config.PAUSED
-           scr.show_playstate('paused')
-         except:
-           raise 
-         finally:
-           config.PLAY_STATE = play_state
+      if config.PLAY_STATE == config.PAUSED: 
+         logging.info(F"Pausing {config.DATE.strftime('%Y-%m-%d')} on player") 
+         player.pause()
+      if config.PLAY_STATE == config.STOPPED:
+         player.stop()
+         scr.show_playstate('paused')
       play_state = config.PLAY_STATE
-      if meInterrupt: return player
-      N = N+1
       sleep(.1)
-    return player
+    return (player,play_state)
 
 def main(parms):
     player = GD.GDPlayer()
@@ -104,7 +106,6 @@ def main(parms):
 
     logging.info ("Loading GD Archive")
     a = GD.GDArchive('/home/steve/projects/deadstream/metadata')
-    #a = None
     logging.info ("Done ")
 
     staged_date = ctl.date_knob_reader(y,m,d,a)
@@ -115,6 +116,7 @@ def main(parms):
     scr.show_date(staged_date.date,tape=staged_date.tape_available())
     #scr.show_text(staged_date.venue())
     try:
+      player,play_state = meLoop((y,m,d),a,scr,player,maxN=50)
       player = meLoop((y,m,d),a,scr,player)   # ,maxN=50)
     finally:
       print("In Finally")
