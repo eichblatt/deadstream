@@ -56,7 +56,7 @@ def meLoop(knobs,a,scr,player,maxN=None):
            logging.info(F"Setting DATE to {date_fmt}")
            scr.show_date(config.DATE,loc=(85,0),size=10,color=(255,255,255),stack=True,tape=True)
         config.SELECT_DATE = False
-      elif (config.PLAY_STATE == 3) and (play_state < 3):  #  Day Button was Pushed while not playing
+      elif (config.PLAY_STATE == config.PLAYING) and (play_state < config.PLAYING):  #  Day Button was Pushed while not playing
          try:
            date_fmt = config.DATE.strftime('%Y-%m-%d')
            logging.info(F"Playing {date_fmt} on player")
@@ -73,7 +73,7 @@ def meLoop(knobs,a,scr,player,maxN=None):
            raise 
          finally:
            config.PLAY_STATE = play_state
-      elif (config.PLAY_STATE < 3) and (play_state == 3):  # Day Button pushed while playing
+      elif (config.PLAY_STATE < config.PLAYING) and (play_state == config.PLAYING):  # Day Button pushed while playing
          try:
            date_fmt = config.DATE.strftime('%Y-%m-%d')
            logging.info(F"Pausing {date_fmt} on player")

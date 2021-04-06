@@ -1,5 +1,9 @@
 
+NEVER_PLAYED = 0
+PAUSED = 1
+STOPPED = 2
+PLAYING = 3
 PLAY_STATES = ['Never Played','Paused','Stopped','Playing']
 SELECT_DATE = False
-PLAY_STATE = 0
+PLAY_STATE = NEVER_PLAYED
 DATE = None
