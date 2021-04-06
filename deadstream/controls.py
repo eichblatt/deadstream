@@ -27,12 +27,23 @@ class knob:
   def __repr__(self):
     return F"{self.name}: pins cl:{self.cl}, dt:{self.dt}, sw:{self.sw}. Value: {self.value}"
  
+  def add_callback(self,pin,edge_type,cb,maxtries=3):
+    itries = 0
+    while itries < maxtries:
+      itries += 1
+      try:
+        GPIO.add_event_detect(pin,edge_type, callback = cb, bouncetime = self.bouncetime) 
+        return
+      except:
+        logging.warn(F"Retrying event_detection callback on pin {pin}")
+    logging.warn(F"Failed to set event_detection callback on pin {pin}")
+
   def setup(self):
     GPIO.setmode(GPIO.BCM)
     _ = [GPIO.setup(x,GPIO.IN,pull_up_down=GPIO.PUD_DOWN) for x in [self.cl,self.dt,self.sw]]
-    GPIO.add_event_detect(self.sw,GPIO.RISING, callback = self.sw_callback, bouncetime = self.bouncetime) 
-    GPIO.add_event_detect(self.dt,GPIO.FALLING, callback = self.dt_callback, bouncetime = self.bouncetime) 
-    GPIO.add_event_detect(self.cl,GPIO.FALLING, callback = self.cl_callback, bouncetime = self.bouncetime) 
+    self.add_callback(self.sw,GPIO.RISING,self.sw_callback)
+    self.add_callback(self.dt,GPIO.FALLING,self.dt_callback)
+    self.add_callback(self.cl,GPIO.FALLING,self.cl_callback)
     return None 
 
   def show_pin_states(self,msg): 
@@ -64,11 +75,14 @@ class knob:
     if self.name == 'year':
        config.SELECT_DATE = True 
        logging.info(F"Setting SELECT_DATE to {config.SELECT_DATE}")
-    if self.name == 'day':
-       if config.PLAY_STATE in [config.NEVER_PLAYED, config.PAUSED, config.STOPPED]: config.PLAY_STATE = config.PLAYING  # play if not playing
+    if self.name == 'month':
+       if config.PLAY_STATE in [config.READY, config.PAUSED, config.STOPPED]: config.PLAY_STATE = config.PLAYING  # play if not playing
        elif config.PLAY_STATE == config.PLAYING: config.PLAY_STATE = config.PAUSED   # Pause if playing
        logging.info(F"Setting PLAY_STATE to {config.PLAY_STATES[config.PLAY_STATE]}")
-    #sleep(0.3)
+    if self.name == 'day':
+       if config.PLAY_STATE in [config.PLAYING, config.PAUSED]: config.PLAY_STATE = config.STOPPED  # stop playing or pausing
+       logging.info(F"Setting PLAY_STATE to {config.PLAY_STATES[config.PLAY_STATE]}")
+     #sleep(0.3)
 
   def set_value(self,value): 
     self.value = min(max(value,min(self._values)),max(self._values))

@@ -16,8 +16,7 @@ from operator import attrgetter,methodcaller
 from mpv import MPV
 from importlib import reload
 
-logger = logging.getLogger(__name__)
-
+logging.basicConfig(format='%(asctime)s.%(msecs)03d %(levelname)s: %(message)s', level=logging.INFO,datefmt='%Y-%m-%d %H:%M:%S')
 
 class BaseTapeDownloader(abc.ABC):
     """Abstract base class for a Grateful Dead tape downloader.
@@ -80,7 +79,7 @@ class TapeDownloader(BaseTapeDownloader):
         r = self._get_chunk(year)
         j = r.json()
         total = j['total']
-        logger.debug(f"total rows {total}")
+        logging.debug(f"total rows {total}")
         current_rows += j['count']
         tapes = j['items']
         while current_rows < total:
@@ -108,9 +107,9 @@ class TapeDownloader(BaseTapeDownloader):
         query = 'collection:GratefulDead AND year:'+str(year)
         parms['q'] = query
         r = requests.get(self.api, params=parms)
-        logger.debug(f"url is {r.url}")
+        logging.debug(f"url is {r.url}")
         if r.status_code != 200:
-            logger.error(f"Error {r.status_code} collecting data")
+            logging.error(f"Error {r.status_code} collecting data")
             raise Exception(
                 'Download', 'Error {} collection'.format(r.status_code))
         return r
@@ -141,7 +140,7 @@ class AsyncTapeDownloader(BaseTapeDownloader):
         Returns a list dictionaries of tape information
         """
         # This is the asynchronous impl of get_tapes()
-        logger.info("Loading tapes from the archive...")
+        logging.info("Loading tapes from the archive...")
         async with aiohttp.ClientSession() as session:
             tasks = [self._get_tapes_year(session, year) for year in years]
             tapes = await asyncio.gather(*tasks)
@@ -165,7 +164,7 @@ class AsyncTapeDownloader(BaseTapeDownloader):
             parms['cursor'] = cursor
 
         async with session.get(self.api, params={**self.parms, **parms}) as r:
-            logger.debug(f"Year {year} chunk {cursor} url: {r.url}")
+            logging.debug(f"Year {year} chunk {cursor} url: {r.url}")
             json = await r.json()
             return json
 
@@ -522,11 +521,11 @@ class GDSet:
   
 class GDPlayer(MPV):
   """ A media player to play a GDTape """
-  def __init__(self,tape):
+  def __init__(self,tape=None):
     super().__init__()
     self._set_property('audio-buffer',10.0)  ## This allows to play directly from the html without a gap!
-    self.tape = tape
-    self.create_playlist()
+    if tape != None:
+      self.insert_tape(tape)
 
   def __str__(self):
     return self.__repr__()
@@ -535,6 +534,15 @@ class GDPlayer(MPV):
     retstr = str(self.playlist)
     return retstr
     
+  def insert_tape(self,tape):
+    self.tape = tape
+    self.create_playlist()
+
+  def eject_tape(self):
+    self.stop()
+    self.tape = None
+    self.playlist_clear()
+
   def extract_urls(self,tape):  ## NOTE this should also give a list of backup URL's.
     tape.get_metadata()
     urls = [] 
@@ -544,8 +552,10 @@ class GDPlayer(MPV):
     return urls
   
   def create_playlist(self):
+    self.playlist_clear()
     urls = self.extract_urls(self.tape);
-    _ = [self.command('loadfile',x,'append') for x in urls]
+    self.command('loadfile',urls[0])
+    if len(urls)>0: _ = [self.command('loadfile',x,'append') for x in urls[1:]]
     self.playlist_pos = 0 
     self.pause()
     print (F"Playlist {self.playlist}")
