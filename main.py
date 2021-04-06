@@ -116,9 +116,9 @@ def main(parms):
     scr.show_date(staged_date.date,tape=staged_date.tape_available())
     #scr.show_text(staged_date.venue())
     try:
-      player,play_state = meLoop((y,m,d),a,scr,player,maxN=50)
-      player = meLoop((y,m,d),a,scr,player)   # ,maxN=50)
+      player,play_state = meLoop((y,m,d),a,scr,player)   # ,maxN=50)
     finally:
       print("In Finally")
       [x.cleanup() for x in [y,m,d]] ## redundant, only one cleanup is needed!
 
+main(parms)
