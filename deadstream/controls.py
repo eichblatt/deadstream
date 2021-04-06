@@ -1,7 +1,6 @@
 #!/usr/bin/python3
 from RPi import GPIO
 from time import sleep
-import GD
 import datetime
 import logging
 import digitalio
@@ -28,12 +27,23 @@ class knob:
   def __repr__(self):
     return F"{self.name}: pins cl:{self.cl}, dt:{self.dt}, sw:{self.sw}. Value: {self.value}"
  
+  def add_callback(self,pin,edge_type,cb,maxtries=3):
+    itries = 0
+    while itries < maxtries:
+      itries += 1
+      try:
+        GPIO.add_event_detect(pin,edge_type, callback = cb, bouncetime = self.bouncetime) 
+        return
+      except:
+        logging.warn(F"Retrying event_detection callback on pin {pin}")
+    logging.warn(F"Failed to set event_detection callback on pin {pin}")
+
   def setup(self):
     GPIO.setmode(GPIO.BCM)
     _ = [GPIO.setup(x,GPIO.IN,pull_up_down=GPIO.PUD_DOWN) for x in [self.cl,self.dt,self.sw]]
-    GPIO.add_event_detect(self.sw,GPIO.RISING, callback = self.sw_callback, bouncetime = self.bouncetime) 
-    GPIO.add_event_detect(self.dt,GPIO.FALLING, callback = self.dt_callback, bouncetime = self.bouncetime) 
-    GPIO.add_event_detect(self.cl,GPIO.FALLING, callback = self.cl_callback, bouncetime = self.bouncetime) 
+    self.add_callback(self.sw,GPIO.RISING,self.sw_callback)
+    self.add_callback(self.dt,GPIO.FALLING,self.dt_callback)
+    self.add_callback(self.cl,GPIO.FALLING,self.cl_callback)
     return None 
 
   def show_pin_states(self,msg): 
@@ -65,15 +75,20 @@ class knob:
     if self.name == 'year':
        config.SELECT_DATE = True 
        logging.info(F"Setting SELECT_DATE to {config.SELECT_DATE}")
+    if self.name == 'month':
+       if config.PLAY_STATE in [config.READY, config.PAUSED, config.STOPPED]: config.PLAY_STATE = config.PLAYING  # play if not playing
+       elif config.PLAY_STATE == config.PLAYING: config.PLAY_STATE = config.PAUSED   # Pause if playing
+       logging.info(F"Setting PLAY_STATE to {config.PLAY_STATES[config.PLAY_STATE]}")
     if self.name == 'day':
-       config.PLAY_STATE = not config.PLAY_STATE  
-       logging.info(F"Setting PLAY_STATE to {config.PLAY_STATE}")
-    #sleep(0.3)
+       if config.PLAY_STATE in [config.PLAYING, config.PAUSED]: config.PLAY_STATE = config.STOPPED  # stop playing or pausing
+       logging.info(F"Setting PLAY_STATE to {config.PLAY_STATES[config.PLAY_STATE]}")
+     #sleep(0.3)
 
   def set_value(self,value): 
     self.value = min(max(value,min(self._values)),max(self._values))
   def get_value(self): 
     return self.value 
+
   def cleanup(self): 
     GPIO.cleanup()
 
@@ -170,7 +185,7 @@ class screen:
     self.draw = ImageDraw.Draw(self.image)
     self.disp.image(self.image)
     print(' ---> disp ',self.disp.width,self.disp.height)
-    self.font= ImageFont.truetype(pkg_resources.resource_filename("GD", "FreeMono.ttf"), 20)
+    self.font= ImageFont.truetype(pkg_resources.resource_filename("deadstream", "FreeMono.ttf"), 20)
 
   def rectangle(self,loc,size,color=(0,0,255)):
     x,y = loc; w,h = size;
@@ -229,68 +244,3 @@ class screen:
     if tape: self.disp.fill_rectangle(0,0,30,30,color565(255,255,255))  
     else: self.disp.fill_rectangle(0,0,30,30,self.bgcolor)  
 
- 
-#y = knob((13,26,23),"year",range(1965,1996),1979)   # cl, dt, sw
-#m = knob((16,22,20),"month",range(1,13),11)
-#d = knob((12,6,5)  ,"day",range(1,32),2,bouncetime=100)
-
-y = knob((16,22,23),"year",range(1965,1996),1979)   # cl, dt, sw
-m = knob((13,17,27),"month",range(1,13),11)
-d = knob((12,5,6)  ,"day",range(1,32),2,bouncetime=100)
-
-
-_ = [x.setup() for x in [y,m,d]]
-
-logging.info ("Loading GD Archive")
-a = GD.GDArchive('/home/steve/projects/deadstream/metadata')
-#a = None
-logging.info ("Done ")
-
-staged_date = date_knob_reader(y,m,d,a)
-selected_date = None
-print (staged_date)
-d0 = staged_date.date
-
-scr = screen()
-scr.clear()
-#scr.show_date(datetime.date(1977,11,2),tape=True)
-scr.show_date(staged_date.date,tape=staged_date.tape_available())
-#scr.show_text(staged_date.venue())
-play_state = config.PLAY_STATE
-
-"""
-while True:
-  staged_date = date_knob_reader(y,m,d,a)
-  if staged_date.date != d0: 
-    logging.info (F"DATE: {config.DATE}, SELECT_DATE: {config.SELECT_DATE}, PLAY_STATE: {config.PLAY_STATE}")
-    print (staged_date)
-    d0 = staged_date.date
-    scr.show_date(staged_date.date,tape=staged_date.tape_available())
-#    if staged_date.tape_available(): 
-#      venue = staged_date.venue()
-#      scr.show_text(venue)
-#    else:
-#      scr.draw.rectangle((0,0,160,32),outline=0,fill=(0,0,0)) # erase the venue
-#      scr.disp.image(scr.image)
-  if config.SELECT_DATE:
-    if staged_date.tape_available():
-       config.DATE = staged_date.date 
-       logging.info(F"Setting DATE to {config.DATE.strftime('%Y-%m-%d')}")
-       scr.show_date(config.DATE,loc=(85,0),size=10,color=(255,255,255),stack=True,tape=True)
-    config.SELECT_DATE = False
-  if config.PLAY_STATE and not play_state:  # start playing
-     date_fmt = config.DATE.strftime('%Y-%m-%d')
-     tape = a.best_tape(date_fmt)
-     player = GD.GDPlayer(tape)
-     logging.info(F"Playing {date_fmt} on player")
-     player.play()
-     scr.show_playstate('playing')
-  if not config.PLAY_STATE and play_state:  # pause playing
-     logging.info(F"Pausing {date_fmt} on player")
-     player.pause()
-
-     scr.show_playstate('paused')
-  play_state = config.PLAY_STATE
-
-  sleep(.1)
-"""

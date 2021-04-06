@@ -1,7 +1,7 @@
 import unittest
 import tempfile
 
-import GD
+from deadstream import GD
 
 
 class TestGD(unittest.TestCase):
