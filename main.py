@@ -104,7 +104,7 @@ def main(parms):
 
     scr = ctl.screen()
     scr.clear()
-    scr.show_text("Grateful Dead\nStreamer")
+    scr.show_text("Grateful\n  Dead\n   Streamer",color=(0,255,255))
     _ = [x.setup() for x in [y,m,d]]
 
     logging.info ("Loading GD Archive")
