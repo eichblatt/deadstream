@@ -11,7 +11,7 @@ from adafruit_rgb_display import color565
 from PIL import Image, ImageDraw, ImageFont
 import pkg_resources
 
-logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.INFO)
+logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.DEBUG)
 
 class knob:
   def __init__(self,pins,name,values,init=None,bouncetime=300):
@@ -179,35 +179,52 @@ class screen:
     if self.disp.rotation % 180 == 90: height,width= self.disp.width,self.disp.height
     else: width,height= self.disp.width,self.disp.height
     self.width, self.height = width, height
+    logging.debug(F" ---> disp {self.disp.width},{self.disp.height}")
+    self.boldfont = ImageFont.truetype(pkg_resources.resource_filename("deadstream", "DejaVuSansMono-Bold.ttf"), 33)
+    self.boldsmall = ImageFont.truetype(pkg_resources.resource_filename("deadstream", "DejaVuSansMono-Bold.ttf"), 22)
+    self.font = ImageFont.truetype(pkg_resources.resource_filename("deadstream", "ariallgt.ttf"), 30)
+    self.oldfont = ImageFont.truetype(pkg_resources.resource_filename("deadstream", "FreeMono.ttf"), 20)
+    self.largefont = ImageFont.truetype(pkg_resources.resource_filename("deadstream", "FreeMono.ttf"), 30)
+    self.hugefont = ImageFont.truetype(pkg_resources.resource_filename("deadstream", "FreeMono.ttf"), 40)
 
+    self.image = Image.new("RGB",(width,height))
+    self.draw = ImageDraw.Draw(self.image)       # draw using this object. Display image when complete.
 
-    self.image = Image.new("RGB",(160,96))
-    self.draw = ImageDraw.Draw(self.image)
+    self.staged_date_locsize = (0,0,160,31)
+    self.selected_date_locsize = (90,80,70,48)
+
+  def refresh(self):
     self.disp.image(self.image)
-    print(' ---> disp ',self.disp.width,self.disp.height)
-    self.font= ImageFont.truetype(pkg_resources.resource_filename("deadstream", "FreeMono.ttf"), 20)
+
+  def clear_area(self,locsize,now=False):
+    self.draw.rectangle(locsize,outline=0,fill=(0,0,0))
+ 
+  def clear(self):
+    self.draw.rectangle((0,0,self.width,self.height),outline=0,fill=(0,0,0))
+    self.refresh()
 
   def rectangle(self,loc,size,color=(0,0,255)):
     x,y = loc; w,h = size;
     self.disp.fill_rectangle(x,y,w,h,color565(color))
 
-  def set_pixel(self,loc,color=(0,0,255)):
-    x,y = loc
-    self.disp.pixel(x,y,color565(color))
+#  def set_pixel(self,loc,color=(0,0,255)):
+#    x,y = loc
+#    self.disp.pixel(x,y,color565(color))
 
-  def black(self):
-    self.disp.fill()
-    self.disp.init()
+#  def black(self):
+#    self.disp.fill()
+#    self.disp.init()
 
-  def clear(self):
-    self.disp.reset()
-    self.black()
+#  def clear(self):
+#    self.disp.reset()
+#    self.black()
 
-  def show_text(self,text,loc=(0,0),color=(255,255,255)):
-    (font_width,font_height)= self.font.getsize(text)
-    print(F' ---> font_size {font_width},{font_height}')
-    self.draw.text(loc, text, font=self.font,fill=color)
-    self.disp.image(self.image)
+  def show_text(self,text,loc=(0,0),font=None,color=(255,255,255),now=True):
+    if font==None: font = self.font
+    (font_width,font_height)= font.getsize(text)
+    logging.debug(F' ---> font_size {font_width},{font_height}')
+    self.draw.text(loc, text, font=font,fill=color)
+    if now: self.refresh()
 
   def show_playstate(self,playstate,loc=(146,6),color=(100,100,255)):
     y,x = loc; color = color565(color);
@@ -221,6 +238,23 @@ class screen:
        self.disp.fill_rectangle(x,y+3,9,3,self.bgcolor)   # draw black stripe
     if playstate == 'stopped' :  
        self.disp.fill_rectangle(x,y,9,9,self.bgcolor)  
+
+  def show_staged_date(self,date,color=(0,255,255),now=True):
+    self.clear_area(self.staged_date_locsize)
+    month = str(date.month).rjust(2)
+    day = str(date.day).rjust(2)
+    year = str(divmod(date.year,100)[1]).rjust(2)
+    text = month + '-' + day + '-' + year
+    logging.debug (F"staged date string {text}")
+    self.show_text(text,self.staged_date_locsize[:2],self.boldfont,color=color,now=now)
+
+  def show_selected_date(self,date,color=(255,255,255),now=True):
+    self.clear_area(self.selected_date_locsize)
+    month = str(date.month).rjust(2)
+    day = str(date.day).rjust(2)
+    year = str(date.year).rjust(4)
+    text = month + '-' + day + '\n' + year
+    self.show_text(text,self.selected_date_locsize[:2],self.boldsmall,color=color,now=now)
 
   def show_date(self,date,loc=(0,96),size=16,separation=4,color=(0,200,255),stack=False,tape=False):
     x0,y0 = loc; segwidth = size; segheight = 2*size; 
