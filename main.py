@@ -5,6 +5,7 @@ from deadstream import controls as ctl
 import config
 from time import sleep
 import logging
+import threading
 import signal
 
 logging.basicConfig(format='%(asctime)s.%(msecs)03d %(levelname)s: %(message)s', level=logging.INFO,datefmt='%Y-%m-%d %H:%M:%S')
@@ -30,7 +31,7 @@ def play_tape(tape,player):
     player.play()
     return player
 
-def meLoop(knobs,a,scr,player,maxN=None):
+def runLoop(knobs,a,scr,player,maxN=None):
     y,m,d = knobs
     play_state = config.PLAY_STATE
     d0 = (ctl.date_knob_reader(y,m,d,a)).date
@@ -38,7 +39,7 @@ def meLoop(knobs,a,scr,player,maxN=None):
 
     while N<=maxN if maxN != None else True:
       staged_date = ctl.date_knob_reader(y,m,d,a)
-      if meInterrupt: return player,play_state
+      if meInterrupt: break
       # deal with DATE changes
       N = N+1
       if staged_date.date != d0:  # Date knobs changed
@@ -93,7 +94,6 @@ def meLoop(knobs,a,scr,player,maxN=None):
          scr.show_playstate('paused')
       play_state = config.PLAY_STATE
       sleep(.1)
-    return (player,play_state)
 
 def main(parms):
     player = GD.GDPlayer()
@@ -115,10 +115,12 @@ def main(parms):
     scr.clear()
     scr.show_date(staged_date.date,tape=staged_date.tape_available())
     #scr.show_text(staged_date.venue())
-    try:
-      player,play_state = meLoop((y,m,d),a,scr,player)   # ,maxN=50)
-    finally:
-      print("In Finally")
-      [x.cleanup() for x in [y,m,d]] ## redundant, only one cleanup is needed!
+    loop = threading.Thread(target=runLoop,name="deadstream loop",args=((y,m,d),a,scr,player),kwargs={'maxN':None})
+    loop.start()
 
-main(parms)
+    loop.join()
+    [x.cleanup() for x in [y,m,d]] ## redundant, only one cleanup is needed!
+
+if __name__ == "__main__" and not parms.debug:
+  main(parms)
+
