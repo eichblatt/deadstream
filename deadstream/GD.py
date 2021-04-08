@@ -429,6 +429,7 @@ class GDTrack:
   def __init__(self,tdict,parent_id,break_track=False):
     self.parent_id = parent_id
     attribs = ['track','original','title']
+    if not 'title' in tdict.keys(): tdict['title'] = 'unknown'
     for k,v in tdict.items():
        if k in attribs: setattr(self,k,v)
     # if these don't exist, i'll throw an error!
