@@ -47,8 +47,8 @@ def runLoop(knobs,a,scr,player,maxN=None):
          print (staged_date)
          d0 = staged_date.date
          if staged_date.tape_available(): 
-    #        venue = staged_date.venue()
-            venue = "Venue, City, State"
+            venue = staged_date.venue()
+    #        venue = "Venue, City, State"
             scr.show_text(venue,(0,30))
          else:
             scr.clear_area((0,30,160,30)) # erase the venue
