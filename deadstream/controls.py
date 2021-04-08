@@ -190,14 +190,15 @@ class screen:
     self.image = Image.new("RGB",(width,height))
     self.draw = ImageDraw.Draw(self.image)       # draw using this object. Display image when complete.
 
-    self.staged_date_locsize = (0,0,160,31)
-    self.selected_date_locsize = (90,80,70,48)
+    self.staged_date_bbox = (0,0,160,31)
+    self.selected_date_bbox = (90,80,160,128)
 
   def refresh(self):
     self.disp.image(self.image)
 
-  def clear_area(self,locsize,now=False):
-    self.draw.rectangle(locsize,outline=0,fill=(0,0,0))
+  def clear_area(self,bbox,now=False):
+    self.draw.rectangle(bbox,outline=0,fill=(0,0,0))
+    if now: self.refresh()
  
   def clear(self):
     self.draw.rectangle((0,0,self.width,self.height),outline=0,fill=(0,0,0))
@@ -240,21 +241,21 @@ class screen:
        self.disp.fill_rectangle(x,y,9,9,self.bgcolor)  
 
   def show_staged_date(self,date,color=(0,255,255),now=True):
-    self.clear_area(self.staged_date_locsize)
+    self.clear_area(self.staged_date_bbox)
     month = str(date.month).rjust(2)
     day = str(date.day).rjust(2)
     year = str(divmod(date.year,100)[1]).rjust(2)
     text = month + '-' + day + '-' + year
     logging.debug (F"staged date string {text}")
-    self.show_text(text,self.staged_date_locsize[:2],self.boldfont,color=color,now=now)
+    self.show_text(text,self.staged_date_bbox[:2],self.boldfont,color=color,now=now)
 
   def show_selected_date(self,date,color=(255,255,255),now=True):
-    self.clear_area(self.selected_date_locsize)
+    self.clear_area(self.selected_date_bbox)
     month = str(date.month).rjust(2)
     day = str(date.day).rjust(2)
     year = str(date.year).rjust(4)
     text = month + '-' + day + '\n' + year
-    self.show_text(text,self.selected_date_locsize[:2],self.boldsmall,color=color,now=now)
+    self.show_text(text,self.selected_date_bbox[:2],self.boldsmall,color=color,now=now)
 
   def show_date(self,date,loc=(0,96),size=16,separation=4,color=(0,200,255),stack=False,tape=False):
     x0,y0 = loc; segwidth = size; segheight = 2*size; 
