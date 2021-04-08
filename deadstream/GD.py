@@ -367,15 +367,15 @@ class GDTape:
     """return the venue, city, state"""
     # Note, if tracknum > 0, this could be a second show...check after running insert_breaks 
     # 1970-02-14 is an example with 2 shows.
-    self.get_metadata()
     sd = self.set_data
     if sd == None: return self.identifier
-    breaks = self._compute_breaks()
     venue_string = ""
-    if not sd == None:
-      l = sd['location']
+    l = sd['location']
+    if tracknum > 0:    # only pull the metadata if the query is about a late track.
+      self.get_metadata()
+      breaks = self._compute_breaks()
       if (len(breaks['location'])>0) and (tracknum > breaks['location'][0]): l = sd['location2']
-      venue_string = F"{l[0]}, {l[1]}, {l[2]}"
+    venue_string = F"{l[0]}, {l[1]}, {l[2]}"
     return venue_string 
 
   def _compute_breaks(self):
