@@ -78,7 +78,7 @@ def runLoop(knobs,a,scr,player,maxN=None):
            if len(player.playlist) == 0: player = play_tape(tape,player)  ## NOTE required?
            else: player.play()
            play_state = config.PLAYING
-           scr.show_playstate('playing')
+           scr.show_playstate()
          except AttributeError:
            logging.info(F"Cannot play date {config.DATE}")
            pass
@@ -91,8 +91,9 @@ def runLoop(knobs,a,scr,player,maxN=None):
          player.pause()
       if config.PLAY_STATE == config.STOPPED:
          player.stop()
-         scr.show_playstate('paused')
+         scr.show_playstate()
       play_state = config.PLAY_STATE
+      scr.show_playstate()
       sleep(.1)
 
 def main(parms):
