@@ -227,17 +227,19 @@ class screen:
     self.draw.text(loc, text, font=font,fill=color)
     if now: self.refresh()
 
-  def show_playstate(self,playstate,loc=(146,6),color=(100,100,255)):
+  def show_playstate(self,loc=(146,6),color=(100,100,255)):
     y,x = loc; color = color565(color);
-    logging.debug("showing playstate {playstate}")
-    if playstate == 'playing':  
+    logging.debug("showing playstate {config.PLAY_STATES[config.PLAY_STATE]}")
+    if config.PLAY_STATES[config.PLAY_STATE] == 'Playing':  
        self.disp.fill_rectangle(x,y,9,9,self.bgcolor)  
        for i in range(9):
          self.disp.hline(x+int(i/2),y+i,9-i,color)  
-    if playstate == 'paused' :  
+    elif config.PLAY_STATES[config.PLAY_STATE] == 'Paused' :  
        self.disp.fill_rectangle(x,y,9,9,color)  
        self.disp.fill_rectangle(x,y+3,9,3,self.bgcolor)   # draw black stripe
-    if playstate == 'stopped' :  
+    elif config.PLAY_STATES[config.PLAY_STATE] == 'Stopped' :  
+       self.disp.fill_rectangle(x,y,9,9,color)  
+    elif config.PLAY_STATES[config.PLAY_STATE] in ['Init','Ready'] :  
        self.disp.fill_rectangle(x,y,9,9,self.bgcolor)  
 
   def show_staged_date(self,date,color=(0,255,255),now=True):

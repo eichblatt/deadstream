@@ -58,7 +58,6 @@ def runLoop(knobs,a,scr,player,maxN=None):
             config.DATE = staged_date.date 
             logging.info(F"Setting DATE to {config.DATE}")
             config.PLAY_STATE = config.READY  #  eject current tape, insert new one in player
-    #        scr.show_date(config.DATE,loc=(85,0),size=10,color=(255,255,255),stack=True,tape=True)
             scr.show_selected_date(config.DATE)
          config.SELECT_DATE = False
 
@@ -79,7 +78,7 @@ def runLoop(knobs,a,scr,player,maxN=None):
            if len(player.playlist) == 0: player = play_tape(tape,player)  ## NOTE required?
            else: player.play()
            play_state = config.PLAYING
-           scr.show_playstate('playing')
+           scr.show_playstate()
          except AttributeError:
            logging.info(F"Cannot play date {config.DATE}")
            pass
@@ -92,8 +91,9 @@ def runLoop(knobs,a,scr,player,maxN=None):
          player.pause()
       if config.PLAY_STATE == config.STOPPED:
          player.stop()
-         scr.show_playstate('paused')
+         scr.show_playstate()
       play_state = config.PLAY_STATE
+      scr.show_playstate()
       sleep(.1)
 
 def main(parms):
@@ -114,7 +114,6 @@ def main(parms):
 
     scr = ctl.screen()
     scr.clear()
-    #scr.show_date(staged_date.date,tape=staged_date.tape_available())
     scr.show_staged_date(staged_date.date)
     #scr.show_text(staged_date.venue())
     loop = threading.Thread(target=runLoop,name="deadstream loop",args=((y,m,d),a,scr,player),kwargs={'maxN':None})
