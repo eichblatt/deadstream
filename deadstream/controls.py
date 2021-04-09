@@ -213,11 +213,11 @@ class screen:
     x,y = loc; w,h = size;
     self.disp.fill_rectangle(x,y,w,h,color565(color))
 
-  def show_text(self,text,loc=(0,0),font=None,color=(255,255,255),now=True):
+  def show_text(self,text,loc=(0,0),font=None,color=(255,255,255),stroke_width=None,now=True):
     if font==None: font = self.font
     (font_width,font_height)= font.getsize(text)
     logging.debug(F' ---> font_size {font_width},{font_height}')
-    self.draw.text(loc, text, font=font,fill=color)
+    self.draw.text(loc, text, font=font,stroke_width=stroke_width,fill=color)
     if now: self.refresh()
 
   def show_venue(self,text,color=(0,255,255),now=True):

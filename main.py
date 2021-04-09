@@ -36,6 +36,7 @@ def runLoop(knobs,a,scr,player,maxN=None):
     play_state = config.PLAY_STATE
     d0 = (ctl.date_knob_reader(y,m,d,a)).date
     N = 0; prev_track = None
+    scr.refresh()
 
     while N<=maxN if maxN != None else True:
       staged_date = ctl.date_knob_reader(y,m,d,a)
@@ -49,7 +50,7 @@ def runLoop(knobs,a,scr,player,maxN=None):
          if staged_date.tape_available(): 
             scr.show_venue(staged_date.venue())
          else:
-            scr.clear_area((0,30,160,30)) # erase the venue
+            scr.clear_area(scr.venue_bbox,now=True) # erase the venue
          scr.show_staged_date(staged_date.date)
       if config.SELECT_DATE:   # Year Button was Pushed
          if staged_date.tape_available():
@@ -76,7 +77,7 @@ def runLoop(knobs,a,scr,player,maxN=None):
                scr.show_track(next_title,1)
             else: scr.show_track(" ",1)
             scr.show_playstate()
-         sleep(0.1); continue
+         sleep(0.02); continue
 
       # now, config.PLAY_STATE != play_state
 
@@ -109,7 +110,7 @@ def runLoop(knobs,a,scr,player,maxN=None):
          scr.show_playstate()
       play_state = config.PLAY_STATE
       #scr.show_playstate()
-      sleep(.1)
+      sleep(.02)
 
 def main(parms):
     player = GD.GDPlayer()
@@ -120,7 +121,7 @@ def main(parms):
 
     scr = ctl.screen()
     scr.clear()
-    scr.show_text("Grateful\n  Dead\n   Streamer",color=(0,255,255))
+    scr.show_text("Grateful\n  Dead\n   Streamer\n     loading...",color=(0,255,255),stroke_width=1)
 
     _ = [x.setup() for x in [y,m,d]]
 
