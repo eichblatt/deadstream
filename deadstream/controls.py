@@ -32,7 +32,7 @@ class knob:
     while itries < maxtries:
       itries += 1
       try:
-        GPIO.add_event_detect(pin,edge_type, callback = cb, bouncetime = self.bouncetime) 
+        GPIO.add_event_detect(pin,edge_type, callback = cb , bouncetime = self.bouncetime) 
         return
       except:
         logging.warn(F"Retrying event_detection callback on pin {pin}")
@@ -220,7 +220,7 @@ class screen:
     self.draw.text(loc, text, font=font,fill=color)
     if now: self.refresh()
 
-  def show_venue(self,text,color=(255,255,255),now=True):
+  def show_venue(self,text,color=(0,255,255),now=True):
     self.clear_area(self.venue_bbox)
     self.show_text(text,self.venue_bbox[:2],font=self.boldsmall,color=color,now=now)
 
