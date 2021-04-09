@@ -118,19 +118,23 @@ def main(parms):
     m = ctl.knob(config.month_pins,"month",range(1,13),11)
     d = ctl.knob(config.day_pins,"day",range(1,32),2,bouncetime=100)
 
+    scr = ctl.screen()
+    scr.clear()
+    scr.show_text("Grateful\n  Dead\n   Streamer",color=(0,255,255))
+
     _ = [x.setup() for x in [y,m,d]]
 
     logging.info ("Loading GD Archive")
     a = GD.GDArchive('/home/steve/projects/deadstream/metadata')
     logging.info ("Done ")
-
-    staged_date = ctl.date_knob_reader(y,m,d,a)
-    print (staged_date)
-
-    scr = ctl.screen()
+    
     scr.clear()
+    staged_date = ctl.date_knob_reader(y,m,d,a)
+    logging.info(staged_date)
+
     scr.show_staged_date(staged_date.date)
     scr.show_venue(staged_date.venue())
+
     loop = threading.Thread(target=runLoop,name="deadstream loop",args=((y,m,d),a,scr,player),kwargs={'maxN':None})
     loop.start()
 

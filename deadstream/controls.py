@@ -224,10 +224,11 @@ class screen:
     self.clear_area(self.venue_bbox)
     self.show_text(text,self.venue_bbox[:2],font=self.boldsmall,color=color,now=now)
 
-  def show_track(self,text,trackpos,color=(120,0,255),now=True):
+  def show_track(self,text,trackpos,color=(120,0,255)):
     bbox = self.track1_bbox if trackpos == 0 else self.track2_bbox
     self.clear_area(bbox)
-    self.show_text(text,bbox[:2],font=self.smallfont,color=color,now=now)
+    self.draw.text(bbox[:2], text, font=self.smallfont,fill=color,stroke_width=1);
+    self.refresh()
 
   def show_playstate(self,color=(0,100,255)):
     logging.debug("showing playstate {config.PLAY_STATES[config.PLAY_STATE]}")

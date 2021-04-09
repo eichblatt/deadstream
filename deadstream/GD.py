@@ -574,8 +574,8 @@ class GDPlayer(MPV):
     self.playlist_pos = 0
     self.pause()
 
-  def next(self): self.command('playlist-next'); self.wait_until_playing() # jump to next track
-  def prev(self): self.command('playlist-prev'); self.wait_until_playing() # jump to previous track
+  def next(self): self.command('playlist-next'); # self.wait_until_playing() # jump to next track
+  def prev(self): self.command('playlist-prev'); # self.wait_until_playing() # jump to previous track
 
   def track_status(self):
     if self.playlist_pos == None: print (F"Playlist not started"); return None
