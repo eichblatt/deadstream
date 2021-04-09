@@ -35,7 +35,7 @@ def runLoop(knobs,a,scr,player,maxN=None):
     y,m,d = knobs
     play_state = config.PLAY_STATE
     d0 = (ctl.date_knob_reader(y,m,d,a)).date
-    N = 0
+    N = 0; prev_track = None
 
     while N<=maxN if maxN != None else True:
       staged_date = ctl.date_knob_reader(y,m,d,a)
@@ -47,9 +47,7 @@ def runLoop(knobs,a,scr,player,maxN=None):
          print (staged_date)
          d0 = staged_date.date
          if staged_date.tape_available(): 
-            venue = staged_date.venue()
-    #        venue = "Venue, City, State"
-            scr.show_text(venue,(0,30))
+            scr.show_venue(staged_date.venue())
          else:
             scr.clear_area((0,30,160,30)) # erase the venue
          scr.show_staged_date(staged_date.date)
@@ -60,12 +58,28 @@ def runLoop(knobs,a,scr,player,maxN=None):
             config.PLAY_STATE = config.READY  #  eject current tape, insert new one in player
             scr.show_selected_date(config.DATE)
          config.SELECT_DATE = False
+         scr.show_playstate()
 
       # Deal with PLAY_STATE changes
 
       #PLAY_STATE = config.PLAY_STATE
 
-      if (config.PLAY_STATE == play_state): sleep(0.1); continue
+      current_track = player._get_property('playlist-pos')
+      if (config.PLAY_STATE == play_state): 
+         if (config.PLAY_STATES[config.PLAY_STATE] in ['Playing','Paused']) and current_track != prev_track:
+            prev_track = current_track
+            title = player.tape.tracks()[current_track].title
+            scr.show_track(title,0)
+            if (current_track+1)<len(player.playlist):
+               next_track = current_track+1 if (current_track+1)<len(player.playlist) else None
+               next_title = player.tape.tracks()[next_track].title
+               scr.show_track(next_title,1)
+            else: scr.show_track(" ",1)
+            scr.show_playstate()
+         sleep(0.1); continue
+
+      # now, config.PLAY_STATE != play_state
+
       if (config.PLAY_STATE == config.READY):  #  A new tape to be inserted
          player.eject_tape()
          tape = a.best_tape(config.DATE.strftime('%Y-%m-%d'))
@@ -89,11 +103,12 @@ def runLoop(knobs,a,scr,player,maxN=None):
       if config.PLAY_STATE == config.PAUSED: 
          logging.info(F"Pausing {config.DATE.strftime('%Y-%m-%d')} on player") 
          player.pause()
+         scr.show_playstate()
       if config.PLAY_STATE == config.STOPPED:
          player.stop()
          scr.show_playstate()
       play_state = config.PLAY_STATE
-      scr.show_playstate()
+      #scr.show_playstate()
       sleep(.1)
 
 def main(parms):
@@ -115,7 +130,7 @@ def main(parms):
     scr = ctl.screen()
     scr.clear()
     scr.show_staged_date(staged_date.date)
-    #scr.show_text(staged_date.venue())
+    scr.show_venue(staged_date.venue())
     loop = threading.Thread(target=runLoop,name="deadstream loop",args=((y,m,d),a,scr,player),kwargs={'maxN':None})
     loop.start()
 

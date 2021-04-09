@@ -183,6 +183,7 @@ class screen:
     self.boldfont = ImageFont.truetype(pkg_resources.resource_filename("deadstream", "DejaVuSansMono-Bold.ttf"), 33)
     self.boldsmall = ImageFont.truetype(pkg_resources.resource_filename("deadstream", "DejaVuSansMono-Bold.ttf"), 22)
     self.font = ImageFont.truetype(pkg_resources.resource_filename("deadstream", "ariallgt.ttf"), 30)
+    self.smallfont = ImageFont.truetype(pkg_resources.resource_filename("deadstream", "ariallgt.ttf"), 20)
     self.oldfont = ImageFont.truetype(pkg_resources.resource_filename("deadstream", "FreeMono.ttf"), 20)
     self.largefont = ImageFont.truetype(pkg_resources.resource_filename("deadstream", "FreeMono.ttf"), 30)
     self.hugefont = ImageFont.truetype(pkg_resources.resource_filename("deadstream", "FreeMono.ttf"), 40)
@@ -191,7 +192,11 @@ class screen:
     self.draw = ImageDraw.Draw(self.image)       # draw using this object. Display image when complete.
 
     self.staged_date_bbox = (0,0,160,31)
-    self.selected_date_bbox = (90,80,160,128)
+    self.selected_date_bbox = (0,100,160,128)
+    self.venue_bbox = (0,31,160,55)
+    self.track1_bbox = (0,55,160,77)
+    self.track2_bbox = (0,78,160,100)
+    self.playstate_bbox = (130,100,160,128)
 
   def refresh(self):
     self.disp.image(self.image)
@@ -208,18 +213,6 @@ class screen:
     x,y = loc; w,h = size;
     self.disp.fill_rectangle(x,y,w,h,color565(color))
 
-#  def set_pixel(self,loc,color=(0,0,255)):
-#    x,y = loc
-#    self.disp.pixel(x,y,color565(color))
-
-#  def black(self):
-#    self.disp.fill()
-#    self.disp.init()
-
-#  def clear(self):
-#    self.disp.reset()
-#    self.black()
-
   def show_text(self,text,loc=(0,0),font=None,color=(255,255,255),now=True):
     if font==None: font = self.font
     (font_width,font_height)= font.getsize(text)
@@ -227,20 +220,31 @@ class screen:
     self.draw.text(loc, text, font=font,fill=color)
     if now: self.refresh()
 
-  def show_playstate(self,loc=(146,6),color=(100,100,255)):
-    y,x = loc; color = color565(color);
+  def show_venue(self,text,color=(255,255,255),now=True):
+    self.clear_area(self.venue_bbox)
+    self.show_text(text,self.venue_bbox[:2],font=self.boldsmall,color=color,now=now)
+
+  def show_track(self,text,trackpos,color=(120,0,255),now=True):
+    bbox = self.track1_bbox if trackpos == 0 else self.track2_bbox
+    self.clear_area(bbox)
+    self.show_text(text,bbox[:2],font=self.smallfont,color=color,now=now)
+
+  def show_playstate(self,color=(0,100,255)):
     logging.debug("showing playstate {config.PLAY_STATES[config.PLAY_STATE]}")
+    bbox = self.playstate_bbox
+    self.clear_area(bbox)
+    center = (int((bbox[0]+bbox[2])/2),int((bbox[1]+bbox[3])/2))
+    size   = (int(bbox[2]-bbox[0]),int(bbox[3]-bbox[1]))
     if config.PLAY_STATES[config.PLAY_STATE] == 'Playing':  
-       self.disp.fill_rectangle(x,y,9,9,self.bgcolor)  
-       for i in range(9):
-         self.disp.hline(x+int(i/2),y+i,9-i,color)  
+       self.draw.regular_polygon((center,10),3,rotation=30,fill=color)
     elif config.PLAY_STATES[config.PLAY_STATE] == 'Paused' :  
-       self.disp.fill_rectangle(x,y,9,9,color)  
-       self.disp.fill_rectangle(x,y+3,9,3,self.bgcolor)   # draw black stripe
+       self.draw.line([(bbox[0]+10,bbox[1]+4),(bbox[0]+10,bbox[1]+20)],width=4,fill=color)
+       self.draw.line([(bbox[0]+20,bbox[1]+4),(bbox[0]+20,bbox[1]+20)],width=4,fill=color)
     elif config.PLAY_STATES[config.PLAY_STATE] == 'Stopped' :  
-       self.disp.fill_rectangle(x,y,9,9,color)  
+       self.draw.rectangle([(bbox[0]+10,bbox[1]+4),(bbox[0]+20,bbox[1]+20)],fill=color)
     elif config.PLAY_STATES[config.PLAY_STATE] in ['Init','Ready'] :  
-       self.disp.fill_rectangle(x,y,9,9,self.bgcolor)  
+       pass
+    self.refresh()
 
   def show_staged_date(self,date,color=(0,255,255),now=True):
     self.clear_area(self.staged_date_bbox)
@@ -256,7 +260,7 @@ class screen:
     month = str(date.month).rjust(2)
     day = str(date.day).rjust(2)
     year = str(date.year).rjust(4)
-    text = month + '-' + day + '\n' + year
+    text = month + '-' + day + '-' + year
     self.show_text(text,self.selected_date_bbox[:2],self.boldsmall,color=color,now=now)
 
   def show_date(self,date,loc=(0,96),size=16,separation=4,color=(0,200,255),stack=False,tape=False):
