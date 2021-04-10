@@ -13,6 +13,63 @@ import pkg_resources
 
 logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.DEBUG)
 
+class button:
+  def __init__(self,pin,name,bouncetime=300):
+    self.pin = pin
+    self.name = name
+    self.bouncetime = bouncetime
+    self.is_setup = False
+
+  def __str__(self):
+    return self.__repr__()
+
+  def __repr__(self):
+    return F"{self.name}: pin:{self.pin}"
+
+  def add_callback(self,pin,edge_type,cb,maxtries=3):
+    itries = 0
+    while itries < maxtries:
+      itries += 1
+      try:
+        GPIO.add_event_detect(pin,edge_type, callback = cb, bouncetime = self.bouncetime) 
+        return
+      except:
+        logging.warn(F"Retrying event_detection callback on pin {pin}")
+    logging.warn(F"Failed to set event_detection callback on pin {pin}")
+
+  def setup(self):
+    if self.pin == None: return
+    if self.is_setup: return
+    GPIO.setmode(GPIO.BCM)
+    GPIO.setup(self.pin,GPIO.IN,pull_up_down=GPIO.PUD_DOWN)
+    self.add_callback(self.pin,GPIO.RISING,self.callback)
+    self.is_setup = True
+    return None 
+
+  def show_pin_state(self,msg): 
+    logging.debug (F"{self.name} {msg}: State of pin:{GPIO.input(self.pin)}")
+    return 
+ 
+  def callback(self,channel):
+    logging.info(F"Pushed button {self.name}")
+    if self.name == 'ffwd':
+       config.FFWD = True 
+       logging.info(F"Setting FFWD to {config.FFWD}")
+    if self.name == 'rewind':
+       config.REWIND = True 
+       logging.info(F"Setting REWIND to {config.REWIND}")
+    if self.name == 'play_pause':
+       if config.PLAY_STATE in [config.READY, config.PAUSED, config.STOPPED]: config.PLAY_STATE = config.PLAYING  # play if not playing
+       elif config.PLAY_STATE == config.PLAYING: config.PLAY_STATE = config.PAUSED   # Pause if playing
+       logging.info(F"Setting PLAY_STATE to {config.PLAY_STATES[config.PLAY_STATE]}")
+    if self.name == 'stop':
+       if config.PLAY_STATE in [config.PLAYING, config.PAUSED]: config.PLAY_STATE = config.STOPPED  # stop playing or pausing
+       logging.info(F"Setting PLAY_STATE to {config.PLAY_STATES[config.PLAY_STATE]}")
+
+  def cleanup(self): 
+    GPIO.cleanup()
+
+ 
 class knob:
   def __init__(self,pins,name,values,init=None,bouncetime=300):
     self.cl, self.dt, self.sw = pins
@@ -20,6 +77,7 @@ class knob:
     self._values = values 
     self.value = min(values) if init == None else init
     self.bouncetime = bouncetime
+    self.is_setup = False
 
   def __str__(self):
     return self.__repr__()
@@ -32,18 +90,23 @@ class knob:
     while itries < maxtries:
       itries += 1
       try:
-        GPIO.add_event_detect(pin,edge_type, callback = cb , bouncetime = self.bouncetime) 
+        GPIO.add_event_detect(pin,edge_type, callback = cb, bouncetime = self.bouncetime) 
         return
       except:
         logging.warn(F"Retrying event_detection callback on pin {pin}")
     logging.warn(F"Failed to set event_detection callback on pin {pin}")
+    raise
 
   def setup(self):
+    if self.is_setup: return
     GPIO.setmode(GPIO.BCM)
     _ = [GPIO.setup(x,GPIO.IN,pull_up_down=GPIO.PUD_DOWN) for x in [self.cl,self.dt,self.sw]]
-    self.add_callback(self.sw,GPIO.RISING,self.sw_callback)
-    self.add_callback(self.dt,GPIO.FALLING,self.dt_callback)
-    self.add_callback(self.cl,GPIO.FALLING,self.cl_callback)
+    try:
+      self.add_callback(self.sw,GPIO.RISING,self.sw_callback)
+      self.add_callback(self.dt,GPIO.FALLING,self.dt_callback)
+      self.add_callback(self.cl,GPIO.FALLING,self.cl_callback)
+      self.is_setup = True
+    except: raise
     return None 
 
   def show_pin_states(self,msg): 
@@ -118,7 +181,6 @@ class date_knob_reader:
   def venue(self):
     if self.tape_available: 
       t = self.archive.best_tape(self.fmtdate())
-      t.get_metadata()
       return t.venue()
     return ""
 
@@ -213,7 +275,7 @@ class screen:
     x,y = loc; w,h = size;
     self.disp.fill_rectangle(x,y,w,h,color565(color))
 
-  def show_text(self,text,loc=(0,0),font=None,color=(255,255,255),stroke_width=None,now=True):
+  def show_text(self,text,loc=(0,0),font=None,color=(255,255,255),stroke_width=0,now=True):
     if font==None: font = self.font
     (font_width,font_height)= font.getsize(text)
     logging.debug(F' ---> font_size {font_width},{font_height}')
