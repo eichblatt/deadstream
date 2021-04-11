@@ -127,6 +127,7 @@ def main(parms):
     stop = ctl.button(config.stop_pin,"stop")
     _ = [x.setup() for x in [select,play_pause,ffwd,rewind,stop]]
 
+#    scr = ctl.fast_screen() if config.SCREEN_TYPE == "fast" else ctl.slow_screen()
     scr = ctl.screen()
     scr.clear()
     scr.show_text("Grateful\n  Dead\n   Streamer\n     Loading...",color=(0,255,255))

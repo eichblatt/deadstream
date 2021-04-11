@@ -226,6 +226,9 @@ class seven_segment:
     pattern = [self.segments[x] for x in self.digits[digit]] 
     [self.draw_segment(x) for x in pattern]
 
+#class fast_screen(screen):
+#class slow_screen(screen):
+
 class screen:
   def __init__(self):
     cs_pin= digitalio.DigitalInOut(board.CE0)

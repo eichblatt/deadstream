@@ -1,3 +1,4 @@
+import datetime
 
 # State variables
 INIT = 0
@@ -9,6 +10,12 @@ PLAY_STATES = ['Init','Ready','Paused','Stopped','Playing']
 SELECT_DATE = False
 PLAY_STATE = INIT
 DATE = None
+ON_TOUR = False
+TIH = False
+_today = datetime.datetime.now().date()
+TIH_YEAR = None
+TIH_MONTH = _today.month
+TIH_DAY = _today.year
 
 # Hardware pins
 
@@ -30,5 +37,5 @@ ffwd_pin = 26    # pin 26 ok with sound card.
 
 # Options
 
-ON_TOUR = False
 FADE_AWAY = "NOT"  # or "WEST_LA"
+SCREEN_TYPE = "fast"  # or "slow"
