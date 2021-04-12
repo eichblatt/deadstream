@@ -57,6 +57,10 @@ def runLoop(knobs,a,scr,player,maxN=None):
          d.value = config.TIH_DAY
          config.TIH = False
          continue
+      if config.NEXT_DATE:   # Day Button was Pushed, set date to next date with tape available
+         new_date = staged_date.next_date() 
+         y.value = new_date.year; m.value = new_date.month; d.value = new_date.day;
+         config.NEXT_DATE = False
       if config.SELECT_DATE:   # Select Button was Pushed
          if staged_date.tape_available():
             config.DATE = staged_date.date 

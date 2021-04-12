@@ -151,15 +151,15 @@ class knob:
   def sw_callback(self,channel):
     logging.debug(F"Pushed button {self.name}")
     if self.name == 'year':
-       config.TIH = True 
-       logging.debug(F"Setting TIH to {config.TIH}")
+      config.TIH = True 
+      logging.debug(F"Setting TIH to {config.TIH}")
     if self.name == 'month':
-       if config.PLAY_STATE in [config.READY, config.PAUSED, config.STOPPED]: config.PLAY_STATE = config.PLAYING  # play if not playing
-       elif config.PLAY_STATE == config.PLAYING: config.PLAY_STATE = config.PAUSED   # Pause if playing
-       logging.debug(F"Setting PLAY_STATE to {config.PLAY_STATES[config.PLAY_STATE]}")
+      if config.PLAY_STATE in [config.READY, config.PAUSED, config.STOPPED]: config.PLAY_STATE = config.PLAYING  # play if not playing
+      elif config.PLAY_STATE == config.PLAYING: config.PLAY_STATE = config.PAUSED   # Pause if playing
+      logging.debug(F"Setting PLAY_STATE to {config.PLAY_STATES[config.PLAY_STATE]}")
     if self.name == 'day':
-       if config.PLAY_STATE in [config.PLAYING, config.PAUSED]: config.PLAY_STATE = config.STOPPED  # stop playing or pausing
-       logging.debug(F"Setting PLAY_STATE to {config.PLAY_STATES[config.PLAY_STATE]}")
+      config.NEXT_DATE = True
+      logging.debug(F"Setting NEXT_DATE to {config.NEXT_DATE}")
      #sleep(0.3)
 
   def set_value(self,value): 
@@ -206,6 +206,12 @@ class date_knob_reader:
     if self.archive == None: return False
     return self.fmtdate() in self.archive.dates   
 
+  def next_date(self):
+    if self.archive == None: return None
+    for d in self.archive.dates:
+      if d>self.fmtdate(): return datetime.datetime.strptime(d,'%Y-%m-%d').date()
+    return self.date
+      
 
 class seven_segment:
   def __init__(self,disp,loc,size,thickness=3,color=(0,0,255),bgcolor=(0,0,0)):

@@ -17,6 +17,8 @@ TIH_YEAR = None
 TIH_MONTH = _today.month
 TIH_DAY = _today.day
 
+NEXT_DATE = False
+
 FFWD = False
 FSEEK = False
 REWIND = False
