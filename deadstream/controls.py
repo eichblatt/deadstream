@@ -250,6 +250,26 @@ class seven_segment:
     pattern = [self.segments[x] for x in self.digits[digit]] 
     [self.draw_segment(x) for x in pattern]
 
+class Bbox:
+  def __init__(self,x0,y0,x1,y1):
+    self.corners = (x0,y0,x1,y1)
+    self.x0,self.y0,self.x1,self.y1 = self.corners
+  
+  def __str__(self):
+    return self.__repr__()
+
+  def __repr__(self):
+    return F"Bbox: x0 {self.x0},y0 {self.y0},x1 {self.x1},y1 {self.y1}"
+
+  def width(self): return self.x1-self.x0
+  def height(self): return self.y1-self.y0
+  def origin(self): return (self.x0,self.y0)
+  def topright(self): return (self.x1,self.y1)
+  def size(self): return (int(self.height),int(self.width))
+  def center(self): return (int((self.x0+self.x1)/2),int((self.y0+self.y1)/2))
+  def shift(self,d): return Bbox(self.x0-d.x0,self.y0-d.y0,self.x1-d.x1,self.y1-d.y1)
+
+ 
 class screen:
   def __init__(self):
     cs_pin= digitalio.DigitalInOut(board.CE0)
@@ -280,18 +300,20 @@ class screen:
     self.staged_date = None
     self.selected_date = None
 
-    self.staged_date_bbox = (0,0,160,31)
-    self.selected_date_bbox = (0,100,160,128)
-    self.venue_bbox = (0,31,160,55)
-    self.track1_bbox = (0,55,160,77)
-    self.track2_bbox = (0,78,160,100)
-    self.playstate_bbox = (130,100,160,128)
+    self.staged_date_bbox = Bbox(0,0,160,31)
+    self.selected_date_bbox = Bbox(0,100,160,128)
+    self.venue_bbox = Bbox(0,31,160,56)
+    self.track1_bbox = Bbox(0,55,160,77)
+    self.track2_bbox = Bbox(0,78,160,100)
+    self.playstate_bbox = Bbox(130,100,160,128)
+
+
 
   def refresh(self):
     self.disp.image(self.image)
 
   def clear_area(self,bbox,now=False):
-    self.draw.rectangle(bbox,outline=0,fill=(0,0,0))
+    self.draw.rectangle(bbox.corners,outline=0,fill=(0,0,0))
     if now: self.refresh()
  
   def clear(self):
@@ -304,14 +326,14 @@ class screen:
 
   def show_text(self,text,loc=(0,0),font=None,color=(255,255,255),stroke_width=0,now=True):
     if font==None: font = self.font
-    (font_width,font_height)= font.getsize(text)
-    logging.debug(F' ---> font_size {font_width},{font_height}')
+    (text_width,text_height)= font.getsize(text)
+    logging.debug(F' show_text {text}. text_size {text_height},{text_width}')
     self.draw.text(loc, text, font=font,stroke_width=stroke_width,fill=color)
     if now: self.refresh()
 
   def show_venue(self,text,color=(0,255,255),now=True):
     self.clear_area(self.venue_bbox)
-    self.show_text(text,self.venue_bbox[:2],font=self.boldsmall,color=color,now=now)
+    self.show_text(text,self.venue_bbox.origin(),font=self.boldsmall,color=color,now=now)
 
   def show_date(self,date,loc=(0,96),size=16,separation=4,color=(0,200,255),stack=False,tape=False):
     x0,y0 = loc; segwidth = size; segheight = 2*size; 
@@ -343,7 +365,7 @@ class screen:
     year = str(divmod(date.year,100)[1]).rjust(2)
     text = month + '-' + day + '-' + year
     logging.debug (F"staged date string {text}")
-    self.show_text(text,self.staged_date_bbox[:2],self.boldfont,color=color,now=now)
+    self.show_text(text,self.staged_date_bbox.origin(),self.boldfont,color=color,now=now)
     self.staged_date = date
 
   def show_selected_date(self,date,color=(255,255,255),now=True):
@@ -353,28 +375,28 @@ class screen:
     day = str(date.day).rjust(2)
     year = str(date.year).rjust(4)
     text = month + '-' + day + '-' + year
-    self.show_text(text,self.selected_date_bbox[:2],self.boldsmall,color=color,now=now)
+    self.show_text(text,self.selected_date_bbox.origin(),self.boldsmall,color=color,now=now)
     self.selected_date = date
 
   def show_track(self,text,trackpos,color=(120,0,255)):
     bbox = self.track1_bbox if trackpos == 0 else self.track2_bbox
     self.clear_area(bbox)
-    self.draw.text(bbox[:2], text, font=self.smallfont,fill=color,stroke_width=1);
+    self.draw.text(bbox.origin(), text, font=self.smallfont,fill=color,stroke_width=1);
     self.refresh()
 
   def show_playstate(self,color=(0,100,255)):
     logging.debug("showing playstate {config.PLAY_STATES[config.PLAY_STATE]}")
     bbox = self.playstate_bbox
     self.clear_area(bbox)
-    center = (int((bbox[0]+bbox[2])/2),int((bbox[1]+bbox[3])/2))
-    size   = (int(bbox[2]-bbox[0]),int(bbox[3]-bbox[1]))
+    center = bbox.center()
+    size   = bbox.size()
     if config.PLAY_STATES[config.PLAY_STATE] == 'Playing':  
        self.draw.regular_polygon((center,10),3,rotation=30,fill=color)
     elif config.PLAY_STATES[config.PLAY_STATE] == 'Paused' :  
-       self.draw.line([(bbox[0]+10,bbox[1]+4),(bbox[0]+10,bbox[1]+20)],width=4,fill=color)
-       self.draw.line([(bbox[0]+20,bbox[1]+4),(bbox[0]+20,bbox[1]+20)],width=4,fill=color)
+       self.draw.line([(bbox.x0+10,bbox.y0+4),(bbox.x0+10,bbox.y0+20)],width=4,fill=color)
+       self.draw.line([(bbox.x0+20,bbox.y0+4),(bbox.x0+20,bbox.y0+20)],width=4,fill=color)
     elif config.PLAY_STATES[config.PLAY_STATE] == 'Stopped' :  
-       self.draw.rectangle([(bbox[0]+10,bbox[1]+4),(bbox[0]+20,bbox[1]+20)],fill=color)
+       self.draw.rectangle([(bbox.x0+10,bbox.y0+4),(bbox.x0+20,bbox.y0+20)],fill=color)
     elif config.PLAY_STATES[config.PLAY_STATE] in ['Init','Ready'] :  
        pass
     self.refresh()
