@@ -13,8 +13,8 @@ parser.add_option('-d','--debug',dest='debug',type="int",default=1,help="If > 0,
 parser.add_option('-v','--verbose',dest='verbose',action="store_true",default=False,help="Print more verbose information")
 parms,remainder = parser.parse_args()
 
-logLevel = 0 if parms.verbose else logging.INFO
-logging.basicConfig(format='%(asctime)s.%(msecs)03d %(levelname)s: %(message)s', level=logLevel,datefmt='%Y-%m-%d %H:%M:%S')
+#logLevel = 0 if parms.verbose else logging.DEBUG
+logging.basicConfig(format='%(asctime)s.%(msecs)03d %(levelname)s: %(message)s', level=logging.DEBUG,datefmt='%Y-%m-%d %H:%M:%S')
 
 meInterrupt = False
 def meCustomHandler(signum,stack_frame):
@@ -75,6 +75,9 @@ def runLoop(knobs,a,scr,player,maxN=None):
          if config.FFWD:
             player.next()
             config.FFWD = False
+         else: 
+            while config.FSEEK:
+              player.seek(1)
          if (config.PLAY_STATES[config.PLAY_STATE] in ['Playing','Paused']) and current_track != prev_track:
             prev_track = current_track
             title = player.tape.tracks()[current_track].title

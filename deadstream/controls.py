@@ -14,7 +14,7 @@ import pkg_resources
 logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.DEBUG)
 
 class button:
-  def __init__(self,pin,name,bouncetime=300):
+  def __init__(self,pin,name,bouncetime=10):
     self.pin = pin
     self.name = name
     self.bouncetime = bouncetime
@@ -51,30 +51,46 @@ class button:
     return 
  
   def callback(self,channel):
-    logging.info(F"Pushed button {self.name}")
+    if GPIO.input(self.pin) == 0: return
+    logging.debug(F"Pushed button {self.name}")
     if self.name == 'select':
        config.SELECT_DATE = True 
-       logging.info(F"Setting SELECT_DATE to {config.SELECT_DATE}")
+       logging.debug(F"Setting SELECT_DATE to {config.SELECT_DATE}")
     if self.name == 'ffwd':
-       config.FFWD = True 
-       logging.info(F"Setting FFWD to {config.FFWD}")
+       config.FSEEK = False
+       sleep(0.5)
+       while GPIO.input(self.pin) == 1: # button is still being pressed
+           logging.debug(F"Setting FFWD to {config.FFWD}, FSEEK is {config.FSEEK}")
+           config.FSEEK = True
+           sleep(0.1)
+       if not config.FSEEK: 
+           logging.debug(F"Setting FFWD to {config.FFWD}, FSEEK is {config.FSEEK}")
+           config.FFWD = True
+       config.FSEEK = False
     if self.name == 'rewind':
-       config.REWIND = True 
-       logging.info(F"Setting REWIND to {config.REWIND}")
+       config.RSEEK = False
+       sleep(0.5)
+       while GPIO.input(self.pin) == 1: # button is still being pressed
+           logging.debug(F"Setting REWIND to {config.REWIND}, RSEEK is {config.RSEEK}")
+           config.RSEEK = True
+           sleep(0.1)
+       if not config.RSEEK: 
+           logging.debug(F"Setting REWIND to {config.REWIND}, RSEEK is {config.RSEEK}")
+           config.REWIND = True
     if self.name == 'play_pause':
        if config.PLAY_STATE in [config.READY, config.PAUSED, config.STOPPED]: config.PLAY_STATE = config.PLAYING  # play if not playing
        elif config.PLAY_STATE == config.PLAYING: config.PLAY_STATE = config.PAUSED   # Pause if playing
-       logging.info(F"Setting PLAY_STATE to {config.PLAY_STATES[config.PLAY_STATE]}")
+       logging.debug(F"Setting PLAY_STATE to {config.PLAY_STATES[config.PLAY_STATE]}")
     if self.name == 'stop':
        if config.PLAY_STATE in [config.PLAYING, config.PAUSED]: config.PLAY_STATE = config.STOPPED  # stop playing or pausing
-       logging.info(F"Setting PLAY_STATE to {config.PLAY_STATES[config.PLAY_STATE]}")
+       logging.debug(F"Setting PLAY_STATE to {config.PLAY_STATES[config.PLAY_STATE]}")
 
   def cleanup(self): 
     GPIO.cleanup()
 
  
 class knob:
-  def __init__(self,pins,name,values,init=None,bouncetime=300):
+  def __init__(self,pins,name,values,init=None,bouncetime=100):
     self.cl, self.dt, self.sw = pins
     self.name = name
     self._values = values 
@@ -118,36 +134,32 @@ class knob:
  
   def cl_callback(self,channel):
     self.show_pin_states("cl")
-    dt0 = GPIO.input(self.dt) 
-    sleep(0.005)
-    dt1 = GPIO.input(self.dt)
-    if (dt0 == 1) and (dt1 == 1): 
+    dt = GPIO.input(self.dt) 
+    if dt == 1: 
       self.set_value(self.value + 1)
-      logging.debug (F"incrementing {self.name}.  {self.value}")
+      logging.debug (F" +++ increasing {self.name}.  {self.value}")
     return
 
   def dt_callback(self,channel):
     self.show_pin_states("dt")
-    cl0 = GPIO.input(self.cl)
-    sleep(0.005)
-    cl1 = GPIO.input(self.cl)
-    if (cl0 == 1) and (cl1 == 1): 
+    cl = GPIO.input(self.cl)
+    if cl == 1: 
       self.set_value(self.value -1)
-      logging.debug (F"DEcrementing {self.name}. {self.value}")
+      logging.debug (F" --- decreasing {self.name}. {self.value}")
     return
 
   def sw_callback(self,channel):
-    logging.info(F"Pushed button {self.name}")
+    logging.debug(F"Pushed button {self.name}")
     if self.name == 'year':
        config.TIH = True 
-       logging.info(F"Setting TIH to {config.TIH}")
+       logging.debug(F"Setting TIH to {config.TIH}")
     if self.name == 'month':
        if config.PLAY_STATE in [config.READY, config.PAUSED, config.STOPPED]: config.PLAY_STATE = config.PLAYING  # play if not playing
        elif config.PLAY_STATE == config.PLAYING: config.PLAY_STATE = config.PAUSED   # Pause if playing
-       logging.info(F"Setting PLAY_STATE to {config.PLAY_STATES[config.PLAY_STATE]}")
+       logging.debug(F"Setting PLAY_STATE to {config.PLAY_STATES[config.PLAY_STATE]}")
     if self.name == 'day':
        if config.PLAY_STATE in [config.PLAYING, config.PAUSED]: config.PLAY_STATE = config.STOPPED  # stop playing or pausing
-       logging.info(F"Setting PLAY_STATE to {config.PLAY_STATES[config.PLAY_STATE]}")
+       logging.debug(F"Setting PLAY_STATE to {config.PLAY_STATES[config.PLAY_STATE]}")
      #sleep(0.3)
 
   def set_value(self,value): 
@@ -160,15 +172,9 @@ class knob:
 
 class date_knob_reader:
   def __init__(self,y,m,d,archive=None):
-    maxd = [31,29,31,30,31,30,31,31,30,31,30,31] ## max days in a month.
-    if d.value > maxd[m.value-1]: d.set_value(maxd[m.value-1])
     self.date = None
     self.archive = archive
-    try:
-      self.date = datetime.date(y.value,m.value,d.value)
-    except ValueError:
-      d.set_value(d.value-1)
-      self.date = datetime.date(y.value,m.value,d.value)
+    self.update(y,m,d)
  
   def __str__(self):  
     return self.__repr__()
@@ -177,6 +183,15 @@ class date_knob_reader:
     avail = "Tape Available" if self.tape_available() else ""
     return F'Date Knob Says: {self.date.strftime("%Y-%m-%d")}. {avail}'
 
+  def update(self,y,m,d):
+    maxd = [31,29,31,30,31,30,31,31,30,31,30,31] ## max days in a month.
+    if d.value > maxd[m.value-1]: d.set_value(maxd[m.value-1])
+    try:
+      self.date = datetime.date(y.value,m.value,d.value)
+    except ValueError:
+      d.set_value(d.value-1)
+      self.date = datetime.date(y.value,m.value,d.value)
+ 
   def fmtdate(self):
     if self.date == None: return None
     return self.date.strftime('%Y-%m-%d')
@@ -256,6 +271,9 @@ class screen:
     self.image = Image.new("RGB",(width,height))
     self.draw = ImageDraw.Draw(self.image)       # draw using this object. Display image when complete.
 
+    self.staged_date = None
+    self.selected_date = None
+
     self.staged_date_bbox = (0,0,160,31)
     self.selected_date_bbox = (0,100,160,128)
     self.venue_bbox = (0,31,160,55)
@@ -312,6 +330,7 @@ class screen:
     else: self.disp.fill_rectangle(0,0,30,30,self.bgcolor)  
 
   def show_staged_date(self,date,color=(0,255,255),now=True):
+    if date == self.staged_date: return
     self.clear_area(self.staged_date_bbox)
     month = str(date.month).rjust(2)
     day = str(date.day).rjust(2)
@@ -319,14 +338,17 @@ class screen:
     text = month + '-' + day + '-' + year
     logging.debug (F"staged date string {text}")
     self.show_text(text,self.staged_date_bbox[:2],self.boldfont,color=color,now=now)
+    self.staged_date = date
 
   def show_selected_date(self,date,color=(255,255,255),now=True):
+    if date == self.selected_date: return
     self.clear_area(self.selected_date_bbox)
     month = str(date.month).rjust(2)
     day = str(date.day).rjust(2)
     year = str(date.year).rjust(4)
     text = month + '-' + day + '-' + year
     self.show_text(text,self.selected_date_bbox[:2],self.boldsmall,color=color,now=now)
+    self.selected_date = date
 
   def show_track(self,text,trackpos,color=(120,0,255)):
     bbox = self.track1_bbox if trackpos == 0 else self.track2_bbox
