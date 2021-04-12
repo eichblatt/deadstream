@@ -11,15 +11,92 @@ from adafruit_rgb_display import color565
 from PIL import Image, ImageDraw, ImageFont
 import pkg_resources
 
-logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.INFO)
+logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.DEBUG)
 
+class button:
+  def __init__(self,pin,name,bouncetime=10):
+    self.pin = pin
+    self.name = name
+    self.bouncetime = bouncetime
+    self.is_setup = False
+
+  def __str__(self):
+    return self.__repr__()
+
+  def __repr__(self):
+    return F"{self.name}: pin:{self.pin}"
+
+  def add_callback(self,pin,edge_type,cb,maxtries=3):
+    itries = 0
+    while itries < maxtries:
+      itries += 1
+      try:
+        GPIO.add_event_detect(pin,edge_type, callback = cb, bouncetime = self.bouncetime) 
+        return
+      except:
+        logging.warn(F"Retrying event_detection callback on pin {pin}")
+    logging.warn(F"Failed to set event_detection callback on pin {pin}")
+
+  def setup(self):
+    if self.pin == None: return
+    if self.is_setup: return
+    GPIO.setmode(GPIO.BCM)
+    GPIO.setup(self.pin,GPIO.IN,pull_up_down=GPIO.PUD_DOWN)
+    self.add_callback(self.pin,GPIO.RISING,self.callback)
+    self.is_setup = True
+    return None 
+
+  def show_pin_state(self,msg): 
+    logging.debug (F"{self.name} {msg}: State of pin:{GPIO.input(self.pin)}")
+    return 
+ 
+  def callback(self,channel):
+    if GPIO.input(self.pin) == 0: return
+    logging.debug(F"Pushed button {self.name}")
+    if self.name == 'select':
+       config.SELECT_DATE = True 
+       logging.debug(F"Setting SELECT_DATE to {config.SELECT_DATE}")
+    if self.name == 'ffwd':
+       config.FSEEK = False
+       sleep(0.5)
+       while GPIO.input(self.pin) == 1: # button is still being pressed
+           logging.debug(F"Setting FFWD to {config.FFWD}, FSEEK is {config.FSEEK}")
+           config.FSEEK = True
+           sleep(0.1)
+       if not config.FSEEK: 
+           logging.debug(F"Setting FFWD to {config.FFWD}, FSEEK is {config.FSEEK}")
+           config.FFWD = True
+       config.FSEEK = False
+    if self.name == 'rewind':
+       config.RSEEK = False
+       sleep(0.5)
+       while GPIO.input(self.pin) == 1: # button is still being pressed
+           logging.debug(F"Setting REWIND to {config.REWIND}, RSEEK is {config.RSEEK}")
+           config.RSEEK = True
+           sleep(0.1)
+       if not config.RSEEK: 
+           logging.debug(F"Setting REWIND to {config.REWIND}, RSEEK is {config.RSEEK}")
+           config.REWIND = True
+    if self.name == 'play_pause':
+       if config.PLAY_STATE in [config.READY, config.PAUSED, config.STOPPED]: config.PLAY_STATE = config.PLAYING  # play if not playing
+       elif config.PLAY_STATE == config.PLAYING: config.PLAY_STATE = config.PAUSED   # Pause if playing
+       logging.debug(F"Setting PLAY_STATE to {config.PLAY_STATES[config.PLAY_STATE]}")
+    if self.name == 'stop':
+       if config.PLAY_STATE in [config.PLAYING, config.PAUSED]: config.PLAY_STATE = config.STOPPED  # stop playing or pausing
+       logging.debug(F"Setting PLAY_STATE to {config.PLAY_STATES[config.PLAY_STATE]}")
+
+  def cleanup(self): 
+    GPIO.cleanup()
+
+ 
 class knob:
-  def __init__(self,pins,name,values,init=None,bouncetime=300):
+  def __init__(self,pins,name,values,init=None,bouncetime=100):
     self.cl, self.dt, self.sw = pins
     self.name = name
     self._values = values 
     self.value = min(values) if init == None else init
     self.bouncetime = bouncetime
+    self.is_setup = False
 
   def __str__(self):
     return self.__repr__()
@@ -37,13 +114,18 @@ class knob:
       except:
         logging.warn(F"Retrying event_detection callback on pin {pin}")
     logging.warn(F"Failed to set event_detection callback on pin {pin}")
+    raise
 
   def setup(self):
+    if self.is_setup: return
     GPIO.setmode(GPIO.BCM)
     _ = [GPIO.setup(x,GPIO.IN,pull_up_down=GPIO.PUD_DOWN) for x in [self.cl,self.dt,self.sw]]
-    self.add_callback(self.sw,GPIO.RISING,self.sw_callback)
-    self.add_callback(self.dt,GPIO.FALLING,self.dt_callback)
-    self.add_callback(self.cl,GPIO.FALLING,self.cl_callback)
+    try:
+      self.add_callback(self.sw,GPIO.RISING,self.sw_callback)
+      self.add_callback(self.dt,GPIO.FALLING,self.dt_callback)
+      self.add_callback(self.cl,GPIO.FALLING,self.cl_callback)
+      self.is_setup = True
+    except: raise
     return None 
 
   def show_pin_states(self,msg): 
@@ -52,36 +134,32 @@ class knob:
  
   def cl_callback(self,channel):
     self.show_pin_states("cl")
-    dt0 = GPIO.input(self.dt) 
-    sleep(0.005)
-    dt1 = GPIO.input(self.dt)
-    if (dt0 == 1) and (dt1 == 1): 
+    dt = GPIO.input(self.dt) 
+    if dt == 1: 
       self.set_value(self.value + 1)
-      logging.debug (F"incrementing {self.name}.  {self.value}")
+      logging.debug (F" +++ increasing {self.name}.  {self.value}")
     return
 
   def dt_callback(self,channel):
     self.show_pin_states("dt")
-    cl0 = GPIO.input(self.cl)
-    sleep(0.005)
-    cl1 = GPIO.input(self.cl)
-    if (cl0 == 1) and (cl1 == 1): 
+    cl = GPIO.input(self.cl)
+    if cl == 1: 
       self.set_value(self.value -1)
-      logging.debug (F"DEcrementing {self.name}. {self.value}")
+      logging.debug (F" --- decreasing {self.name}. {self.value}")
     return
 
   def sw_callback(self,channel):
-    logging.info(F"Pushed button {self.name}")
+    logging.debug(F"Pushed button {self.name}")
     if self.name == 'year':
-       config.SELECT_DATE = True 
-       logging.info(F"Setting SELECT_DATE to {config.SELECT_DATE}")
+      config.TIH = True 
+      logging.debug(F"Setting TIH to {config.TIH}")
     if self.name == 'month':
-       if config.PLAY_STATE in [config.READY, config.PAUSED, config.STOPPED]: config.PLAY_STATE = config.PLAYING  # play if not playing
-       elif config.PLAY_STATE == config.PLAYING: config.PLAY_STATE = config.PAUSED   # Pause if playing
-       logging.info(F"Setting PLAY_STATE to {config.PLAY_STATES[config.PLAY_STATE]}")
+      if config.PLAY_STATE in [config.READY, config.PAUSED, config.STOPPED]: config.PLAY_STATE = config.PLAYING  # play if not playing
+      elif config.PLAY_STATE == config.PLAYING: config.PLAY_STATE = config.PAUSED   # Pause if playing
+      logging.debug(F"Setting PLAY_STATE to {config.PLAY_STATES[config.PLAY_STATE]}")
     if self.name == 'day':
-       if config.PLAY_STATE in [config.PLAYING, config.PAUSED]: config.PLAY_STATE = config.STOPPED  # stop playing or pausing
-       logging.info(F"Setting PLAY_STATE to {config.PLAY_STATES[config.PLAY_STATE]}")
+      config.NEXT_DATE = True
+      logging.debug(F"Setting NEXT_DATE to {config.NEXT_DATE}")
      #sleep(0.3)
 
   def set_value(self,value): 
@@ -94,15 +172,9 @@ class knob:
 
 class date_knob_reader:
   def __init__(self,y,m,d,archive=None):
-    maxd = [31,29,31,30,31,30,31,31,30,31,30,31] ## max days in a month.
-    if d.value > maxd[m.value-1]: d.set_value(maxd[m.value-1])
     self.date = None
     self.archive = archive
-    try:
-      self.date = datetime.date(y.value,m.value,d.value)
-    except ValueError:
-      d.set_value(d.value-1)
-      self.date = datetime.date(y.value,m.value,d.value)
+    self.update(y,m,d)
  
   def __str__(self):  
     return self.__repr__()
@@ -111,6 +183,15 @@ class date_knob_reader:
     avail = "Tape Available" if self.tape_available() else ""
     return F'Date Knob Says: {self.date.strftime("%Y-%m-%d")}. {avail}'
 
+  def update(self,y,m,d):
+    maxd = [31,29,31,30,31,30,31,31,30,31,30,31] ## max days in a month.
+    if d.value > maxd[m.value-1]: d.set_value(maxd[m.value-1])
+    try:
+      self.date = datetime.date(y.value,m.value,d.value)
+    except ValueError:
+      d.set_value(d.value-1)
+      self.date = datetime.date(y.value,m.value,d.value)
+ 
   def fmtdate(self):
     if self.date == None: return None
     return self.date.strftime('%Y-%m-%d')
@@ -118,7 +199,6 @@ class date_knob_reader:
   def venue(self):
     if self.tape_available: 
       t = self.archive.best_tape(self.fmtdate())
-      t.get_metadata()
       return t.venue()
     return ""
 
@@ -126,6 +206,12 @@ class date_knob_reader:
     if self.archive == None: return False
     return self.fmtdate() in self.archive.dates   
 
+  def next_date(self):
+    if self.archive == None: return None
+    for d in self.archive.dates:
+      if d>self.fmtdate(): return datetime.datetime.strptime(d,'%Y-%m-%d').date()
+    return self.date
+      
 
 class seven_segment:
   def __init__(self,disp,loc,size,thickness=3,color=(0,0,255),bgcolor=(0,0,0)):
@@ -179,48 +265,53 @@ class screen:
     if self.disp.rotation % 180 == 90: height,width= self.disp.width,self.disp.height
     else: width,height= self.disp.width,self.disp.height
     self.width, self.height = width, height
+    logging.debug(F" ---> disp {self.disp.width},{self.disp.height}")
+    self.boldfont = ImageFont.truetype(pkg_resources.resource_filename("deadstream", "DejaVuSansMono-Bold.ttf"), 33)
+    self.boldsmall = ImageFont.truetype(pkg_resources.resource_filename("deadstream", "DejaVuSansMono-Bold.ttf"), 22)
+    self.font = ImageFont.truetype(pkg_resources.resource_filename("deadstream", "ariallgt.ttf"), 30)
+    self.smallfont = ImageFont.truetype(pkg_resources.resource_filename("deadstream", "ariallgt.ttf"), 20)
+    self.oldfont = ImageFont.truetype(pkg_resources.resource_filename("deadstream", "FreeMono.ttf"), 20)
+    self.largefont = ImageFont.truetype(pkg_resources.resource_filename("deadstream", "FreeMono.ttf"), 30)
+    self.hugefont = ImageFont.truetype(pkg_resources.resource_filename("deadstream", "FreeMono.ttf"), 40)
 
+    self.image = Image.new("RGB",(width,height))
+    self.draw = ImageDraw.Draw(self.image)       # draw using this object. Display image when complete.
 
-    self.image = Image.new("RGB",(160,96))
-    self.draw = ImageDraw.Draw(self.image)
+    self.staged_date = None
+    self.selected_date = None
+
+    self.staged_date_bbox = (0,0,160,31)
+    self.selected_date_bbox = (0,100,160,128)
+    self.venue_bbox = (0,31,160,55)
+    self.track1_bbox = (0,55,160,77)
+    self.track2_bbox = (0,78,160,100)
+    self.playstate_bbox = (130,100,160,128)
+
+  def refresh(self):
     self.disp.image(self.image)
-    print(' ---> disp ',self.disp.width,self.disp.height)
-    self.font= ImageFont.truetype(pkg_resources.resource_filename("deadstream", "FreeMono.ttf"), 20)
+
+  def clear_area(self,bbox,now=False):
+    self.draw.rectangle(bbox,outline=0,fill=(0,0,0))
+    if now: self.refresh()
+ 
+  def clear(self):
+    self.draw.rectangle((0,0,self.width,self.height),outline=0,fill=(0,0,0))
+    self.refresh()
 
   def rectangle(self,loc,size,color=(0,0,255)):
     x,y = loc; w,h = size;
     self.disp.fill_rectangle(x,y,w,h,color565(color))
 
-  def set_pixel(self,loc,color=(0,0,255)):
-    x,y = loc
-    self.disp.pixel(x,y,color565(color))
+  def show_text(self,text,loc=(0,0),font=None,color=(255,255,255),stroke_width=0,now=True):
+    if font==None: font = self.font
+    (font_width,font_height)= font.getsize(text)
+    logging.debug(F' ---> font_size {font_width},{font_height}')
+    self.draw.text(loc, text, font=font,stroke_width=stroke_width,fill=color)
+    if now: self.refresh()
 
-  def black(self):
-    self.disp.fill()
-    self.disp.init()
-
-  def clear(self):
-    self.disp.reset()
-    self.black()
-
-  def show_text(self,text,loc=(0,0),color=(255,255,255)):
-    (font_width,font_height)= self.font.getsize(text)
-    print(F' ---> font_size {font_width},{font_height}')
-    self.draw.text(loc, text, font=self.font,fill=color)
-    self.disp.image(self.image)
-
-  def show_playstate(self,playstate,loc=(146,6),color=(100,100,255)):
-    y,x = loc; color = color565(color);
-    logging.debug("showing playstate {playstate}")
-    if playstate == 'playing':  
-       self.disp.fill_rectangle(x,y,9,9,self.bgcolor)  
-       for i in range(9):
-         self.disp.hline(x+int(i/2),y+i,9-i,color)  
-    if playstate == 'paused' :  
-       self.disp.fill_rectangle(x,y,9,9,color)  
-       self.disp.fill_rectangle(x,y+3,9,3,self.bgcolor)   # draw black stripe
-    if playstate == 'stopped' :  
-       self.disp.fill_rectangle(x,y,9,9,self.bgcolor)  
+  def show_venue(self,text,color=(0,255,255),now=True):
+    self.clear_area(self.venue_bbox)
+    self.show_text(text,self.venue_bbox[:2],font=self.boldsmall,color=color,now=now)
 
   def show_date(self,date,loc=(0,96),size=16,separation=4,color=(0,200,255),stack=False,tape=False):
     x0,y0 = loc; segwidth = size; segheight = 2*size; 
@@ -244,3 +335,46 @@ class screen:
     if tape: self.disp.fill_rectangle(0,0,30,30,color565(255,255,255))  
     else: self.disp.fill_rectangle(0,0,30,30,self.bgcolor)  
 
+  def show_staged_date(self,date,color=(0,255,255),now=True):
+    if date == self.staged_date: return
+    self.clear_area(self.staged_date_bbox)
+    month = str(date.month).rjust(2)
+    day = str(date.day).rjust(2)
+    year = str(divmod(date.year,100)[1]).rjust(2)
+    text = month + '-' + day + '-' + year
+    logging.debug (F"staged date string {text}")
+    self.show_text(text,self.staged_date_bbox[:2],self.boldfont,color=color,now=now)
+    self.staged_date = date
+
+  def show_selected_date(self,date,color=(255,255,255),now=True):
+    if date == self.selected_date: return
+    self.clear_area(self.selected_date_bbox)
+    month = str(date.month).rjust(2)
+    day = str(date.day).rjust(2)
+    year = str(date.year).rjust(4)
+    text = month + '-' + day + '-' + year
+    self.show_text(text,self.selected_date_bbox[:2],self.boldsmall,color=color,now=now)
+    self.selected_date = date
+
+  def show_track(self,text,trackpos,color=(120,0,255)):
+    bbox = self.track1_bbox if trackpos == 0 else self.track2_bbox
+    self.clear_area(bbox)
+    self.draw.text(bbox[:2], text, font=self.smallfont,fill=color,stroke_width=1);
+    self.refresh()
+
+  def show_playstate(self,color=(0,100,255)):
+    logging.debug("showing playstate {config.PLAY_STATES[config.PLAY_STATE]}")
+    bbox = self.playstate_bbox
+    self.clear_area(bbox)
+    center = (int((bbox[0]+bbox[2])/2),int((bbox[1]+bbox[3])/2))
+    size   = (int(bbox[2]-bbox[0]),int(bbox[3]-bbox[1]))
+    if config.PLAY_STATES[config.PLAY_STATE] == 'Playing':  
+       self.draw.regular_polygon((center,10),3,rotation=30,fill=color)
+    elif config.PLAY_STATES[config.PLAY_STATE] == 'Paused' :  
+       self.draw.line([(bbox[0]+10,bbox[1]+4),(bbox[0]+10,bbox[1]+20)],width=4,fill=color)
+       self.draw.line([(bbox[0]+20,bbox[1]+4),(bbox[0]+20,bbox[1]+20)],width=4,fill=color)
+    elif config.PLAY_STATES[config.PLAY_STATE] == 'Stopped' :  
+       self.draw.rectangle([(bbox[0]+10,bbox[1]+4),(bbox[0]+20,bbox[1]+20)],fill=color)
+    elif config.PLAY_STATES[config.PLAY_STATE] in ['Init','Ready'] :  
+       pass
+    self.refresh()

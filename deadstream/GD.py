@@ -367,15 +367,15 @@ class GDTape:
     """return the venue, city, state"""
     # Note, if tracknum > 0, this could be a second show...check after running insert_breaks 
     # 1970-02-14 is an example with 2 shows.
-    self.get_metadata()
     sd = self.set_data
     if sd == None: return self.identifier
-    breaks = self._compute_breaks()
     venue_string = ""
-    if not sd == None:
-      l = sd['location']
+    l = sd['location']
+    if tracknum > 0:    # only pull the metadata if the query is about a late track.
+      self.get_metadata()
+      breaks = self._compute_breaks()
       if (len(breaks['location'])>0) and (tracknum > breaks['location'][0]): l = sd['location2']
-      venue_string = F"{l[0]}, {l[1]}, {l[2]}"
+    venue_string = F"{l[0]}, {l[1]}, {l[2]}"
     return venue_string 
 
   def _compute_breaks(self):
@@ -429,6 +429,7 @@ class GDTrack:
   def __init__(self,tdict,parent_id,break_track=False):
     self.parent_id = parent_id
     attribs = ['track','original','title']
+    if not 'title' in tdict.keys(): tdict['title'] = 'unknown'
     for k,v in tdict.items():
        if k in attribs: setattr(self,k,v)
     # if these don't exist, i'll throw an error!
@@ -573,8 +574,8 @@ class GDPlayer(MPV):
     self.playlist_pos = 0
     self.pause()
 
-  def next(self): self.command('playlist-next'); self.wait_until_playing() # jump to next track
-  def prev(self): self.command('playlist-prev'); self.wait_until_playing() # jump to previous track
+  def next(self): self.command('playlist-next'); # self.wait_until_playing() # jump to next track
+  def prev(self): self.command('playlist-prev'); # self.wait_until_playing() # jump to previous track
 
   def track_status(self):
     if self.playlist_pos == None: print (F"Playlist not started"); return None
