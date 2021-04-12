@@ -1,6 +1,7 @@
 from deadstream import controls as ctl
 import config
 import datetime,time
+import threading
 
 d1 = '1977-05-08'
 d1 =  datetime.date(*(int(s) for s in d1.split('-')))
@@ -15,8 +16,8 @@ d2 =  datetime.date(*(int(s) for s in d2.split('-')))
 s.show_selected_date(d2)
 
 s.show_text("Venue",(0,30))
-for i in [d1,d2,d1,d2,d1,d2,d1,d2,d1,d2]: s.show_staged_date(i)
-for i in [d1,d2,d1,d2,d1,d2,d1,d2,d1,d2]: s.show_selected_date(i)
+#for i in [d1,d2,d1,d2,d1,d2,d1,d2,d1,d2]: s.show_staged_date(i)
+#for i in [d1,d2,d1,d2,d1,d2,d1,d2,d1,d2]: s.show_selected_date(i)
 
 y = ctl.knob(config.year_pins,"year",range(1965,1996),1979)   # cl, dt, sw
 m = ctl.knob(config.month_pins,"month",range(1,13),11)
@@ -35,6 +36,12 @@ date_knob = ctl.date_knob_reader(y,m,d,None)
  
 config.PLAY_STATE = 1   # Ready
 
+#venue_thread = threading.Thread(target=s.scroll_venue,name="venue_scroll",args=(),kwargs={'stroke_width':0,'inc':10})
+#venue_thread.start()
+#s.venue_name ="Fillmore West, San Francisco, CA"
+venue_name ="Fillmore West, San Francisco, CA"
+
+s.show_venue(venue_name)
 while True:
     date_knob.update(y,m,d)
     s.show_staged_date(date_knob.date)
@@ -45,19 +52,3 @@ while True:
         print ("calling player.next()")
         config.FFWD = False
     time.sleep(0.001)
-"""
-while True:
-    date_knob.update(y,m,d)
-    s.show_staged_date(date_knob.date)
-    if config.FFWD:
-       seeking = False
-       time.sleep(0.5)
-       while not config.FFWD_RELEASED:
-          seeking = True
-          print ("calling player.seek(1)")
-          time.sleep(0.1)
-       if not seeking: print ("calling player.next()")
-       config.FFWD = False
-       config.FFWD_RELEASED = False
-    time.sleep(0.001)
-"""
