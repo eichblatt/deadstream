@@ -1,6 +1,7 @@
 from deadstream import controls as ctl
 import config
-import datetime,time
+import datetime
+from time import sleep
 import threading
 
 d1 = '1977-05-08'
@@ -42,6 +43,11 @@ config.PLAY_STATE = 1   # Ready
 venue_name ="Fillmore West, San Francisco, CA"
 
 s.show_venue(venue_name)
+for i,state in enumerate(config.PLAY_STATES):
+  config.PLAY_STATE = i
+  s.show_playstate()
+  sleep(1)
+
 while True:
     date_knob.update(y,m,d)
     s.show_staged_date(date_knob.date)
@@ -51,4 +57,4 @@ while True:
     if config.FFWD: 
         print ("calling player.next()")
         config.FFWD = False
-    time.sleep(0.001)
+    sleep(0.001)

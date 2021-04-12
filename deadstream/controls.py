@@ -265,7 +265,7 @@ class Bbox:
   def height(self): return self.y1-self.y0
   def origin(self): return (self.x0,self.y0)
   def topright(self): return (self.x1,self.y1)
-  def size(self): return (int(self.height),int(self.width))
+  def size(self): return (int(self.height()),int(self.width()))
   def center(self): return (int((self.x0+self.x1)/2),int((self.y0+self.y1)/2))
   def shift(self,d): return Bbox(self.x0-d.x0,self.y0-d.y0,self.x1-d.x1,self.y1-d.y1)
 
@@ -330,6 +330,35 @@ class screen:
     logging.debug(F' show_text {text}. text_size {text_height},{text_width}')
     self.draw.text(loc, text, font=font,stroke_width=stroke_width,fill=color)
     if now: self.refresh()
+
+  def scroll_venue(self,color=(0,255,255),stroke_width=0,inc=15):
+    """ This function can be called in a thread from the main. 
+        eg. 
+        venue_thread = threading.Thread(target=s.scroll_venue,name="venue_scroll",args=(),kwargs={'stroke_width':0,'inc':10})
+        venue_thread.start()
+        s.venue_name ="Fillmore West, San Francisco, CA"
+
+        It works, but eats a lot of cycles. I'm not ready to go in this direction yet
+    """   
+    bbox = self.venue_bbox
+    font = self.boldsmall
+    self.clear_area(bbox)
+    while True:
+      text = self.venue_name
+      (text_width,text_height)= font.getsize(text)
+      excess = text_width - bbox.width()
+      self.draw.text(bbox.origin(),text,font=font,fill=color,stroke_width=stroke_width)
+      if excess > 0:
+         self.show_text(text,bbox.origin(),font=font,color=color,stroke_width=stroke_width)
+         sleep(2)
+         for i in range(int(excess/inc)+2):
+           #logging.debug(F"scrolling excess {excess}, inc: {inc}, i:{i}")
+           if self.venue_name != text: break
+           #sleep(0.005)
+           self.clear_area(bbox)
+           self.show_text(text,bbox.shift(Bbox(inc*i,0,0,0)).origin(),font=font,color=color,stroke_width=stroke_width)
+         sleep(1)
+         self.clear_area(bbox)
 
   def show_venue(self,text,color=(0,255,255),now=True):
     self.clear_area(self.venue_bbox)
@@ -396,7 +425,7 @@ class screen:
        self.draw.line([(bbox.x0+10,bbox.y0+4),(bbox.x0+10,bbox.y0+20)],width=4,fill=color)
        self.draw.line([(bbox.x0+20,bbox.y0+4),(bbox.x0+20,bbox.y0+20)],width=4,fill=color)
     elif config.PLAY_STATES[config.PLAY_STATE] == 'Stopped' :  
-       self.draw.rectangle([(bbox.x0+10,bbox.y0+4),(bbox.x0+20,bbox.y0+20)],fill=color)
+       self.draw.regular_polygon((center,10),4,rotation=0,fill=color)
     elif config.PLAY_STATES[config.PLAY_STATE] in ['Init','Ready'] :  
        pass
     self.refresh()
