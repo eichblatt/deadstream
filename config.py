@@ -12,10 +12,13 @@ PLAY_STATE = INIT
 DATE = None
 ON_TOUR = False
 TIH = False
-_today = datetime.datetime.now().date()
+_today = datetime.date.today()
 TIH_YEAR = None
 TIH_MONTH = _today.month
-TIH_DAY = _today.year
+TIH_DAY = _today.day
+
+FFWD = False
+REWIND = False
 
 # Hardware pins
 

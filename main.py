@@ -52,7 +52,12 @@ def runLoop(knobs,a,scr,player,maxN=None):
          else:
             scr.clear_area(scr.venue_bbox,now=True) # erase the venue
          scr.show_staged_date(staged_date.date)
-      if config.SELECT_DATE:   # Year Button was Pushed
+      if config.TIH:   # Year Button was Pushed, set Month and Date to Today in History
+         m.value = config.TIH_MONTH
+         d.value = config.TIH_DAY
+         config.TIH = False
+         continue
+      if config.SELECT_DATE:   # Select Button was Pushed
          if staged_date.tape_available():
             config.DATE = staged_date.date 
             logging.info(F"Setting DATE to {config.DATE}")
@@ -67,6 +72,9 @@ def runLoop(knobs,a,scr,player,maxN=None):
 
       current_track = player._get_property('playlist-pos')
       if (config.PLAY_STATE == play_state): 
+         if config.FFWD:
+            player.next()
+            config.FFWD = False
          if (config.PLAY_STATES[config.PLAY_STATE] in ['Playing','Paused']) and current_track != prev_track:
             prev_track = current_track
             title = player.tape.tracks()[current_track].title

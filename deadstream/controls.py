@@ -52,6 +52,9 @@ class button:
  
   def callback(self,channel):
     logging.info(F"Pushed button {self.name}")
+    if self.name == 'select':
+       config.SELECT_DATE = True 
+       logging.info(F"Setting SELECT_DATE to {config.SELECT_DATE}")
     if self.name == 'ffwd':
        config.FFWD = True 
        logging.info(F"Setting FFWD to {config.FFWD}")
@@ -136,8 +139,8 @@ class knob:
   def sw_callback(self,channel):
     logging.info(F"Pushed button {self.name}")
     if self.name == 'year':
-       config.SELECT_DATE = True 
-       logging.info(F"Setting SELECT_DATE to {config.SELECT_DATE}")
+       config.TIH = True 
+       logging.info(F"Setting TIH to {config.TIH}")
     if self.name == 'month':
        if config.PLAY_STATE in [config.READY, config.PAUSED, config.STOPPED]: config.PLAY_STATE = config.PLAYING  # play if not playing
        elif config.PLAY_STATE == config.PLAYING: config.PLAY_STATE = config.PAUSED   # Pause if playing
@@ -226,9 +229,6 @@ class seven_segment:
     pattern = [self.segments[x] for x in self.digits[digit]] 
     [self.draw_segment(x) for x in pattern]
 
-#class fast_screen(screen):
-#class slow_screen(screen):
-
 class screen:
   def __init__(self):
     cs_pin= digitalio.DigitalInOut(board.CE0)
@@ -289,46 +289,6 @@ class screen:
     self.clear_area(self.venue_bbox)
     self.show_text(text,self.venue_bbox[:2],font=self.boldsmall,color=color,now=now)
 
-  def show_track(self,text,trackpos,color=(120,0,255)):
-    bbox = self.track1_bbox if trackpos == 0 else self.track2_bbox
-    self.clear_area(bbox)
-    self.draw.text(bbox[:2], text, font=self.smallfont,fill=color,stroke_width=1);
-    self.refresh()
-
-  def show_playstate(self,color=(0,100,255)):
-    logging.debug("showing playstate {config.PLAY_STATES[config.PLAY_STATE]}")
-    bbox = self.playstate_bbox
-    self.clear_area(bbox)
-    center = (int((bbox[0]+bbox[2])/2),int((bbox[1]+bbox[3])/2))
-    size   = (int(bbox[2]-bbox[0]),int(bbox[3]-bbox[1]))
-    if config.PLAY_STATES[config.PLAY_STATE] == 'Playing':  
-       self.draw.regular_polygon((center,10),3,rotation=30,fill=color)
-    elif config.PLAY_STATES[config.PLAY_STATE] == 'Paused' :  
-       self.draw.line([(bbox[0]+10,bbox[1]+4),(bbox[0]+10,bbox[1]+20)],width=4,fill=color)
-       self.draw.line([(bbox[0]+20,bbox[1]+4),(bbox[0]+20,bbox[1]+20)],width=4,fill=color)
-    elif config.PLAY_STATES[config.PLAY_STATE] == 'Stopped' :  
-       self.draw.rectangle([(bbox[0]+10,bbox[1]+4),(bbox[0]+20,bbox[1]+20)],fill=color)
-    elif config.PLAY_STATES[config.PLAY_STATE] in ['Init','Ready'] :  
-       pass
-    self.refresh()
-
-  def show_staged_date(self,date,color=(0,255,255),now=True):
-    self.clear_area(self.staged_date_bbox)
-    month = str(date.month).rjust(2)
-    day = str(date.day).rjust(2)
-    year = str(divmod(date.year,100)[1]).rjust(2)
-    text = month + '-' + day + '-' + year
-    logging.debug (F"staged date string {text}")
-    self.show_text(text,self.staged_date_bbox[:2],self.boldfont,color=color,now=now)
-
-  def show_selected_date(self,date,color=(255,255,255),now=True):
-    self.clear_area(self.selected_date_bbox)
-    month = str(date.month).rjust(2)
-    day = str(date.day).rjust(2)
-    year = str(date.year).rjust(4)
-    text = month + '-' + day + '-' + year
-    self.show_text(text,self.selected_date_bbox[:2],self.boldsmall,color=color,now=now)
-
   def show_date(self,date,loc=(0,96),size=16,separation=4,color=(0,200,255),stack=False,tape=False):
     x0,y0 = loc; segwidth = size; segheight = 2*size; 
     size = (segwidth,segheight)
@@ -351,3 +311,42 @@ class screen:
     if tape: self.disp.fill_rectangle(0,0,30,30,color565(255,255,255))  
     else: self.disp.fill_rectangle(0,0,30,30,self.bgcolor)  
 
+  def show_staged_date(self,date,color=(0,255,255),now=True):
+    self.clear_area(self.staged_date_bbox)
+    month = str(date.month).rjust(2)
+    day = str(date.day).rjust(2)
+    year = str(divmod(date.year,100)[1]).rjust(2)
+    text = month + '-' + day + '-' + year
+    logging.debug (F"staged date string {text}")
+    self.show_text(text,self.staged_date_bbox[:2],self.boldfont,color=color,now=now)
+
+  def show_selected_date(self,date,color=(255,255,255),now=True):
+    self.clear_area(self.selected_date_bbox)
+    month = str(date.month).rjust(2)
+    day = str(date.day).rjust(2)
+    year = str(date.year).rjust(4)
+    text = month + '-' + day + '-' + year
+    self.show_text(text,self.selected_date_bbox[:2],self.boldsmall,color=color,now=now)
+
+  def show_track(self,text,trackpos,color=(120,0,255)):
+    bbox = self.track1_bbox if trackpos == 0 else self.track2_bbox
+    self.clear_area(bbox)
+    self.draw.text(bbox[:2], text, font=self.smallfont,fill=color,stroke_width=1);
+    self.refresh()
+
+  def show_playstate(self,color=(0,100,255)):
+    logging.debug("showing playstate {config.PLAY_STATES[config.PLAY_STATE]}")
+    bbox = self.playstate_bbox
+    self.clear_area(bbox)
+    center = (int((bbox[0]+bbox[2])/2),int((bbox[1]+bbox[3])/2))
+    size   = (int(bbox[2]-bbox[0]),int(bbox[3]-bbox[1]))
+    if config.PLAY_STATES[config.PLAY_STATE] == 'Playing':  
+       self.draw.regular_polygon((center,10),3,rotation=30,fill=color)
+    elif config.PLAY_STATES[config.PLAY_STATE] == 'Paused' :  
+       self.draw.line([(bbox[0]+10,bbox[1]+4),(bbox[0]+10,bbox[1]+20)],width=4,fill=color)
+       self.draw.line([(bbox[0]+20,bbox[1]+4),(bbox[0]+20,bbox[1]+20)],width=4,fill=color)
+    elif config.PLAY_STATES[config.PLAY_STATE] == 'Stopped' :  
+       self.draw.rectangle([(bbox[0]+10,bbox[1]+4),(bbox[0]+20,bbox[1]+20)],fill=color)
+    elif config.PLAY_STATES[config.PLAY_STATE] in ['Init','Ready'] :  
+       pass
+    self.refresh()
