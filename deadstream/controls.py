@@ -310,12 +310,13 @@ class screen:
     self.selected_date = None
 
     self.staged_date_bbox = Bbox(0,0,160,31)
+    #self.selected_date_bbox = Bbox(0,100,130,128)
     self.selected_date_bbox = Bbox(0,100,160,128)
     self.venue_bbox = Bbox(0,31,160,56)
     self.track1_bbox = Bbox(0,55,160,77)
     self.track2_bbox = Bbox(0,78,160,100)
     self.playstate_bbox = Bbox(130,100,160,128)
-
+    self.sbd_bbox = Bbox(155,100,160,108)
 
 
   def refresh(self):
@@ -422,19 +423,27 @@ class screen:
     self.draw.text(bbox.origin(), text, font=self.smallfont,fill=color,stroke_width=1);
     self.refresh()
 
-  def show_playstate(self,color=(0,100,255)):
+  def show_playstate(self,color=(0,100,255),sbd=None):
     logging.debug("showing playstate {config.PLAY_STATES[config.PLAY_STATE]}")
     bbox = self.playstate_bbox
     self.clear_area(bbox)
-    center = bbox.center()
     size   = bbox.size()
     if config.PLAY_STATES[config.PLAY_STATE] == 'Playing':  
-       self.draw.regular_polygon((center,10),3,rotation=30,fill=color)
+       self.draw.regular_polygon((bbox.center(),10),3,rotation=30,fill=color)
     elif config.PLAY_STATES[config.PLAY_STATE] == 'Paused' :  
        self.draw.line([(bbox.x0+10,bbox.y0+4),(bbox.x0+10,bbox.y0+20)],width=4,fill=color)
        self.draw.line([(bbox.x0+20,bbox.y0+4),(bbox.x0+20,bbox.y0+20)],width=4,fill=color)
     elif config.PLAY_STATES[config.PLAY_STATE] == 'Stopped' :  
-       self.draw.regular_polygon((center,10),4,rotation=0,fill=color)
+       self.draw.regular_polygon((bbox.center(),10),4,rotation=0,fill=color)
     elif config.PLAY_STATES[config.PLAY_STATE] in ['Init','Ready'] :  
        pass
+    if sbd: self.show_soundboard(sbd)
     self.refresh()
+
+  def show_soundboard(self,sbd,color=(255,255,255)):
+    if not sbd: 
+      self.draw.regular_polygon((self.sbd_bbox.center(),3),4,rotation=45,fill=(0,0,0))
+      return
+    logging.debug("showing soundboard status")
+    self.draw.regular_polygon((self.sbd_bbox.center(),3),4,rotation=45,fill=color)
+

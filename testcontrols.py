@@ -46,7 +46,10 @@ s.show_venue(venue_name)
 for i,state in enumerate(config.PLAY_STATES):
   config.PLAY_STATE = i
   s.show_playstate()
+  s.show_playstate(sbd=True)
   sleep(1)
+
+  s.show_soundboard(True)
 
 while True:
     date_knob.update(y,m,d)

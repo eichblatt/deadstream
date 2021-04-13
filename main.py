@@ -37,6 +37,7 @@ def runLoop(knobs,archive,scr,player,maxN=None):
     d0 = (ctl.date_knob_reader(y,m,d,archive)).date
     N = 0; prev_track = None
     scr.refresh()
+    sbd = None
 
     while N<=maxN if maxN != None else True:
       staged_date = ctl.date_knob_reader(y,m,d,archive)
@@ -70,19 +71,22 @@ def runLoop(knobs,archive,scr,player,maxN=None):
           sbd = tapes[itape].stream_only()
           id_color = (0,255,255) if sbd else (0,0,255)
           logging.info (F"In NEXT_TAPE. Choosing {tape_id}, the {itape}th of {len(tapes)} choices. SBD:{sbd}")
+          #scr.show_soundboard(sbd)
           if len(tape_id)<16: scr.show_venue(tape_id,color=id_color)
           else:
             for i in range(0,max(1,len(tape_id)),2):
-             scr.show_venue(tape_id[i:],color=id_color)
-             if not config.NEXT_TAPE: 
-               scr.show_venue(tape_id,color=id_color)
-               break 
+              scr.show_venue(tape_id[i:],color=id_color)
+              if not config.NEXT_TAPE: 
+                scr.show_venue(tape_id,color=id_color)
+                break 
         itape = max(0,itape) 
         if config.SELECT_DATE:   # Select Button was Pushed and Released
           config.DATE = staged_date.date 
           logging.info(F"Setting DATE to {config.DATE}")
           config.PLAY_STATE = config.READY  #  eject current tape, insert new one in player
           tape = tapes[itape] 
+          sbd = tape.stream_only()
+          #scr.show_soundboard(sbd)
           scr.show_selected_date(config.DATE)
       config.SELECT_DATE = False
       config.NEXT_TAPE = False
