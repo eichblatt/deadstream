@@ -278,7 +278,8 @@ class screen:
     #BAUDRATE= 2400000
     BAUDRATE= 40000000
     spi= board.SPI()
-    self.disp= st7735.ST7735R(spi,rotation=270,cs=cs_pin,dc=dc_pin,rst=reset_pin,baudrate=BAUDRATE)
+    #self.disp= st7735.ST7735R(spi,rotation=270,cs=cs_pin,dc=dc_pin,rst=reset_pin,baudrate=BAUDRATE)
+    self.disp= st7735.ST7735R(spi,rotation=90,cs=cs_pin,dc=dc_pin,rst=reset_pin,baudrate=BAUDRATE)
    
     self.bgcolor = color565(0,0,0)
     # --- swap width/height, if
