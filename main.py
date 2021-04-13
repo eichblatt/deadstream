@@ -30,16 +30,16 @@ def play_tape(tape,player):
     player.play()
     return player
 
-def runLoop(knobs,a,scr,player,maxN=None):
+def runLoop(knobs,archive,scr,player,maxN=None):
     global meInterrupt
     y,m,d = knobs
     play_state = config.PLAY_STATE
-    d0 = (ctl.date_knob_reader(y,m,d,a)).date
+    d0 = (ctl.date_knob_reader(y,m,d,archive)).date
     N = 0; prev_track = None
     scr.refresh()
 
     while N<=maxN if maxN != None else True:
-      staged_date = ctl.date_knob_reader(y,m,d,a)
+      staged_date = ctl.date_knob_reader(y,m,d,archive)
       if meInterrupt: break   ## not working (yet)
       # deal with DATE changes
       N = N+1
@@ -61,14 +61,32 @@ def runLoop(knobs,a,scr,player,maxN=None):
          new_date = staged_date.next_date() 
          y.value = new_date.year; m.value = new_date.month; d.value = new_date.day;
          config.NEXT_DATE = False
-      if config.SELECT_DATE:   # Select Button was Pushed
-         if staged_date.tape_available():
-            config.DATE = staged_date.date 
-            logging.info(F"Setting DATE to {config.DATE}")
-            config.PLAY_STATE = config.READY  #  eject current tape, insert new one in player
-            scr.show_selected_date(config.DATE)
-         config.SELECT_DATE = False
-         scr.show_playstate()
+      if staged_date.tape_available():
+        tapes = archive.tape_dates[staged_date.fmtdate()]
+        itape = -1
+        while config.NEXT_TAPE:   # Select Button was Pushed and Held
+          itape = divmod(itape + 1,len(tapes))[1]
+          tape_id = tapes[itape].identifier
+          sbd = tapes[itape].stream_only()
+          id_color = (0,255,255) if sbd else (0,0,255)
+          logging.info (F"In NEXT_TAPE. Choosing {tape_id}, the {itape}th of {len(tapes)} choices. SBD:{sbd}")
+          if len(tape_id)<16: scr.show_venue(tape_id,color=id_color)
+          else:
+            for i in range(0,max(1,len(tape_id)),2):
+             scr.show_venue(tape_id[i:],color=id_color)
+             if not config.NEXT_TAPE: 
+               scr.show_venue(tape_id,color=id_color)
+               break 
+        itape = max(0,itape) 
+        if config.SELECT_DATE:   # Select Button was Pushed and Released
+          config.DATE = staged_date.date 
+          logging.info(F"Setting DATE to {config.DATE}")
+          config.PLAY_STATE = config.READY  #  eject current tape, insert new one in player
+          tape = tapes[itape] 
+          scr.show_selected_date(config.DATE)
+      config.SELECT_DATE = False
+      config.NEXT_TAPE = False
+      scr.show_playstate()
 
       # Deal with PLAY_STATE changes
 
@@ -98,16 +116,17 @@ def runLoop(knobs,a,scr,player,maxN=None):
 
       if (config.PLAY_STATE == config.READY):  #  A new tape to be inserted
          player.eject_tape()
-         tape = a.best_tape(config.DATE.strftime('%Y-%m-%d'))
+         #tape = archive.best_tape(config.DATE.strftime('%Y-%m-%d'))
          player.insert_tape(tape)
-         config.PLAY_STATE = config.PLAYING
+         #config.PLAY_STATE = config.PLAYING  
       if (config.PLAY_STATE == config.PLAYING):  # Play tape 
          try:
            logging.info(F"Playing {config.DATE} on player")
-           tape = a.best_tape(config.DATE.strftime('%Y-%m-%d'))
+           #tape = archive.best_tape(config.DATE.strftime('%Y-%m-%d'))
            if len(player.playlist) == 0: player = play_tape(tape,player)  ## NOTE required?
            else: player.play()
            play_state = config.PLAYING
+           scr.show_venue(staged_date.venue())
            scr.show_playstate()
          except AttributeError:
            logging.info(F"Cannot play date {config.DATE}")

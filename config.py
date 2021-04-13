@@ -8,6 +8,7 @@ STOPPED = 3
 PLAYING = 4
 PLAY_STATES = ['Init','Ready','Paused','Stopped','Playing']
 SELECT_DATE = False
+NEXT_TAPE = False
 PLAY_STATE = INIT
 DATE = None
 ON_TOUR = False

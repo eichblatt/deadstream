@@ -53,9 +53,17 @@ class button:
   def callback(self,channel):
     if GPIO.input(self.pin) == 0: return
     logging.debug(F"Pushed button {self.name}")
-    if self.name == 'select':
-       config.SELECT_DATE = True 
-       logging.debug(F"Setting SELECT_DATE to {config.SELECT_DATE}")
+    if self.name == 'select':   # NOTE I should move this logic to a function, since it's repeated 3 times.
+       config.NEXT_TAPE = False
+       sleep(0.5)
+       while GPIO.input(self.pin) == 1: # button is still being pressed
+           logging.debug(F"Setting SELECT_DATE to {config.SELECT_DATE}, NEXT_TAPE to {config.NEXT_TAPE}")
+           config.NEXT_TAPE = True
+           sleep(0.1)
+       config.NEXT_TAPE = False
+       if not config.NEXT_TAPE: 
+           logging.debug(F"Setting SELECT_DATE to {config.SELECT_DATE}, NEXT_TAPE to {config.NEXT_TAPE}")
+           config.SELECT_DATE = True
     if self.name == 'ffwd':
        config.FSEEK = False
        sleep(0.5)
