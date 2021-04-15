@@ -16,7 +16,7 @@ from operator import attrgetter,methodcaller
 from mpv import MPV
 from importlib import reload
 
-logging.basicConfig(format='%(asctime)s.%(msecs)03d %(levelname)s: %(message)s', level=logging.INFO,datefmt='%Y-%m-%d %H:%M:%S')
+logging.basicConfig(format='%(asctime)s.%(msecs)03d %(levelname)s: %(message)s', level=logging.DEBUG,datefmt='%Y-%m-%d %H:%M:%S')
 
 class BaseTapeDownloader(abc.ABC):
     """Abstract base class for a Grateful Dead tape downloader.

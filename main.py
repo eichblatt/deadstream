@@ -35,7 +35,7 @@ def runLoop(knobs,archive,scr,player,maxN=None):
     y,m,d = knobs
     play_state = config.PLAY_STATE
     d0 = (ctl.date_knob_reader(y,m,d,archive)).date
-    N = 0; prev_track = None
+    N = 0; prev_track_id = ''; prev_tape_id = ''; current_tape_id = ''
     scr.refresh()
     sbd = None
 
@@ -45,7 +45,7 @@ def runLoop(knobs,archive,scr,player,maxN=None):
       # deal with DATE changes
       N = N+1
       if staged_date.date != d0:  # Date knobs changed
-         logging.info (F"DATE: {config.DATE}, SELECT_DATE: {config.SELECT_DATE}, PLAY_STATE: {config.PLAY_STATE}")
+         logging.info (F"DATE: {config.DATE}, SELECT_STAGED_DATE: {config.SELECT_STAGED_DATE}, PLAY_STATE: {config.PLAY_STATE}")
          print (staged_date)
          d0 = staged_date.date
          if staged_date.tape_available(): 
@@ -80,49 +80,55 @@ def runLoop(knobs,archive,scr,player,maxN=None):
                 scr.show_venue(tape_id,color=id_color)
                 break 
         itape = max(0,itape) 
-        if config.SELECT_DATE:   # Select Button was Pushed and Released
+        if config.SELECT_STAGED_DATE:   # Select Button was Pushed and Released
           config.DATE = staged_date.date 
-          logging.info(F"Setting DATE to {config.DATE}")
+          logging.info(F"Set DATE to {config.DATE}")
           config.PLAY_STATE = config.READY  #  eject current tape, insert new one in player
           tape = tapes[itape] 
+          current_tape_id = tape.identifier
           sbd = tape.stream_only()
           #scr.show_soundboard(sbd)
           scr.show_selected_date(config.DATE)
-      config.SELECT_DATE = False
+      config.SELECT_STAGED_DATE = False
       config.NEXT_TAPE = False
-      scr.show_playstate()
-
-      # Deal with PLAY_STATE changes
-
-      #PLAY_STATE = config.PLAY_STATE
 
       current_track = player._get_property('playlist-pos')
-      if (config.PLAY_STATE == play_state): 
+      current_track_id = current_tape_id + '_track_'+str(current_track)
+      if (config.PLAY_STATE == play_state):   ##  PLAY_STATE has not changed, but we need to dead with stuff.
          if config.FFWD:
             player.next()
             config.FFWD = False
          else: 
             while config.FSEEK:
               player.seek(1)
-         if (config.PLAY_STATES[config.PLAY_STATE] in ['Playing','Paused']) and current_track != prev_track:
-            prev_track = current_track
+         if (config.PLAY_STATE in [config.INIT,config.READY, config.STOPPED]) and current_tape_id != prev_tape_id:
+            prev_tape_id = current_tape_id
+            scr.show_track('',0)
+            scr.show_track('',1)
+            scr.show_playstate()
+            if (config.PLAY_STATE == config.READY):
+              logging.info(F"PLAY_STATE is {config.PLAY_STATE}. Inserting new tape")
+              player.eject_tape()
+              player.insert_tape(tape)
+         if (config.PLAY_STATES[config.PLAY_STATE] in ['Playing','Paused']) and current_track_id != prev_track_id:
+            prev_track_id = current_track_id
             title = player.tape.tracks()[current_track].title
             scr.show_track(title,0)
             if (current_track+1)<len(player.playlist):
                next_track = current_track+1 if (current_track+1)<len(player.playlist) else None
                next_title = player.tape.tracks()[next_track].title
                scr.show_track(next_title,1)
-            else: scr.show_track(" ",1)
+            else: scr.show_track('',1)
             scr.show_playstate()
          sleep(0.02); continue
 
+      # Deal with PLAY_STATE changes
       # now, config.PLAY_STATE != play_state
 
       if (config.PLAY_STATE == config.READY):  #  A new tape to be inserted
+         logging.info(F"PLAY_STATE is {config.PLAY_STATE}. Inserting new tape")
          player.eject_tape()
-         #tape = archive.best_tape(config.DATE.strftime('%Y-%m-%d'))
          player.insert_tape(tape)
-         #config.PLAY_STATE = config.PLAYING  
       if (config.PLAY_STATE == config.PLAYING):  # Play tape 
          try:
            logging.info(F"Playing {config.DATE} on player")
@@ -148,7 +154,9 @@ def runLoop(knobs,archive,scr,player,maxN=None):
          scr.show_playstate()
       play_state = config.PLAY_STATE
       #scr.show_playstate()
-      sleep(.02)
+      sleep(.02); continue
+
+
 
 def main(parms):
     player = GD.GDPlayer()

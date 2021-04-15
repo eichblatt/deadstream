@@ -14,7 +14,7 @@ import pkg_resources
 logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.DEBUG)
 
 class button:
-  def __init__(self,pin,name,bouncetime=10):
+  def __init__(self,pin,name,bouncetime=300):
     self.pin = pin
     self.name = name
     self.bouncetime = bouncetime
@@ -57,13 +57,14 @@ class button:
        config.NEXT_TAPE = False
        sleep(0.5)
        while GPIO.input(self.pin) == 1: # button is still being pressed
-           logging.debug(F"Setting SELECT_DATE to {config.SELECT_DATE}, NEXT_TAPE to {config.NEXT_TAPE}")
+           logging.debug(F"Setting SELECT_STAGED_DATE to {config.SELECT_STAGED_DATE}, NEXT_TAPE to {config.NEXT_TAPE}")
            config.NEXT_TAPE = True
            sleep(0.1)
        config.NEXT_TAPE = False
        if not config.NEXT_TAPE: 
-           logging.debug(F"Setting SELECT_DATE to {config.SELECT_DATE}, NEXT_TAPE to {config.NEXT_TAPE}")
-           config.SELECT_DATE = True
+           logging.debug(F"Setting SELECT_STAGED_DATE to {config.SELECT_STAGED_DATE}, NEXT_TAPE to {config.NEXT_TAPE}")
+           config.SELECT_STAGED_DATE = True
+           config.PLAY_STATE = config.READY
     if self.name == 'ffwd':
        config.FSEEK = False
        sleep(0.5)
@@ -424,7 +425,7 @@ class screen:
     self.refresh()
 
   def show_playstate(self,color=(0,100,255),sbd=None):
-    logging.debug("showing playstate {config.PLAY_STATES[config.PLAY_STATE]}")
+    logging.debug(F"showing playstate {config.PLAY_STATES[config.PLAY_STATE]}")
     bbox = self.playstate_bbox
     self.clear_area(bbox)
     size   = bbox.size()
