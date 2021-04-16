@@ -7,6 +7,7 @@ from time import sleep
 import logging
 import threading
 import signal
+import os
 
 parser = optparse.OptionParser()
 parser.add_option('--box',dest='box',type="string",default='v1',help="v0 box has screen at 270.")
