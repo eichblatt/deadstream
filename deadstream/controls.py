@@ -280,15 +280,15 @@ class Bbox:
 
  
 class screen:
-  def __init__(self):
+  def __init__(self,upside_down=False):
     cs_pin= digitalio.DigitalInOut(board.CE0)
     dc_pin= digitalio.DigitalInOut(board.D24)
     reset_pin= digitalio.DigitalInOut(board.D25)
     #BAUDRATE= 2400000
     BAUDRATE= 40000000
     spi= board.SPI()
-    #self.disp= st7735.ST7735R(spi,rotation=270,cs=cs_pin,dc=dc_pin,rst=reset_pin,baudrate=BAUDRATE)
-    self.disp= st7735.ST7735R(spi,rotation=90,cs=cs_pin,dc=dc_pin,rst=reset_pin,baudrate=BAUDRATE)
+    rotation_angle = 90 if not upside_down else 270
+    self.disp= st7735.ST7735R(spi,rotation=rotation_angle,cs=cs_pin,dc=dc_pin,rst=reset_pin,baudrate=BAUDRATE)
    
     self.bgcolor = color565(0,0,0)
     # --- swap width/height, if

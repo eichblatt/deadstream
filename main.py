@@ -9,6 +9,7 @@ import threading
 import signal
 
 parser = optparse.OptionParser()
+parser.add_option('--box',dest='box',type="string",default='v1',help="v0 box has screen at 270.")
 parser.add_option('-d','--debug',dest='debug',type="int",default=1,help="If > 0, don't run the main script on loading")
 parser.add_option('-v','--verbose',dest='verbose',action="store_true",default=False,help="Print more verbose information")
 parms,remainder = parser.parse_args()
@@ -173,8 +174,8 @@ def main(parms):
     stop = ctl.button(config.stop_pin,"stop")
     _ = [x.setup() for x in [select,play_pause,ffwd,rewind,stop]]
 
-#    scr = ctl.fast_screen() if config.SCREEN_TYPE == "fast" else ctl.slow_screen()
-    scr = ctl.screen()
+    if parms.box == 'v0': upside_down=True
+    scr = ctl.screen(upside_down=upside_down)
     scr.clear()
     scr.show_text("Grateful\n  Dead\n   Streamer\n     Loading...",color=(0,255,255))
     #_ = [x.setup() for x in [y,m,d,select,ffwd,stop]]
