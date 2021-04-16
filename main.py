@@ -175,6 +175,9 @@ def main(parms):
     _ = [x.setup() for x in [select,play_pause,ffwd,rewind,stop]]
 
     if parms.box == 'v0': upside_down=True
+    else: 
+       upside_down = False
+       os.system("amixer sset 'Headphone' 100%")
     scr = ctl.screen(upside_down=upside_down)
     scr.clear()
     scr.show_text("Grateful\n  Dead\n   Streamer\n     Loading...",color=(0,255,255))
