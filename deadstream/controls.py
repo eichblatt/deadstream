@@ -15,10 +15,11 @@ logging.basicConfig(format='%(asctime)s.%(msecs)03d %(levelname)s: %(name)s %(me
 logger = logging.getLogger(__name__)
 
 class button:
-  def __init__(self,pin,name,bouncetime=300):
+  def __init__(self,pin,name,pull_up=False,bouncetime=300):
     self.pin = pin
     self.name = name
     self.bouncetime = bouncetime
+    self.pull_up = True if self.pin in [2,3] else pull_up
     self.is_setup = False
 
   def __str__(self):
@@ -42,8 +43,15 @@ class button:
     if self.pin == None: return
     if self.is_setup: return
     GPIO.setmode(GPIO.BCM)
-    GPIO.setup(self.pin,GPIO.IN,pull_up_down=GPIO.PUD_DOWN)
-    self.add_callback(self.pin,GPIO.RISING,self.callback)
+    if self.pull_up: # These pins are pulled up.
+      #GPIO.setup(self.pin,GPIO.IN,pull_up_down=GPIO.PUD_DOWN)
+      #self.add_callback(self.pin,GPIO.RISING,self.callback)
+      GPIO.setup(self.pin,GPIO.IN,pull_up_down=GPIO.PUD_DOWN)
+      self.add_callback(self.pin,GPIO.BOTH,self.callback)
+    else:
+      GPIO.setup(self.pin,GPIO.IN,pull_up_down=GPIO.PUD_DOWN)
+      self.add_callback(self.pin,GPIO.RISING,self.callback)
+
     self.is_setup = True
     return None 
 
@@ -52,8 +60,9 @@ class button:
     return 
  
   def callback(self,channel):
-    if GPIO.input(self.pin) == 0: return
-    logger.debug(F"Pushed button {self.name}")
+    logger.debug(F"Pushed button {self.name}. -- {GPIO.input(self.pin)}")
+    nullval = 0 if not self.pull_up else 1
+    if GPIO.input(self.pin) == nullval: return
     if self.name == 'select':   # NOTE I should move this logic to a function, since it's repeated 3 times.
        config.NEXT_TAPE = False
        sleep(0.5)
@@ -78,9 +87,11 @@ class button:
            config.FFWD = True
        config.FSEEK = False
     if self.name == 'rewind':
+       logger.debug(F"GPIO is now {GPIO.input(self.pin)}")
        config.RSEEK = False
        sleep(0.5)
-       while GPIO.input(self.pin) == 1: # button is still being pressed
+       logger.debug(F"GPIO is now {GPIO.input(self.pin)}")
+       while GPIO.input(self.pin) == 0: # button is still being pressed -- NOTE: Because this is connected to pin2, default is on.
            logger.debug(F"Setting REWIND to {config.REWIND}, RSEEK is {config.RSEEK}")
            config.RSEEK = True
            sleep(0.1)
