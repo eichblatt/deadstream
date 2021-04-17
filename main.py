@@ -10,9 +10,10 @@ import signal
 import os
 
 parser = optparse.OptionParser()
-parser.add_option('--box',dest='box',type="string",default='v1',help="v0 box has screen at 270.")
-parser.add_option('-d','--debug',dest='debug',type="int",default=1,help="If > 0, don't run the main script on loading")
-parser.add_option('-v','--verbose',dest='verbose',action="store_true",default=False,help="Print more verbose information")
+parser.add_option('--box',dest='box',type="string",default='v1',help="v0 box has screen at 270. [default %default]")
+parser.add_option('--dbpath',dest='dbpath',type="string",default=os.path.join(os.getenv('HOME'),'projects/deadstream/metadata'),help="path to database [default %default]")
+parser.add_option('-d','--debug',dest='debug',type="int",default=1,help="If > 0, don't run the main script on loading [default %default]")
+parser.add_option('-v','--verbose',dest='verbose',action="store_true",default=False,help="Print more verbose information [default %default]")
 parms,remainder = parser.parse_args()
 
 #logLevel = 0 if parms.verbose else logging.DEBUG
@@ -179,14 +180,14 @@ def main(parms):
     if parms.box == 'v0': upside_down=True
     else: 
        upside_down = False
-       os.system("amixer sset 'Headphone' 100%")
+       #os.system("amixer sset 'Headphone' 100%")
     scr = ctl.screen(upside_down=upside_down)
     scr.clear()
     scr.show_text("Grateful\n  Dead\n   Streamer\n     Loading...",color=(0,255,255))
     #_ = [x.setup() for x in [y,m,d,select,ffwd,stop]]
 
     logger.info ("Loading GD Archive")
-    a = GD.GDArchive('/home/steve/projects/deadstream/metadata')
+    a = GD.GDArchive(parms.dbpath)
     logger.info ("Done ")
     
     scr.clear()
@@ -202,6 +203,7 @@ def main(parms):
     loop.join()
     [x.cleanup() for x in [y,m,d]] ## redundant, only one cleanup is needed!
 
-print(F"parms: {parms}")
+#parser.print_help()
+for k in parms.__dict__.keys(): print (F"{k:20s} : {parms.__dict__[k]}")
 if __name__ == "__main__" and parms.debug==0:
   main(parms)

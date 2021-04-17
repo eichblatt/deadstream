@@ -279,6 +279,8 @@ class GDTape:
     self.set_data = set_data.get(self.date)
     if 'avg_rating' in raw_json.keys(): self.avg_rating = float(self.avg_rating)
     else: self.avg_rating = 2.0
+    if 'num_reviews' in raw_json.keys(): self.num_reviews = int(self.num_reviews)
+    else: self.num_reviews = 1
 
   def __str__(self):
     return self.__repr__()
@@ -294,9 +296,9 @@ class GDTape:
   def compute_score(self):
     """ compute a score for sorting the tape. High score means it should be played first """    
     score = 0
-    if self.stream_only(): score = score + 1000
-    score = score + math.log(1+self.downloads)
-    score = score + self.avg_rating * 10
+    if self.stream_only(): score = score + 10
+    score = score + math.log(1+self.downloads) 
+    score = score + self.avg_rating - 2.0/math.sqrt(self.num_reviews)
     return score
 
   def contains_sound(self):
