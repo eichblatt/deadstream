@@ -376,28 +376,6 @@ class screen:
     self.clear_area(self.venue_bbox)
     self.show_text(text,self.venue_bbox.origin(),font=self.boldsmall,color=color,now=now)
 
-  def show_date(self,date,loc=(0,96),size=16,separation=4,color=(0,200,255),stack=False,tape=False):
-    x0,y0 = loc; segwidth = size; segheight = 2*size; 
-    size = (segwidth,segheight)
-    ss = []
-    monthlist = [c for c in str(date.month).rjust(2)]
-    dash = ['-']
-    daylist = [c for c in str(date.day).rjust(2)]
-
-    if stack:
-      y1 = y0+segheight+separation
-      ss = [seven_segment(self.disp,(x0 + i*(segwidth + separation),y1),size,color=color) for i in range(5)]
-      ss = ss + [seven_segment(self.disp,(x0 + i*(segwidth + separation),y0),size,color=color) for i in range(4)]
-      yearlist = [c for c in str(date.year).rjust(4)]
-      for i,v in enumerate(monthlist + dash + daylist + yearlist): ss[i].draw(v)
-    else:
-      ss = [seven_segment(self.disp,(x0 + i*(segwidth + separation),y0),size,color=color) for i in range(8)]
-      yearlist = [c for c in str(divmod(date.year,100)[1]).rjust(2)]
-      for i,v in enumerate(monthlist + dash + daylist + dash + yearlist): ss[i].draw(v)
-
-    if tape: self.disp.fill_rectangle(0,0,30,30,color565(255,255,255))  
-    else: self.disp.fill_rectangle(0,0,30,30,self.bgcolor)  
-
   def show_staged_date(self,date,color=(0,255,255),now=True):
     if date == self.staged_date: return
     self.clear_area(self.staged_date_bbox)
@@ -425,11 +403,14 @@ class screen:
     self.draw.text(bbox.origin(), text, font=self.smallfont,fill=color,stroke_width=1);
     self.refresh()
 
-  def show_playstate(self,color=(0,100,255),sbd=None):
+  def show_playstate(self,staged_play=False,color=(0,100,255),sbd=None):
     logger.debug(F"showing playstate {config.PLAY_STATES[config.PLAY_STATE]}")
     bbox = self.playstate_bbox
     self.clear_area(bbox)
     size   = bbox.size()
+    if staged_play:
+       self.draw.regular_polygon((bbox.center(),10),3,rotation=30,fill=color)
+       self.draw.regular_polygon((bbox.center(),8),3,rotation=30,fill=(0,0,0))
     if config.PLAY_STATES[config.PLAY_STATE] == 'Playing':  
        self.draw.regular_polygon((bbox.center(),10),3,rotation=30,fill=color)
     elif config.PLAY_STATES[config.PLAY_STATE] == 'Paused' :  
