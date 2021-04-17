@@ -11,7 +11,7 @@ setup(
         'RPi.GPIO',
         'adafruit-blinka',
         'adafruit-circuitpython-rgb-display',
-        'pillow',
+        'Pillow',
         'pickle5'
     ],
     package_data={

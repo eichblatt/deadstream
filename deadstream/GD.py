@@ -16,7 +16,8 @@ from operator import attrgetter,methodcaller
 from mpv import MPV
 from importlib import reload
 
-logging.basicConfig(format='%(asctime)s.%(msecs)03d %(levelname)s: %(message)s', level=logging.INFO,datefmt='%Y-%m-%d %H:%M:%S')
+logging.basicConfig(format='%(asctime)s.%(msecs)03d %(levelname)s: %(name)s %(message)s', level=logging.INFO,datefmt='%Y-%m-%d %H:%M:%S')
+logger = logging.getLogger(__name__)
 
 class BaseTapeDownloader(abc.ABC):
     """Abstract base class for a Grateful Dead tape downloader.
@@ -79,7 +80,7 @@ class TapeDownloader(BaseTapeDownloader):
         r = self._get_chunk(year)
         j = r.json()
         total = j['total']
-        logging.debug(f"total rows {total}")
+        logger.debug(f"total rows {total}")
         current_rows += j['count']
         tapes = j['items']
         while current_rows < total:
@@ -107,9 +108,9 @@ class TapeDownloader(BaseTapeDownloader):
         query = 'collection:GratefulDead AND year:'+str(year)
         parms['q'] = query
         r = requests.get(self.api, params=parms)
-        logging.debug(f"url is {r.url}")
+        logger.debug(f"url is {r.url}")
         if r.status_code != 200:
-            logging.error(f"Error {r.status_code} collecting data")
+            logger.error(f"Error {r.status_code} collecting data")
             raise Exception(
                 'Download', 'Error {} collection'.format(r.status_code))
         return r
@@ -140,7 +141,7 @@ class AsyncTapeDownloader(BaseTapeDownloader):
         Returns a list dictionaries of tape information
         """
         # This is the asynchronous impl of get_tapes()
-        logging.info("Loading tapes from the archive...")
+        logger.info("Loading tapes from the archive...")
         async with aiohttp.ClientSession() as session:
             tasks = [self._get_tapes_year(session, year) for year in years]
             tapes = await asyncio.gather(*tasks)
@@ -164,7 +165,7 @@ class AsyncTapeDownloader(BaseTapeDownloader):
             parms['cursor'] = cursor
 
         async with session.get(self.api, params={**self.parms, **parms}) as r:
-            logging.debug(f"Year {year} chunk {cursor} url: {r.url}")
+            logger.debug(f"Year {year} chunk {cursor} url: {r.url}")
             json = await r.json()
             return json
 
@@ -278,6 +279,8 @@ class GDTape:
     self.set_data = set_data.get(self.date)
     if 'avg_rating' in raw_json.keys(): self.avg_rating = float(self.avg_rating)
     else: self.avg_rating = 2.0
+    if 'num_reviews' in raw_json.keys(): self.num_reviews = int(self.num_reviews)
+    else: self.num_reviews = 1
 
   def __str__(self):
     return self.__repr__()
@@ -293,9 +296,9 @@ class GDTape:
   def compute_score(self):
     """ compute a score for sorting the tape. High score means it should be played first """    
     score = 0
-    if self.stream_only(): score = score + 1000
-    score = score + math.log(1+self.downloads)
-    score = score + self.avg_rating * 10
+    if self.stream_only(): score = score + 10
+    score = score + math.log(1+self.downloads) 
+    score = score + self.avg_rating - 2.0/math.sqrt(self.num_reviews)
     return score
 
   def contains_sound(self):
