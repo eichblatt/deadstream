@@ -11,7 +11,8 @@ from adafruit_rgb_display import color565
 from PIL import Image, ImageDraw, ImageFont
 import pkg_resources
 
-logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.DEBUG)
+logging.basicConfig(format='%(asctime)s.%(msecs)03d %(levelname)s: %(name)s %(message)s', level=logging.INFO,datefmt='%Y-%m-%d %H:%M:%S')
+logger = logging.getLogger(__name__)
 
 class button:
   def __init__(self,pin,name,bouncetime=300):
@@ -34,8 +35,8 @@ class button:
         GPIO.add_event_detect(pin,edge_type, callback = cb, bouncetime = self.bouncetime) 
         return
       except:
-        logging.warn(F"Retrying event_detection callback on pin {pin}")
-    logging.warn(F"Failed to set event_detection callback on pin {pin}")
+        logger.warn(F"Retrying event_detection callback on pin {pin}")
+    logger.warn(F"Failed to set event_detection callback on pin {pin}")
 
   def setup(self):
     if self.pin == None: return
@@ -47,52 +48,52 @@ class button:
     return None 
 
   def show_pin_state(self,msg): 
-    logging.debug (F"{self.name} {msg}: State of pin:{GPIO.input(self.pin)}")
+    logger.debug (F"{self.name} {msg}: State of pin:{GPIO.input(self.pin)}")
     return 
  
   def callback(self,channel):
     if GPIO.input(self.pin) == 0: return
-    logging.debug(F"Pushed button {self.name}")
+    logger.debug(F"Pushed button {self.name}")
     if self.name == 'select':   # NOTE I should move this logic to a function, since it's repeated 3 times.
        config.NEXT_TAPE = False
        sleep(0.5)
        while GPIO.input(self.pin) == 1: # button is still being pressed
-           logging.debug(F"Setting SELECT_STAGED_DATE to {config.SELECT_STAGED_DATE}, NEXT_TAPE to {config.NEXT_TAPE}")
+           logger.debug(F"Setting SELECT_STAGED_DATE to {config.SELECT_STAGED_DATE}, NEXT_TAPE to {config.NEXT_TAPE}")
            config.NEXT_TAPE = True
            sleep(0.1)
        config.NEXT_TAPE = False
        if not config.NEXT_TAPE: 
-           logging.debug(F"Setting SELECT_STAGED_DATE to {config.SELECT_STAGED_DATE}, NEXT_TAPE to {config.NEXT_TAPE}")
+           logger.debug(F"Setting SELECT_STAGED_DATE to {config.SELECT_STAGED_DATE}, NEXT_TAPE to {config.NEXT_TAPE}")
            config.SELECT_STAGED_DATE = True
            config.PLAY_STATE = config.READY
     if self.name == 'ffwd':
        config.FSEEK = False
        sleep(0.5)
        while GPIO.input(self.pin) == 1: # button is still being pressed
-           logging.debug(F"Setting FFWD to {config.FFWD}, FSEEK is {config.FSEEK}")
+           logger.debug(F"Setting FFWD to {config.FFWD}, FSEEK is {config.FSEEK}")
            config.FSEEK = True
            sleep(0.1)
        if not config.FSEEK: 
-           logging.debug(F"Setting FFWD to {config.FFWD}, FSEEK is {config.FSEEK}")
+           logger.debug(F"Setting FFWD to {config.FFWD}, FSEEK is {config.FSEEK}")
            config.FFWD = True
        config.FSEEK = False
     if self.name == 'rewind':
        config.RSEEK = False
        sleep(0.5)
        while GPIO.input(self.pin) == 1: # button is still being pressed
-           logging.debug(F"Setting REWIND to {config.REWIND}, RSEEK is {config.RSEEK}")
+           logger.debug(F"Setting REWIND to {config.REWIND}, RSEEK is {config.RSEEK}")
            config.RSEEK = True
            sleep(0.1)
        if not config.RSEEK: 
-           logging.debug(F"Setting REWIND to {config.REWIND}, RSEEK is {config.RSEEK}")
+           logger.debug(F"Setting REWIND to {config.REWIND}, RSEEK is {config.RSEEK}")
            config.REWIND = True
     if self.name == 'play_pause':
        if config.PLAY_STATE in [config.READY, config.PAUSED, config.STOPPED]: config.PLAY_STATE = config.PLAYING  # play if not playing
        elif config.PLAY_STATE == config.PLAYING: config.PLAY_STATE = config.PAUSED   # Pause if playing
-       logging.debug(F"Setting PLAY_STATE to {config.PLAY_STATES[config.PLAY_STATE]}")
+       logger.debug(F"Setting PLAY_STATE to {config.PLAY_STATES[config.PLAY_STATE]}")
     if self.name == 'stop':
        if config.PLAY_STATE in [config.PLAYING, config.PAUSED]: config.PLAY_STATE = config.STOPPED  # stop playing or pausing
-       logging.debug(F"Setting PLAY_STATE to {config.PLAY_STATES[config.PLAY_STATE]}")
+       logger.debug(F"Setting PLAY_STATE to {config.PLAY_STATES[config.PLAY_STATE]}")
 
   def cleanup(self): 
     GPIO.cleanup()
@@ -121,8 +122,8 @@ class knob:
         GPIO.add_event_detect(pin,edge_type, callback = cb, bouncetime = self.bouncetime) 
         return
       except:
-        logging.warn(F"Retrying event_detection callback on pin {pin}")
-    logging.warn(F"Failed to set event_detection callback on pin {pin}")
+        logger.warn(F"Retrying event_detection callback on pin {pin}")
+    logger.warn(F"Failed to set event_detection callback on pin {pin}")
     raise
 
   def setup(self):
@@ -138,7 +139,7 @@ class knob:
     return None 
 
   def show_pin_states(self,msg): 
-    logging.debug (F"{self.name} {msg}: State of cl:{GPIO.input(self.cl)}, dt:{GPIO.input(self.dt)}, sw:{GPIO.input(self.sw)}")
+    logger.debug (F"{self.name} {msg}: State of cl:{GPIO.input(self.cl)}, dt:{GPIO.input(self.dt)}, sw:{GPIO.input(self.sw)}")
     return 
  
   def cl_callback(self,channel):
@@ -146,7 +147,7 @@ class knob:
     dt = GPIO.input(self.dt) 
     if dt == 1: 
       self.set_value(self.value + 1)
-      logging.debug (F" +++ increasing {self.name}.  {self.value}")
+      logger.debug (F" +++ increasing {self.name}.  {self.value}")
     return
 
   def dt_callback(self,channel):
@@ -154,21 +155,21 @@ class knob:
     cl = GPIO.input(self.cl)
     if cl == 1: 
       self.set_value(self.value -1)
-      logging.debug (F" --- decreasing {self.name}. {self.value}")
+      logger.debug (F" --- decreasing {self.name}. {self.value}")
     return
 
   def sw_callback(self,channel):
-    logging.debug(F"Pushed button {self.name}")
+    logger.debug(F"Pushed button {self.name}")
     if self.name == 'year':
       config.TIH = True 
-      logging.debug(F"Setting TIH to {config.TIH}")
+      logger.debug(F"Setting TIH to {config.TIH}")
     if self.name == 'month':
       if config.PLAY_STATE in [config.READY, config.PAUSED, config.STOPPED]: config.PLAY_STATE = config.PLAYING  # play if not playing
       elif config.PLAY_STATE == config.PLAYING: config.PLAY_STATE = config.PAUSED   # Pause if playing
-      logging.debug(F"Setting PLAY_STATE to {config.PLAY_STATES[config.PLAY_STATE]}")
+      logger.debug(F"Setting PLAY_STATE to {config.PLAY_STATES[config.PLAY_STATE]}")
     if self.name == 'day':
       config.NEXT_DATE = True
-      logging.debug(F"Setting NEXT_DATE to {config.NEXT_DATE}")
+      logger.debug(F"Setting NEXT_DATE to {config.NEXT_DATE}")
      #sleep(0.3)
 
   def set_value(self,value): 
@@ -248,7 +249,7 @@ class seven_segment:
       line_height = self.thickness
     x,y = (self.x + int(seg[0]*self.w - seg[0]*self.thickness),self.y + int(seg[1]*self.h - seg[1]*self.thickness))
     self.disp.fill_rectangle(y,x,line_height,line_width,color)
-    logging.debug(F"drawing rectangle {y},{x},{line_height},{line_width},color {color}")
+    logger.debug(F"drawing rectangle {y},{x},{line_height},{line_width},color {color}")
  
   def draw(self,digit):
     if digit == '-': digit = 10
@@ -295,7 +296,7 @@ class screen:
     if self.disp.rotation % 180 == 90: height,width= self.disp.width,self.disp.height
     else: width,height= self.disp.width,self.disp.height
     self.width, self.height = width, height
-    logging.debug(F" ---> disp {self.disp.width},{self.disp.height}")
+    logger.debug(F" ---> disp {self.disp.width},{self.disp.height}")
     self.boldfont = ImageFont.truetype(pkg_resources.resource_filename("deadstream", "DejaVuSansMono-Bold.ttf"), 33)
     self.boldsmall = ImageFont.truetype(pkg_resources.resource_filename("deadstream", "DejaVuSansMono-Bold.ttf"), 22)
     self.font = ImageFont.truetype(pkg_resources.resource_filename("deadstream", "ariallgt.ttf"), 30)
@@ -338,7 +339,7 @@ class screen:
   def show_text(self,text,loc=(0,0),font=None,color=(255,255,255),stroke_width=0,now=True):
     if font==None: font = self.font
     (text_width,text_height)= font.getsize(text)
-    logging.debug(F' show_text {text}. text_size {text_height},{text_width}')
+    logger.debug(F' show_text {text}. text_size {text_height},{text_width}')
     self.draw.text(loc, text, font=font,stroke_width=stroke_width,fill=color)
     if now: self.refresh()
 
@@ -363,7 +364,7 @@ class screen:
          self.show_text(text,bbox.origin(),font=font,color=color,stroke_width=stroke_width)
          sleep(2)
          for i in range(int(excess/inc)+2):
-           #logging.debug(F"scrolling excess {excess}, inc: {inc}, i:{i}")
+           #logger.debug(F"scrolling excess {excess}, inc: {inc}, i:{i}")
            if self.venue_name != text: break
            #sleep(0.005)
            self.clear_area(bbox)
@@ -404,7 +405,7 @@ class screen:
     day = str(date.day).rjust(2)
     year = str(divmod(date.year,100)[1]).rjust(2)
     text = month + '-' + day + '-' + year
-    logging.debug (F"staged date string {text}")
+    logger.debug (F"staged date string {text}")
     self.show_text(text,self.staged_date_bbox.origin(),self.boldfont,color=color,now=now)
     self.staged_date = date
 
@@ -425,7 +426,7 @@ class screen:
     self.refresh()
 
   def show_playstate(self,color=(0,100,255),sbd=None):
-    logging.debug(F"showing playstate {config.PLAY_STATES[config.PLAY_STATE]}")
+    logger.debug(F"showing playstate {config.PLAY_STATES[config.PLAY_STATE]}")
     bbox = self.playstate_bbox
     self.clear_area(bbox)
     size   = bbox.size()
@@ -445,6 +446,6 @@ class screen:
     if not sbd: 
       self.draw.regular_polygon((self.sbd_bbox.center(),3),4,rotation=45,fill=(0,0,0))
       return
-    logging.debug("showing soundboard status")
+    logger.debug("showing soundboard status")
     self.draw.regular_polygon((self.sbd_bbox.center(),3),4,rotation=45,fill=color)
 

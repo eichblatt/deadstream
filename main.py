@@ -16,7 +16,8 @@ parser.add_option('-v','--verbose',dest='verbose',action="store_true",default=Fa
 parms,remainder = parser.parse_args()
 
 #logLevel = 0 if parms.verbose else logging.DEBUG
-logging.basicConfig(format='%(asctime)s.%(msecs)03d %(levelname)s: %(message)s', level=logging.DEBUG,datefmt='%Y-%m-%d %H:%M:%S')
+logging.basicConfig(format='%(asctime)s.%(msecs)03d %(levelname)s: %(name)s %(message)s', level=logging.INFO,datefmt='%Y-%m-%d %H:%M:%S')
+logger = logging.getLogger(__name__)
 
 meInterrupt = False
 def meCustomHandler(signum,stack_frame):
@@ -27,7 +28,7 @@ def meCustomHandler(signum,stack_frame):
 signal.signal(signal.SIGINT, meCustomHandler)
 
 def play_tape(tape,player):
-    logging.info(F"Playing tape {tape}")
+    logger.info(F"Playing tape {tape}")
     player.insert_tape(tape)
     player.play()
     return player
@@ -47,7 +48,7 @@ def runLoop(knobs,archive,scr,player,maxN=None):
       # deal with DATE changes
       N = N+1
       if staged_date.date != d0:  # Date knobs changed
-         logging.info (F"DATE: {config.DATE}, SELECT_STAGED_DATE: {config.SELECT_STAGED_DATE}, PLAY_STATE: {config.PLAY_STATE}")
+         logger.info (F"DATE: {config.DATE}, SELECT_STAGED_DATE: {config.SELECT_STAGED_DATE}, PLAY_STATE: {config.PLAY_STATE}")
          print (staged_date)
          d0 = staged_date.date
          if staged_date.tape_available(): 
@@ -72,7 +73,7 @@ def runLoop(knobs,archive,scr,player,maxN=None):
           tape_id = tapes[itape].identifier
           sbd = tapes[itape].stream_only()
           id_color = (0,255,255) if sbd else (0,0,255)
-          logging.info (F"In NEXT_TAPE. Choosing {tape_id}, the {itape}th of {len(tapes)} choices. SBD:{sbd}")
+          logger.info (F"In NEXT_TAPE. Choosing {tape_id}, the {itape}th of {len(tapes)} choices. SBD:{sbd}")
           #scr.show_soundboard(sbd)
           if len(tape_id)<16: scr.show_venue(tape_id,color=id_color)
           else:
@@ -84,7 +85,7 @@ def runLoop(knobs,archive,scr,player,maxN=None):
         itape = max(0,itape) 
         if config.SELECT_STAGED_DATE:   # Select Button was Pushed and Released
           config.DATE = staged_date.date 
-          logging.info(F"Set DATE to {config.DATE}")
+          logger.info(F"Set DATE to {config.DATE}")
           config.PLAY_STATE = config.READY  #  eject current tape, insert new one in player
           tape = tapes[itape] 
           current_tape_id = tape.identifier
@@ -109,7 +110,7 @@ def runLoop(knobs,archive,scr,player,maxN=None):
             scr.show_track('',1)
             scr.show_playstate()
             if (config.PLAY_STATE == config.READY):
-              logging.info(F"PLAY_STATE is {config.PLAY_STATE}. Inserting new tape")
+              logger.info(F"PLAY_STATE is {config.PLAY_STATE}. Inserting new tape")
               player.eject_tape()
               player.insert_tape(tape)
          if (config.PLAY_STATES[config.PLAY_STATE] in ['Playing','Paused']) and current_track_id != prev_track_id:
@@ -128,12 +129,12 @@ def runLoop(knobs,archive,scr,player,maxN=None):
       # now, config.PLAY_STATE != play_state
 
       if (config.PLAY_STATE == config.READY):  #  A new tape to be inserted
-         logging.info(F"PLAY_STATE is {config.PLAY_STATE}. Inserting new tape")
+         logger.info(F"PLAY_STATE is {config.PLAY_STATE}. Inserting new tape")
          player.eject_tape()
          player.insert_tape(tape)
       if (config.PLAY_STATE == config.PLAYING):  # Play tape 
          try:
-           logging.info(F"Playing {config.DATE} on player")
+           logger.info(F"Playing {config.DATE} on player")
            #tape = archive.best_tape(config.DATE.strftime('%Y-%m-%d'))
            if len(player.playlist) == 0: player = play_tape(tape,player)  ## NOTE required?
            else: player.play()
@@ -141,14 +142,14 @@ def runLoop(knobs,archive,scr,player,maxN=None):
            scr.show_venue(staged_date.venue())
            scr.show_playstate()
          except AttributeError:
-           logging.info(F"Cannot play date {config.DATE}")
+           logger.info(F"Cannot play date {config.DATE}")
            pass
          except:
            raise 
          finally:
            config.PLAY_STATE = play_state
       if config.PLAY_STATE == config.PAUSED: 
-         logging.info(F"Pausing {config.DATE.strftime('%Y-%m-%d')} on player") 
+         logger.info(F"Pausing {config.DATE.strftime('%Y-%m-%d')} on player") 
          player.pause()
          scr.show_playstate()
       if config.PLAY_STATE == config.STOPPED:
@@ -184,13 +185,13 @@ def main(parms):
     scr.show_text("Grateful\n  Dead\n   Streamer\n     Loading...",color=(0,255,255))
     #_ = [x.setup() for x in [y,m,d,select,ffwd,stop]]
 
-    logging.info ("Loading GD Archive")
+    logger.info ("Loading GD Archive")
     a = GD.GDArchive('/home/steve/projects/deadstream/metadata')
-    logging.info ("Done ")
+    logger.info ("Done ")
     
     scr.clear()
     staged_date = ctl.date_knob_reader(y,m,d,a)
-    logging.info(staged_date)
+    logger.info(staged_date)
 
     scr.show_staged_date(staged_date.date)
     scr.show_venue(staged_date.venue())
