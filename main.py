@@ -129,6 +129,10 @@ def runLoop(knobs,archive,scr,player,maxN=None):
          else: 
             while config.RSEEK:
               player.seek(-1)
+         if config.PLAY_STATE == config.INIT:
+            scr.show_track('',0)
+            scr.show_track('',1)
+            scr.show_playstate()
          if (config.PLAY_STATE in [config.INIT,config.READY, config.STOPPED]) and current_tape_id != prev_tape_id:
             prev_tape_id = current_tape_id
             scr.show_track('',0)
@@ -139,6 +143,9 @@ def runLoop(knobs,archive,scr,player,maxN=None):
               player.eject_tape()
               player.insert_tape(tape)
          if (config.PLAY_STATE in [config.PLAYING,config.PAUSED]) and current_track_id != prev_track_id:
+            if current_track == None:        # this happens when the tape has ended (at least).
+              config.PLAY_STATE = config.INIT   # NOTE Not quite working
+              continue
             prev_track_id = current_track_id
             title = player.tape.tracks()[current_track].title
             scr.show_track(title,0)

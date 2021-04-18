@@ -385,6 +385,7 @@ class GDTape:
     if not self.meta_loaded: self.get_metadata()
     tlist = [x.title for x in self._tracks]
     sd = self.set_data
+    if sd == None: sd = {}
     lb = sd['longbreaks'] if 'longbreaks' in sd.keys() else []
     sb = sd['shortbreaks'] if 'shortbreaks' in sd.keys() else []
     locb = sd['locationbreak'] if 'locationbreak' in sd.keys() else []
@@ -577,8 +578,13 @@ class GDPlayer(MPV):
     self.playlist_pos = 0
     self.pause()
 
-  def next(self): self.command('playlist-next'); # self.wait_until_playing() # jump to next track
-  def prev(self): self.command('playlist-prev'); # self.wait_until_playing() # jump to previous track
+  def next(self): 
+      if self._get_property('playlist-pos')+1 == len(self.playlist): return
+      self.command('playlist-next'); 
+
+  def prev(self): 
+      if self._get_property('playlist-pos') == 0: return
+      self.command('playlist-prev'); 
 
   def track_status(self):
     if self.playlist_pos == None: print (F"Playlist not started"); return None
