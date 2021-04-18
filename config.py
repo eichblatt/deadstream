@@ -31,12 +31,6 @@ year_pins = (16,22,23)   # cl, dt, sw
 month_pins = (12,5,6)
 day_pins = (13,17,27)
 
-select_pin = None
-play_pause_pin = None
-rewind_pin = None
-stop_pin = None
-ffwd_pin = None
-
 select_pin = 4   # pin 4 ok w/ Sound card
 play_pause_pin = 20 # pin 18 interferes with sound card
 rewind_pin = 3  # from the I2C bus (may need to connect to ground)
