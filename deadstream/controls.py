@@ -15,10 +15,11 @@ logging.basicConfig(format='%(asctime)s.%(msecs)03d %(levelname)s: %(name)s %(me
 logger = logging.getLogger(__name__)
 
 class button:
-  def __init__(self,pin,name,bouncetime=300):
+  def __init__(self,pin,name,pull_up=False,bouncetime=300):
     self.pin = pin
     self.name = name
     self.bouncetime = bouncetime
+    self.pull_up = True if self.pin in [2,3] else pull_up
     self.is_setup = False
 
   def __str__(self):
@@ -42,8 +43,15 @@ class button:
     if self.pin == None: return
     if self.is_setup: return
     GPIO.setmode(GPIO.BCM)
-    GPIO.setup(self.pin,GPIO.IN,pull_up_down=GPIO.PUD_DOWN)
-    self.add_callback(self.pin,GPIO.RISING,self.callback)
+    if self.pull_up: # These pins are pulled up.
+      #GPIO.setup(self.pin,GPIO.IN,pull_up_down=GPIO.PUD_DOWN)
+      #self.add_callback(self.pin,GPIO.RISING,self.callback)
+      GPIO.setup(self.pin,GPIO.IN,pull_up_down=GPIO.PUD_DOWN)
+      self.add_callback(self.pin,GPIO.BOTH,self.callback)
+    else:
+      GPIO.setup(self.pin,GPIO.IN,pull_up_down=GPIO.PUD_DOWN)
+      self.add_callback(self.pin,GPIO.RISING,self.callback)
+
     self.is_setup = True
     return None 
 
@@ -52,8 +60,9 @@ class button:
     return 
  
   def callback(self,channel):
-    if GPIO.input(self.pin) == 0: return
-    logger.debug(F"Pushed button {self.name}")
+    logger.debug(F"Pushed button {self.name}. -- {GPIO.input(self.pin)}")
+    nullval = 0 if not self.pull_up else 1
+    if GPIO.input(self.pin) == nullval: return
     if self.name == 'select':   # NOTE I should move this logic to a function, since it's repeated 3 times.
        config.NEXT_TAPE = False
        sleep(0.5)
@@ -78,9 +87,11 @@ class button:
            config.FFWD = True
        config.FSEEK = False
     if self.name == 'rewind':
+       logger.debug(F"GPIO is now {GPIO.input(self.pin)}")
        config.RSEEK = False
        sleep(0.5)
-       while GPIO.input(self.pin) == 1: # button is still being pressed
+       logger.debug(F"GPIO is now {GPIO.input(self.pin)}")
+       while GPIO.input(self.pin) == 0: # button is still being pressed -- NOTE: Because this is connected to pin2, default is on.
            logger.debug(F"Setting REWIND to {config.REWIND}, RSEEK is {config.RSEEK}")
            config.RSEEK = True
            sleep(0.1)
@@ -376,28 +387,6 @@ class screen:
     self.clear_area(self.venue_bbox)
     self.show_text(text,self.venue_bbox.origin(),font=self.boldsmall,color=color,now=now)
 
-  def show_date(self,date,loc=(0,96),size=16,separation=4,color=(0,200,255),stack=False,tape=False):
-    x0,y0 = loc; segwidth = size; segheight = 2*size; 
-    size = (segwidth,segheight)
-    ss = []
-    monthlist = [c for c in str(date.month).rjust(2)]
-    dash = ['-']
-    daylist = [c for c in str(date.day).rjust(2)]
-
-    if stack:
-      y1 = y0+segheight+separation
-      ss = [seven_segment(self.disp,(x0 + i*(segwidth + separation),y1),size,color=color) for i in range(5)]
-      ss = ss + [seven_segment(self.disp,(x0 + i*(segwidth + separation),y0),size,color=color) for i in range(4)]
-      yearlist = [c for c in str(date.year).rjust(4)]
-      for i,v in enumerate(monthlist + dash + daylist + yearlist): ss[i].draw(v)
-    else:
-      ss = [seven_segment(self.disp,(x0 + i*(segwidth + separation),y0),size,color=color) for i in range(8)]
-      yearlist = [c for c in str(divmod(date.year,100)[1]).rjust(2)]
-      for i,v in enumerate(monthlist + dash + daylist + dash + yearlist): ss[i].draw(v)
-
-    if tape: self.disp.fill_rectangle(0,0,30,30,color565(255,255,255))  
-    else: self.disp.fill_rectangle(0,0,30,30,self.bgcolor)  
-
   def show_staged_date(self,date,color=(0,255,255),now=True):
     if date == self.staged_date: return
     self.clear_area(self.staged_date_bbox)
@@ -425,11 +414,14 @@ class screen:
     self.draw.text(bbox.origin(), text, font=self.smallfont,fill=color,stroke_width=1);
     self.refresh()
 
-  def show_playstate(self,color=(0,100,255),sbd=None):
+  def show_playstate(self,staged_play=False,color=(0,100,255),sbd=None):
     logger.debug(F"showing playstate {config.PLAY_STATES[config.PLAY_STATE]}")
     bbox = self.playstate_bbox
     self.clear_area(bbox)
     size   = bbox.size()
+    if staged_play:
+       self.draw.regular_polygon((bbox.center(),10),3,rotation=30,fill=color)
+       self.draw.regular_polygon((bbox.center(),8),3,rotation=30,fill=(0,0,0))
     if config.PLAY_STATES[config.PLAY_STATE] == 'Playing':  
        self.draw.regular_polygon((bbox.center(),10),3,rotation=30,fill=color)
     elif config.PLAY_STATES[config.PLAY_STATE] == 'Paused' :  

@@ -4,6 +4,7 @@ import datetime
 from time import sleep
 import threading
 
+ctl.logger.setLevel(10) # DEBUG
 d1 = '1977-05-08'
 d1 =  datetime.date(*(int(s) for s in d1.split('-')))
 

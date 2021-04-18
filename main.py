@@ -8,6 +8,7 @@ import logging
 import threading
 import signal
 import os
+import datetime
 
 parser = optparse.OptionParser()
 parser.add_option('--box',dest='box',type="string",default='v1',help="v0 box has screen at 270. [default %default]")
@@ -16,9 +17,14 @@ parser.add_option('-d','--debug',dest='debug',type="int",default=1,help="If > 0,
 parser.add_option('-v','--verbose',dest='verbose',action="store_true",default=False,help="Print more verbose information [default %default]")
 parms,remainder = parser.parse_args()
 
-#logLevel = 0 if parms.verbose else logging.DEBUG
 logging.basicConfig(format='%(asctime)s.%(msecs)03d %(levelname)s: %(name)s %(message)s', level=logging.INFO,datefmt='%Y-%m-%d %H:%M:%S')
 logger = logging.getLogger(__name__)
+GDLogger = logging.getLogger('GD')
+controlsLogger = logging.getLogger('controls')
+if parms.verbose:
+  logger.setLevel(logging.DEBUG)
+  GDLogger.setLevel(logging.DEBUG)
+  controlsLogger.setLevel(logging.DEBUG)
 
 meInterrupt = False
 def meCustomHandler(signum,stack_frame):
@@ -27,6 +33,8 @@ def meCustomHandler(signum,stack_frame):
    meInterrupt= True
 
 signal.signal(signal.SIGINT, meCustomHandler)
+
+def to_date(d): return datetime.datetime.strptime(d,'%Y-%m-%d').date()
 
 def play_tape(tape,player):
     logger.info(F"Playing tape {tape}")
@@ -42,30 +50,40 @@ def runLoop(knobs,archive,scr,player,maxN=None):
     N = 0; prev_track_id = ''; prev_tape_id = ''; current_tape_id = ''
     scr.refresh()
     sbd = None
+    quiescent = 0; q_counter = False
 
     while N<=maxN if maxN != None else True:
       staged_date = ctl.date_knob_reader(y,m,d,archive)
       if meInterrupt: break   ## not working (yet)
       # deal with DATE changes
-      N = N+1
+      N = N+1; 
+      if q_counter: quiescent = quiescent + 1
+      if quiescent > config.QUIESCENT_TIME and config.PLAY_STATE in [config.PAUSED,config.PLAYING]: # the dates have not been changed in a while -- revert staged_date to date
+         logger.info (F"quiescent: {quiescent}")
+         quiescent = 0; q_counter = False
+         scr.show_staged_date(to_date(player.tape.date))
+         scr.show_venue(player.tape.venue())
       if staged_date.date != d0:  # Date knobs changed
-         logger.info (F"DATE: {config.DATE}, SELECT_STAGED_DATE: {config.SELECT_STAGED_DATE}, PLAY_STATE: {config.PLAY_STATE}")
-         print (staged_date)
+         logger.info (F"DATE: {config.DATE}, SELECT_STAGED_DATE: {config.SELECT_STAGED_DATE}, PLAY_STATE: {config.PLAY_STATE}. quiescent {quiescent}")
+         logger.info (F"staged_date: {staged_date}")
          d0 = staged_date.date
          if staged_date.tape_available(): 
             scr.show_venue(staged_date.venue())
          else:
             scr.clear_area(scr.venue_bbox,now=True) # erase the venue
          scr.show_staged_date(staged_date.date)
+         quiescent = 0; q_counter = True
       if config.TIH:   # Year Button was Pushed, set Month and Date to Today in History
          m.value = config.TIH_MONTH
          d.value = config.TIH_DAY
          config.TIH = False
+         quiescent = 0; q_counter = True
          continue
       if config.NEXT_DATE:   # Day Button was Pushed, set date to next date with tape available
          new_date = staged_date.next_date() 
          y.value = new_date.year; m.value = new_date.month; d.value = new_date.day;
          config.NEXT_DATE = False
+         quiescent = 0; q_counter = True
       if staged_date.tape_available():
         tapes = archive.tape_dates[staged_date.fmtdate()]
         itape = -1
@@ -105,6 +123,12 @@ def runLoop(knobs,archive,scr,player,maxN=None):
          else: 
             while config.FSEEK:
               player.seek(1)
+         if config.REWIND:
+            player.prev()
+            config.REWIND = False
+         else: 
+            while config.RSEEK:
+              player.seek(-1)
          if (config.PLAY_STATE in [config.INIT,config.READY, config.STOPPED]) and current_tape_id != prev_tape_id:
             prev_tape_id = current_tape_id
             scr.show_track('',0)
@@ -114,7 +138,7 @@ def runLoop(knobs,archive,scr,player,maxN=None):
               logger.info(F"PLAY_STATE is {config.PLAY_STATE}. Inserting new tape")
               player.eject_tape()
               player.insert_tape(tape)
-         if (config.PLAY_STATES[config.PLAY_STATE] in ['Playing','Paused']) and current_track_id != prev_track_id:
+         if (config.PLAY_STATE in [config.PLAYING,config.PAUSED]) and current_track_id != prev_track_id:
             prev_track_id = current_track_id
             title = player.tape.tracks()[current_track].title
             scr.show_track(title,0)
@@ -136,6 +160,7 @@ def runLoop(knobs,archive,scr,player,maxN=None):
       if (config.PLAY_STATE == config.PLAYING):  # Play tape 
          try:
            logger.info(F"Playing {config.DATE} on player")
+           scr.show_playstate(staged_play=True) # show an empty triangle, to register the button press.
            #tape = archive.best_tape(config.DATE.strftime('%Y-%m-%d'))
            if len(player.playlist) == 0: player = play_tape(tape,player)  ## NOTE required?
            else: player.play()
