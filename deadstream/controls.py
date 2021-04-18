@@ -118,6 +118,7 @@ class knob:
     self.value = min(values) if init == None else init
     self.bouncetime = bouncetime
     self.is_setup = False
+    self.in_rotate = False
 
   def __str__(self):
     return self.__repr__()
@@ -143,8 +144,8 @@ class knob:
     _ = [GPIO.setup(x,GPIO.IN,pull_up_down=GPIO.PUD_DOWN) for x in [self.cl,self.dt,self.sw]]
     try:
       self.add_callback(self.sw,GPIO.RISING,self.sw_callback)
-      self.add_callback(self.dt,GPIO.FALLING,self.dt_callback)
-      self.add_callback(self.cl,GPIO.FALLING,self.cl_callback)
+      #self.add_callback(self.dt,GPIO.FALLING,self.dt_callback)
+      self.add_callback(self.cl,GPIO.FALLING,self.rotate)
       self.is_setup = True
     except: raise
     return None 
@@ -152,23 +153,28 @@ class knob:
   def show_pin_states(self,msg): 
     logger.debug (F"{self.name} {msg}: State of cl:{GPIO.input(self.cl)}, dt:{GPIO.input(self.dt)}, sw:{GPIO.input(self.sw)}")
     return 
- 
-  def cl_callback(self,channel):
-    self.show_pin_states("cl")
-    dt = GPIO.input(self.dt) 
-    if dt == 1: 
+
+  def rotate(self,channel):
+    if self.in_rotate: 
+      logger.debug (F" Already in rotate for {self.name}")
+      return
+    self.in_rotate = True
+    vals = [(GPIO.input(self.dt),GPIO.input(self.cl)) for i in range(10)]
+    if sum([v[1] for v in vals])>3: 
+      logger.debug (F" Noisy click on {self.name}.  {self.value}")
+      cl_val = 1
+    else: cl_val = 0
+    if sum([v[0] for v in vals])>5: dt_val = 1 
+    else: dt_val = 0
+    if cl_val == 0 and dt_val == 0:
+      self.set_value(self.value - 1)
+      logger.debug (F" --- decreasing {self.name}.  {self.value}")
+    elif cl_val == 0 and dt_val == 1:
       self.set_value(self.value + 1)
       logger.debug (F" +++ increasing {self.name}.  {self.value}")
+    self.in_rotate = False
     return
-
-  def dt_callback(self,channel):
-    self.show_pin_states("dt")
-    cl = GPIO.input(self.cl)
-    if cl == 1: 
-      self.set_value(self.value -1)
-      logger.debug (F" --- decreasing {self.name}. {self.value}")
-    return
-
+ 
   def sw_callback(self,channel):
     logger.debug(F"Pushed button {self.name}")
     if self.name == 'year':
