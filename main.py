@@ -17,9 +17,14 @@ parser.add_option('-d','--debug',dest='debug',type="int",default=1,help="If > 0,
 parser.add_option('-v','--verbose',dest='verbose',action="store_true",default=False,help="Print more verbose information [default %default]")
 parms,remainder = parser.parse_args()
 
-#logLevel = 0 if parms.verbose else logging.DEBUG
 logging.basicConfig(format='%(asctime)s.%(msecs)03d %(levelname)s: %(name)s %(message)s', level=logging.INFO,datefmt='%Y-%m-%d %H:%M:%S')
 logger = logging.getLogger(__name__)
+GDLogger = logging.getLogger('GD')
+controlsLogger = logging.getLogger('controls')
+if parms.verbose:
+  logger.setLevel(logging.DEBUG)
+  GDLogger.setLevel(logging.DEBUG)
+  controlsLogger.setLevel(logging.DEBUG)
 
 meInterrupt = False
 def meCustomHandler(signum,stack_frame):
@@ -118,6 +123,12 @@ def runLoop(knobs,archive,scr,player,maxN=None):
          else: 
             while config.FSEEK:
               player.seek(1)
+         if config.REWIND:
+            player.prev()
+            config.REWIND = False
+         else: 
+            while config.RSEEK:
+              player.seek(-1)
          if (config.PLAY_STATE in [config.INIT,config.READY, config.STOPPED]) and current_tape_id != prev_tape_id:
             prev_tape_id = current_tape_id
             scr.show_track('',0)
