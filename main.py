@@ -2,7 +2,7 @@
 import optparse
 from deadstream import GD
 from deadstream import controls as ctl
-import config
+from deadstream import config
 from time import sleep
 import logging
 import threading

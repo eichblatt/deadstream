@@ -1,5 +1,5 @@
 from deadstream import controls as ctl
-import config
+from deadstream import config
 import datetime
 from time import sleep
 import threading

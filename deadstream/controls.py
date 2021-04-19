@@ -5,7 +5,7 @@ import datetime
 import logging
 import digitalio
 import board
-import config
+from  . import config
 import adafruit_rgb_display.st7735 as st7735
 from adafruit_rgb_display import color565
 from PIL import Image, ImageDraw, ImageFont
