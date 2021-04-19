@@ -1,8 +1,8 @@
 #!/usr/bin/python3
 import optparse
-from deadstream import GD
-from deadstream import controls as ctl
-from deadstream import config
+from timemachine import GD
+from timemachine import controls as ctl
+from timemachine import config
 from time import sleep
 import logging
 import threading
@@ -229,7 +229,7 @@ def main(parms):
     scr.show_staged_date(staged_date.date)
     scr.show_venue(staged_date.venue())
 
-    loop = threading.Thread(target=runLoop,name="deadstream loop",args=((y,m,d),a,scr,player),kwargs={'maxN':None})
+    loop = threading.Thread(target=runLoop,name="timemachine loop",args=((y,m,d),a,scr,player),kwargs={'maxN':None})
     loop.start()
 
     loop.join()

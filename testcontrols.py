@@ -1,5 +1,5 @@
-from deadstream import controls as ctl
-from deadstream import config
+from timemachine import controls as ctl
+from timemachine import config
 import datetime
 from time import sleep
 import threading
