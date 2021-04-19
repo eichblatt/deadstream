@@ -143,8 +143,7 @@ class knob:
     GPIO.setmode(GPIO.BCM)
     _ = [GPIO.setup(x,GPIO.IN,pull_up_down=GPIO.PUD_DOWN) for x in [self.cl,self.dt,self.sw]]
     try:
-      self.add_callback(self.sw,GPIO.RISING,self.sw_callback)
-      #self.add_callback(self.dt,GPIO.FALLING,self.dt_callback)
+      self.add_callback(self.sw,GPIO.RISING,self.push)
       self.add_callback(self.cl,GPIO.FALLING,self.rotate)
       self.is_setup = True
     except: raise
@@ -175,15 +174,15 @@ class knob:
     self.in_rotate = False
     return
  
-  def sw_callback(self,channel):
+  def push(self,channel):
     logger.debug(F"Pushed button {self.name}")
     if self.name == 'year':
       config.TIH = True 
       logger.debug(F"Setting TIH to {config.TIH}")
     if self.name == 'month':
-      if config.PLAY_STATE in [config.READY, config.PAUSED, config.STOPPED]: config.PLAY_STATE = config.PLAYING  # play if not playing
-      elif config.PLAY_STATE == config.PLAYING: config.PLAY_STATE = config.PAUSED   # Pause if playing
-      logger.debug(F"Setting PLAY_STATE to {config.PLAY_STATES[config.PLAY_STATE]}")
+      if config.EXPERIENCE: config.EXPERIENCE = False
+      else: config.EXPERIENCE = True
+      logger.debug(F"Setting EXPERIENCE to {config.EXPERIENCE}")
     if self.name == 'day':
       config.NEXT_DATE = True
       logger.debug(F"Setting NEXT_DATE to {config.NEXT_DATE}")
@@ -336,6 +335,7 @@ class screen:
     self.track2_bbox = Bbox(0,78,160,100)
     self.playstate_bbox = Bbox(130,100,160,128)
     self.sbd_bbox = Bbox(155,100,160,108)
+    self.exp_bbox = Bbox(0,55,160,100)
 
 
   def refresh(self):
@@ -388,6 +388,10 @@ class screen:
            self.show_text(text,bbox.shift(Bbox(inc*i,0,0,0)).origin(),font=font,color=color,stroke_width=stroke_width)
          sleep(1)
          self.clear_area(bbox)
+
+  def show_experience(self,text="Press Month to\nExit Experience",color=(0,255,255),now=True):
+    self.clear_area(self.exp_bbox)
+    self.show_text(text,self.exp_bbox.origin(),font=self.smallfont,color=color,stroke_width=1,now=now)
 
   def show_venue(self,text,color=(0,255,255),now=True):
     self.clear_area(self.venue_bbox)

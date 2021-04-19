@@ -44,6 +44,7 @@ config.PLAY_STATE = 1   # Ready
 venue_name ="Fillmore West, San Francisco, CA"
 
 s.show_venue(venue_name)
+s.show_experience("Press Month to\nExit Experience")
 for i,state in enumerate(config.PLAY_STATES):
   config.PLAY_STATE = i
   s.show_playstate()

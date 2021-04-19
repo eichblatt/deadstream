@@ -42,6 +42,13 @@ def play_tape(tape,player):
     player.play()
     return player
 
+def experience_mode(src,player):
+   logger.info ("Change to Experience Mode")
+   if not config.EXPERIENCE:
+     scr.show_experience("") 
+   if config.PLAY_STATE in [config.INIT,config.READY]: return
+   scr.show_experience("Press Month to\nExit Experience") 
+
 def runLoop(knobs,archive,scr,player,maxN=None):
     global meInterrupt
     y,m,d = knobs
@@ -51,6 +58,7 @@ def runLoop(knobs,archive,scr,player,maxN=None):
     scr.refresh()
     sbd = None
     quiescent = 0; q_counter = False
+    prev_experience = config.EXPERIENCE
 
     while N<=maxN if maxN != None else True:
       staged_date = ctl.date_knob_reader(y,m,d,archive)
@@ -63,6 +71,12 @@ def runLoop(knobs,archive,scr,player,maxN=None):
          quiescent = 0; q_counter = False
          scr.show_staged_date(to_date(player.tape.date))
          scr.show_venue(player.tape.venue())
+      if config.EXPERIENCE != prev_experience:
+         experience_mode(scr,player)
+         prev_experience = config.EXPERIENCE 
+      if config.EXPERIENCE: 
+         sleep(0.005)
+         continue
       if staged_date.date != d0:  # Date knobs changed
          logger.info (F"DATE: {config.DATE}, SELECT_STAGED_DATE: {config.SELECT_STAGED_DATE}, PLAY_STATE: {config.PLAY_STATE}. quiescent {quiescent}")
          logger.info (F"staged_date: {staged_date}")
