@@ -6,15 +6,17 @@ READY = 1
 PAUSED = 2
 STOPPED = 3
 PLAYING = 4
-PLAY_STATES = ['Init','Ready','Paused','Stopped','Playing']
+PLAY_STATE = INIT
+#PLAY_STATES = ['Init','Ready','Paused','Stopped','Playing']
 SELECT_STAGED_DATE = False
 NEXT_TAPE = False
-PLAY_STATE = INIT
 DATE = None
 STAGED_DATE = None
+
 ON_TOUR = False
 EXPERIENCE = False
 TIH = False
+
 _today = datetime.date.today()
 TIH_YEAR = None
 TIH_MONTH = _today.month

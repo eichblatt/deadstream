@@ -101,10 +101,10 @@ class button:
     if self.name == 'play_pause':
        if config.PLAY_STATE in [config.READY, config.PAUSED, config.STOPPED]: config.PLAY_STATE = config.PLAYING  # play if not playing
        elif config.PLAY_STATE == config.PLAYING: config.PLAY_STATE = config.PAUSED   # Pause if playing
-       logger.debug(F"Setting PLAY_STATE to {config.PLAY_STATES[config.PLAY_STATE]}")
+       logger.debug(F"Setting PLAY_STATE to {config.PLAY_STATE}")
     if self.name == 'stop':
        if config.PLAY_STATE in [config.PLAYING, config.PAUSED]: config.PLAY_STATE = config.STOPPED  # stop playing or pausing
-       logger.debug(F"Setting PLAY_STATE to {config.PLAY_STATES[config.PLAY_STATE]}")
+       logger.debug(F"Setting PLAY_STATE to {config.PLAY_STATE}")
 
   def cleanup(self): 
     GPIO.cleanup()
@@ -200,7 +200,8 @@ class date_knob_reader:
   def __init__(self,y,m,d,archive=None):
     self.date = None
     self.archive = archive
-    self.update(y,m,d)
+    self.y = y; self.m = m; self.d = d;
+    self.update()
  
   def __str__(self):  
     return self.__repr__()
@@ -209,31 +210,34 @@ class date_knob_reader:
     avail = "Tape Available" if self.tape_available() else ""
     return F'Date Knob Says: {self.date.strftime("%Y-%m-%d")}. {avail}'
 
-  def update(self,y,m,d):
+#  def update(self,y,m,d):
+  def update(self):
     maxd = [31,29,31,30,31,30,31,31,30,31,30,31] ## max days in a month.
-    if d.value > maxd[m.value-1]: d.set_value(maxd[m.value-1])
+    if self.d.value > maxd[self.m.value-1]: self.d.set_value(maxd[self.m.value-1])
     try:
-      self.date = datetime.date(y.value,m.value,d.value)
+      self.date = datetime.date(self.y.value,self.m.value,self.d.value)
     except ValueError:
-      d.set_value(d.value-1)
-      self.date = datetime.date(y.value,m.value,d.value)
+      self.d.set_value(self.d.value-1)
+      self.date = datetime.date(self.y.value,self.m.value,self.d.value)
  
   def fmtdate(self):
     if self.date == None: return None
     return self.date.strftime('%Y-%m-%d')
 
   def venue(self):
-    if self.tape_available: 
+    if self.tape_available(): 
       t = self.archive.best_tape(self.fmtdate())
       return t.venue()
     return ""
 
   def tape_available(self):
     if self.archive == None: return False
+    self.update()
     return self.fmtdate() in self.archive.dates   
 
   def next_date(self):
     if self.archive == None: return None
+    self.update()
     for d in self.archive.dates:
       if d>self.fmtdate(): return datetime.datetime.strptime(d,'%Y-%m-%d').date()
     return self.date
@@ -425,7 +429,7 @@ class screen:
     self.refresh()
 
   def show_playstate(self,staged_play=False,color=(0,100,255),sbd=None):
-    logger.debug(F"showing playstate {config.PLAY_STATES[config.PLAY_STATE]}")
+    logger.debug(F"showing playstate {config.PLAY_STATE}")
     bbox = self.playstate_bbox
     self.clear_area(bbox)
     size   = bbox.size()
@@ -454,33 +458,50 @@ class screen:
     self.draw.regular_polygon((self.sbd_bbox.center(),3),4,rotation=45,fill=color)
 
 class state:
-  def __init__(self,module_name='config'):
-    self.module_name = module_name
-    self.cfg = self.get_current()
+  def __init__(self,date_reader,player=None,tape_id='',track_id=''):
+    self.module_name = 'config'
+    self.date_reader = date_reader
+    self.player = player
+    self.tape_id = tape_id; self.track_id = track_id;
+    self.dict = self.get_current()
 
   def __str__(self):
     return self.__repr__()
 
   def __repr__(self):
-    return F"state is {self.cfg}"
+    return F"state is {self.dict}"
 
-  def get_changes(self,other_state): 
+  @staticmethod
+  def dict_diff(d1,d2): 
     changes = {}
-    current = self.get_current()
-    other = other_state.cfg
-    for k in other.keys():
-        if other[k] != current[k]:
-          changes[k] = (other[k],current[k])
-          logger.info(F"Change to config[{k}]")
+    for k in d2.keys():
+        if d1[k] != d2[k]:
+          changes[k] = (d1[k],d2[k])
     return changes
 
-  def set_current(new_state):
+  def snap(self): 
+    previous = self.dict.copy() 
+    current = self.get_current()
+    changes = self.dict_diff(previous,current)
+    return (changes,previous,current)
+
+  def get_changes(self): 
+    previous = self.dict   # do this first!
+    current = self.get_current()
+    return self.dict_diff(previous,current)
+
+  def set(self,new_state):
    for k in new_state.keys():
       config.__dict__[k] = new_state[k]   # NOTE This directly names config, which I'd like to be a variable.
 
   def get_current(self): 
     module = globals().get(self.module_name,None)
-    self.cfg = {}
+    self.dict = {}
     if module:
-      self.cfg = {key: value for key,value in module.__dict__.items() if (not key.startswith('_')) and key.isupper()}
-    return self.cfg
+      self.dict = {key: value for key,value in module.__dict__.items() if (not key.startswith('_')) and key.isupper()}
+    self.date_reader.update()
+    self.dict['DATE_READER'] = self.date_reader.date
+    self.dict['TAPE_ID'] = self.tape_id
+    self.dict['TRACK_NUM'] = self.player._get_property('playlist-pos')
+    self.dict['TRACK_ID'] = self.tape_id + "_track_" + str(self.dict['TRACK_NUM'])
+    return self.dict

@@ -26,13 +26,13 @@ if parms.verbose:
   GDLogger.setLevel(logging.DEBUG)
   controlsLogger.setLevel(logging.DEBUG)
 
-meInterrupt = False
-def meCustomHandler(signum,stack_frame):
-   global meInterrupt
-   print('encountered ctrl+C - here before the process exists')
-   meInterrupt= True
+#meInterrupt = False
+#def meCustomHandler(signum,stack_frame):
+#   global meInterrupt
+#   print('encountered ctrl+C - here before the process exists')
+#   meInterrupt= True
 
-signal.signal(signal.SIGINT, meCustomHandler)
+#signal.signal(signal.SIGINT, meCustomHandler)
 
 def to_date(d): return datetime.datetime.strptime(d,'%Y-%m-%d').date()
 
@@ -49,203 +49,181 @@ def play_tape(tape,player):
     player.play()
     return player
 
-def experience_mode(scr,player,cfg):
-   """ handle the experience change. Return the frozen state before change """
-   cfg['EXPERIENCE'] = False
-   logger.info (F"Changeing Experience Mode to {config.EXPERIENCE}")
-   if not config.EXPERIENCE:
-     scr.show_experience("") 
-   if config.PLAY_STATE in [config.INIT,config.READY]: 
-     config.EXPERIENCE = False
-     return cfg
-   scr.show_experience("Press Month to\nExit Experience") 
-   return cfg 
+def date_knob_changes(state,changes,current,scr,tape,quiescent,q_counter):
+      sbd = None;
+      if 'DATE_READER' in changes.keys():  # Date knobs changed
+         logger.info (F"DATE: {config.DATE}, SELECT_STAGED_DATE: {config.SELECT_STAGED_DATE}, PLAY_STATE: {config.PLAY_STATE}. quiescent {quiescent}")
+         if state.date_reader.tape_available(): 
+            scr.show_venue(state.date_reader.venue())
+         else:
+            scr.clear_area(scr.venue_bbox,now=True) # erase the venue
+         scr.show_staged_date(current['DATE_READER'])
+         quiescent = 0; q_counter = True
+      if current['TIH']:   # Year Button was Pushed, set Month and Date to Today in History
+         m.value = datetime.date.today().month; d.value = datetime.date.today().day
+         current['TIH'] = False
+         quiescent = 0; q_counter = True
+         state.set(current)
+      if current['NEXT_DATE']:   # Day Button was Pushed, set date to next date with tape available
+         new_date = state.date_reader.next_date() 
+         y.value = new_date.year; m.value = new_date.month; d.value = new_date.day;
+         current['NEXT_DATE'] = False
+         quiescent = 0; q_counter = True
+         # state.set(current)
+      if state.date_reader.tape_available():
+         tapes = state.date_reader.archive.tape_dates[state.date_reader.fmtdate()]
+         itape = -1
+         while current['NEXT_TAPE']:   # Select Button was Pushed and Held
+           itape = divmod(itape + 1,len(tapes))[1]
+           tape_id = tapes[itape].identifier
+           sbd = tapes[itape].stream_only()
+           id_color = (0,255,255) if sbd else (0,0,255)
+           logger.info (F"In NEXT_TAPE. Choosing {tape_id}, the {itape}th of {len(tapes)} choices. SBD:{sbd}")
+           #scr.show_soundboard(sbd)
+           if len(tape_id)<16: scr.show_venue(tape_id,color=id_color)
+           else:
+             for i in range(0,max(1,len(tape_id)),2):
+               scr.show_venue(tape_id[i:],color=id_color)
+               if not current['NEXT_TAPE']: 
+                 scr.show_venue(tape_id,color=id_color)
+                 break 
+         itape = max(0,itape) 
+         if current['SELECT_STAGED_DATE']:   # Select Button was Pushed and Released
+           current['DATE'] = state.date_reader.date 
+           logger.info(F"Set DATE to {current['DATE']}")
+           current['PLAY_STATE'] = config.READY  #  eject current tape, insert new one in player
+           tape = tapes[itape] 
+           current['TAPE_ID'] = tape.identifier
+           current['TRACK_NUM'] = -1
+           sbd = tape.stream_only()
+           #scr.show_soundboard(sbd)
+           scr.show_selected_date(current['DATE'])
+      current['SELECT_STAGED_DATE'] = False
+      current['NEXT_TAPE'] = False
+      return (current,tape,sbd,quiescent,q_counter)
 
-def set_state(cfg):
-   for k in cfg.keys():
-      config.__dict__[k] = cfg[k]
+  
+def update_tracks(state,current,changes,scr):
+    if not current['PLAY_STATE'] in [config.PLAYING,config.PAUSED]: return
+    if current['TRACK_NUM'] == None :        # this happens when the tape has ended (at least).
+      current['PLAY_STATE'] = config.INIT   # NOTE Not quite working
+      return
 
-def get_changes(prev): 
-    changes = {}
-    current = get_module_dict('config')
-    for k in prev.keys():
-        if prev[k] != current[k]:
-          changes[k] = (prev[k],current[k])
-          logger.info(F"Change to config[{k}]")
-    return changes
+    print (F"TRACK_ID is {current['TRACK_ID']}")
+    if 'TRACK_ID' in changes.keys():
+      title = state.player.tape.tracks()[current['TRACK_NUM']].title
+      scr.show_track(title,0)
+      print (F"show title {title}")
+      if (current['TRACK_NUM']+1)<len(state.player.playlist):
+         next_track = current['TRACK_NUM']+1 
+         next_title = state.player.tape.tracks()[next_track].title
+         scr.show_track(next_title,1)
+      else: scr.show_track('',1)
+      scr.show_playstate()
 
-def runLoop(knobs,archive,scr,player,maxN=None):
-    y,m,d = knobs
-    #play_state = config.PLAY_STATE
-    staged_date = ctl.date_knob_reader(y,m,d,archive)
-    config.STAGED_DATE = staged_date.date
+def playstate_static(state,changes,current,scr,tape):
+    if current['FFWD']:
+       state.player.next()
+       current['FFWD'] = False
+    else: 
+       while current['FSEEK']:
+         state.player.seek(1)
+    if current['REWIND']:
+       state.player.prev()
+       current['REWIND'] = False
+    else: 
+       while current['RSEEK']:
+         state.player.seek(-1)
+    if current['PLAY_STATE'] == config.INIT:
+       scr.show_track('',0)
+       scr.show_track('',1)
+       scr.show_playstate()
+    if (current['PLAY_STATE'] in [config.INIT,config.READY, config.STOPPED]) and 'TAPE_ID' in changes.keys():
+       scr.show_track('',0)
+       scr.show_track('',1)
+       scr.show_playstate()
+       if current['PLAY_STATE'] == config.READY:
+         logger.info(F"PLAY_STATE is {config.PLAY_STATE}. Inserting new tape")
+         state.player.eject_tape()
+         state.player.insert_tape(tape)
+    return current
 
-    N = 0; prev_track_id = ''; prev_tape_id = ''; current_tape_id = ''
+def playstate_changes(state,changes,current,scr,tape):
+    if (current['PLAY_STATE'] == config.READY):  #  A new tape to be inserted
+       logger.info(F"PLAY_STATE is {config.PLAY_STATE}. Inserting new tape")
+       state.player.eject_tape()
+       state.player.insert_tape(tape)
+    if (current['PLAY_STATE'] == config.PLAYING):  # Play tape 
+       try:
+         logger.info(F"Playing {current['DATE']} on player")
+         scr.show_playstate(staged_play=True) # show an empty triangle, to register the button press.
+         #tape = archive.best_tape(config.DATE.strftime('%Y-%m-%d'))
+         if len(state.player.playlist) == 0: state.player = play_tape(tape,state.player)  ## NOTE required?
+         else: state.player.play()
+         scr.show_venue(state.date_reader.venue())
+         scr.show_playstate()
+       except AttributeError:
+         logger.info(F"Cannot play date {current['DATE']}")
+         pass
+       except:
+         raise 
+       finally:
+         pass
+    if current['PLAY_STATE'] == config.PAUSED: 
+       logger.info(F"Pausing {current['DATE'].strftime('%Y-%m-%d')} on player") 
+       state.player.pause()
+       scr.show_playstate()
+    if current['PLAY_STATE'] == config.STOPPED:
+       state.player.stop()
+       scr.show_playstate()
+    return current
+
+def runLoop(state,scr,maxN=None):
+
+    N = 0; 
     scr.refresh()
-    sbd = None
+    tape = None; sbd = None;
     quiescent = 0; q_counter = False
-    cfg = get_module_dict('config')
-    frozen_config = cfg.copy()
 
     while N<=maxN if maxN != None else True:
       N = N+1; 
       if q_counter: quiescent = quiescent + 1
-      staged_date = ctl.date_knob_reader(y,m,d,archive)
-      config.STAGED_DATE = staged_date.date
-      cfg_changes = get_changes(cfg)
-      changes = cfg_changes.keys()
+      changes,previous,current = state.snap()
 
-      if meInterrupt: break   ## not working (yet)
-
-      # deal with DATE changes
-
-      if quiescent > config.QUIESCENT_TIME and config.PLAY_STATE in [config.PAUSED,config.PLAYING]: # the dates have not been changed in a while -- revert staged_date to date
+      if quiescent > config.QUIESCENT_TIME and current['PLAY_STATE'] in [config.PAUSED,config.PLAYING]: # the dates have not been changed in a while -- revert staged_date to date
          logger.info (F"quiescent: {quiescent}")
          quiescent = 0; q_counter = False
-         scr.show_staged_date(to_date(player.tape.date))
-         scr.show_venue(player.tape.venue())
+         scr.show_staged_date(to_date(state.player.tape.date))
+         scr.show_venue(state.player.tape.venue())
 
-      if 'EXPERIENCE' in changes:
-         frozen_config = experience_mode(scr,player,cfg.copy())
-         if not config.EXPERIENCE:  # we have exited EXPERIENCE mode
-            prev_track_id = ''     # so the player can display tracks.
+      update_tracks(state,current,changes,scr)
+      if len(changes) == 0:
+         sleep(.02)
          continue
-      if config.EXPERIENCE: 
-         cfg = frozen_config
-         set_state(cfg)     # set config to the frozen version
-         cfg_changes = {}
-         changes = cfg_changes.keys()
-         sleep(0.005)
+
+      logger.info (F"change keys {changes.keys()}")
+      if 'EXPERIENCE' in changes.keys():
+         if current['EXPERIENCE']:   
+           frozen_config = current.copy()
+           frozen_config['EXPERIENCE'] = False
+           scr.show_experience("Press Month to\nExit Experience") 
+         if not current['EXPERIENCE']:  # we have exited EXPERIENCE mode
+           state.set(frozen_config)
+           scr.show_experience("") 
+
+      if current['EXPERIENCE']: 
          continue
-      import pdb; pdb.set_trace()
-      if 'STAGED_DATE' in changes:  # Date knobs changed
-         logger.info (F"DATE: {config.DATE}, SELECT_STAGED_DATE: {config.SELECT_STAGED_DATE}, PLAY_STATE: {config.PLAY_STATE}. quiescent {quiescent}")
-         logger.info (F"staged_date: {staged_date}")
-         if staged_date.tape_available(): 
-            scr.show_venue(staged_date.venue())
-         else:
-            scr.clear_area(scr.venue_bbox,now=True) # erase the venue
-         scr.show_staged_date(staged_date.date)
-         quiescent = 0; q_counter = True
-      if config.TIH:   # Year Button was Pushed, set Month and Date to Today in History
-         m.value = config.TIH_MONTH
-         d.value = config.TIH_DAY
-         config.TIH = False
-         quiescent = 0; q_counter = True
-         continue
-      if config.NEXT_DATE:   # Day Button was Pushed, set date to next date with tape available
-         new_date = staged_date.next_date() 
-         y.value = new_date.year; m.value = new_date.month; d.value = new_date.day;
-         config.NEXT_DATE = False
-         quiescent = 0; q_counter = True
-      if staged_date.tape_available():
-        tapes = archive.tape_dates[staged_date.fmtdate()]
-        itape = -1
-        while config.NEXT_TAPE:   # Select Button was Pushed and Held
-          itape = divmod(itape + 1,len(tapes))[1]
-          tape_id = tapes[itape].identifier
-          sbd = tapes[itape].stream_only()
-          id_color = (0,255,255) if sbd else (0,0,255)
-          logger.info (F"In NEXT_TAPE. Choosing {tape_id}, the {itape}th of {len(tapes)} choices. SBD:{sbd}")
-          #scr.show_soundboard(sbd)
-          if len(tape_id)<16: scr.show_venue(tape_id,color=id_color)
-          else:
-            for i in range(0,max(1,len(tape_id)),2):
-              scr.show_venue(tape_id[i:],color=id_color)
-              if not config.NEXT_TAPE: 
-                scr.show_venue(tape_id,color=id_color)
-                break 
-        itape = max(0,itape) 
-        if config.SELECT_STAGED_DATE:   # Select Button was Pushed and Released
-          config.DATE = staged_date.date 
-          logger.info(F"Set DATE to {config.DATE}")
-          config.PLAY_STATE = config.READY  #  eject current tape, insert new one in player
-          tape = tapes[itape] 
-          current_tape_id = tape.identifier
-          sbd = tape.stream_only()
-          #scr.show_soundboard(sbd)
-          scr.show_selected_date(config.DATE)
-      config.SELECT_STAGED_DATE = False
-      config.NEXT_TAPE = False
 
-      current_track = player._get_property('playlist-pos')
-      current_track_id = current_tape_id + '_track_'+str(current_track)
-      if not 'PLAY_STATE' in changes:   ##  PLAY_STATE has not changed, but we need to dead with stuff.
-      #if (config.PLAY_STATE == play_state):   ##  PLAY_STATE has not changed, but we need to dead with stuff.
-         if config.FFWD:
-            player.next()
-            config.FFWD = False
-         else: 
-            while config.FSEEK:
-              player.seek(1)
-         if config.REWIND:
-            player.prev()
-            config.REWIND = False
-         else: 
-            while config.RSEEK:
-              player.seek(-1)
-         if config.PLAY_STATE == config.INIT:
-            scr.show_track('',0)
-            scr.show_track('',1)
-            scr.show_playstate()
-         if (config.PLAY_STATE in [config.INIT,config.READY, config.STOPPED]) and current_tape_id != prev_tape_id:
-            prev_tape_id = current_tape_id
-            scr.show_track('',0)
-            scr.show_track('',1)
-            scr.show_playstate()
-            if (config.PLAY_STATE == config.READY):
-              logger.info(F"PLAY_STATE is {config.PLAY_STATE}. Inserting new tape")
-              player.eject_tape()
-              player.insert_tape(tape)
-         if (config.PLAY_STATE in [config.PLAYING,config.PAUSED]) and current_track_id != prev_track_id:
-            if current_track == None:        # this happens when the tape has ended (at least).
-              config.PLAY_STATE = config.INIT   # NOTE Not quite working
-              continue
-            prev_track_id = current_track_id
-            title = player.tape.tracks()[current_track].title
-            scr.show_track(title,0)
-            if (current_track+1)<len(player.playlist):
-               next_track = current_track+1 if (current_track+1)<len(player.playlist) else None
-               next_title = player.tape.tracks()[next_track].title
-               scr.show_track(next_title,1)
-            else: scr.show_track('',1)
-            scr.show_playstate()
-         sleep(0.02); continue
+      current,tape,sbd,quiescent,q_counter = date_knob_changes(state,changes,current,scr,tape,quiescent,q_counter)
 
-      # Deal with PLAY_STATE changes
-      # now, config.PLAY_STATE != play_state
-
-      if (config.PLAY_STATE == config.READY):  #  A new tape to be inserted
-         logger.info(F"PLAY_STATE is {config.PLAY_STATE}. Inserting new tape")
-         player.eject_tape()
-         player.insert_tape(tape)
-      if (config.PLAY_STATE == config.PLAYING):  # Play tape 
-         try:
-           logger.info(F"Playing {config.DATE} on player")
-           scr.show_playstate(staged_play=True) # show an empty triangle, to register the button press.
-           #tape = archive.best_tape(config.DATE.strftime('%Y-%m-%d'))
-           if len(player.playlist) == 0: player = play_tape(tape,player)  ## NOTE required?
-           else: player.play()
-           #play_state = config.PLAYING
-           scr.show_venue(staged_date.venue())
-           scr.show_playstate()
-         except AttributeError:
-           logger.info(F"Cannot play date {config.DATE}")
-           pass
-         except:
-           raise 
-         finally:
-           pass
-           #config.PLAY_STATE = play_state
-      if config.PLAY_STATE == config.PAUSED: 
-         logger.info(F"Pausing {config.DATE.strftime('%Y-%m-%d')} on player") 
-         player.pause()
-         scr.show_playstate()
-      if config.PLAY_STATE == config.STOPPED:
-         player.stop()
-         scr.show_playstate()
-      #play_state = config.PLAY_STATE
-      sleep(.02); continue
+      if 'PLAY_STATE' in changes.keys():   
+        current = playstate_changes(state,changes,current,scr,tape) 
+      else:
+        current = playstate_static(state,changes,current,scr,tape) 
+      
+      #import pdb; pdb.set_trace()
+      state.set(current)
+      sleep(.02); 
 
 
 
@@ -277,13 +255,15 @@ def main(parms):
     logger.info ("Done ")
     
     scr.clear()
-    staged_date = ctl.date_knob_reader(y,m,d,a)
-    logger.info(staged_date)
+    date_reader = ctl.date_knob_reader(y,m,d,a)
+    logger.info(date_reader)
 
-    scr.show_staged_date(staged_date.date)
-    scr.show_venue(staged_date.venue())
+    scr.show_staged_date(date_reader.date)
+    scr.show_venue(date_reader.venue())
+    state = ctl.state(date_reader,player)
     # runLoop((y,m,d),a,scr,player)
-    loop = threading.Thread(target=runLoop,name="timemachine loop",args=((y,m,d),a,scr,player),kwargs={'maxN':None})
+    # runLoop(state,scr)
+    loop = threading.Thread(target=runLoop,name="timemachine loop",args=(state,scr),kwargs={'maxN':None})
     loop.start()
 
     loop.join()
