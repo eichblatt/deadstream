@@ -11,8 +11,9 @@ SELECT_STAGED_DATE = False
 NEXT_TAPE = False
 PLAY_STATE = INIT
 DATE = None
+STAGED_DATE = None
 ON_TOUR = False
-EXPERIENCE = None
+EXPERIENCE = False
 TIH = False
 _today = datetime.date.today()
 TIH_YEAR = None
@@ -41,5 +42,4 @@ ffwd_pin = 26    # pin 26 ok with sound card.
 # Options
 
 FADE_AWAY = "NOT"  # or "WEST_LA"
-SCREEN_TYPE = "fast"  # or "slow"
 QUIESCENT_TIME = 3000 # -- cycles to wait until reverting staged date

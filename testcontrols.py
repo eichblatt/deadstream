@@ -4,6 +4,10 @@ import datetime
 from time import sleep
 import threading
 
+state = ctl.state('config')
+
+cfg = state.get_current()
+
 ctl.logger.setLevel(10) # DEBUG
 d1 = '1977-05-08'
 d1 =  datetime.date(*(int(s) for s in d1.split('-')))
@@ -45,7 +49,7 @@ venue_name ="Fillmore West, San Francisco, CA"
 
 s.show_venue(venue_name)
 s.show_experience("Press Month to\nExit Experience")
-for i,state in enumerate(config.PLAY_STATES):
+for i,pstate in enumerate(config.PLAY_STATES):
   config.PLAY_STATE = i
   s.show_playstate()
   s.show_playstate(sbd=True)

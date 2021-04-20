@@ -432,14 +432,16 @@ class screen:
     if staged_play:
        self.draw.regular_polygon((bbox.center(),10),3,rotation=30,fill=color)
        self.draw.regular_polygon((bbox.center(),8),3,rotation=30,fill=(0,0,0))
-    if config.PLAY_STATES[config.PLAY_STATE] == 'Playing':  
+       self.refresh()
+       return
+    if config.PLAY_STATE == config.PLAYING:  
        self.draw.regular_polygon((bbox.center(),10),3,rotation=30,fill=color)
-    elif config.PLAY_STATES[config.PLAY_STATE] == 'Paused' :  
+    elif config.PLAY_STATE == config.PAUSED:  
        self.draw.line([(bbox.x0+10,bbox.y0+4),(bbox.x0+10,bbox.y0+20)],width=4,fill=color)
        self.draw.line([(bbox.x0+20,bbox.y0+4),(bbox.x0+20,bbox.y0+20)],width=4,fill=color)
-    elif config.PLAY_STATES[config.PLAY_STATE] == 'Stopped' :  
+    elif config.PLAY_STATE == config.STOPPED :  
        self.draw.regular_polygon((bbox.center(),10),4,rotation=0,fill=color)
-    elif config.PLAY_STATES[config.PLAY_STATE] in ['Init','Ready'] :  
+    elif config.PLAY_STATE in [config.INIT,config.READY] :  
        pass
     if sbd: self.show_soundboard(sbd)
     self.refresh()
@@ -451,3 +453,34 @@ class screen:
     logger.debug("showing soundboard status")
     self.draw.regular_polygon((self.sbd_bbox.center(),3),4,rotation=45,fill=color)
 
+class state:
+  def __init__(self,module_name='config'):
+    self.module_name = module_name
+    self.cfg = self.get_current()
+
+  def __str__(self):
+    return self.__repr__()
+
+  def __repr__(self):
+    return F"state is {self.cfg}"
+
+  def get_changes(self,other_state): 
+    changes = {}
+    current = self.get_current()
+    other = other_state.cfg
+    for k in other.keys():
+        if other[k] != current[k]:
+          changes[k] = (other[k],current[k])
+          logger.info(F"Change to config[{k}]")
+    return changes
+
+  def set_current(new_state):
+   for k in new_state.keys():
+      config.__dict__[k] = new_state[k]   # NOTE This directly names config, which I'd like to be a variable.
+
+  def get_current(self): 
+    module = globals().get(self.module_name,None)
+    self.cfg = {}
+    if module:
+      self.cfg = {key: value for key,value in module.__dict__.items() if (not key.startswith('_')) and key.isupper()}
+    return self.cfg

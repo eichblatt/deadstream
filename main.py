@@ -36,51 +36,91 @@ signal.signal(signal.SIGINT, meCustomHandler)
 
 def to_date(d): return datetime.datetime.strptime(d,'%Y-%m-%d').date()
 
+def get_module_dict(module_name): 
+    module = globals().get(module_name,None)
+    d = {}
+    if module:
+      d = {key: value for key,value in module.__dict__.items() if (not key.startswith('_')) and key.isupper()}
+    return d
+
 def play_tape(tape,player):
     logger.info(F"Playing tape {tape}")
     player.insert_tape(tape)
     player.play()
     return player
 
-def experience_mode(src,player):
-   logger.info ("Change to Experience Mode")
+def experience_mode(scr,player,cfg):
+   """ handle the experience change. Return the frozen state before change """
+   cfg['EXPERIENCE'] = False
+   logger.info (F"Changeing Experience Mode to {config.EXPERIENCE}")
    if not config.EXPERIENCE:
      scr.show_experience("") 
-   if config.PLAY_STATE in [config.INIT,config.READY]: return
+   if config.PLAY_STATE in [config.INIT,config.READY]: 
+     config.EXPERIENCE = False
+     return cfg
    scr.show_experience("Press Month to\nExit Experience") 
+   return cfg 
+
+def set_state(cfg):
+   for k in cfg.keys():
+      config.__dict__[k] = cfg[k]
+
+def get_changes(prev): 
+    changes = {}
+    current = get_module_dict('config')
+    for k in prev.keys():
+        if prev[k] != current[k]:
+          changes[k] = (prev[k],current[k])
+          logger.info(F"Change to config[{k}]")
+    return changes
 
 def runLoop(knobs,archive,scr,player,maxN=None):
-    global meInterrupt
     y,m,d = knobs
-    play_state = config.PLAY_STATE
-    d0 = (ctl.date_knob_reader(y,m,d,archive)).date
+    #play_state = config.PLAY_STATE
+    staged_date = ctl.date_knob_reader(y,m,d,archive)
+    config.STAGED_DATE = staged_date.date
+
     N = 0; prev_track_id = ''; prev_tape_id = ''; current_tape_id = ''
     scr.refresh()
     sbd = None
     quiescent = 0; q_counter = False
-    prev_experience = config.EXPERIENCE
+    cfg = get_module_dict('config')
+    frozen_config = cfg.copy()
 
     while N<=maxN if maxN != None else True:
-      staged_date = ctl.date_knob_reader(y,m,d,archive)
-      if meInterrupt: break   ## not working (yet)
-      # deal with DATE changes
       N = N+1; 
       if q_counter: quiescent = quiescent + 1
+      staged_date = ctl.date_knob_reader(y,m,d,archive)
+      config.STAGED_DATE = staged_date.date
+      cfg_changes = get_changes(cfg)
+      changes = cfg_changes.keys()
+
+      if meInterrupt: break   ## not working (yet)
+
+      # deal with DATE changes
+
       if quiescent > config.QUIESCENT_TIME and config.PLAY_STATE in [config.PAUSED,config.PLAYING]: # the dates have not been changed in a while -- revert staged_date to date
          logger.info (F"quiescent: {quiescent}")
          quiescent = 0; q_counter = False
          scr.show_staged_date(to_date(player.tape.date))
          scr.show_venue(player.tape.venue())
-      if config.EXPERIENCE != prev_experience:
-         experience_mode(scr,player)
-         prev_experience = config.EXPERIENCE 
+
+      if 'EXPERIENCE' in changes:
+         frozen_config = experience_mode(scr,player,cfg.copy())
+         if not config.EXPERIENCE:  # we have exited EXPERIENCE mode
+            prev_track_id = ''     # so the player can display tracks.
+         continue
       if config.EXPERIENCE: 
+         cfg = frozen_config
+         set_state(cfg)     # set config to the frozen version
+         cfg_changes = {}
+         changes = cfg_changes.keys()
          sleep(0.005)
          continue
-      if staged_date.date != d0:  # Date knobs changed
+      import pdb; pdb.set_trace()
+      if 'STAGED_DATE' in changes:  # Date knobs changed
          logger.info (F"DATE: {config.DATE}, SELECT_STAGED_DATE: {config.SELECT_STAGED_DATE}, PLAY_STATE: {config.PLAY_STATE}. quiescent {quiescent}")
          logger.info (F"staged_date: {staged_date}")
-         d0 = staged_date.date
          if staged_date.tape_available(): 
             scr.show_venue(staged_date.venue())
          else:
@@ -130,7 +170,8 @@ def runLoop(knobs,archive,scr,player,maxN=None):
 
       current_track = player._get_property('playlist-pos')
       current_track_id = current_tape_id + '_track_'+str(current_track)
-      if (config.PLAY_STATE == play_state):   ##  PLAY_STATE has not changed, but we need to dead with stuff.
+      if not 'PLAY_STATE' in changes:   ##  PLAY_STATE has not changed, but we need to dead with stuff.
+      #if (config.PLAY_STATE == play_state):   ##  PLAY_STATE has not changed, but we need to dead with stuff.
          if config.FFWD:
             player.next()
             config.FFWD = False
@@ -185,7 +226,7 @@ def runLoop(knobs,archive,scr,player,maxN=None):
            #tape = archive.best_tape(config.DATE.strftime('%Y-%m-%d'))
            if len(player.playlist) == 0: player = play_tape(tape,player)  ## NOTE required?
            else: player.play()
-           play_state = config.PLAYING
+           #play_state = config.PLAYING
            scr.show_venue(staged_date.venue())
            scr.show_playstate()
          except AttributeError:
@@ -194,7 +235,8 @@ def runLoop(knobs,archive,scr,player,maxN=None):
          except:
            raise 
          finally:
-           config.PLAY_STATE = play_state
+           pass
+           #config.PLAY_STATE = play_state
       if config.PLAY_STATE == config.PAUSED: 
          logger.info(F"Pausing {config.DATE.strftime('%Y-%m-%d')} on player") 
          player.pause()
@@ -202,8 +244,7 @@ def runLoop(knobs,archive,scr,player,maxN=None):
       if config.PLAY_STATE == config.STOPPED:
          player.stop()
          scr.show_playstate()
-      play_state = config.PLAY_STATE
-      #scr.show_playstate()
+      #play_state = config.PLAY_STATE
       sleep(.02); continue
 
 
@@ -230,7 +271,6 @@ def main(parms):
     scr = ctl.screen(upside_down=upside_down)
     scr.clear()
     scr.show_text("Grateful\n  Dead\n   Streamer\n     Loading...",color=(0,255,255))
-    #_ = [x.setup() for x in [y,m,d,select,ffwd,stop]]
 
     logger.info ("Loading GD Archive")
     a = GD.GDArchive(parms.dbpath)
@@ -242,7 +282,7 @@ def main(parms):
 
     scr.show_staged_date(staged_date.date)
     scr.show_venue(staged_date.venue())
-
+    # runLoop((y,m,d),a,scr,player)
     loop = threading.Thread(target=runLoop,name="timemachine loop",args=((y,m,d),a,scr,player),kwargs={'maxN':None})
     loop.start()
 
