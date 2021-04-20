@@ -458,11 +458,10 @@ class screen:
     self.draw.regular_polygon((self.sbd_bbox.center(),3),4,rotation=45,fill=color)
 
 class state:
-  def __init__(self,date_reader,player=None,tape_id='',track_id=''):
+  def __init__(self,date_reader,player=None):
     self.module_name = 'config'
     self.date_reader = date_reader
     self.player = player
-    self.tape_id = tape_id; self.track_id = track_id;
     self.dict = self.get_current()
 
   def __str__(self):
@@ -501,7 +500,10 @@ class state:
       self.dict = {key: value for key,value in module.__dict__.items() if (not key.startswith('_')) and key.isupper()}
     self.date_reader.update()
     self.dict['DATE_READER'] = self.date_reader.date
-    self.dict['TAPE_ID'] = self.tape_id
+    try:
+      self.dict['TAPE_ID'] = self.player.tape.identifier
+    except: 
+      self.dict['TAPE_ID'] = ''
     self.dict['TRACK_NUM'] = self.player._get_property('playlist-pos')
-    self.dict['TRACK_ID'] = self.tape_id + "_track_" + str(self.dict['TRACK_NUM'])
+    self.dict['TRACK_ID'] = self.dict['TAPE_ID']+ "_track_" + str(self.dict['TRACK_NUM'])
     return self.dict

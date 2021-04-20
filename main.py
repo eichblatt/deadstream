@@ -94,6 +94,7 @@ def date_knob_changes(state,changes,current,scr,tape,quiescent,q_counter):
            current['PLAY_STATE'] = config.READY  #  eject current tape, insert new one in player
            tape = tapes[itape] 
            current['TAPE_ID'] = tape.identifier
+           logger.info(F"Set TAPE_ID to {current['TAPE_ID']}")
            current['TRACK_NUM'] = -1
            sbd = tape.stream_only()
            #scr.show_soundboard(sbd)
@@ -109,8 +110,7 @@ def update_tracks(state,current,changes,scr):
       current['PLAY_STATE'] = config.INIT   # NOTE Not quite working
       return
 
-    print (F"TRACK_ID is {current['TRACK_ID']}")
-    if 'TRACK_ID' in changes.keys():
+    if current['TRACK_ID'] in changes.keys():
       title = state.player.tape.tracks()[current['TRACK_NUM']].title
       scr.show_track(title,0)
       print (F"show title {title}")
@@ -197,6 +197,7 @@ def runLoop(state,scr,maxN=None):
          scr.show_venue(state.player.tape.venue())
 
       update_tracks(state,current,changes,scr)
+
       if len(changes) == 0:
          sleep(.02)
          continue
@@ -215,6 +216,8 @@ def runLoop(state,scr,maxN=None):
          continue
 
       current,tape,sbd,quiescent,q_counter = date_knob_changes(state,changes,current,scr,tape,quiescent,q_counter)
+
+      update_tracks(state,current,changes,scr)
 
       if 'PLAY_STATE' in changes.keys():   
         current = playstate_changes(state,changes,current,scr,tape) 
