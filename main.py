@@ -194,12 +194,16 @@ def runLoop(state,scr,maxN=None):
 
       if 'EXPERIENCE' in changes.keys():
          if current['EXPERIENCE']:   
-           frozen_config = current.copy()
-           frozen_config['EXPERIENCE'] = False
+           frozen_state = current.copy()
+           frozen_state['EXPERIENCE'] = False
            scr.show_experience("Press Month to\nExit Experience") 
          if not current['EXPERIENCE']:  # we have exited EXPERIENCE mode
-           state.set(frozen_config)
+           state.set(frozen_state)
+           changes = {}
+           current = frozen_state
+           previous = frozen_state
            scr.show_experience("") 
+           continue
 
       if current['EXPERIENCE']: 
          continue
