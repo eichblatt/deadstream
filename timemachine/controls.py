@@ -393,7 +393,7 @@ class screen:
          sleep(1)
          self.clear_area(bbox)
 
-  def show_experience(self,text="Press Month to\nExit Experience",color=(0,255,255),now=True):
+  def show_experience(self,text="Press Month to\nExit Experience",color=(255,255,255),now=True):
     self.clear_area(self.exp_bbox)
     self.show_text(text,self.exp_bbox.origin(),font=self.smallfont,color=color,stroke_width=1,now=now)
 
