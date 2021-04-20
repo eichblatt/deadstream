@@ -104,22 +104,18 @@ def date_knob_changes(state,changes,current,scr,tape,quiescent,q_counter):
       return (current,tape,sbd,quiescent,q_counter)
 
   
-def update_tracks(state,current,changes,scr):
-    if not current['PLAY_STATE'] in [config.PLAYING,config.PAUSED]: return
+def update_tracks(state,current,previous,changes,scr):
+    if not current['PLAY_STATE'] in [config.READY,config.PLAYING,config.PAUSED]: return current
     if current['TRACK_NUM'] == None :        # this happens when the tape has ended (at least).
       current['PLAY_STATE'] = config.INIT   # NOTE Not quite working
-      return
+      return current
 
-    if current['TRACK_ID'] in changes.keys():
-      title = state.player.tape.tracks()[current['TRACK_NUM']].title
-      scr.show_track(title,0)
-      print (F"show title {title}")
-      if (current['TRACK_NUM']+1)<len(state.player.playlist):
-         next_track = current['TRACK_NUM']+1 
-         next_title = state.player.tape.tracks()[next_track].title
-         scr.show_track(next_title,1)
-      else: scr.show_track('',1)
+    if ('TRACK_TITLE' in changes.keys()) or 'EXPERIENCE' in changes.keys():
+    #if current['TRACK_TITLE'] != previous['TRACK_TITLE']:
+      scr.show_track(current['TRACK_TITLE'],0)
+      scr.show_track(current['NEXT_TRACK_TITLE'],1)
       scr.show_playstate()
+    return current
 
 def playstate_static(state,changes,current,scr,tape):
     if current['FFWD']:
@@ -196,13 +192,6 @@ def runLoop(state,scr,maxN=None):
          scr.show_staged_date(to_date(state.player.tape.date))
          scr.show_venue(state.player.tape.venue())
 
-      update_tracks(state,current,changes,scr)
-
-      if len(changes) == 0:
-         sleep(.02)
-         continue
-
-      logger.info (F"change keys {changes.keys()}")
       if 'EXPERIENCE' in changes.keys():
          if current['EXPERIENCE']:   
            frozen_config = current.copy()
@@ -215,9 +204,15 @@ def runLoop(state,scr,maxN=None):
       if current['EXPERIENCE']: 
          continue
 
+      if len(changes) == 0:
+         sleep(.01)
+         continue
+
+      logger.info (F"change keys {changes.keys()}")
+
       current,tape,sbd,quiescent,q_counter = date_knob_changes(state,changes,current,scr,tape,quiescent,q_counter)
 
-      update_tracks(state,current,changes,scr)
+      current = update_tracks(state,current,previous,changes,scr)
 
       if 'PLAY_STATE' in changes.keys():   
         current = playstate_changes(state,changes,current,scr,tape) 
@@ -226,7 +221,7 @@ def runLoop(state,scr,maxN=None):
       
       #import pdb; pdb.set_trace()
       state.set(current)
-      sleep(.02); 
+      sleep(.01); 
 
 
 

@@ -500,10 +500,17 @@ class state:
       self.dict = {key: value for key,value in module.__dict__.items() if (not key.startswith('_')) and key.isupper()}
     self.date_reader.update()
     self.dict['DATE_READER'] = self.date_reader.date
+    self.dict['TRACK_NUM'] = self.player._get_property('playlist-pos')
     try:
       self.dict['TAPE_ID'] = self.player.tape.identifier
+      self.dict['TRACK_TITLE'] = self.player.tape.tracks()[self.dict['TRACK_NUM']].title
+      if (self.dict['TRACK_NUM']+1)<len(self.player.playlist):
+         next_track = self.dict['TRACK_NUM']+1 
+         self.dict['NEXT_TRACK_TITLE'] = self.player.tape.tracks()[next_track].title
+      else: self.dict['NEXT_TRACK_TITLE'] = ''
     except: 
       self.dict['TAPE_ID'] = ''
-    self.dict['TRACK_NUM'] = self.player._get_property('playlist-pos')
+      self.dict['TRACK_TITLE'] = ''
+      self.dict['NEXT_TRACK_TITLE'] = ''
     self.dict['TRACK_ID'] = self.dict['TAPE_ID']+ "_track_" + str(self.dict['TRACK_NUM'])
     return self.dict
