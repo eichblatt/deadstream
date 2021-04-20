@@ -1,9 +1,9 @@
 from setuptools import setup
 
 setup(
-    name="deadstream",
+    name="timemachine",
     version="0.1.0",
-    packages=["deadstream"],
+    packages=["timemachine"],
     install_requires=[
         'aiohttp',
         'requests',
@@ -15,6 +15,6 @@ setup(
         'pickle5'
     ],
     package_data={
-        "deadstream": ["FreeMono.ttf", "ariallgt.ttf", "DejaVuSansMono-Bold.ttf","set_breaks.csv"]
+        "timemachine": ["FreeMono.ttf", "ariallgt.ttf", "DejaVuSansMono-Bold.ttf","set_breaks.csv"]
     }
 )

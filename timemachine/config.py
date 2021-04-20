@@ -6,13 +6,17 @@ READY = 1
 PAUSED = 2
 STOPPED = 3
 PLAYING = 4
-PLAY_STATES = ['Init','Ready','Paused','Stopped','Playing']
+PLAY_STATE = INIT
+#PLAY_STATES = ['Init','Ready','Paused','Stopped','Playing']
 SELECT_STAGED_DATE = False
 NEXT_TAPE = False
-PLAY_STATE = INIT
 DATE = None
+STAGED_DATE = None
+
 ON_TOUR = False
+EXPERIENCE = False
 TIH = False
+
 _today = datetime.date.today()
 TIH_YEAR = None
 TIH_MONTH = _today.month
@@ -40,5 +44,4 @@ ffwd_pin = 26    # pin 26 ok with sound card.
 # Options
 
 FADE_AWAY = "NOT"  # or "WEST_LA"
-SCREEN_TYPE = "fast"  # or "slow"
 QUIESCENT_TIME = 3000 # -- cycles to wait until reverting staged date

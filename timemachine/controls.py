@@ -5,7 +5,7 @@ import datetime
 import logging
 import digitalio
 import board
-import config
+from  . import config
 import adafruit_rgb_display.st7735 as st7735
 from adafruit_rgb_display import color565
 from PIL import Image, ImageDraw, ImageFont
@@ -101,10 +101,10 @@ class button:
     if self.name == 'play_pause':
        if config.PLAY_STATE in [config.READY, config.PAUSED, config.STOPPED]: config.PLAY_STATE = config.PLAYING  # play if not playing
        elif config.PLAY_STATE == config.PLAYING: config.PLAY_STATE = config.PAUSED   # Pause if playing
-       logger.debug(F"Setting PLAY_STATE to {config.PLAY_STATES[config.PLAY_STATE]}")
+       logger.debug(F"Setting PLAY_STATE to {config.PLAY_STATE}")
     if self.name == 'stop':
        if config.PLAY_STATE in [config.PLAYING, config.PAUSED]: config.PLAY_STATE = config.STOPPED  # stop playing or pausing
-       logger.debug(F"Setting PLAY_STATE to {config.PLAY_STATES[config.PLAY_STATE]}")
+       logger.debug(F"Setting PLAY_STATE to {config.PLAY_STATE}")
 
   def cleanup(self): 
     GPIO.cleanup()
@@ -118,6 +118,7 @@ class knob:
     self.value = min(values) if init == None else init
     self.bouncetime = bouncetime
     self.is_setup = False
+    self.in_rotate = False
 
   def __str__(self):
     return self.__repr__()
@@ -142,9 +143,8 @@ class knob:
     GPIO.setmode(GPIO.BCM)
     _ = [GPIO.setup(x,GPIO.IN,pull_up_down=GPIO.PUD_DOWN) for x in [self.cl,self.dt,self.sw]]
     try:
-      self.add_callback(self.sw,GPIO.RISING,self.sw_callback)
-      self.add_callback(self.dt,GPIO.FALLING,self.dt_callback)
-      self.add_callback(self.cl,GPIO.FALLING,self.cl_callback)
+      self.add_callback(self.sw,GPIO.RISING,self.push)
+      self.add_callback(self.cl,GPIO.FALLING,self.rotate)
       self.is_setup = True
     except: raise
     return None 
@@ -152,32 +152,37 @@ class knob:
   def show_pin_states(self,msg): 
     logger.debug (F"{self.name} {msg}: State of cl:{GPIO.input(self.cl)}, dt:{GPIO.input(self.dt)}, sw:{GPIO.input(self.sw)}")
     return 
- 
-  def cl_callback(self,channel):
-    self.show_pin_states("cl")
-    dt = GPIO.input(self.dt) 
-    if dt == 1: 
+
+  def rotate(self,channel):
+    if self.in_rotate: 
+      logger.debug (F" Already in rotate for {self.name}")
+      return
+    self.in_rotate = True
+    vals = [(GPIO.input(self.dt),GPIO.input(self.cl)) for i in range(10)]
+    if sum([v[1] for v in vals])>3: 
+      logger.debug (F" Noisy click on {self.name}.  {self.value}")
+      cl_val = 1
+    else: cl_val = 0
+    if sum([v[0] for v in vals])>5: dt_val = 1 
+    else: dt_val = 0
+    if cl_val == 0 and dt_val == 0:
+      self.set_value(self.value - 1)
+      logger.debug (F" --- decreasing {self.name}.  {self.value}")
+    elif cl_val == 0 and dt_val == 1:
       self.set_value(self.value + 1)
       logger.debug (F" +++ increasing {self.name}.  {self.value}")
+    self.in_rotate = False
     return
-
-  def dt_callback(self,channel):
-    self.show_pin_states("dt")
-    cl = GPIO.input(self.cl)
-    if cl == 1: 
-      self.set_value(self.value -1)
-      logger.debug (F" --- decreasing {self.name}. {self.value}")
-    return
-
-  def sw_callback(self,channel):
+ 
+  def push(self,channel):
     logger.debug(F"Pushed button {self.name}")
     if self.name == 'year':
       config.TIH = True 
       logger.debug(F"Setting TIH to {config.TIH}")
     if self.name == 'month':
-      if config.PLAY_STATE in [config.READY, config.PAUSED, config.STOPPED]: config.PLAY_STATE = config.PLAYING  # play if not playing
-      elif config.PLAY_STATE == config.PLAYING: config.PLAY_STATE = config.PAUSED   # Pause if playing
-      logger.debug(F"Setting PLAY_STATE to {config.PLAY_STATES[config.PLAY_STATE]}")
+      if config.EXPERIENCE: config.EXPERIENCE = False
+      else: config.EXPERIENCE = True
+      logger.debug(F"Setting EXPERIENCE to {config.EXPERIENCE}")
     if self.name == 'day':
       config.NEXT_DATE = True
       logger.debug(F"Setting NEXT_DATE to {config.NEXT_DATE}")
@@ -195,7 +200,8 @@ class date_knob_reader:
   def __init__(self,y,m,d,archive=None):
     self.date = None
     self.archive = archive
-    self.update(y,m,d)
+    self.y = y; self.m = m; self.d = d;
+    self.update()
  
   def __str__(self):  
     return self.__repr__()
@@ -204,31 +210,34 @@ class date_knob_reader:
     avail = "Tape Available" if self.tape_available() else ""
     return F'Date Knob Says: {self.date.strftime("%Y-%m-%d")}. {avail}'
 
-  def update(self,y,m,d):
+#  def update(self,y,m,d):
+  def update(self):
     maxd = [31,29,31,30,31,30,31,31,30,31,30,31] ## max days in a month.
-    if d.value > maxd[m.value-1]: d.set_value(maxd[m.value-1])
+    if self.d.value > maxd[self.m.value-1]: self.d.set_value(maxd[self.m.value-1])
     try:
-      self.date = datetime.date(y.value,m.value,d.value)
+      self.date = datetime.date(self.y.value,self.m.value,self.d.value)
     except ValueError:
-      d.set_value(d.value-1)
-      self.date = datetime.date(y.value,m.value,d.value)
+      self.d.set_value(self.d.value-1)
+      self.date = datetime.date(self.y.value,self.m.value,self.d.value)
  
   def fmtdate(self):
     if self.date == None: return None
     return self.date.strftime('%Y-%m-%d')
 
   def venue(self):
-    if self.tape_available: 
+    if self.tape_available(): 
       t = self.archive.best_tape(self.fmtdate())
       return t.venue()
     return ""
 
   def tape_available(self):
     if self.archive == None: return False
+    self.update()
     return self.fmtdate() in self.archive.dates   
 
   def next_date(self):
     if self.archive == None: return None
+    self.update()
     for d in self.archive.dates:
       if d>self.fmtdate(): return datetime.datetime.strptime(d,'%Y-%m-%d').date()
     return self.date
@@ -308,13 +317,13 @@ class screen:
     else: width,height= self.disp.width,self.disp.height
     self.width, self.height = width, height
     logger.debug(F" ---> disp {self.disp.width},{self.disp.height}")
-    self.boldfont = ImageFont.truetype(pkg_resources.resource_filename("deadstream", "DejaVuSansMono-Bold.ttf"), 33)
-    self.boldsmall = ImageFont.truetype(pkg_resources.resource_filename("deadstream", "DejaVuSansMono-Bold.ttf"), 22)
-    self.font = ImageFont.truetype(pkg_resources.resource_filename("deadstream", "ariallgt.ttf"), 30)
-    self.smallfont = ImageFont.truetype(pkg_resources.resource_filename("deadstream", "ariallgt.ttf"), 20)
-    self.oldfont = ImageFont.truetype(pkg_resources.resource_filename("deadstream", "FreeMono.ttf"), 20)
-    self.largefont = ImageFont.truetype(pkg_resources.resource_filename("deadstream", "FreeMono.ttf"), 30)
-    self.hugefont = ImageFont.truetype(pkg_resources.resource_filename("deadstream", "FreeMono.ttf"), 40)
+    self.boldfont = ImageFont.truetype(pkg_resources.resource_filename("timemachine", "DejaVuSansMono-Bold.ttf"), 33)
+    self.boldsmall = ImageFont.truetype(pkg_resources.resource_filename("timemachine", "DejaVuSansMono-Bold.ttf"), 22)
+    self.font = ImageFont.truetype(pkg_resources.resource_filename("timemachine", "ariallgt.ttf"), 30)
+    self.smallfont = ImageFont.truetype(pkg_resources.resource_filename("timemachine", "ariallgt.ttf"), 20)
+    self.oldfont = ImageFont.truetype(pkg_resources.resource_filename("timemachine", "FreeMono.ttf"), 20)
+    self.largefont = ImageFont.truetype(pkg_resources.resource_filename("timemachine", "FreeMono.ttf"), 30)
+    self.hugefont = ImageFont.truetype(pkg_resources.resource_filename("timemachine", "FreeMono.ttf"), 40)
 
     self.image = Image.new("RGB",(width,height))
     self.draw = ImageDraw.Draw(self.image)       # draw using this object. Display image when complete.
@@ -330,6 +339,7 @@ class screen:
     self.track2_bbox = Bbox(0,78,160,100)
     self.playstate_bbox = Bbox(130,100,160,128)
     self.sbd_bbox = Bbox(155,100,160,108)
+    self.exp_bbox = Bbox(0,55,160,100)
 
 
   def refresh(self):
@@ -383,6 +393,10 @@ class screen:
          sleep(1)
          self.clear_area(bbox)
 
+  def show_experience(self,text="Press Month to\nExit Experience",color=(255,255,255),now=True):
+    self.clear_area(self.exp_bbox)
+    self.show_text(text,self.exp_bbox.origin(),font=self.smallfont,color=color,stroke_width=1,now=now)
+
   def show_venue(self,text,color=(0,255,255),now=True):
     self.clear_area(self.venue_bbox)
     self.show_text(text,self.venue_bbox.origin(),font=self.boldsmall,color=color,now=now)
@@ -415,21 +429,23 @@ class screen:
     self.refresh()
 
   def show_playstate(self,staged_play=False,color=(0,100,255),sbd=None):
-    logger.debug(F"showing playstate {config.PLAY_STATES[config.PLAY_STATE]}")
+    logger.debug(F"showing playstate {config.PLAY_STATE}")
     bbox = self.playstate_bbox
     self.clear_area(bbox)
     size   = bbox.size()
     if staged_play:
        self.draw.regular_polygon((bbox.center(),10),3,rotation=30,fill=color)
        self.draw.regular_polygon((bbox.center(),8),3,rotation=30,fill=(0,0,0))
-    if config.PLAY_STATES[config.PLAY_STATE] == 'Playing':  
+       self.refresh()
+       return
+    if config.PLAY_STATE == config.PLAYING:  
        self.draw.regular_polygon((bbox.center(),10),3,rotation=30,fill=color)
-    elif config.PLAY_STATES[config.PLAY_STATE] == 'Paused' :  
+    elif config.PLAY_STATE == config.PAUSED:  
        self.draw.line([(bbox.x0+10,bbox.y0+4),(bbox.x0+10,bbox.y0+20)],width=4,fill=color)
        self.draw.line([(bbox.x0+20,bbox.y0+4),(bbox.x0+20,bbox.y0+20)],width=4,fill=color)
-    elif config.PLAY_STATES[config.PLAY_STATE] == 'Stopped' :  
+    elif config.PLAY_STATE == config.STOPPED :  
        self.draw.regular_polygon((bbox.center(),10),4,rotation=0,fill=color)
-    elif config.PLAY_STATES[config.PLAY_STATE] in ['Init','Ready'] :  
+    elif config.PLAY_STATE in [config.INIT,config.READY] :  
        pass
     if sbd: self.show_soundboard(sbd)
     self.refresh()
@@ -441,3 +457,60 @@ class screen:
     logger.debug("showing soundboard status")
     self.draw.regular_polygon((self.sbd_bbox.center(),3),4,rotation=45,fill=color)
 
+class state:
+  def __init__(self,date_reader,player=None):
+    self.module_name = 'config'
+    self.date_reader = date_reader
+    self.player = player
+    self.dict = self.get_current()
+
+  def __str__(self):
+    return self.__repr__()
+
+  def __repr__(self):
+    return F"state is {self.dict}"
+
+  @staticmethod
+  def dict_diff(d1,d2): 
+    changes = {}
+    for k in d2.keys():
+        if d1[k] != d2[k]:
+          changes[k] = (d1[k],d2[k])
+    return changes
+
+  def snap(self): 
+    previous = self.dict.copy() 
+    current = self.get_current()
+    changes = self.dict_diff(previous,current)
+    return (changes,previous,current)
+
+  def get_changes(self): 
+    previous = self.dict   # do this first!
+    current = self.get_current()
+    return self.dict_diff(previous,current)
+
+  def set(self,new_state):
+   for k in new_state.keys():
+      config.__dict__[k] = new_state[k]   # NOTE This directly names config, which I'd like to be a variable.
+
+  def get_current(self): 
+    module = globals().get(self.module_name,None)
+    self.dict = {}
+    if module:
+      self.dict = {key: value for key,value in module.__dict__.items() if (not key.startswith('_')) and key.isupper()}
+    self.date_reader.update()
+    self.dict['DATE_READER'] = self.date_reader.date
+    self.dict['TRACK_NUM'] = self.player._get_property('playlist-pos')
+    try:
+      self.dict['TAPE_ID'] = self.player.tape.identifier
+      self.dict['TRACK_TITLE'] = self.player.tape.tracks()[self.dict['TRACK_NUM']].title
+      if (self.dict['TRACK_NUM']+1)<len(self.player.playlist):
+         next_track = self.dict['TRACK_NUM']+1 
+         self.dict['NEXT_TRACK_TITLE'] = self.player.tape.tracks()[next_track].title
+      else: self.dict['NEXT_TRACK_TITLE'] = ''
+    except: 
+      self.dict['TAPE_ID'] = ''
+      self.dict['TRACK_TITLE'] = ''
+      self.dict['NEXT_TRACK_TITLE'] = ''
+    self.dict['TRACK_ID'] = self.dict['TAPE_ID']+ "_track_" + str(self.dict['TRACK_NUM'])
+    return self.dict

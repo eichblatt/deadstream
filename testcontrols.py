@@ -1,8 +1,12 @@
-from deadstream import controls as ctl
-import config
+from timemachine import controls as ctl
+from timemachine import config
 import datetime
 from time import sleep
 import threading
+
+state = ctl.state('config')
+
+cfg = state.get_current()
 
 ctl.logger.setLevel(10) # DEBUG
 d1 = '1977-05-08'
@@ -44,7 +48,8 @@ config.PLAY_STATE = 1   # Ready
 venue_name ="Fillmore West, San Francisco, CA"
 
 s.show_venue(venue_name)
-for i,state in enumerate(config.PLAY_STATES):
+s.show_experience("Press Month to\nExit Experience")
+for i,pstate in enumerate(config.PLAY_STATES):
   config.PLAY_STATE = i
   s.show_playstate()
   s.show_playstate(sbd=True)
