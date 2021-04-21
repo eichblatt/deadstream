@@ -113,14 +113,13 @@ def date_knob_changes(state,changes,current,scr,tape,quiescent,q_counter):
       return (current,tape,quiescent,q_counter)
 
   
-def update_tracks(state,current,previous,changes,scr):
+def update_tracks(state,current,changes,scr,force=False):
     if not current['PLAY_STATE'] in [config.READY,config.PLAYING,config.PAUSED]: return current
     if current['TRACK_NUM'] == None :        # this happens when the tape has ended (at least).
       current['PLAY_STATE'] = config.INIT   # NOTE Not quite working
       return current
 
-    if ('TRACK_TITLE' in changes.keys()) or 'EXPERIENCE' in changes.keys():
-    #if current['TRACK_TITLE'] != previous['TRACK_TITLE']:
+    if force or ('TRACK_TITLE' in changes.keys()) or 'EXPERIENCE' in changes.keys():
       scr.show_track(current['TRACK_TITLE'],0)
       scr.show_track(current['NEXT_TRACK_TITLE'],1)
       scr.show_playstate(sbd=state.player.tape.stream_only())
@@ -212,6 +211,7 @@ def runLoop(state,scr,maxN=None):
            current = frozen_state
            previous = frozen_state
            scr.show_experience("") 
+           update_tracks(state,current,changes,scr,force=True)
            continue
 
       if current['EXPERIENCE']: 
@@ -225,7 +225,7 @@ def runLoop(state,scr,maxN=None):
 
       current,tape,quiescent,q_counter = date_knob_changes(state,changes,current,scr,tape,quiescent,q_counter)
 
-      current = update_tracks(state,current,previous,changes,scr)
+      current = update_tracks(state,current,changes,scr)
 
       if 'PLAY_STATE' in changes.keys():   
         current = playstate_changes(state,changes,current,scr,tape) 

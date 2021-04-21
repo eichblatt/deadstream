@@ -111,7 +111,7 @@ class button:
 
  
 class knob:
-  def __init__(self,pins,name,values,init=None,bouncetime=100):
+  def __init__(self,pins,name,values,init=None,bouncetime=50):
     self.cl, self.dt, self.sw = pins
     self.name = name
     self._values = values 
