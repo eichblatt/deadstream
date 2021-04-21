@@ -50,6 +50,7 @@ def play_tape(tape,player):
     return player
 
 def date_knob_changes(state,changes,current,scr,tape,quiescent,q_counter):
+      m = state.date_reader.m; d = state.date_reader.d; y = state.date_reader.y
       if 'DATE_READER' in changes.keys():  # Date knobs changed
          logger.info (F"DATE: {config.DATE}, SELECT_STAGED_DATE: {config.SELECT_STAGED_DATE}, PLAY_STATE: {config.PLAY_STATE}. quiescent {quiescent}")
          if state.date_reader.tape_available(): 
@@ -256,7 +257,7 @@ def main(parms):
     if parms.box == 'v0': upside_down=True
     else: 
        upside_down = False
-       #os.system("amixer sset 'Headphone' 100%")
+       os.system("amixer sset 'Headphone' 100%")
     scr = ctl.screen(upside_down=upside_down)
     scr.clear()
     scr.show_text("Grateful\n  Dead\n   Streamer\n     Loading...",color=(0,255,255))
