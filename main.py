@@ -60,7 +60,19 @@ def date_knob_changes(state,changes,current,scr,tape,quiescent,q_counter):
          scr.show_staged_date(current['DATE_READER'])
          quiescent = 0; q_counter = True
       if current['TIH']:   # Year Button was Pushed, set Month and Date to Today in History
-         m.value = datetime.date.today().month; d.value = datetime.date.today().day
+         now_m = datetime.date.today().month; now_d = datetime.date.today().day
+         if m.value == now_m and d.value == now_d:   # move to the next year where there is a tape available
+           tihstring = F"{m.value:0>2d}-{d.value:0>2d}"
+           tih_tapedates = [to_date(d) for d in state.date_reader.archive.dates if d.endswith(tihstring)]
+           if len(tih_tapedates) > 0:
+             cut = 0
+             for i,dt in enumerate(tih_tapedates):
+                if dt.year > y.value:
+                  cut = i 
+                  break
+             tapedate = (tih_tapedates[cut:]+tih_tapedates[:cut])[0]
+             y.value = tapedate.year
+         m.value = now_m; d.value = now_d
          current['TIH'] = False
          quiescent = 0; q_counter = True
       if current['NEXT_DATE']:   # Day Button was Pushed, set date to next date with tape available
