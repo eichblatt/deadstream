@@ -63,13 +63,11 @@ def date_knob_changes(state,changes,current,scr,tape,quiescent,q_counter):
          m.value = datetime.date.today().month; d.value = datetime.date.today().day
          current['TIH'] = False
          quiescent = 0; q_counter = True
-         state.set(current)
       if current['NEXT_DATE']:   # Day Button was Pushed, set date to next date with tape available
          new_date = state.date_reader.next_date() 
          y.value = new_date.year; m.value = new_date.month; d.value = new_date.day;
          current['NEXT_DATE'] = False
          quiescent = 0; q_counter = True
-         # state.set(current)
       if state.date_reader.tape_available():
          tapes = state.date_reader.archive.tape_dates[state.date_reader.fmtdate()]
          itape = -1
