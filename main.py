@@ -50,7 +50,6 @@ def play_tape(tape,player):
     return player
 
 def date_knob_changes(state,changes,current,scr,tape,quiescent,q_counter):
-      sbd = None;
       if 'DATE_READER' in changes.keys():  # Date knobs changed
          logger.info (F"DATE: {config.DATE}, SELECT_STAGED_DATE: {config.SELECT_STAGED_DATE}, PLAY_STATE: {config.PLAY_STATE}. quiescent {quiescent}")
          if state.date_reader.tape_available(): 
@@ -106,12 +105,12 @@ def date_knob_changes(state,changes,current,scr,tape,quiescent,q_counter):
            current['TAPE_ID'] = tape.identifier
            logger.info(F"Set TAPE_ID to {current['TAPE_ID']}")
            current['TRACK_NUM'] = -1
-           sbd = tape.stream_only()
+           #sbd = tape.stream_only()
            #scr.show_soundboard(sbd)
            scr.show_selected_date(current['DATE'])
       current['SELECT_STAGED_DATE'] = False
       current['NEXT_TAPE'] = False
-      return (current,tape,sbd,quiescent,q_counter)
+      return (current,tape,quiescent,q_counter)
 
   
 def update_tracks(state,current,previous,changes,scr):
@@ -124,7 +123,7 @@ def update_tracks(state,current,previous,changes,scr):
     #if current['TRACK_TITLE'] != previous['TRACK_TITLE']:
       scr.show_track(current['TRACK_TITLE'],0)
       scr.show_track(current['NEXT_TRACK_TITLE'],1)
-      scr.show_playstate()
+      scr.show_playstate(sbd=state.player.tape.stream_only())
     return current
 
 def playstate_static(state,changes,current,scr,tape):
@@ -167,7 +166,7 @@ def playstate_changes(state,changes,current,scr,tape):
          if len(state.player.playlist) == 0: state.player = play_tape(tape,state.player)  ## NOTE required?
          else: state.player.play()
          scr.show_venue(state.date_reader.venue())
-         scr.show_playstate()
+         scr.show_playstate(sbd=state.player.tape.stream_only())
        except AttributeError:
          logger.info(F"Cannot play date {current['DATE']}")
          pass
@@ -224,7 +223,7 @@ def runLoop(state,scr,maxN=None):
 
       logger.info (F"change keys {changes.keys()}")
 
-      current,tape,sbd,quiescent,q_counter = date_knob_changes(state,changes,current,scr,tape,quiescent,q_counter)
+      current,tape,quiescent,q_counter = date_knob_changes(state,changes,current,scr,tape,quiescent,q_counter)
 
       current = update_tracks(state,current,previous,changes,scr)
 
