@@ -15,7 +15,7 @@ logging.basicConfig(format='%(asctime)s.%(msecs)03d %(levelname)s: %(name)s %(me
 logger = logging.getLogger(__name__)
 
 class button:
-  def __init__(self,pin,name,pull_up=False,bouncetime=300):
+  def __init__(self,pin,name,pull_up=True,bouncetime=300):
     self.pin = pin
     self.name = name
     self.bouncetime = bouncetime
@@ -43,11 +43,9 @@ class button:
     if self.pin == None: return
     if self.is_setup: return
     GPIO.setmode(GPIO.BCM)
-    if self.pull_up: # These pins are pulled up.
-      #GPIO.setup(self.pin,GPIO.IN,pull_up_down=GPIO.PUD_DOWN)
-      #self.add_callback(self.pin,GPIO.RISING,self.callback)
-      GPIO.setup(self.pin,GPIO.IN,pull_up_down=GPIO.PUD_DOWN)
-      self.add_callback(self.pin,GPIO.BOTH,self.callback)
+    if self.pull_up: 
+      GPIO.setup(self.pin,GPIO.IN,pull_up_down=GPIO.PUD_UP)
+      self.add_callback(self.pin,GPIO.FALLING,self.callback)
     else:
       GPIO.setup(self.pin,GPIO.IN,pull_up_down=GPIO.PUD_DOWN)
       self.add_callback(self.pin,GPIO.RISING,self.callback)
@@ -66,7 +64,7 @@ class button:
     if self.name == 'select':   # NOTE I should move this logic to a function, since it's repeated 3 times.
        config.NEXT_TAPE = False
        sleep(0.5)
-       while GPIO.input(self.pin) == 1: # button is still being pressed
+       while GPIO.input(self.pin) == 0: # button is still being pressed
            logger.debug(F"Setting SELECT_STAGED_DATE to {config.SELECT_STAGED_DATE}, NEXT_TAPE to {config.NEXT_TAPE}")
            config.NEXT_TAPE = True
            sleep(0.1)
@@ -78,7 +76,7 @@ class button:
     if self.name == 'ffwd':
        config.FSEEK = False
        sleep(0.5)
-       while GPIO.input(self.pin) == 1: # button is still being pressed
+       while GPIO.input(self.pin) == 0: # button is still being pressed
            logger.debug(F"Setting FFWD to {config.FFWD}, FSEEK is {config.FSEEK}")
            config.FSEEK = True
            sleep(0.1)
