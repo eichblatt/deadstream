@@ -15,7 +15,7 @@ logging.basicConfig(format='%(asctime)s.%(msecs)03d %(levelname)s: %(name)s %(me
 logger = logging.getLogger(__name__)
 
 class button:
-  def __init__(self,pin,name,pull_up=False,bouncetime=300):
+  def __init__(self,pin,name,pull_up=True,bouncetime=300):
     self.pin = pin
     self.name = name
     self.bouncetime = bouncetime
@@ -43,10 +43,6 @@ class button:
   def setup(self):
     if self.pin == None: return
     if self.is_setup: return
-    GPIO.setmode(GPIO.BCM)
-    if self.pull_up: # These pins are pulled up.
-      GPIO.setup(self.pin,GPIO.IN,pull_up_down=GPIO.PUD_DOWN)
-      self.add_callback(self.pin,GPIO.BOTH,self.push)
     else:
       GPIO.setup(self.pin,GPIO.IN,pull_up_down=GPIO.PUD_DOWN)
       self.add_callback(self.pin,GPIO.RISING,self.push)
@@ -70,7 +66,6 @@ class button:
       self.longpress = True
       sleep(0.1)
     return
-
   def cleanup(self): 
     GPIO.cleanup()
 
@@ -539,5 +534,51 @@ def controlLoop(item_list,callback):
       config.NEXT_DATE = True
       logger.debug(F"Setting NEXT_DATE to {config.NEXT_DATE}")
      #sleep(0.3)
+
+"""
+
+"""
+    if self.name == 'select':   # NOTE I should move this logic to a function, since it's repeated 3 times.
+       config.NEXT_TAPE = False
+       sleep(0.5)
+       while GPIO.input(self.pin) == 0: # button is still being pressed
+           logger.debug(F"Setting SELECT_STAGED_DATE to {config.SELECT_STAGED_DATE}, NEXT_TAPE to {config.NEXT_TAPE}")
+           config.NEXT_TAPE = True
+           sleep(0.1)
+       config.NEXT_TAPE = False
+       if not config.NEXT_TAPE: 
+           logger.debug(F"Setting SELECT_STAGED_DATE to {config.SELECT_STAGED_DATE}, NEXT_TAPE to {config.NEXT_TAPE}")
+           config.SELECT_STAGED_DATE = True
+           config.PLAY_STATE = config.READY
+    if self.name == 'ffwd':
+       config.FSEEK = False
+       sleep(0.5)
+       while GPIO.input(self.pin) == 0: # button is still being pressed
+           logger.debug(F"Setting FFWD to {config.FFWD}, FSEEK is {config.FSEEK}")
+           config.FSEEK = True
+           sleep(0.1)
+       if not config.FSEEK: 
+           logger.debug(F"Setting FFWD to {config.FFWD}, FSEEK is {config.FSEEK}")
+           config.FFWD = True
+       config.FSEEK = False
+    if self.name == 'rewind':
+       logger.debug(F"GPIO is now {GPIO.input(self.pin)}")
+       config.RSEEK = False
+       sleep(0.5)
+       logger.debug(F"GPIO is now {GPIO.input(self.pin)}")
+       while GPIO.input(self.pin) == 0: # button is still being pressed -- NOTE: Because this is connected to pin2, default is on.
+           logger.debug(F"Setting REWIND to {config.REWIND}, RSEEK is {config.RSEEK}")
+           config.RSEEK = True
+           sleep(0.1)
+       if not config.RSEEK: 
+           logger.debug(F"Setting REWIND to {config.REWIND}, RSEEK is {config.RSEEK}")
+           config.REWIND = True
+    if self.name == 'play_pause':
+       if config.PLAY_STATE in [config.READY, config.PAUSED, config.STOPPED]: config.PLAY_STATE = config.PLAYING  # play if not playing
+       elif config.PLAY_STATE == config.PLAYING: config.PLAY_STATE = config.PAUSED   # Pause if playing
+       logger.debug(F"Setting PLAY_STATE to {config.PLAY_STATE}")
+    if self.name == 'stop':
+       if config.PLAY_STATE in [config.PLAYING, config.PAUSED]: config.PLAY_STATE = config.STOPPED  # stop playing or pausing
+       logger.debug(F"Setting PLAY_STATE to {config.PLAY_STATE}")
 
 """
