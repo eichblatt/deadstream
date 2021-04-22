@@ -43,10 +43,12 @@ class button:
   def setup(self):
     if self.pin == None: return
     if self.is_setup: return
+    if self.pull_up: 
+      GPIO.setup(self.pin,GPIO.IN,pull_up_down=GPIO.PUD_UP)
+      self.add_callback(self.pin,GPIO.FALLING,self.push)
     else:
       GPIO.setup(self.pin,GPIO.IN,pull_up_down=GPIO.PUD_DOWN)
       self.add_callback(self.pin,GPIO.RISING,self.push)
-
     self.is_setup = True
     return None 
 
