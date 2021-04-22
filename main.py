@@ -50,7 +50,7 @@ def play_tape(tape,player):
     return player
 
 def date_knob_changes(state,changes,current,scr,tape,quiescent,q_counter):
-      sbd = None;
+      m = state.date_reader.m; d = state.date_reader.d; y = state.date_reader.y
       if 'DATE_READER' in changes.keys():  # Date knobs changed
          logger.info (F"DATE: {config.DATE}, SELECT_STAGED_DATE: {config.SELECT_STAGED_DATE}, PLAY_STATE: {config.PLAY_STATE}. quiescent {quiescent}")
          if state.date_reader.tape_available(): 
@@ -60,16 +60,26 @@ def date_knob_changes(state,changes,current,scr,tape,quiescent,q_counter):
          scr.show_staged_date(current['DATE_READER'])
          quiescent = 0; q_counter = True
       if current['TIH']:   # Year Button was Pushed, set Month and Date to Today in History
-         m.value = datetime.date.today().month; d.value = datetime.date.today().day
+         now_m = datetime.date.today().month; now_d = datetime.date.today().day
+         if m.value == now_m and d.value == now_d:   # move to the next year where there is a tape available
+           tihstring = F"{m.value:0>2d}-{d.value:0>2d}"
+           tih_tapedates = [to_date(d) for d in state.date_reader.archive.dates if d.endswith(tihstring)]
+           if len(tih_tapedates) > 0:
+             cut = 0
+             for i,dt in enumerate(tih_tapedates):
+                if dt.year > y.value:
+                  cut = i 
+                  break
+             tapedate = (tih_tapedates[cut:]+tih_tapedates[:cut])[0]
+             y.value = tapedate.year
+         m.value = now_m; d.value = now_d
          current['TIH'] = False
          quiescent = 0; q_counter = True
-         state.set(current)
       if current['NEXT_DATE']:   # Day Button was Pushed, set date to next date with tape available
          new_date = state.date_reader.next_date() 
          y.value = new_date.year; m.value = new_date.month; d.value = new_date.day;
          current['NEXT_DATE'] = False
          quiescent = 0; q_counter = True
-         # state.set(current)
       if state.date_reader.tape_available():
          tapes = state.date_reader.archive.tape_dates[state.date_reader.fmtdate()]
          itape = -1
@@ -96,25 +106,24 @@ def date_knob_changes(state,changes,current,scr,tape,quiescent,q_counter):
            current['TAPE_ID'] = tape.identifier
            logger.info(F"Set TAPE_ID to {current['TAPE_ID']}")
            current['TRACK_NUM'] = -1
-           sbd = tape.stream_only()
+           #sbd = tape.stream_only()
            #scr.show_soundboard(sbd)
            scr.show_selected_date(current['DATE'])
       current['SELECT_STAGED_DATE'] = False
       current['NEXT_TAPE'] = False
-      return (current,tape,sbd,quiescent,q_counter)
+      return (current,tape,quiescent,q_counter)
 
   
-def update_tracks(state,current,previous,changes,scr):
+def update_tracks(state,current,changes,scr,force=False):
     if not current['PLAY_STATE'] in [config.READY,config.PLAYING,config.PAUSED]: return current
     if current['TRACK_NUM'] == None :        # this happens when the tape has ended (at least).
       current['PLAY_STATE'] = config.INIT   # NOTE Not quite working
       return current
 
-    if ('TRACK_TITLE' in changes.keys()) or 'EXPERIENCE' in changes.keys():
-    #if current['TRACK_TITLE'] != previous['TRACK_TITLE']:
+    if force or ('TRACK_TITLE' in changes.keys()) or 'EXPERIENCE' in changes.keys():
       scr.show_track(current['TRACK_TITLE'],0)
       scr.show_track(current['NEXT_TRACK_TITLE'],1)
-      scr.show_playstate()
+      scr.show_playstate(sbd=state.player.tape.stream_only())
     return current
 
 def playstate_static(state,changes,current,scr,tape):
@@ -157,7 +166,7 @@ def playstate_changes(state,changes,current,scr,tape):
          if len(state.player.playlist) == 0: state.player = play_tape(tape,state.player)  ## NOTE required?
          else: state.player.play()
          scr.show_venue(state.date_reader.venue())
-         scr.show_playstate()
+         scr.show_playstate(sbd=state.player.tape.stream_only())
        except AttributeError:
          logger.info(F"Cannot play date {current['DATE']}")
          pass
@@ -194,12 +203,17 @@ def runLoop(state,scr,maxN=None):
 
       if 'EXPERIENCE' in changes.keys():
          if current['EXPERIENCE']:   
-           frozen_config = current.copy()
-           frozen_config['EXPERIENCE'] = False
+           frozen_state = current.copy()
+           frozen_state['EXPERIENCE'] = False
            scr.show_experience("Press Month to\nExit Experience") 
          if not current['EXPERIENCE']:  # we have exited EXPERIENCE mode
-           state.set(frozen_config)
+           state.set(frozen_state)
+           changes = {}
+           current = frozen_state
+           previous = frozen_state
            scr.show_experience("") 
+           update_tracks(state,current,changes,scr,force=True)
+           continue
 
       if current['EXPERIENCE']: 
          continue
@@ -210,9 +224,9 @@ def runLoop(state,scr,maxN=None):
 
       logger.info (F"change keys {changes.keys()}")
 
-      current,tape,sbd,quiescent,q_counter = date_knob_changes(state,changes,current,scr,tape,quiescent,q_counter)
+      current,tape,quiescent,q_counter = date_knob_changes(state,changes,current,scr,tape,quiescent,q_counter)
 
-      current = update_tracks(state,current,previous,changes,scr)
+      current = update_tracks(state,current,changes,scr)
 
       if 'PLAY_STATE' in changes.keys():   
         current = playstate_changes(state,changes,current,scr,tape) 
@@ -243,7 +257,7 @@ def main(parms):
     if parms.box == 'v0': upside_down=True
     else: 
        upside_down = False
-       #os.system("amixer sset 'Headphone' 100%")
+       os.system("amixer sset 'Headphone' 100%")
     scr = ctl.screen(upside_down=upside_down)
     scr.clear()
     scr.show_text("Grateful\n  Dead\n   Streamer\n     Loading...",color=(0,255,255))
