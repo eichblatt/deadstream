@@ -551,9 +551,16 @@ class GDPlayer(MPV):
   def extract_urls(self,tape):  ## NOTE this should also give a list of backup URL's.
     tape.get_metadata()
     urls = [] 
-    for y in [x.files for x in tape.tracks()]: 
-      for f in y: 
-        if f['format'] in tape._playable_formats: urls.append(f['url']); break 
+    playable_formats = tape._playable_formats
+    preferred_format = playable_formats[0]
+    for track_files in [x.files for x in tape.tracks()]: 
+      best_track = None
+      candidates = []
+      for f in track_files: 
+        if f['format'] == preferred_format: best_track = f['url']
+        elif f['format'] in playable_formats: candidates.append(f['url'])
+      if best_track == None and len(candidates)>0: best_track = candidates[0]
+      urls.append(best_track)
     return urls
   
   def create_playlist(self):
