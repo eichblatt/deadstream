@@ -21,6 +21,7 @@ class button:
     self.bouncetime = bouncetime
     self.pull_up = True if self.pin in [2,3] else pull_up
     self.is_setup = False
+    self.active = False
 
   def __str__(self):
     return self.__repr__()
@@ -44,67 +45,31 @@ class button:
     if self.is_setup: return
     GPIO.setmode(GPIO.BCM)
     if self.pull_up: # These pins are pulled up.
-      #GPIO.setup(self.pin,GPIO.IN,pull_up_down=GPIO.PUD_DOWN)
-      #self.add_callback(self.pin,GPIO.RISING,self.callback)
       GPIO.setup(self.pin,GPIO.IN,pull_up_down=GPIO.PUD_DOWN)
-      self.add_callback(self.pin,GPIO.BOTH,self.callback)
+      self.add_callback(self.pin,GPIO.BOTH,self.push)
     else:
       GPIO.setup(self.pin,GPIO.IN,pull_up_down=GPIO.PUD_DOWN)
-      self.add_callback(self.pin,GPIO.RISING,self.callback)
+      self.add_callback(self.pin,GPIO.RISING,self.push)
 
     self.is_setup = True
     return None 
 
-  def show_pin_state(self,msg): 
-    logger.debug (F"{self.name} {msg}: State of pin:{GPIO.input(self.pin)}")
-    return 
- 
-  def callback(self,channel):
+  def push(self,channel):
     logger.debug(F"Pushed button {self.name}. -- {GPIO.input(self.pin)}")
     nullval = 0 if not self.pull_up else 1
     if GPIO.input(self.pin) == nullval: return
-    if self.name == 'select':   # NOTE I should move this logic to a function, since it's repeated 3 times.
-       config.NEXT_TAPE = False
-       sleep(0.5)
-       while GPIO.input(self.pin) == 1: # button is still being pressed
-           logger.debug(F"Setting SELECT_STAGED_DATE to {config.SELECT_STAGED_DATE}, NEXT_TAPE to {config.NEXT_TAPE}")
-           config.NEXT_TAPE = True
-           sleep(0.1)
-       config.NEXT_TAPE = False
-       if not config.NEXT_TAPE: 
-           logger.debug(F"Setting SELECT_STAGED_DATE to {config.SELECT_STAGED_DATE}, NEXT_TAPE to {config.NEXT_TAPE}")
-           config.SELECT_STAGED_DATE = True
-           config.PLAY_STATE = config.READY
-    if self.name == 'ffwd':
-       config.FSEEK = False
-       sleep(0.5)
-       while GPIO.input(self.pin) == 1: # button is still being pressed
-           logger.debug(F"Setting FFWD to {config.FFWD}, FSEEK is {config.FSEEK}")
-           config.FSEEK = True
-           sleep(0.1)
-       if not config.FSEEK: 
-           logger.debug(F"Setting FFWD to {config.FFWD}, FSEEK is {config.FSEEK}")
-           config.FFWD = True
-       config.FSEEK = False
-    if self.name == 'rewind':
-       logger.debug(F"GPIO is now {GPIO.input(self.pin)}")
-       config.RSEEK = False
-       sleep(0.5)
-       logger.debug(F"GPIO is now {GPIO.input(self.pin)}")
-       while GPIO.input(self.pin) == 0: # button is still being pressed -- NOTE: Because this is connected to pin2, default is on.
-           logger.debug(F"Setting REWIND to {config.REWIND}, RSEEK is {config.RSEEK}")
-           config.RSEEK = True
-           sleep(0.1)
-       if not config.RSEEK: 
-           logger.debug(F"Setting REWIND to {config.REWIND}, RSEEK is {config.RSEEK}")
-           config.REWIND = True
-    if self.name == 'play_pause':
-       if config.PLAY_STATE in [config.READY, config.PAUSED, config.STOPPED]: config.PLAY_STATE = config.PLAYING  # play if not playing
-       elif config.PLAY_STATE == config.PLAYING: config.PLAY_STATE = config.PAUSED   # Pause if playing
-       logger.debug(F"Setting PLAY_STATE to {config.PLAY_STATE}")
-    if self.name == 'stop':
-       if config.PLAY_STATE in [config.PLAYING, config.PAUSED]: config.PLAY_STATE = config.STOPPED  # stop playing or pausing
-       logger.debug(F"Setting PLAY_STATE to {config.PLAY_STATE}")
+    self.press = True
+    sleep(0.5)
+    if GPIO.input(self.pin) == nullval: 
+      self.active = True
+      self.longpress = False
+    while GPIO.input(self.pin) != nullval: 
+      logger.debug(F"Longpress of button {self.name}. -- {GPIO.input(self.pin)}")
+      self.active = True
+      self.press = False
+      self.longpress = True
+      sleep(0.1)
+    return
 
   def cleanup(self): 
     GPIO.cleanup()
@@ -119,6 +84,10 @@ class knob:
     self.bouncetime = bouncetime
     self.is_setup = False
     self.in_rotate = False
+    self.turn = False
+    self.press = False
+    self.longpress = False
+    self.active = False
 
   def __str__(self):
     return self.__repr__()
@@ -149,15 +118,12 @@ class knob:
     except: raise
     return None 
 
-  def show_pin_states(self,msg): 
-    logger.debug (F"{self.name} {msg}: State of cl:{GPIO.input(self.cl)}, dt:{GPIO.input(self.dt)}, sw:{GPIO.input(self.sw)}")
-    return 
-
   def rotate(self,channel):
     if self.in_rotate: 
       logger.debug (F" Already in rotate for {self.name}")
       return
     self.in_rotate = True
+    self.active = True
     vals = [(GPIO.input(self.dt),GPIO.input(self.cl)) for i in range(10)]
     if sum([v[1] for v in vals])>3: 
       logger.debug (F" Noisy click on {self.name}.  {self.value}")
@@ -172,21 +138,13 @@ class knob:
       self.set_value(self.value + 1)
       logger.debug (F" +++ increasing {self.name}.  {self.value}")
     self.in_rotate = False
+    self.turn = True
     return
  
   def push(self,channel):
     logger.debug(F"Pushed button {self.name}")
-    if self.name == 'year':
-      config.TIH = True 
-      logger.debug(F"Setting TIH to {config.TIH}")
-    if self.name == 'month':
-      if config.EXPERIENCE: config.EXPERIENCE = False
-      else: config.EXPERIENCE = True
-      logger.debug(F"Setting EXPERIENCE to {config.EXPERIENCE}")
-    if self.name == 'day':
-      config.NEXT_DATE = True
-      logger.debug(F"Setting NEXT_DATE to {config.NEXT_DATE}")
-     #sleep(0.3)
+    self.active = True
+    self.press = True
 
   def set_value(self,value): 
     self.value = min(max(value,min(self._values)),max(self._values))
@@ -210,7 +168,6 @@ class date_knob_reader:
     avail = "Tape Available" if self.tape_available() else ""
     return F'Date Knob Says: {self.date.strftime("%Y-%m-%d")}. {avail}'
 
-#  def update(self,y,m,d):
   def update(self):
     maxd = [31,29,31,30,31,30,31,31,30,31,30,31] ## max days in a month.
     if self.d.value > maxd[self.m.value-1]: self.d.set_value(maxd[self.m.value-1])
@@ -500,8 +457,8 @@ class state:
       self.dict = {key: value for key,value in module.__dict__.items() if (not key.startswith('_')) and key.isupper()}
     self.date_reader.update()
     self.dict['DATE_READER'] = self.date_reader.date
-    self.dict['TRACK_NUM'] = self.player._get_property('playlist-pos')
     try:
+      self.dict['TRACK_NUM'] = self.player._get_property('playlist-pos')
       self.dict['TAPE_ID'] = self.player.tape.identifier
       self.dict['TRACK_TITLE'] = self.player.tape.tracks()[self.dict['TRACK_NUM']].title
       if (self.dict['TRACK_NUM']+1)<len(self.player.playlist):
@@ -509,8 +466,78 @@ class state:
          self.dict['NEXT_TRACK_TITLE'] = self.player.tape.tracks()[next_track].title
       else: self.dict['NEXT_TRACK_TITLE'] = ''
     except: 
+      self.dict['TRACK_NUM'] = -1
       self.dict['TAPE_ID'] = ''
       self.dict['TRACK_TITLE'] = ''
       self.dict['NEXT_TRACK_TITLE'] = ''
     self.dict['TRACK_ID'] = self.dict['TAPE_ID']+ "_track_" + str(self.dict['TRACK_NUM'])
     return self.dict
+
+
+def controlLoop(item_list,callback):
+    while True:
+      for item in item_list:
+          if item.active:
+              callback(item) 
+
+"""
+        venue_thread = threading.Thread(target=s.scroll_venue,name="venue_scroll",args=(),kwargs={'stroke_width':0,'inc':10})
+
+    if self.name == 'select':   # NOTE I should move this logic to a function, since it's repeated 3 times.
+       config.NEXT_TAPE = False
+       sleep(0.5)
+       while GPIO.input(self.pin) == 1: # button is still being pressed
+           logger.debug(F"Setting SELECT_STAGED_DATE to {config.SELECT_STAGED_DATE}, NEXT_TAPE to {config.NEXT_TAPE}")
+           config.NEXT_TAPE = True
+           sleep(0.1)
+       config.NEXT_TAPE = False
+       if not config.NEXT_TAPE: 
+           logger.debug(F"Setting SELECT_STAGED_DATE to {config.SELECT_STAGED_DATE}, NEXT_TAPE to {config.NEXT_TAPE}")
+           config.SELECT_STAGED_DATE = True
+           config.PLAY_STATE = config.READY
+    if self.name == 'ffwd':
+       config.FSEEK = False
+       sleep(0.5)
+       while GPIO.input(self.pin) == 1: # button is still being pressed
+           logger.debug(F"Setting FFWD to {config.FFWD}, FSEEK is {config.FSEEK}")
+           config.FSEEK = True
+           sleep(0.1)
+       if not config.FSEEK: 
+           logger.debug(F"Setting FFWD to {config.FFWD}, FSEEK is {config.FSEEK}")
+           config.FFWD = True
+       config.FSEEK = False
+    if self.name == 'rewind':
+       logger.debug(F"GPIO is now {GPIO.input(self.pin)}")
+       config.RSEEK = False
+       sleep(0.5)
+       logger.debug(F"GPIO is now {GPIO.input(self.pin)}")
+       while GPIO.input(self.pin) == 0: # button is still being pressed -- NOTE: Because this is connected to pin2, default is on.
+           logger.debug(F"Setting REWIND to {config.REWIND}, RSEEK is {config.RSEEK}")
+           config.RSEEK = True
+           sleep(0.1)
+       if not config.RSEEK: 
+           logger.debug(F"Setting REWIND to {config.REWIND}, RSEEK is {config.RSEEK}")
+           config.REWIND = True
+    if self.name == 'play_pause':
+       if config.PLAY_STATE in [config.READY, config.PAUSED, config.STOPPED]: config.PLAY_STATE = config.PLAYING  # play if not playing
+       elif config.PLAY_STATE == config.PLAYING: config.PLAY_STATE = config.PAUSED   # Pause if playing
+       logger.debug(F"Setting PLAY_STATE to {config.PLAY_STATE}")
+    if self.name == 'stop':
+       if config.PLAY_STATE in [config.PLAYING, config.PAUSED]: config.PLAY_STATE = config.STOPPED  # stop playing or pausing
+       logger.debug(F"Setting PLAY_STATE to {config.PLAY_STATE}")
+
+"""
+"""
+    if self.name == 'year':
+      config.TIH = True 
+      logger.debug(F"Setting TIH to {config.TIH}")
+    if self.name == 'month':
+      if config.EXPERIENCE: config.EXPERIENCE = False
+      else: config.EXPERIENCE = True
+      logger.debug(F"Setting EXPERIENCE to {config.EXPERIENCE}")
+    if self.name == 'day':
+      config.NEXT_DATE = True
+      logger.debug(F"Setting NEXT_DATE to {config.NEXT_DATE}")
+     #sleep(0.3)
+
+"""
