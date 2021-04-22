@@ -260,7 +260,7 @@ def main(parms):
        os.system("amixer sset 'Headphone' 100%")
     scr = ctl.screen(upside_down=upside_down)
     scr.clear()
-    scr.show_text("Grateful\n  Dead\n   Streamer\n     Loading...",color=(0,255,255))
+    scr.show_text("Grateful\n  Time\n   Machine\n     Loading...",color=(0,255,255))
 
     logger.info ("Loading GD Archive")
     a = GD.GDArchive(parms.dbpath)
