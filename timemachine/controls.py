@@ -57,7 +57,7 @@ class button:
     nullval = 0 if not self.pull_up else 1
     if GPIO.input(self.pin) == nullval: return
     self.press = True
-    sleep(0.5)
+    sleep(0.25)
     if GPIO.input(self.pin) == nullval: 
       self.active = True
       self.longpress = False
@@ -477,53 +477,6 @@ def controlLoop(item_list,callback):
           if item.active:
               callback(item) 
 
-"""
-        venue_thread = threading.Thread(target=s.scroll_venue,name="venue_scroll",args=(),kwargs={'stroke_width':0,'inc':10})
-
-    if self.name == 'select':   # NOTE I should move this logic to a function, since it's repeated 3 times.
-       config.NEXT_TAPE = False
-       sleep(0.5)
-       while GPIO.input(self.pin) == 1: # button is still being pressed
-           logger.debug(F"Setting SELECT_STAGED_DATE to {config.SELECT_STAGED_DATE}, NEXT_TAPE to {config.NEXT_TAPE}")
-           config.NEXT_TAPE = True
-           sleep(0.1)
-       config.NEXT_TAPE = False
-       if not config.NEXT_TAPE: 
-           logger.debug(F"Setting SELECT_STAGED_DATE to {config.SELECT_STAGED_DATE}, NEXT_TAPE to {config.NEXT_TAPE}")
-           config.SELECT_STAGED_DATE = True
-           config.PLAY_STATE = config.READY
-    if self.name == 'ffwd':
-       config.FSEEK = False
-       sleep(0.5)
-       while GPIO.input(self.pin) == 1: # button is still being pressed
-           logger.debug(F"Setting FFWD to {config.FFWD}, FSEEK is {config.FSEEK}")
-           config.FSEEK = True
-           sleep(0.1)
-       if not config.FSEEK: 
-           logger.debug(F"Setting FFWD to {config.FFWD}, FSEEK is {config.FSEEK}")
-           config.FFWD = True
-       config.FSEEK = False
-    if self.name == 'rewind':
-       logger.debug(F"GPIO is now {GPIO.input(self.pin)}")
-       config.RSEEK = False
-       sleep(0.5)
-       logger.debug(F"GPIO is now {GPIO.input(self.pin)}")
-       while GPIO.input(self.pin) == 0: # button is still being pressed -- NOTE: Because this is connected to pin2, default is on.
-           logger.debug(F"Setting REWIND to {config.REWIND}, RSEEK is {config.RSEEK}")
-           config.RSEEK = True
-           sleep(0.1)
-       if not config.RSEEK: 
-           logger.debug(F"Setting REWIND to {config.REWIND}, RSEEK is {config.RSEEK}")
-           config.REWIND = True
-    if self.name == 'play_pause':
-       if config.PLAY_STATE in [config.READY, config.PAUSED, config.STOPPED]: config.PLAY_STATE = config.PLAYING  # play if not playing
-       elif config.PLAY_STATE == config.PLAYING: config.PLAY_STATE = config.PAUSED   # Pause if playing
-       logger.debug(F"Setting PLAY_STATE to {config.PLAY_STATE}")
-    if self.name == 'stop':
-       if config.PLAY_STATE in [config.PLAYING, config.PAUSED]: config.PLAY_STATE = config.STOPPED  # stop playing or pausing
-       logger.debug(F"Setting PLAY_STATE to {config.PLAY_STATE}")
-
-"""
 """
     if self.name == 'year':
       config.TIH = True 
