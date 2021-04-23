@@ -257,13 +257,15 @@ class Bbox:
 
  
 class screen:
-  def __init__(self,upside_down=False):
+  def __init__(self,upside_down=False,name='screen'):
     cs_pin= digitalio.DigitalInOut(board.CE0)
     dc_pin= digitalio.DigitalInOut(board.D24)
     reset_pin= digitalio.DigitalInOut(board.D25)
     #BAUDRATE= 2400000
     BAUDRATE= 40000000
     spi= board.SPI()
+    self.name = name
+    self.active = False
     rotation_angle = 90 if not upside_down else 270
     self.disp= st7735.ST7735R(spi,rotation=rotation_angle,cs=cs_pin,dc=dc_pin,rst=reset_pin,baudrate=BAUDRATE)
    
@@ -475,13 +477,24 @@ class state:
 
 def controlLoop(item_list,callback,state=None,scr=None):
     last_active = datetime.datetime.now()
+    last_timer = last_active
+    refreshed = False
     while True:
+      now = datetime.datetime.now()
       for item in item_list:
           if item.active:
-              now = datetime.datetime.now()
-              time_since_active = (now - last_active).seconds
-              last_active = now
               callback(item,state,scr) 
+              last_active = now
+              refreshed = False
+      time_since_active = (now - last_active).seconds
+      if (time_since_active > config.QUIESCENT_TIME) and not refreshed:
+         callback(scr,state,scr)
+         refreshed = True
+      if (now - last_timer).seconds > 5:
+         last_timer = now
+         callback(None,state,scr)
+      sleep(0.1)
+
 
 """
     if self.name == 'year':
