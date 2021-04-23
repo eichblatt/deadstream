@@ -81,7 +81,7 @@ def play_pause_button(item,state,scr):
      if current['PLAY_STATE'] == config.PLAYING: 
         logger.info(F"Pausing {current['DATE'].strftime('%Y-%m-%d')} on player") 
         state.player.pause()
-        current['PLAY_STATE'] == config.PAUSED
+        current['PLAY_STATE'] = config.PAUSED
      elif current['PLAY_STATE'] in [config.PAUSED,config.STOPPED,config.READY]: 
         state.player.play()
         current['PLAY_STATE'] = config.PLAYING
@@ -99,7 +99,7 @@ def stop_button(item,state,scr):
    if item.longpress: stop_button_longpress(item,state)  
    if item.press: 
       state.player.stop()
-      current['PLAY_STATE'] == config.STOPPED
+      current['PLAY_STATE'] = config.STOPPED
       state.set(current)
       scr.show_playstate()
    state.set(current)
@@ -401,7 +401,7 @@ def main(parms):
        os.system("amixer sset 'Headphone' 100%")
     scr = ctl.screen(upside_down=upside_down)
     scr.clear()
-    scr.show_text("GratefulDead\n  Time\n   Machine\n     Loading...",color=(0,255,255))
+    scr.show_text("Grateful Dead\n  Time\n   Machine\n     Loading...",color=(0,255,255))
 
     logger.info ("Loading GD Archive")
     a = GD.GDArchive(parms.dbpath)
