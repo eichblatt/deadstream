@@ -31,7 +31,7 @@ def select_tape(tape,state,scr):
    current['TAPE_ID'] = tape.identifier
    logger.info(F"Set TAPE_ID to {current['TAPE_ID']}")
    current['TRACK_NUM'] = -1
-   scr.show_selected_date(current['DATE'])  
+   scr.show_selected_date(state.date_reader.date)  
    state.player.insert_tape(tape)
    state.set(current)
 
@@ -39,8 +39,6 @@ def select_button(item,state,scr):
    if not state.date_reader.tape_available(): return 
    date_reader = state.date_reader
    current = state.get_current()
-   current['DATE'] = date_reader.date 
-   logger.info(F"Set DATE to {current['DATE']}")
    tapes = date_reader.archive.tape_dates[date_reader.fmtdate()]
    state.set(current)
 
@@ -76,7 +74,7 @@ def play_pause_button(item,state,scr):
    if item.press: 
      logger.debug (F"pressing {item.name}")
      if current['PLAY_STATE'] == config.PLAYING: 
-        logger.info(F"Pausing {current['DATE'].strftime('%Y-%m-%d')} on player") 
+        logger.info(F"Pausing  on player") 
         state.player.pause()
         current['PLAY_STATE'] = config.PAUSED
      elif current['PLAY_STATE'] in [config.PAUSED,config.STOPPED,config.READY]: 
@@ -162,7 +160,7 @@ def year_button(item,state,scr):
    if item.longpress: year_button_longpress(item,state)  
    if item.press:
       m = state.date_reader.m; d = state.date_reader.d
-      now_m = datetime.date.today().month; now_d = datetime.date.today().day
+      today = datetime.date.today(); now_m = today.month; now_d = today.day
       if m.value == now_m and d.value == now_d:   # move to the next year where there is a tape available
          tihstring = F"{m.value:0>2d}-{d.value:0>2d}"
          tih_tapedates = [to_date(d) for d in state.date_reader.archive.dates if d.endswith(tihstring)]
@@ -173,6 +171,7 @@ def year_button(item,state,scr):
                  cut = i 
                  break
             tapedate = (tih_tapedates[cut:]+tih_tapedates[:cut])[0]
+            logger.debug(F"tapedate is {tapedate}")
             y.value = tapedate.year
       else:
          m.value = now_m; d.value = now_d
@@ -191,22 +190,23 @@ def callback(item,state=None,scr=None):
      if item.name == 'rewind': rewind_button(item,state,scr)
      if item.name == 'ffwd': ffwd_button(item,state,scr)
      if item.name in ['year','month','day']:
+       state.date_reader.update()
        if item.turn:
-         state.date_reader.update()
          item.turn = False
          print (F"-- date is:{state.date_reader.date}")
-         scr.show_staged_date(state.date_reader.date)
        else:
          if item.name == 'month': month_button(item,state,scr)
          if item.name == 'day': day_button(item,state,scr)
          if item.name == 'year': year_button(item,state,scr)
-         scr.show_staged_date(state.date_reader.date)
 
    finally:
      item.active = False
      item.press = False
      item.turn = False
      item.longpress = False
+     state.date_reader.update()
+     scr.show_staged_date(state.date_reader.date)
+     scr.show_venue(state.date_reader.venue())
 
 
 def to_date(d): return datetime.datetime.strptime(d,'%Y-%m-%d').date()
