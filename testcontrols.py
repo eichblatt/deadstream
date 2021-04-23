@@ -4,7 +4,7 @@ import datetime
 from time import sleep
 import threading
 
-ctl.logger.setLevel(10) # DEBUG
+ctl.logger.setLevel(50) 
 d1 = '1977-05-08'
 d1 =  datetime.date(*(int(s) for s in d1.split('-')))
 
@@ -39,16 +39,38 @@ cfg = state.get_current()
 
 config.PLAY_STATE = 1   # Ready
 
+def play_pause_button(item):
+   """ deal with presses of play_pause button """
+   if item.longpress: play_pause_button_longpress(item)  
+   if item.press: print (F"pressing {item.name}")
+def play_pause_button_longpress(item):
+   """ deal with longpress of play_pause button """
+   print ("nyi")
+
+def select_button(item):
+   """ deal with presses of select button """
+   if item.longpress: select_button_longpress(item)  
+   if item.press: print (F"pressing {item.name}")
+def select_button_longpress(item):
+   """ deal with longpress of select button """
+   print (F"long pressing {item.name}")
+
 def callback(item):
-   print (F"in callback for item {item.name}")
-   print (F"-- press:{item.press} -- longpress:{item.longpress}")
-   item.active = False
-   item.press = False
-   item.longpress = False
-   if item.name in ['year','month','date']:
-     date_knob.update()
-     item.turn = False
-     print (F"-- date is:{date_knob.date}")
+   #print (F"in callback for item {item.name}")
+   try:
+     if item.name == 'select': select_button(item)
+     if item.name == 'play_pause': play_pause_button(item)
+
+     if item.name in ['year','month','date']:
+       date_knob.update()
+       item.turn = False
+       print (F"-- date is:{date_knob.date}")
+
+   finally:
+     item.active = False
+     item.press = False
+     item.longpress = False
+
 
 buttons = threading.Thread(target=ctl.controlLoop,name="controlLoop",args=([select,play_pause,ffwd,rewind,stop],callback),kwargs={})
 knobs = threading.Thread(target=ctl.controlLoop,name="knobs_controlLoop",args=([y,m,d],callback),kwargs={})
