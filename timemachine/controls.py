@@ -474,9 +474,13 @@ class state:
 
 
 def controlLoop(item_list,callback,state=None,scr=None):
+    last_active = datetime.datetime.now()
     while True:
       for item in item_list:
           if item.active:
+              now = datetime.datetime.now()
+              time_since_active = (now - last_active).seconds
+              last_active = now
               callback(item,state,scr) 
 
 """

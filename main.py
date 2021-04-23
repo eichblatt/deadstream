@@ -26,7 +26,7 @@ if parms.verbose:
   controlsLogger.setLevel(logging.DEBUG)
 
 def select_tape(tape,state,scr):
-   changes,previous,current = state.snap()
+   current = state.get_current()
    current['PLAY_STATE'] = config.READY  #  eject current tape, insert new one in player
    current['TAPE_ID'] = tape.identifier
    logger.info(F"Set TAPE_ID to {current['TAPE_ID']}")
@@ -34,12 +34,11 @@ def select_tape(tape,state,scr):
    scr.show_selected_date(current['DATE'])  
    state.player.insert_tape(tape)
    state.set(current)
-   return 
 
 def select_button(item,state,scr):
    if not state.date_reader.tape_available(): return 
    date_reader = state.date_reader
-   changes,previous,current = state.snap()
+   current = state.get_current()
    current['DATE'] = date_reader.date 
    logger.info(F"Set DATE to {current['DATE']}")
    tapes = date_reader.archive.tape_dates[date_reader.fmtdate()]
@@ -50,11 +49,10 @@ def select_button(item,state,scr):
       logger.debug (F"pressing {item.name}")
       tape = tapes[0] 
       select_tape(tape,state,scr)
-   return 
 
 def select_button_longpress(item,state,scr,tapes):
    logger.debug (F"long pressing {item.name}")
-   changes,previous,current = state.snap()
+   current = state.get_current()
    itape = -1
    while item.longpress:
       itape = divmod(itape + 1,len(tapes))[1]
@@ -69,10 +67,9 @@ def select_button_longpress(item,state,scr,tapes):
    scr.show_venue(tape_id,color=id_color)
    tape = tapes[itape] 
    select_tape(tape,state,scr)
-   return 
 
 def play_pause_button(item,state,scr):
-   changes,previous,current = state.snap()
+   current = state.get_current()
    if current['EXPERIENCE']: return 
    if not current['PLAY_STATE'] in [config.READY,config.PLAYING,config.PAUSED,config.STOPPED]: return 
    if item.longpress: play_pause_button_longpress(item,state)  
@@ -83,17 +80,17 @@ def play_pause_button(item,state,scr):
         state.player.pause()
         current['PLAY_STATE'] = config.PAUSED
      elif current['PLAY_STATE'] in [config.PAUSED,config.STOPPED,config.READY]: 
-        state.player.play()
         current['PLAY_STATE'] = config.PLAYING
+        scr.show_playstate(staged_play=True) # show that we've registered the button-press before blocking call.
+        state.player.play()   # this is a blocking call
      state.set(current)
      scr.show_playstate()
 
 def play_pause_button_longpress(item,state):
-   logger.debug (" longpress of {item.name} -- nyi")
-   return 
+   logger.debug (F" longpress of {item.name} -- nyi")
 
 def stop_button(item,state,scr):
-   changes,previous,current = state.snap()
+   current = state.get_current()
    if current['EXPERIENCE']: return 
    if current['PLAY_STATE'] in [config.READY,config.INIT,config.STOPPED]: return 
    if item.longpress: stop_button_longpress(item,state)  
@@ -103,52 +100,85 @@ def stop_button(item,state,scr):
       state.set(current)
       scr.show_playstate()
    state.set(current)
-   return 
+
 def stop_button_longpress(item,state):
-   logger.debug (" longpress of {item.name} -- nyi")
-   return 
+   logger.debug (F" longpress of {item.name} -- nyi")
 
 def rewind_button(item,state,scr):
+   current = state.get_current()
+   if current['EXPERIENCE']: return 
    if item.longpress: rewind_button_longpress(item,state)  
-   if item.press: print (F"pressing {item.name}")
-   return 
+   if item.press: 
+      if current['TRACK_NUM']>0: state.player.prev()
 
 def rewind_button_longpress(item,state):
-   logger.debug (" longpress of {item.name} -- nyi")
-   return 
+   while item.longpress:
+      logger.debug (F" longpress of {item.name} ")
+      state.player.seek(-1)
+      sleep(0.05) ## maximum speed is 1/0.05 = 20x
 
 def ffwd_button(item,state,scr):
+   current = state.get_current()
+   if current['EXPERIENCE']: return 
    if item.longpress: ffwd_button_longpress(item,state)  
-   if item.press: print (F"pressing {item.name}")
-   return 
+   if item.press: 
+      if current['TRACK_NUM']<len(state.player.playlist): state.player.next()
 
 def ffwd_button_longpress(item,state):
-   logger.debug (" longpress of {item.name} -- nyi")
-   return 
+   while item.longpress:
+      logger.debug (F" longpress of {item.name} -- nyi")
+      state.player.seek(1)
+      sleep(0.05) ## maximum speed is 1/0.05 = 20x
 
 def month_button(item,state,scr):
+   current = state.get_current()
    if item.longpress: month_button_longpress(item,state)  
-   if item.press: print (F"pressing {item.name}")
-   return 
+   if item.press: 
+     if current['EXPERIENCE']: 
+       current['EXPERIENCE'] = False
+     else:
+       current['EXPERIENCE'] = True
+     state.set(current)
+
 def month_button_longpress(item,state):
-   logger.debug (" longpress of {item.name} -- nyi")
-   return 
+   logger.debug (F" longpress of {item.name} -- nyi")
 
 def day_button(item,state,scr):
+   current = state.get_current()
+   if current['EXPERIENCE']: return 
    if item.longpress: day_button_longpress(item,state)  
-   if item.press: print (F"pressing {item.name}")
-   return 
+   if item.press: 
+      new_date = state.date_reader.next_date() 
+      state.date_reader.y.value = new_date.year; 
+      state.date_reader.m.value = new_date.month; 
+      state.date_reader.d.value = new_date.day;
+ 
 def day_button_longpress(item,state):
    logger.debug (F"long pressing {item.name}")
-   return 
 
 def year_button(item,state,scr):
+   current = state.get_current()
+   if current['EXPERIENCE']: return 
    if item.longpress: year_button_longpress(item,state)  
-   if item.press: print (F"pressing {item.name}")
-   return 
+   if item.press:
+      m = state.date_reader.m; d = state.date_reader.d
+      now_m = datetime.date.today().month; now_d = datetime.date.today().day
+      if m.value == now_m and d.value == now_d:   # move to the next year where there is a tape available
+         tihstring = F"{m.value:0>2d}-{d.value:0>2d}"
+         tih_tapedates = [to_date(d) for d in state.date_reader.archive.dates if d.endswith(tihstring)]
+         if len(tih_tapedates) > 0:
+            cut = 0
+            for i,dt in enumerate(tih_tapedates):
+               if dt.year > y.value:
+                 cut = i 
+                 break
+            tapedate = (tih_tapedates[cut:]+tih_tapedates[:cut])[0]
+            y.value = tapedate.year
+      else:
+         m.value = now_m; d.value = now_d
+ 
 def year_button_longpress(item,state):
    print (F"long pressing {item.name}")
-   return 
 
 
 
@@ -161,12 +191,16 @@ def callback(item,state=None,scr=None):
      if item.name == 'rewind': rewind_button(item,state,scr)
      if item.name == 'ffwd': ffwd_button(item,state,scr)
      if item.name in ['year','month','day']:
-       state.date_reader.update()
-       item.turn = False
-       print (F"-- date is:{state.date_reader.date}")
-       if item.name == 'month': month_button(item,state,scr)
-       if item.name == 'day': day_button(item,state,scr)
-       if item.name == 'year': year_button(item,state,scr)
+       if item.turn:
+         state.date_reader.update()
+         item.turn = False
+         print (F"-- date is:{state.date_reader.date}")
+         scr.show_staged_date(state.date_reader.date)
+       else:
+         if item.name == 'month': month_button(item,state,scr)
+         if item.name == 'day': day_button(item,state,scr)
+         if item.name == 'year': year_button(item,state,scr)
+         scr.show_staged_date(state.date_reader.date)
 
    finally:
      item.active = False
@@ -176,13 +210,6 @@ def callback(item,state=None,scr=None):
 
 
 def to_date(d): return datetime.datetime.strptime(d,'%Y-%m-%d').date()
-
-def get_module_dict(module_name): 
-    module = globals().get(module_name,None)
-    d = {}
-    if module:
-      d = {key: value for key,value in module.__dict__.items() if (not key.startswith('_')) and key.isupper()}
-    return d
 
 def play_tape(tape,player):
     logger.info(F"Playing tape {tape}")
