@@ -6,7 +6,6 @@ from timemachine import config
 from time import sleep
 import logging
 import threading
-import signal
 import os
 import datetime
 
@@ -26,13 +25,155 @@ if parms.verbose:
   GDLogger.setLevel(logging.DEBUG)
   controlsLogger.setLevel(logging.DEBUG)
 
-#meInterrupt = False
-#def meCustomHandler(signum,stack_frame):
-#   global meInterrupt
-#   print('encountered ctrl+C - here before the process exists')
-#   meInterrupt= True
+def select_tape(tape,state,scr):
+   changes,previous,current = state.snap()
+   current['PLAY_STATE'] = config.READY  #  eject current tape, insert new one in player
+   current['TAPE_ID'] = tape.identifier
+   logger.info(F"Set TAPE_ID to {current['TAPE_ID']}")
+   current['TRACK_NUM'] = -1
+   scr.show_selected_date(current['DATE'])  
+   state.player.insert_tape(tape)
+   state.set(current)
+   return 
 
-#signal.signal(signal.SIGINT, meCustomHandler)
+def select_button(item,state,scr):
+   if not state.date_reader.tape_available(): return 
+   date_reader = state.date_reader
+   changes,previous,current = state.snap()
+   current['DATE'] = date_reader.date 
+   logger.info(F"Set DATE to {current['DATE']}")
+   tapes = date_reader.archive.tape_dates[date_reader.fmtdate()]
+   state.set(current)
+
+   if item.longpress: select_button_longpress(item,state,scr,tapes)  
+   if item.press: 
+      logger.debug (F"pressing {item.name}")
+      tape = tapes[0] 
+      select_tape(tape,state,scr)
+   return 
+
+def select_button_longpress(item,state,scr,tapes):
+   logger.debug (F"long pressing {item.name}")
+   changes,previous,current = state.snap()
+   itape = -1
+   while item.longpress:
+      itape = divmod(itape + 1,len(tapes))[1]
+      tape_id = tapes[itape].identifier
+      sbd = tapes[itape].stream_only()
+      id_color = (0,255,255) if sbd else (0,0,255)
+      logger.info (F"Selecting Tape: {tape_id}, the {itape}th of {len(tapes)} choices. SBD:{sbd}")
+      if len(tape_id)<16: scr.show_venue(tape_id,color=id_color)
+      else:
+        for i in range(0,max(1,len(tape_id)),2):
+          scr.show_venue(tape_id[i:],color=id_color)
+   scr.show_venue(tape_id,color=id_color)
+   tape = tapes[itape] 
+   select_tape(tape,state,scr)
+   return 
+
+def play_pause_button(item,state,scr):
+   changes,previous,current = state.snap()
+   if current['EXPERIENCE']: return 
+   if not current['PLAY_STATE'] in [config.READY,config.PLAYING,config.PAUSED,config.STOPPED]: return 
+   if item.longpress: play_pause_button_longpress(item,state)  
+   if item.press: 
+     logger.debug (F"pressing {item.name}")
+     if current['PLAY_STATE'] == config.PLAYING: 
+        logger.info(F"Pausing {current['DATE'].strftime('%Y-%m-%d')} on player") 
+        state.player.pause()
+        current['PLAY_STATE'] == config.PAUSED
+     elif current['PLAY_STATE'] in [config.PAUSED,config.STOPPED,config.READY]: 
+        state.player.play()
+        current['PLAY_STATE'] = config.PLAYING
+     state.set(current)
+     scr.show_playstate()
+
+def play_pause_button_longpress(item,state):
+   logger.debug (" longpress of {item.name} -- nyi")
+   return 
+
+def stop_button(item,state,scr):
+   changes,previous,current = state.snap()
+   if current['EXPERIENCE']: return 
+   if current['PLAY_STATE'] in [config.READY,config.INIT,config.STOPPED]: return 
+   if item.longpress: stop_button_longpress(item,state)  
+   if item.press: 
+      state.player.stop()
+      current['PLAY_STATE'] == config.STOPPED
+      state.set(current)
+      scr.show_playstate()
+   state.set(current)
+   return 
+def stop_button_longpress(item,state):
+   logger.debug (" longpress of {item.name} -- nyi")
+   return 
+
+def rewind_button(item,state,scr):
+   if item.longpress: rewind_button_longpress(item,state)  
+   if item.press: print (F"pressing {item.name}")
+   return 
+
+def rewind_button_longpress(item,state):
+   logger.debug (" longpress of {item.name} -- nyi")
+   return 
+
+def ffwd_button(item,state,scr):
+   if item.longpress: ffwd_button_longpress(item,state)  
+   if item.press: print (F"pressing {item.name}")
+   return 
+
+def ffwd_button_longpress(item,state):
+   logger.debug (" longpress of {item.name} -- nyi")
+   return 
+
+def month_button(item,state,scr):
+   if item.longpress: month_button_longpress(item,state)  
+   if item.press: print (F"pressing {item.name}")
+   return 
+def month_button_longpress(item,state):
+   logger.debug (" longpress of {item.name} -- nyi")
+   return 
+
+def day_button(item,state,scr):
+   if item.longpress: day_button_longpress(item,state)  
+   if item.press: print (F"pressing {item.name}")
+   return 
+def day_button_longpress(item,state):
+   logger.debug (F"long pressing {item.name}")
+   return 
+
+def year_button(item,state,scr):
+   if item.longpress: year_button_longpress(item,state)  
+   if item.press: print (F"pressing {item.name}")
+   return 
+def year_button_longpress(item,state):
+   print (F"long pressing {item.name}")
+   return 
+
+
+
+def callback(item,state=None,scr=None):
+   #logger.debug(F"in callback for item {item.name}.State is {state}")
+   try:
+     if item.name == 'select': select_button(item,state,scr)
+     if item.name == 'play_pause': play_pause_button(item,state,scr)
+     if item.name == 'stop': stop_button(item,state,scr)
+     if item.name == 'rewind': rewind_button(item,state,scr)
+     if item.name == 'ffwd': ffwd_button(item,state,scr)
+     if item.name in ['year','month','day']:
+       state.date_reader.update()
+       item.turn = False
+       print (F"-- date is:{state.date_reader.date}")
+       if item.name == 'month': month_button(item,state,scr)
+       if item.name == 'day': day_button(item,state,scr)
+       if item.name == 'year': year_button(item,state,scr)
+
+   finally:
+     item.active = False
+     item.press = False
+     item.turn = False
+     item.longpress = False
+
 
 def to_date(d): return datetime.datetime.strptime(d,'%Y-%m-%d').date()
 
@@ -260,7 +401,7 @@ def main(parms):
        os.system("amixer sset 'Headphone' 100%")
     scr = ctl.screen(upside_down=upside_down)
     scr.clear()
-    scr.show_text("Grateful\n  Time\n   Machine\n     Loading...",color=(0,255,255))
+    scr.show_text("GratefulDead\n  Time\n   Machine\n     Loading...",color=(0,255,255))
 
     logger.info ("Loading GD Archive")
     a = GD.GDArchive(parms.dbpath)
@@ -273,12 +414,19 @@ def main(parms):
     scr.show_staged_date(date_reader.date)
     scr.show_venue(date_reader.venue())
     state = ctl.state(date_reader,player)
-    # runLoop((y,m,d),a,scr,player)
-    # runLoop(state,scr)
-    loop = threading.Thread(target=runLoop,name="timemachine loop",args=(state,scr),kwargs={'maxN':None})
-    loop.start()
 
-    loop.join()
+    buttons = threading.Thread(target=ctl.controlLoop,name="controlLoop",args=([select,play_pause,ffwd,rewind,stop],callback),kwargs={'state':state,'scr':scr})
+    knobs = threading.Thread(target=ctl.controlLoop,name="knobs_controlLoop",args=([y,m,d],callback),kwargs={'state':state,'scr':scr})
+    buttons.start()
+    knobs.start()
+
+
+    # runLoop(state,scr)
+    #loop = threading.Thread(target=runLoop,name="timemachine loop",args=(state,scr),kwargs={'maxN':None})
+    #loop.start()
+
+    #loop.join()
+
     [x.cleanup() for x in [y,m,d]] ## redundant, only one cleanup is needed!
 
 #parser.print_help()

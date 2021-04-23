@@ -54,19 +54,21 @@ class button:
 
   def push(self,channel):
     logger.debug(F"Pushed button {self.name}. -- {GPIO.input(self.pin)}")
-    nullval = 0 if not self.pull_up else 1
-    if GPIO.input(self.pin) == nullval: return
+    off = 0 if not self.pull_up else 1
+    on =  1 if not self.pull_up else 0
+    if GPIO.input(self.pin) == off: return
     self.press = True
     sleep(0.25)
-    if GPIO.input(self.pin) == nullval: 
+    if GPIO.input(self.pin) == off: 
       self.active = True
       self.longpress = False
-    while GPIO.input(self.pin) != nullval: 
+    while GPIO.input(self.pin) == on: 
       logger.debug(F"Longpress of button {self.name}. -- {GPIO.input(self.pin)}")
       self.active = True
       self.press = False
       self.longpress = True
       sleep(0.1)
+    self.longpress = False
     return
   def cleanup(self): 
     GPIO.cleanup()
@@ -471,11 +473,11 @@ class state:
     return self.dict
 
 
-def controlLoop(item_list,callback):
+def controlLoop(item_list,callback,state=None,scr=None):
     while True:
       for item in item_list:
           if item.active:
-              callback(item) 
+              callback(item,state,scr) 
 
 """
     if self.name == 'year':
