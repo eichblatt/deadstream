@@ -18,9 +18,11 @@ parms,remainder = parser.parse_args()
 
 logging.basicConfig(format='%(asctime)s.%(msecs)03d %(levelname)s: %(name)s %(message)s', level=logging.INFO,datefmt='%Y-%m-%d %H:%M:%S')
 logger = logging.getLogger(__name__)
-GDLogger = logging.getLogger('GD')
-controlsLogger = logging.getLogger('controls')
+GDLogger = logging.getLogger('timemachine.GD')
+controlsLogger = logging.getLogger('timemachine.controls')
+
 if parms.verbose:
+  logger.debug (F"Setting logger levels to {logging.DEBUG}")
   logger.setLevel(logging.DEBUG)
   GDLogger.setLevel(logging.DEBUG)
   controlsLogger.setLevel(logging.DEBUG)
@@ -275,7 +277,7 @@ def main(parms):
     controls = threading.Thread(target=ctl.controlLoop,name="controlLoop",args=([select,play_pause,ffwd,rewind,stop,scr,y,m,d],callback),kwargs={'state':state,'scr':scr})
     controls.start()
 
-    #controls.join()
+    controls.join()
 
     [x.cleanup() for x in [y,m,d]] ## redundant, only one cleanup is needed!
 
