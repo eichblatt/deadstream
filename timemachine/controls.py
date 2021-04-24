@@ -11,8 +11,9 @@ from adafruit_rgb_display import color565
 from PIL import Image, ImageDraw, ImageFont
 import pkg_resources
 
-logging.basicConfig(format='%(asctime)s.%(msecs)03d %(levelname)s: %(name)s %(message)s', level=logging.INFO,datefmt='%Y-%m-%d %H:%M:%S')
+logging.basicConfig(format='%(asctime)s.%(msecs)03d %(levelname)s: %(name)s %(message)s', level=logging.DEBUG,datefmt='%Y-%m-%d %H:%M:%S')
 logger = logging.getLogger(__name__)
+print (F"Name of controls logger is {__name__}")
 
 class button:
   def __init__(self,pin,name,pull_up=True,bouncetime=300):
@@ -75,7 +76,7 @@ class button:
 
  
 class knob:
-  def __init__(self,pins,name,values,init=None,bouncetime=50):
+  def __init__(self,pins,name,values,init=None,pull_up=True,bouncetime=50):
     self.cl, self.dt, self.sw = pins
     self.name = name
     self._values = values 
@@ -84,6 +85,7 @@ class knob:
     self.is_setup = False
     self.in_rotate = False
     self.turn = False
+    self.pull_up = pull_up
     self.press = False
     self.longpress = False
     self.active = False
@@ -109,37 +111,31 @@ class knob:
   def setup(self):
     if self.is_setup: return
     GPIO.setmode(GPIO.BCM)
-    _ = [GPIO.setup(x,GPIO.IN,pull_up_down=GPIO.PUD_DOWN) for x in [self.cl,self.dt,self.sw]]
+    _ = [GPIO.setup(x,GPIO.IN,pull_up_down=GPIO.PUD_UP) for x in [self.cl,self.dt,self.sw]]
     try:
-      self.add_callback(self.sw,GPIO.RISING,self.push)
+      self.add_callback(self.sw,GPIO.FALLING,self.push)
       self.add_callback(self.cl,GPIO.FALLING,self.rotate)
       self.is_setup = True
     except: raise
     return None 
 
   def rotate(self,channel):
-    if self.in_rotate: 
-      logger.debug (F" Already in rotate for {self.name}")
-      return
-    self.in_rotate = True
     self.active = True
-    vals = [(GPIO.input(self.dt),GPIO.input(self.cl)) for i in range(10)]
-    if sum([v[1] for v in vals])>3: 
-      logger.debug (F" Noisy click on {self.name}.  {self.value}")
-      cl_val = 1
-    else: cl_val = 0
-    if sum([v[0] for v in vals])>5: dt_val = 1 
-    else: dt_val = 0
-    if cl_val == 0 and dt_val == 0:
-      self.set_value(self.value - 1)
-      logger.debug (F" --- decreasing {self.name}.  {self.value}")
-    elif cl_val == 0 and dt_val == 1:
-      self.set_value(self.value + 1)
-      logger.debug (F" +++ increasing {self.name}.  {self.value}")
-    self.in_rotate = False
+    off = 0 if not self.pull_up else 1
+    on =  1 if not self.pull_up else 0
+ 
+    cl_val = GPIO.input(self.cl)
+    if cl_val == on:
+      dt_val = GPIO.input(self.dt)
+      if cl_val == dt_val:
+        self.set_value(self.value + 1)
+        logger.debug (F" +++ increasing {self.name}.  {self.value}")
+      else:
+        self.set_value(self.value - 1)
+        logger.debug (F" --- decreasing {self.name}.  {self.value}")
     self.turn = True
     return
- 
+
   def push(self,channel):
     logger.debug(F"Pushed button {self.name}")
     self.active = True
@@ -494,65 +490,3 @@ def controlLoop(item_list,callback,state=None,scr=None):
          last_timer = now
          callback(None,state,scr)
       sleep(0.1)
-
-
-"""
-    if self.name == 'year':
-      config.TIH = True 
-      logger.debug(F"Setting TIH to {config.TIH}")
-    if self.name == 'month':
-      if config.EXPERIENCE: config.EXPERIENCE = False
-      else: config.EXPERIENCE = True
-      logger.debug(F"Setting EXPERIENCE to {config.EXPERIENCE}")
-    if self.name == 'day':
-      config.NEXT_DATE = True
-      logger.debug(F"Setting NEXT_DATE to {config.NEXT_DATE}")
-     #sleep(0.3)
-
-"""
-
-"""
-    if self.name == 'select':   # NOTE I should move this logic to a function, since it's repeated 3 times.
-       config.NEXT_TAPE = False
-       sleep(0.5)
-       while GPIO.input(self.pin) == 0: # button is still being pressed
-           logger.debug(F"Setting SELECT_STAGED_DATE to {config.SELECT_STAGED_DATE}, NEXT_TAPE to {config.NEXT_TAPE}")
-           config.NEXT_TAPE = True
-           sleep(0.1)
-       config.NEXT_TAPE = False
-       if not config.NEXT_TAPE: 
-           logger.debug(F"Setting SELECT_STAGED_DATE to {config.SELECT_STAGED_DATE}, NEXT_TAPE to {config.NEXT_TAPE}")
-           config.SELECT_STAGED_DATE = True
-           config.PLAY_STATE = config.READY
-    if self.name == 'ffwd':
-       config.FSEEK = False
-       sleep(0.5)
-       while GPIO.input(self.pin) == 0: # button is still being pressed
-           logger.debug(F"Setting FFWD to {config.FFWD}, FSEEK is {config.FSEEK}")
-           config.FSEEK = True
-           sleep(0.1)
-       if not config.FSEEK: 
-           logger.debug(F"Setting FFWD to {config.FFWD}, FSEEK is {config.FSEEK}")
-           config.FFWD = True
-       config.FSEEK = False
-    if self.name == 'rewind':
-       logger.debug(F"GPIO is now {GPIO.input(self.pin)}")
-       config.RSEEK = False
-       sleep(0.5)
-       logger.debug(F"GPIO is now {GPIO.input(self.pin)}")
-       while GPIO.input(self.pin) == 0: # button is still being pressed -- NOTE: Because this is connected to pin2, default is on.
-           logger.debug(F"Setting REWIND to {config.REWIND}, RSEEK is {config.RSEEK}")
-           config.RSEEK = True
-           sleep(0.1)
-       if not config.RSEEK: 
-           logger.debug(F"Setting REWIND to {config.REWIND}, RSEEK is {config.RSEEK}")
-           config.REWIND = True
-    if self.name == 'play_pause':
-       if config.PLAY_STATE in [config.READY, config.PAUSED, config.STOPPED]: config.PLAY_STATE = config.PLAYING  # play if not playing
-       elif config.PLAY_STATE == config.PLAYING: config.PLAY_STATE = config.PAUSED   # Pause if playing
-       logger.debug(F"Setting PLAY_STATE to {config.PLAY_STATE}")
-    if self.name == 'stop':
-       if config.PLAY_STATE in [config.PLAYING, config.PAUSED]: config.PLAY_STATE = config.STOPPED  # stop playing or pausing
-       logger.debug(F"Setting PLAY_STATE to {config.PLAY_STATE}")
-
-"""
