@@ -59,7 +59,7 @@ class button:
     on =  1 if not self.pull_up else 0
     if GPIO.input(self.pin) == off: return
     self.press = True
-    sleep(0.25)
+    sleep(0.35)
     if GPIO.input(self.pin) == off: 
       self.active = True
       self.longpress = False
@@ -76,7 +76,7 @@ class button:
 
  
 class knob:
-  def __init__(self,pins,name,values,init=None,pull_up=True,bouncetime=50):
+  def __init__(self,pins,name,values,init=None,pull_up=True,bouncetime=15):
     self.cl, self.dt, self.sw = pins
     self.name = name
     self._values = values 
@@ -489,4 +489,4 @@ def controlLoop(item_list,callback,state=None,scr=None):
       if (now - last_timer).seconds > 5:
          last_timer = now
          callback(None,state,scr)
-      sleep(0.1)
+      sleep(0.01)
