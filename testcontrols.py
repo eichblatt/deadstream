@@ -8,16 +8,16 @@ ctl.logger.setLevel(50)
 d1 = '1977-05-08'
 d1 =  datetime.date(*(int(s) for s in d1.split('-')))
 
-s = ctl.screen()
-s.clear()
+scr = ctl.screen()
+scr.clear()
 
-s.show_staged_date(d1)
+scr.show_staged_date(d1)
 
 d2 = '1979-11-02'
 d2 =  datetime.date(*(int(s) for s in d2.split('-')))
-s.show_selected_date(d2)
+scr.show_selected_date(d2)
 
-s.show_text("Venue",(0,30))
+scr.show_text("Venue",(0,30))
 
 y = ctl.knob(config.year_pins,"year",range(1965,1996),1979)   # cl, dt, sw
 m = ctl.knob(config.month_pins,"month",range(1,13),11)
@@ -55,7 +55,7 @@ def select_button_longpress(item):
    """ deal with longpress of select button """
    print (F"long pressing {item.name}")
 
-def callback(item):
+def callback(item,state=None,scr=None):
    #print (F"in callback for item {item.name}")
    try:
      if item.name == 'select': select_button(item)
@@ -72,10 +72,8 @@ def callback(item):
      item.longpress = False
 
 
-buttons = threading.Thread(target=ctl.controlLoop,name="controlLoop",args=([select,play_pause,ffwd,rewind,stop],callback),kwargs={})
-knobs = threading.Thread(target=ctl.controlLoop,name="knobs_controlLoop",args=([y,m,d],callback),kwargs={})
-buttons.start()
-knobs.start()
+controls = threading.Thread(target=ctl.controlLoop,name="controlLoop",args=([select,play_pause,ffwd,rewind,stop,scr,y,m,d],callback),kwargs={'state':state,'scr':scr})
+controls.start()
 
 """
 #venue_thread.start()
