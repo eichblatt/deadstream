@@ -12,6 +12,8 @@ setup(
         'adafruit-blinka',
         'adafruit-circuitpython-rgb-display',
         'Pillow',
+        'gpiozero',
+        'tenacity',
         'pickle5'
     ],
     package_data={
