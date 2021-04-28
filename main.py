@@ -65,7 +65,7 @@ def select_button(button,state,scr):
    current = state.get_current()
    tapes = date_reader.archive.tape_dates[date_reader.fmtdate()]
    state.set(current)
-   sleep(button._hold_time + 0.01)
+   sleep(button._hold_time)
    if button.is_pressed: return
    else: 
      tape = tapes[0] 
@@ -73,6 +73,7 @@ def select_button(button,state,scr):
 
 def select_button_longpress(button,state,scr):
    logger.debug ("long pressing select")
+   if not state.date_reader.tape_available(): return 
    current = state.get_current()
    date_reader = state.date_reader
    tapes = date_reader.archive.tape_dates[date_reader.fmtdate()]
@@ -95,63 +96,55 @@ def play_pause_button(button,state,scr):
    current = state.get_current()
    if current['EXPERIENCE']: return 
    if not current['PLAY_STATE'] in [config.READY,config.PLAYING,config.PAUSED,config.STOPPED]: return 
-   if button.longpress: play_pause_button_longpress(button,state)  
-   if button.press: 
-     logger.debug (F"pressing {button.name}")
-     if current['PLAY_STATE'] == config.PLAYING: 
-        logger.info(F"Pausing  on player") 
-        state.player.pause()
-        current['PLAY_STATE'] = config.PAUSED
-     elif current['PLAY_STATE'] in [config.PAUSED,config.STOPPED,config.READY]: 
-        current['PLAY_STATE'] = config.PLAYING
-        scr.show_playstate(staged_play=True) # show that we've registered the button-press before blocking call.
-        state.player.play()   # this is a blocking call
-     state.set(current)
-     scr.show_playstate()
+   logger.debug ("pressing play_pause")
+   if current['PLAY_STATE'] == config.PLAYING: 
+      logger.info("Pausing on player") 
+      state.player.pause()
+      current['PLAY_STATE'] = config.PAUSED
+   elif current['PLAY_STATE'] in [config.PAUSED,config.STOPPED,config.READY]: 
+      current['PLAY_STATE'] = config.PLAYING
+      scr.show_playstate(staged_play=True) # show that we've registered the button-press before blocking call.
+      state.player.play()   # this is a blocking call
+   state.set(current)
+   scr.show_playstate()
 
-def play_pause_button_longpress(button,state):
-   logger.debug (F" longpress of {button.name} -- nyi")
+def play_pause_button_longpress(button,state,scr):
+   logger.debug (" longpress of play_pause -- nyi")
 
 def stop_button(button,state,scr):
    current = state.get_current()
    if current['EXPERIENCE']: return 
    if current['PLAY_STATE'] in [config.READY,config.INIT,config.STOPPED]: return 
-   if button.longpress: stop_button_longpress(button,state)  
-   if button.press: 
-      state.player.stop()
-      current['PLAY_STATE'] = config.STOPPED
-      state.set(current)
-      scr.show_playstate()
+   state.player.stop()
+   current['PLAY_STATE'] = config.STOPPED
+   state.set(current)
+   scr.show_playstate()
    state.set(current)
 
-def stop_button_longpress(button,state):
+def stop_button_longpress(button,state,scr):
    logger.debug (F" longpress of {button.name} -- nyi")
 
 def rewind_button(button,state,scr):
    current = state.get_current()
    if current['EXPERIENCE']: return 
-   if button.longpress: rewind_button_longpress(button,state)  
-   if button.press: 
-      if current['TRACK_NUM']>0: state.player.prev()
+   sleep(button._hold_time)
+   if button.is_pressed: return # the button is being "held"
+   if current['TRACK_NUM']<len(state.player.playlist): state.player.next()
 
-def rewind_button_longpress(button,state):
-   while button.longpress:
-      logger.debug (F" longpress of {button.name} ")
-      state.player.seek(-1)
-      sleep(0.05) ## maximum speed is 1/0.05 = 20x
+def rewind_button_longpress(button,state,scr):
+   logger.debug ("longpress of rewind")
+   state.player.seek(3)
 
 def ffwd_button(button,state,scr):
    current = state.get_current()
    if current['EXPERIENCE']: return 
-   if button.longpress: ffwd_button_longpress(button,state)  
-   if button.press: 
-      if current['TRACK_NUM']<len(state.player.playlist): state.player.next()
+   sleep(button._hold_time)
+   if button.is_pressed: return # the button is being "held"
+   if current['TRACK_NUM']<len(state.player.playlist): state.player.next()
 
-def ffwd_button_longpress(button,state):
-   while button.longpress:
-      logger.debug (F" longpress of {button.name} -- nyi")
-      state.player.seek(1)
-      sleep(0.05) ## maximum speed is 1/0.05 = 20x
+def ffwd_button_longpress(button,state,scr):
+   logger.debug ("longpress of ffwd")
+   state.player.seek(3)
 
 def month_button(button,state,scr):
    current = state.get_current()
@@ -259,11 +252,18 @@ def play_tape(tape,player):
     return player
 
 def main(parms):
+    screen_event = Event()
+    stop_event = Event()
+    if parms.box == 'v0': 
+       upside_down=True
+       os.system("amixer sset 'Headphone' 100%")
+    else: 
+       upside_down = False
+    scr = controls.screen(upside_down=upside_down)
+    scr.clear()
+    scr.show_text("(\);} \n  Time\n   Machine\n     Loading...",color=(0,255,255))
     archive = GD.GDArchive(parms.dbpath)
     player = GD.GDPlayer()
-    screen_event = Event()
-    scr = controls.screen()
-    scr.clear()
 
     y = retry_call(RotaryEncoder, config.year_pins[1], config.year_pins[0],max_steps = 0,threshold_steps = (0,30))
     m = retry_call(RotaryEncoder, config.month_pins[1], config.month_pins[0],max_steps = 0,threshold_steps = (1,12))
@@ -271,51 +271,35 @@ def main(parms):
     y.steps = 1979-1965; m.steps = 11; d.steps = 2;
     date_reader = controls.date_knob_reader(y,m,d,archive)
     state = controls.state(date_reader,player)
-    scr.show_staged_date(date_reader.date)
     y.when_rotated = lambda x: twist_knob(screen_event, y, "year",date_reader)
     m.when_rotated = lambda x: twist_knob(screen_event, m, "month",date_reader)
     d.when_rotated = lambda x: twist_knob(screen_event, d, "day",date_reader)
     y_button = retry_call(Button, config.year_pins[2])
     m_button = retry_call(Button, config.month_pins[2])
     d_button = retry_call(Button, config.day_pins[2])
-    select = retry_call(Button, config.select_pin,hold_time = 1,hold_repeat = False)
+    select = retry_call(Button, config.select_pin,hold_time = 0.5,hold_repeat = False)
     play_pause = retry_call(Button, config.play_pause_pin,hold_time = 5)
-    ffwd = retry_call(Button, config.ffwd_pin,hold_time = 1,hold_repeat = True)
-    rewind = retry_call(Button, config.rewind_pin,hold_repeat = True)
-    stop = retry_call(Button, config.stop_pin)
+    ffwd = retry_call(Button, config.ffwd_pin,hold_time = 0.5,hold_repeat = True)
+    rewind = retry_call(Button, config.rewind_pin,hold_time = 0.5,hold_repeat = True)
+    stop = retry_call(Button, config.stop_pin,hold_time = 5)
 
-    play_pause.when_pressed = lambda x: print (F"pressing {x}")
-    play_pause.when_held = lambda x: print ("nyi")
+    play_pause.when_pressed = lambda button: play_pause_button(button,state,scr)
+    play_pause.when_held = lambda button: play_pause_button_longpress(button,state,scr) 
 
     select.when_pressed = lambda button: select_button(button,state,scr)
-    #select.when_held = lambda button: select_button_longpress(button,state,scr)
+    select.when_held = lambda button: select_button_longpress(button,state,scr)
 
-    ffwd.when_released = lambda x: print (F"releasing {x}")
-    ffwd.when_held = lambda x: print (F"long pressing {x}")
+    ffwd.when_pressed = lambda button: ffwd_button(button,state,scr)
+    ffwd.when_held = lambda button: ffwd_button_longpress(button,state,scr)
 
+    rewind.when_pressed = lambda button: rewind_button(button,state,scr)
+    rewind.when_held = lambda button: rewind_button_longpress(button,state,scr)
 
+    stop.when_pressed = lambda button: stop_button(button,state,scr)
+    stop.when_held = lambda button: stop_button_longpress(button,state,scr)
 
-    if parms.box == 'v0': upside_down=False
-    else: 
-       upside_down = True
-       os.system("amixer sset 'Headphone' 100%")
-    scr = controls.screen(upside_down=upside_down)
     scr.clear()
-    #scr.show_text("Grateful Dead\n  Time\n   Machine\n     Loading...",color=(0,255,255))
-    scr.show_text("(\);} \n  Time\n   Machine\n     Loading...",color=(0,255,255))
-
-    logger.info ("Loading GD Archive")
-    a = GD.GDArchive(parms.dbpath)
-    logger.info ("Done ")
-    
-    scr.clear()
-    date_reader = controls.date_knob_reader(y,m,d,a)
-    logger.info(date_reader)
-
     scr.show_staged_date(date_reader.date)
-    scr.show_venue(date_reader.venue())
-    state = controls.state(date_reader,player)
-
     try:
         while not stop_event.wait(timeout=0.001):
             if screen_event.is_set():
