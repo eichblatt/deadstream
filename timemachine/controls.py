@@ -1,5 +1,4 @@
 #!/usr/bin/python3
-from RPi import GPIO
 from time import sleep
 import datetime
 import logging
@@ -10,147 +9,14 @@ import adafruit_rgb_display.st7735 as st7735
 from adafruit_rgb_display import color565
 from PIL import Image, ImageDraw, ImageFont
 import pkg_resources
+from gpiozero import RotaryEncoder, Button
 
 logging.basicConfig(format='%(asctime)s.%(msecs)03d %(levelname)s: %(name)s %(message)s', level=logging.DEBUG,datefmt='%Y-%m-%d %H:%M:%S')
 logger = logging.getLogger(__name__)
 print (F"Name of controls logger is {__name__}")
 
-class button:
-  def __init__(self,pin,name,pull_up=True,bouncetime=300):
-    self.pin = pin
-    self.name = name
-    self.bouncetime = bouncetime
-    self.pull_up = True if self.pin in [2,3] else pull_up
-    self.is_setup = False
-    self.active = False
-
-  def __str__(self):
-    return self.__repr__()
-
-  def __repr__(self):
-    return F"{self.name}: pin:{self.pin}"
-
-  def add_callback(self,pin,edge_type,cb,maxtries=3):
-    itries = 0
-    while itries < maxtries:
-      itries += 1
-      try:
-        GPIO.add_event_detect(pin,edge_type, callback = cb, bouncetime = self.bouncetime) 
-        return
-      except:
-        logger.warn(F"Retrying event_detection callback on pin {pin}")
-    logger.warn(F"Failed to set event_detection callback on pin {pin}")
-
-  def setup(self):
-    if self.pin == None: return
-    if self.is_setup: return
-    if self.pull_up: 
-      GPIO.setup(self.pin,GPIO.IN,pull_up_down=GPIO.PUD_UP)
-      self.add_callback(self.pin,GPIO.FALLING,self.push)
-    else:
-      GPIO.setup(self.pin,GPIO.IN,pull_up_down=GPIO.PUD_DOWN)
-      self.add_callback(self.pin,GPIO.RISING,self.push)
-    self.is_setup = True
-    return None 
-
-  def push(self,channel):
-    logger.debug(F"Pushed button {self.name}. -- {GPIO.input(self.pin)}")
-    off = 0 if not self.pull_up else 1
-    on =  1 if not self.pull_up else 0
-    if GPIO.input(self.pin) == off: return
-    self.press = True
-    sleep(0.25)
-    if GPIO.input(self.pin) == off: 
-      self.active = True
-      self.longpress = False
-    while GPIO.input(self.pin) == on: 
-      logger.debug(F"Longpress of button {self.name}. -- {GPIO.input(self.pin)}")
-      self.active = True
-      self.press = False
-      self.longpress = True
-      sleep(0.1)
-    self.longpress = False
-    return
-  def cleanup(self): 
-    GPIO.cleanup()
-
- 
-class knob:
-  def __init__(self,pins,name,values,init=None,pull_up=True,bouncetime=50):
-    self.cl, self.dt, self.sw = pins
-    self.name = name
-    self._values = values 
-    self.value = min(values) if init == None else init
-    self.bouncetime = bouncetime
-    self.is_setup = False
-    self.in_rotate = False
-    self.turn = False
-    self.pull_up = pull_up
-    self.press = False
-    self.longpress = False
-    self.active = False
-
-  def __str__(self):
-    return self.__repr__()
-
-  def __repr__(self):
-    return F"{self.name}: pins cl:{self.cl}, dt:{self.dt}, sw:{self.sw}. Value: {self.value}"
- 
-  def add_callback(self,pin,edge_type,cb,maxtries=3):
-    itries = 0
-    while itries < maxtries:
-      itries += 1
-      try:
-        GPIO.add_event_detect(pin,edge_type, callback = cb, bouncetime = self.bouncetime) 
-        return
-      except:
-        logger.warn(F"Retrying event_detection callback on pin {pin}")
-    logger.warn(F"Failed to set event_detection callback on pin {pin}")
-    raise
-
-  def setup(self):
-    if self.is_setup: return
-    GPIO.setmode(GPIO.BCM)
-    _ = [GPIO.setup(x,GPIO.IN,pull_up_down=GPIO.PUD_UP) for x in [self.cl,self.dt,self.sw]]
-    try:
-      self.add_callback(self.sw,GPIO.FALLING,self.push)
-      self.add_callback(self.cl,GPIO.FALLING,self.rotate)
-      self.is_setup = True
-    except: raise
-    return None 
-
-  def rotate(self,channel):
-    self.active = True
-    off = 0 if not self.pull_up else 1
-    on =  1 if not self.pull_up else 0
- 
-    cl_val = GPIO.input(self.cl)
-    if cl_val == on:
-      dt_val = GPIO.input(self.dt)
-      if cl_val == dt_val:
-        self.set_value(self.value + 1)
-        logger.debug (F" +++ increasing {self.name}.  {self.value}")
-      else:
-        self.set_value(self.value - 1)
-        logger.debug (F" --- decreasing {self.name}.  {self.value}")
-    self.turn = True
-    return
-
-  def push(self,channel):
-    logger.debug(F"Pushed button {self.name}")
-    self.active = True
-    self.press = True
-
-  def set_value(self,value): 
-    self.value = min(max(value,min(self._values)),max(self._values))
-  def get_value(self): 
-    return self.value 
-
-  def cleanup(self): 
-    GPIO.cleanup()
-
 class date_knob_reader:
-  def __init__(self,y,m,d,archive=None):
+  def __init__(self,y:RotaryEncoder,m:RotaryEncoder,d:RotaryEncoder,archive=None):
     self.date = None
     self.archive = archive
     self.y = y; self.m = m; self.d = d;
@@ -165,13 +31,26 @@ class date_knob_reader:
 
   def update(self):
     maxd = [31,29,31,30,31,30,31,31,30,31,30,31] ## max days in a month.
-    if self.d.value > maxd[self.m.value-1]: self.d.set_value(maxd[self.m.value-1])
+    m_val = self.m.steps 
+    d_val = self.d.steps
+    y_val = self.y.steps + 1965
+    if d_val > maxd[m_val-1]: 
+      self.d.steps = maxd[m_val-1]
+      d_val = self.d.steps 
     try:
-      self.date = datetime.date(self.y.value,self.m.value,self.d.value)
+      self.date = datetime.date(y_val,m_val,d_val)
     except ValueError:
-      self.d.set_value(self.d.value-1)
-      self.date = datetime.date(self.y.value,self.m.value,self.d.value)
- 
+      self.d.steps = self.d.steps - 1
+      d_val = d_val-1
+      self.date = datetime.date(y_val,m_val,d_val)
+
+  def set_date(self,date):
+    new_month,new_day,new_year = (date.month,date.day,date.year)
+    self.m.steps = new_month
+    self.d.steps = new_day
+    self.y.steps = new_year - 1965
+    self.update()
+
   def fmtdate(self):
     if self.date == None: return None
     return self.date.strftime('%Y-%m-%d')
@@ -187,6 +66,7 @@ class date_knob_reader:
     self.update()
     return self.fmtdate() in self.archive.dates   
 
+
   def next_date(self):
     if self.archive == None: return None
     self.update()
@@ -194,44 +74,6 @@ class date_knob_reader:
       if d>self.fmtdate(): return datetime.datetime.strptime(d,'%Y-%m-%d').date()
     return self.date
       
-
-class seven_segment:
-  def __init__(self,disp,loc,size,thickness=3,color=(0,0,255),bgcolor=(0,0,0)):
-    self.disp = disp
-    self.x,self.y = loc
-    self.w,self.h = size
-    self.thickness = thickness
-    self.color = color565(color)
-    self.bgcolor = color565(bgcolor)
-    
-    self.segments = [(0,0,0), (0,.5,0),(0,1,0),(0,0,1),(1,0,1),(0,.5,1),(1,.5,1)]  # x location, y location, vertical?
-    self.digits = [[0,2,3,4,5,6],[4,6],[0,1,2,3,6],[0,1,2,4,6],[1,4,5,6],[0,1,2,4,5],[0,1,2,3,4,5],[2,6,4],[0,1,2,3,4,5,6],[1,2,4,5,6],[1],[]] # which segments on.
-    
-  def draw_background(self):
-    self.disp.fill_rectangle(self.y,self.x,self.h,self.w,self.bgcolor)  # background
-    #[self.draw_segment(x,True) for x in self.segments]
-
-  def draw_segment(self,seg,bgcolor=False):
-    color = self.color if not bgcolor else self.bgcolor
-    if seg[2]: # vertical
-      line_width = self.thickness
-      line_height = divmod(self.h,2)[0]
-    else: 
-      line_width = self.w
-      line_height = self.thickness
-    x,y = (self.x + int(seg[0]*self.w - seg[0]*self.thickness),self.y + int(seg[1]*self.h - seg[1]*self.thickness))
-    self.disp.fill_rectangle(y,x,line_height,line_width,color)
-    logger.debug(F"drawing rectangle {y},{x},{line_height},{line_width},color {color}")
- 
-  def draw(self,digit):
-    if digit == '-': digit = 10
-    if digit == ' ': digit = 11
-    if type(digit) == str: digit = int(digit)
-    if not (digit>=0) and (digit<=11): raise ValueError
-    self.draw_background()
-    pattern = [self.segments[x] for x in self.digits[digit]] 
-    [self.draw_segment(x) for x in pattern]
-
 class Bbox:
   def __init__(self,x0,y0,x1,y1):
     self.corners = (x0,y0,x1,y1)
@@ -489,4 +331,4 @@ def controlLoop(item_list,callback,state=None,scr=None):
       if (now - last_timer).seconds > 5:
          last_timer = now
          callback(None,state,scr)
-      sleep(0.1)
+      sleep(0.01)

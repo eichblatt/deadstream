@@ -1,0 +1,10 @@
+[Unit]
+Description=Grateful Dead Time Machine
+After=multi-user.target
+[Service]
+# change this to a non-steve user
+Type=simple
+User=steve
+ExecStart=/usr/bin/python3 /home/steve/projects/deadstream/main.py --debug 0 --box v1 -v
+[Install]
+WantedBy=multi-user.target
