@@ -1,5 +1,4 @@
 #!/usr/bin/python3
-from RPi import GPIO
 from time import sleep
 import datetime
 import logging
@@ -44,7 +43,14 @@ class date_knob_reader:
       self.d.steps = self.d.steps - 1
       d_val = d_val-1
       self.date = datetime.date(y_val,m_val,d_val)
- 
+
+  def set_date(self,date):
+    new_month,new_day,new_year = (date.month,date.day,date.year)
+    self.m.steps = new_month
+    self.d.steps = new_day
+    self.y.steps = new_year - 1965
+    self.update()
+
   def fmtdate(self):
     if self.date == None: return None
     return self.date.strftime('%Y-%m-%d')
@@ -59,6 +65,7 @@ class date_knob_reader:
     if self.archive == None: return False
     self.update()
     return self.fmtdate() in self.archive.dates   
+
 
   def next_date(self):
     if self.archive == None: return None
