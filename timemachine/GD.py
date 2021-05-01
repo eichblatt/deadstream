@@ -321,9 +321,9 @@ class GDTape:
     self._tracks = []
     date = datetime.datetime.strptime(self.date,'%Y-%m-%d').date() 
     meta_path = os.path.join(self.dbpath,str(date.year),str(date.month),self.identifier+'.json')
-    if os.path.exists(meta_path): 
+    try:     # I used to check if file exists, but it may also be corrupt, so this is safer.
       page_meta = json.load(open(meta_path,'r'))
-    else:
+    except:
       r = requests.get(self.url_metadata)
       print("url is {}".format(r.url))
       if r.status_code != 200: print ("error pulling data for {}".format(self.identifier)); raise Exception('Download','Error {} url {}'.format(r.status_code,self.url_metadata))
