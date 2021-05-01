@@ -1,14 +1,11 @@
 #!/usr/bin/python3
-import optparse
+import optparse,random,logging,os,datetime
 from timemachine import GD
 from timemachine import controls
 from timemachine import config
 from time import sleep
-import logging
 from threading import Event
 from typing import Callable
-import os
-import datetime
 from gpiozero import RotaryEncoder, Button
 from tenacity import retry
 from tenacity.stop import stop_after_delay
@@ -109,8 +106,26 @@ def play_pause_button(button,state,scr,playstate_event: Event):
    state.set(current)
    playstate_event.set()
 
-def play_pause_button_longpress(button,state,playstate_event):
-   logger.debug (" longpress of play_pause -- nyi")
+def play_pause_button_longpress(button,state,select_event,stagedate_event,playstate_event):
+   logger.debug (" longpress of play_pause -- choose random date and play it")
+   current = state.get_current()
+   if current['EXPERIENCE']: 
+     current['EXPERIENCE'] = False
+   new_date = random.choice(state.date_reader.archive.dates)
+   tape = state.date_reader.archive.best_tape(new_date)
+   current['DATE'] = to_date(new_date)
+   state.date_reader.set_date(current['DATE'])
+
+   if current['PLAY_STATE'] in [config.PLAYING,config.PAUSED]:
+     state.player.stop()
+   state.player.insert_tape(tape)
+   current['PLAY_STATE'] = config.PLAYING
+   state.player.play()   # this is a blocking call. I could move the "wait_until_playing" to the event handler.
+
+   state.set(current)
+   select_event.set()
+   stagedate_event.set()
+   playstate_event.set()
 
 def stop_button(button,state,playstate_event):
    current = state.get_current()
@@ -256,7 +271,7 @@ def main(parms):
     stop = retry_call(Button, config.stop_pin,hold_time = 5)
 
     play_pause.when_pressed = lambda button: play_pause_button(button,state,scr,playstate_event)
-    play_pause.when_held = lambda button: play_pause_button_longpress(button,state,playstate_event) 
+    play_pause.when_held = lambda button: play_pause_button_longpress(button,state,select_event,stagedate_event,playstate_event) 
 
     select.when_pressed = lambda button: select_button(button,state,select_event)
     select.when_held = lambda button: select_button_longpress(button,state,scr,select_event)
