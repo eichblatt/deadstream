@@ -151,7 +151,7 @@ def rewind_button(button,state):
    if current['EXPERIENCE']: return 
    sleep(button._hold_time)
    if button.is_pressed: return # the button is being "held"
-   if current['TRACK_NUM']<len(state.player.playlist): state.player.next()
+   if current['TRACK_NUM']<len(state.player.playlist): state.player.prev()
    track_event.set()
 
 def rewind_button_longpress(button,state):
@@ -322,7 +322,7 @@ def main(parms):
     y_button.when_pressed = lambda button: year_button(button,state)
 
     scr.clear()
-    scr.show_text("Powered by\n archive.org \n turn knobs \n to select date",color=(0,255,255))
+    scr.show_text("Powered by\n archive.org",color=(0,255,255))
 
     event_loop(state,scr)
 
