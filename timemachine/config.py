@@ -9,25 +9,11 @@ PLAYING = 4
 PLAY_STATE = INIT
 #PLAY_STATES = ['Init','Ready','Paused','Stopped','Playing']
 SELECT_STAGED_DATE = False
-NEXT_TAPE = False
 DATE = None
 STAGED_DATE = None
 
 ON_TOUR = False
 EXPERIENCE = False
-TIH = False
-
-_today = datetime.date.today()
-TIH_YEAR = None
-TIH_MONTH = _today.month
-TIH_DAY = _today.day
-
-NEXT_DATE = False
-
-FFWD = False
-FSEEK = False
-REWIND = False
-RSEEK = False
 
 # Hardware pins
 

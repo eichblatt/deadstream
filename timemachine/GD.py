@@ -15,9 +15,18 @@ import codecs
 from operator import attrgetter,methodcaller
 from mpv import MPV
 from importlib import reload
+from tenacity import retry
+from tenacity.stop import stop_after_delay
+from typing import Callable
 
 logging.basicConfig(format='%(asctime)s.%(msecs)03d %(levelname)s: %(name)s %(message)s', level=logging.INFO,datefmt='%Y-%m-%d %H:%M:%S')
 logger = logging.getLogger(__name__)
+
+
+@retry(stop=stop_after_delay(30))
+def retry_call(callable: Callable, *args, **kwargs):
+    """Retry a call."""
+    return callable(*args, **kwargs)
 
 class BaseTapeDownloader(abc.ABC):
     """Abstract base class for a Grateful Dead tape downloader.
@@ -227,7 +236,7 @@ class GDArchive:
   
   def best_tape(self,date):
     if not date in self.dates: 
-      print ("No Tape for date {}".format(date))
+      logger.info ("No Tape for date {}".format(date))
       return None
     return self.tape_dates[date][0]
      
@@ -257,7 +266,7 @@ class GDArchive:
     elif (not reload_ids) and os.path.exists(self.idpath):
       tapes = json.load(open(self.idpath,'r'))
     else:
-      print ("Loading Tapes from the Archive...this will take a few minutes")
+      logger.info ("Loading Tapes from the Archive...this will take a few minutes")
       tapes = self.downloader.get_tapes(list(range(1965, 1996, 1)))
       self.write_tapes(tapes)
     return [GDTape(self.dbpath,tape,self.set_data) for tape in tapes]
@@ -310,7 +319,7 @@ class GDTape:
 
   def tracklist(self):
     for i,t in enumerate(self._tracks):
-      print(i)
+      logger.info(i)
     
   def track(self,n):
     if not self.meta_loaded: self.get_metadata()
@@ -321,19 +330,19 @@ class GDTape:
     self._tracks = []
     date = datetime.datetime.strptime(self.date,'%Y-%m-%d').date() 
     meta_path = os.path.join(self.dbpath,str(date.year),str(date.month),self.identifier+'.json')
-    if os.path.exists(meta_path): 
+    try:     # I used to check if file exists, but it may also be corrupt, so this is safer.
       page_meta = json.load(open(meta_path,'r'))
-    else:
+    except:
       r = requests.get(self.url_metadata)
-      print("url is {}".format(r.url))
-      if r.status_code != 200: print ("error pulling data for {}".format(self.identifier)); raise Exception('Download','Error {} url {}'.format(r.status_code,self.url_metadata))
+      logger.info("url is {}".format(r.url))
+      if r.status_code != 200: logger.warn ("error pulling data for {}".format(self.identifier)); raise Exception('Download','Error {} url {}'.format(r.status_code,self.url_metadata))
       try:
         page_meta = r.json()
       except ValueError:
-        print ("Json Error {}".format(r.url))
+        logger.warn ("Json Error {}".format(r.url))
         return None
       except:
-        print ("Json Error, probably")
+        logger.warn ("Json Error, probably")
         return None
 
     # self.reviews = page_meta['reviews'] if 'reviews' in page_meta.keys() else []
@@ -528,7 +537,11 @@ class GDPlayer(MPV):
   """ A media player to play a GDTape """
   def __init__(self,tape=None):
     super().__init__()
+    #self._set_property('prefetch-playlist','yes')
+    #self._set_property('cache-dir','/home/steve/cache')
+    #self._set_property('cache-on-disk','yes')
     self._set_property('audio-buffer',10.0)  ## This allows to play directly from the html without a gap!
+    self._set_property('cache','yes')  
     if tape != None:
       self.insert_tape(tape)
 
@@ -570,7 +583,7 @@ class GDPlayer(MPV):
     if len(urls)>0: _ = [self.command('loadfile',x,'append') for x in urls[1:]]
     self.playlist_pos = 0 
     self.pause()
-    print (F"Playlist {self.playlist}")
+    logger.info (F"Playlist {self.playlist}")
     return
 
   def play(self): 
@@ -586,18 +599,79 @@ class GDPlayer(MPV):
     self.pause()
 
   def next(self): 
-      if self._get_property('playlist-pos')+1 == len(self.playlist): return
-      self.command('playlist-next'); 
+    if self.get_prop('playlist-pos')+1 == len(self.playlist): return
+    self.command('playlist-next'); 
 
   def prev(self): 
-      if self._get_property('playlist-pos') == 0: return
-      self.command('playlist-prev'); 
+    if self.get_prop('playlist-pos') == 0: return
+    self.command('playlist-prev'); 
 
-  def track_status(self):
-    if self.playlist_pos == None: print (F"Playlist not started"); return None
-    print (F"Playlist at track {self.playlist[self.playlist_pos]}")
-    if self.raw.time_pos == None: print (F"Track not started"); return None
-    print(F"time: {datetime.timedelta(seconds=int(self.raw.time_pos))}, time remaining: {datetime.timedelta(seconds=int(self.raw.time_remaining))}")
+  def seek_to(self,track_no,destination=0.0,threshold=1):
+    logger.debug(F'seek_to {track_no},{destination}')
+    try:
+      if track_no<0 or track_no > len(self.playlist):
+        raise Exception(F'seek_to track {track_no} out of bounds')
+      paused = self.get_prop('pause')
+      current_track = self.get_prop('playlist-pos')
+      self.status()
+      if current_track != track_no:
+        self._set_property('playlist-pos',track_no)
+        #self.wait_for_event('file-loaded')   # NOTE: this could wait forever!
+        sleep(5)
+      duration = self.get_prop('duration')
+      if destination < 0: destination = duration + destination
+      if (destination > duration) or (destination < 0):
+        raise Exception(F'seek_to destination {destination} out of bounds (0,{duration})')
+      
+      self.seek(destination,reference = 'absolute')
+      if not paused: self.play()
+      time_pos = self.get_prop('time-pos')
+      if abs(time_pos - destination) > threshold:
+        raise Exception(F'Not close enough: time_pos {time_pos} - destination ({time_pos - destination})>{threshold}')
+    except Exception as e:
+      logger.warning (e)
+    finally: 
+      pass
+
+  def fseek(self,jumpsize=30,sleeptime=2):
+    try:
+      logger.debug(F'seeking {jumpsize}')
+    
+      current_track = self.get_prop('playlist-pos')
+      time_remaining = self.get_prop('time-remaining')
+      time_pos = self.get_prop('time-pos')
+      if time_pos == None: time_pos = 0
+      time_pos = max(0,time_pos)
+      duration = self.get_prop('duration')
+      
+      destination = time_pos + jumpsize
+
+      logger.debug (F'destination {destination} time_pos {time_pos} duration {duration}')
+
+      if destination < 0:
+        if abs(destination)<abs(sleeptime*5):
+          destination = destination - sleeptime*5
+        self.seek_to(current_track-1,destination)
+      elif destination > duration:
+        self.seek_to(current_track+1,destination-duration)
+      else:
+        self.seek_to(current_track,destination)
+    except Exception as e:
+      logger.warning (F'exception in seeking {e}')
+    finally:
+      time.sleep(sleeptime)
+
+  def get_prop(self,property_name):
+    return retry_call(self._get_property, property_name)
+
+  def status(self):
+    if self.playlist_pos == None: logger.info (F"Playlist not started"); return None
+    playlist_pos = self.get_prop('playlist-pos')
+    paused = self.get_prop('pause')
+    logger.info (F"Playlist at track {playlist_pos}, Paused {paused}")
+    if self.raw.time_pos == None: logger.info (F"Track not started"); return None
+    duration = self.get_prop('duration')
+    logger.info(F"duration: {duration}. time: {datetime.timedelta(seconds=int(self.raw.time_pos))}, time remaining: {datetime.timedelta(seconds=int(self.raw.time_remaining))}")
 
   def close(self): self.terminate()
 
