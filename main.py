@@ -152,12 +152,10 @@ def rewind_button(button,state):
    sleep(button._hold_time)
    if button.is_pressed: return # the button is being "held"
    if current['TRACK_NUM']<len(state.player.playlist): state.player.prev()
-   track_event.set()
 
 def rewind_button_longpress(button,state):
    logger.debug ("longpress of rewind")
    state.player.seek(3)
-   track_event.set()
 
 def ffwd_button(button,state):
    current = state.get_current()
@@ -165,12 +163,10 @@ def ffwd_button(button,state):
    sleep(button._hold_time)
    if button.is_pressed: return # the button is being "held"
    if current['TRACK_NUM']<len(state.player.playlist): state.player.next()
-   track_event.set()
 
 def ffwd_button_longpress(button,state):
    logger.debug ("longpress of ffwd")
    state.player.seek(3)
-   track_event.set()
 
 def month_button(button,state):
    current = state.get_current()
@@ -283,6 +279,14 @@ def main(parms):
     scr.show_text("(\);} \n  Time\n   Machine\n     Loading...",color=(0,255,255))
     archive = GD.GDArchive(parms.dbpath)
     player = GD.GDPlayer()
+    @player.property_observer('playlist-pos')
+    def on_track_event(_name, value):
+      track_event.set()
+      print(F'in track event callback {_name}, {value}')
+
+    @player.event_callback('file-loaded')
+    def my_handler(event):
+      print('file-loaded')
 
     y = retry_call(RotaryEncoder, config.year_pins[1], config.year_pins[0],max_steps = 0,threshold_steps = (0,30))
     m = retry_call(RotaryEncoder, config.month_pins[1], config.month_pins[0],max_steps = 0,threshold_steps = (1,12))
