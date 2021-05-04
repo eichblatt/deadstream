@@ -1,6 +1,6 @@
 # The Grateful Dead Time Machine
 
-# Features of the Time Machine
+# Features of the Time Machine (some implemented, some just ideas at this point)
 
 The Deadstreamer is a machine designed to take the listener back in time to a Greatful Dead experience in the past. Although it operates on digital data using a computer, it's purpose is to conjure up spirits. As such it will do, and not do, many things that seem unusual to users of digital devices. 
 
@@ -17,7 +17,7 @@ The Time Machine needs to be controlled with knobs, a few buttons, and intuition
 ## No user tracking
 The thing that led me to the Grateful Dead was that creepy feeling that Spotify is tracking me. Now, I use spotify and YouTube like anybody else. But there is _something_ that feels strange about the fact that they are analyzing my listening habits.
 
-The Deadstream **will never** keep track of your listening. We want your connection with the music to be as direct as possible. We love the music, you love the music, so yeah, we're connected. But we're not going to come between you and the music, and we don't want you to feel that we are.
+The Deadstream **does not** keep track of your listening. We want your connection with the music to be as direct as possible. We love the music, you love the music, so yeah, we're connected. But we're not going to come between you and the music, and we don't want you to feel that we are.
 
 ### No song history
 This means a few things, though. Like, do you want to see your song history? Sorry, we aren't going to help you with that. 
@@ -31,11 +31,11 @@ We will have a [favorites](#favorites) feature. But that will be completely loca
 
 ## Gapless playback
 
-Yeah, we can't have glitchy interruptions between tracks. 
+Yeah, we can't have glitchy interruptions between tracks. This is a technical challenge which is not completely solved yet, but it's definitely high on the agenda.
 
 ## Set breaks
 
-Even with gapless playback, one thing that doesn't quite work with the D*'s picks CD's is that after set 1, Bobby announces "We're going to take a short break and you can too". Then 2 seconds later they launch into Bertha or something to open the second set. 
+Even with gapless playback, one thing that doesn't quite work with the D*'s picks CD's is that after set 1, Bobby announces "We're going to take a short break and you can too". Then 2 seconds later they launch into the second set. 
 
 As a listener, if you are getting into the spirit of the show, you are not ready for that energy yet. So, I add a 10 minute silence (which could be crowd noises, or a [mixture of audio submissions from deadheads](#crowdsourced-background-noise) between sets.
 
@@ -65,5 +65,5 @@ Think of the favorites feature as the stack of tapes that you put in a special p
 ## Open Source
 Of course.
 
-[Editor this file](https://github.com/eichblatt/deadstream/edit/gh-pages/index.md)
+[Edit this file](https://github.com/eichblatt/deadstream/edit/gh-pages/index.md)
 
