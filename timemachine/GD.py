@@ -236,7 +236,7 @@ class GDArchive:
   
   def best_tape(self,date):
     if not date in self.dates: 
-      print ("No Tape for date {}".format(date))
+      logger.info ("No Tape for date {}".format(date))
       return None
     return self.tape_dates[date][0]
      
@@ -266,7 +266,7 @@ class GDArchive:
     elif (not reload_ids) and os.path.exists(self.idpath):
       tapes = json.load(open(self.idpath,'r'))
     else:
-      print ("Loading Tapes from the Archive...this will take a few minutes")
+      logger.info ("Loading Tapes from the Archive...this will take a few minutes")
       tapes = self.downloader.get_tapes(list(range(1965, 1996, 1)))
       self.write_tapes(tapes)
     return [GDTape(self.dbpath,tape,self.set_data) for tape in tapes]
@@ -319,7 +319,7 @@ class GDTape:
 
   def tracklist(self):
     for i,t in enumerate(self._tracks):
-      print(i)
+      logger.info(i)
     
   def track(self,n):
     if not self.meta_loaded: self.get_metadata()
@@ -334,15 +334,15 @@ class GDTape:
       page_meta = json.load(open(meta_path,'r'))
     except:
       r = requests.get(self.url_metadata)
-      print("url is {}".format(r.url))
-      if r.status_code != 200: print ("error pulling data for {}".format(self.identifier)); raise Exception('Download','Error {} url {}'.format(r.status_code,self.url_metadata))
+      logger.info("url is {}".format(r.url))
+      if r.status_code != 200: logger.warn ("error pulling data for {}".format(self.identifier)); raise Exception('Download','Error {} url {}'.format(r.status_code,self.url_metadata))
       try:
         page_meta = r.json()
       except ValueError:
-        print ("Json Error {}".format(r.url))
+        logger.warn ("Json Error {}".format(r.url))
         return None
       except:
-        print ("Json Error, probably")
+        logger.warn ("Json Error, probably")
         return None
 
     # self.reviews = page_meta['reviews'] if 'reviews' in page_meta.keys() else []
@@ -583,7 +583,7 @@ class GDPlayer(MPV):
     if len(urls)>0: _ = [self.command('loadfile',x,'append') for x in urls[1:]]
     self.playlist_pos = 0 
     self.pause()
-    print (F"Playlist {self.playlist}")
+    logger.info (F"Playlist {self.playlist}")
     return
 
   def play(self): 
@@ -616,7 +616,8 @@ class GDPlayer(MPV):
       self.status()
       if current_track != track_no:
         self._set_property('playlist-pos',track_no)
-        self.wait_for_event('file-loaded')   # NOTE: this could wait forever!
+        #self.wait_for_event('file-loaded')   # NOTE: this could wait forever!
+        sleep(5)
       duration = self.get_prop('duration')
       if destination < 0: destination = duration + destination
       if (destination > duration) or (destination < 0):
@@ -664,13 +665,13 @@ class GDPlayer(MPV):
     return retry_call(self._get_property, property_name)
 
   def status(self):
-    if self.playlist_pos == None: print (F"Playlist not started"); return None
+    if self.playlist_pos == None: logger.info (F"Playlist not started"); return None
     playlist_pos = self.get_prop('playlist-pos')
     paused = self.get_prop('pause')
-    print (F"Playlist at track {playlist_pos}, Paused {paused}")
-    if self.raw.time_pos == None: print (F"Track not started"); return None
+    logger.info (F"Playlist at track {playlist_pos}, Paused {paused}")
+    if self.raw.time_pos == None: logger.info (F"Track not started"); return None
     duration = self.get_prop('duration')
-    print(F"duration: {duration}. time: {datetime.timedelta(seconds=int(self.raw.time_pos))}, time remaining: {datetime.timedelta(seconds=int(self.raw.time_remaining))}")
+    logger.info(F"duration: {duration}. time: {datetime.timedelta(seconds=int(self.raw.time_pos))}, time remaining: {datetime.timedelta(seconds=int(self.raw.time_remaining))}")
 
   def close(self): self.terminate()
 

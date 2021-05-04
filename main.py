@@ -37,11 +37,11 @@ def retry_call(callable: Callable, *args, **kwargs):
 
 def twist_knob(knob: RotaryEncoder, label, date_reader:controls.date_knob_reader):
     if knob.is_active:
-      print(f"Knob {label} steps={knob.steps} value={knob.value}")
+      logger.debug(f"Knob {label} steps={knob.steps} value={knob.value}")
     else:
       if knob.steps<knob.threshold_steps[0]: knob.steps = knob.threshold_steps[0]
       if knob.steps>knob.threshold_steps[1]: knob.steps = knob.threshold_steps[1]
-      print(f"Knob {label} is inactive")
+      logger.debug(f"Knob {label} is inactive")
     date_reader.update()
     stagedate_event.set()
 
@@ -155,7 +155,8 @@ def rewind_button(button,state):
 
 def rewind_button_longpress(button,state):
    logger.debug ("longpress of rewind")
-   state.player.seek(3)
+   while button.is_held:
+     state.player.fseek(-30)
 
 def ffwd_button(button,state):
    current = state.get_current()
@@ -166,7 +167,8 @@ def ffwd_button(button,state):
 
 def ffwd_button_longpress(button,state):
    logger.debug ("longpress of ffwd")
-   state.player.seek(3)
+   while button.is_held:
+     state.player.fseek(30)
 
 def month_button(button,state):
    current = state.get_current()
@@ -282,11 +284,11 @@ def main(parms):
     @player.property_observer('playlist-pos')
     def on_track_event(_name, value):
       track_event.set()
-      print(F'in track event callback {_name}, {value}')
+      logger.debug(F'in track event callback {_name}, {value}')
 
     @player.event_callback('file-loaded')
     def my_handler(event):
-      print('file-loaded')
+      logger.debug('file-loaded')
 
     y = retry_call(RotaryEncoder, config.year_pins[1], config.year_pins[0],max_steps = 0,threshold_steps = (0,30))
     m = retry_call(RotaryEncoder, config.month_pins[1], config.month_pins[0],max_steps = 0,threshold_steps = (1,12))
@@ -302,8 +304,8 @@ def main(parms):
     d_button = retry_call(Button, config.day_pins[2])
     select = retry_call(Button, config.select_pin,hold_time = 0.5,hold_repeat = False)
     play_pause = retry_call(Button, config.play_pause_pin,hold_time = 5)
-    ffwd = retry_call(Button, config.ffwd_pin,hold_time = 0.5,hold_repeat = True)
-    rewind = retry_call(Button, config.rewind_pin,hold_time = 0.5,hold_repeat = True)
+    ffwd = retry_call(Button, config.ffwd_pin,hold_time = 0.5,hold_repeat = False)
+    rewind = retry_call(Button, config.rewind_pin,hold_time = 0.5,hold_repeat = False)
     stop = retry_call(Button, config.stop_pin,hold_time = 5)
 
     play_pause.when_pressed = lambda button: play_pause_button(button,state,scr)
