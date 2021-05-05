@@ -1,26 +1,71 @@
 import abc
-import aiohttp
-import asyncio
+import aiohttp,asyncio,aiofiles
+from aiohttp import ClientResponse, ClientSession, ClientTimeout
 import logging
 import requests
 import json
 import os
-import pdb
 import csv
 import difflib
 import datetime,time,math
 import pkg_resources
 import pickle5 as pickle
 import codecs
+import threading
+from contextlib import closing
 from operator import attrgetter,methodcaller
 from mpv import MPV
 from importlib import reload
 from tenacity import retry
 from tenacity.stop import stop_after_delay
-from typing import Callable
+from typing import Callable,List, Tuple
 
 logging.basicConfig(format='%(asctime)s.%(msecs)03d %(levelname)s: %(name)s %(message)s', level=logging.INFO,datefmt='%Y-%m-%d %H:%M:%S')
 logger = logging.getLogger(__name__)
+
+def url2fileurl(url,basepath):
+  if url.startswith('file://'): return url
+  return 'file://'+url2filename(url,basepath)
+
+def url2filename(url,basepath):
+  urlsplit = os.path.split(url)
+  dname = os.path.split(urlsplit[0])[1]
+  fname = urlsplit[1]
+  os.makedirs(os.path.join(basepath,dname),exist_ok=True)
+  return os.path.join(basepath,dname,fname)
+
+async def download_chunk(response: ClientResponse, chunk_size=2048):
+    return await response.content.read(chunk_size)
+async def download(session: ClientSession, url: str, filename: str, semaphore: asyncio.Semaphore = None):
+    try:
+        if semaphore is not None:
+            await semaphore.acquire()
+        async with session.get(url) as response:
+            if response.status != 200:
+                raise RuntimeError(f"Unable to download {url}: {response.text()}")
+            async with aiofiles.open(filename, "wb") as output:
+                chunk = await download_chunk(response)
+                while chunk:
+                    await output.write(chunk)
+                    chunk = await download_chunk(response)
+        print(f"Downloaded {url} to {filename}")
+    except asyncio.TimeoutError:
+        print(f"ERROR: Timeout while downloading {url}")
+    finally:
+        if semaphore is not None:
+            semaphore.release()
+
+async def download_all(targets: List[Tuple[(str, str)]], parallelism: int = None):
+    """
+    targets: list of tuples of (url, download path)
+    parallelism: max number of files to download simultaneously (None for unlimited)
+    """
+    # allow up to 30 seconds for connection, request sending, and response reading
+    timeout = ClientTimeout(connect=30,total=900)
+    semaphore = asyncio.Semaphore(parallelism) if parallelism is not None else None
+    async with ClientSession(timeout=timeout) as session:
+        tasks = [download(session, url, outfile, semaphore=semaphore) for url, outfile in targets]
+        await asyncio.gather(*tasks)
 
 
 @retry(stop=stop_after_delay(30))
@@ -437,6 +482,7 @@ class GDTape:
     self._breaks_added = True
     self._tracks = newtracks.copy()
 
+
 class GDTrack:
   """ A track from a GDTape recording """
   def __init__(self,tdict,parent_id,break_track=False):
@@ -532,6 +578,22 @@ class GDSet:
   def __repr__(self):
     retstr = F"Grateful Dead set data"
     return retstr
+
+@asyncio.coroutine
+def download_url(url, session, semaphore, basepath = '/home/steve/tracks',chunk_size=1<<15):
+    with (yield from semaphore): # limit number of concurrent downloads
+        filename = url2filename(url,basepath)
+        logging.info('downloading %s', filename)
+        response = yield from session.get(url)
+        with closing(response), open(filename, 'wb') as file:
+            while True: # save file
+                chunk = yield from response.content.read(chunk_size)
+                if not chunk:
+                    break
+                file.write(chunk)
+        logging.info('done %s', filename)
+    return filename, (response.status, tuple(response.headers.items()))
+
   
 class GDPlayer(MPV):
   """ A media player to play a GDTape """
@@ -575,10 +637,24 @@ class GDPlayer(MPV):
       if best_track == None and len(candidates)>0: best_track = candidates[0]
       urls.append(best_track)
     return urls
+
+
+  def load_files(self,urls,pathname):
+    logger.debug(F'loading files to {pathname}')
+    remote_urls = [y for y in urls if not y.startswith('file:')]
+    filenames = [url2filename(y,pathname) for y in remote_urls]
+    targets = [(remote_urls[i],filenames[i]) for i,f in enumerate(filenames) if not os.path.exists(f)]
+    asyncio.run(download_all(targets, parallelism=None))
+    return [url2fileurl(x,pathname) for x in urls]
   
   def create_playlist(self):
     self.playlist_clear()
     urls = self.extract_urls(self.tape);
+    if not self.tape.stream_only():
+      get_urls = threading.Thread(target = self.load_files, args = (urls,self.tape.dbpath))
+      get_urls.run()
+      logger.debug('running the get_urls')
+      urls = [url2fileurl(y,self.tape.dbpath) for y in urls]
     self.command('loadfile',urls[0])
     if len(urls)>0: _ = [self.command('loadfile',x,'append') for x in urls[1:]]
     self.playlist_pos = 0 
@@ -617,7 +693,7 @@ class GDPlayer(MPV):
       if current_track != track_no:
         self._set_property('playlist-pos',track_no)
         #self.wait_for_event('file-loaded')   # NOTE: this could wait forever!
-        sleep(5)
+        time.sleep(5)
       duration = self.get_prop('duration')
       if destination < 0: destination = duration + destination
       if (destination > duration) or (destination < 0):
