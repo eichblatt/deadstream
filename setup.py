@@ -6,6 +6,7 @@ setup(
     packages=["timemachine"],
     install_requires=[
         'aiohttp',
+        'aiofiles',
         'requests',
         'python-mpv',
         'RPi.GPIO',
