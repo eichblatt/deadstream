@@ -1,5 +1,6 @@
 #!/usr/bin/python3
 import optparse,random,logging,os,datetime
+import threading
 from timemachine import GD
 from timemachine import controls
 from timemachine import config
@@ -84,18 +85,20 @@ def select_button_longpress(button,state,scr):
    tapes = date_reader.archive.tape_dates[date_reader.fmtdate()]
    itape = -1
    while button.is_held:
-      itape = divmod(itape + 1,len(tapes))[1]
-      tape_id = tapes[itape].identifier
-      sbd = tapes[itape].stream_only()
-      id_color = (0,255,255) if sbd else (0,0,255)
-      logger.info (F"Selecting Tape: {tape_id}, the {itape}th of {len(tapes)} choices. SBD:{sbd}")
-      if len(tape_id)<16: scr.show_venue(tape_id,color=id_color)
-      else:
-        for i in range(0,max(1,len(tape_id)),2):
-          scr.show_venue(tape_id[i:],color=id_color)
+     itape = divmod(itape + 1,len(tapes))[1]
+     tape_id = tapes[itape].identifier
+     sbd = tapes[itape].stream_only()
+     id_color = (0,255,255) if sbd else (0,0,255)
+     logger.info (F"Selecting Tape: {tape_id}, the {itape}th of {len(tapes)} choices. SBD:{sbd}")
+     if len(tape_id)<16: scr.show_venue(tape_id,color=id_color)
+     else:
+       for i in range(0,max(1,len(tape_id)),2):
+         scr.show_venue(tape_id[i:],color=id_color)
+         if not button.is_held: break
    scr.show_venue(tape_id,color=id_color)
    tape = tapes[itape] 
    select_tape(tape,state)
+   select_event.set()
 
 def play_pause_button(button,state,scr):
    current = state.get_current()
@@ -243,9 +246,21 @@ def event_loop(state,scr):
     date_reader = state.date_reader
     last_sdevent = datetime.datetime.now()
     q_counter = False
+    n_timer = 0
     try:
         while not stop_event.wait(timeout=0.001):
             now = datetime.datetime.now()
+            n_timer = n_timer + 1
+            if divmod(n_timer,5000)[1] == 0: # a simple timer.
+                if config.DATE and ((now-last_sdevent).seconds) > config.QUIESCENT_TIME:
+                    scr.show_staged_date(config.DATE)
+                else:     
+                    scr.show_staged_date(date_reader.date)
+                track_event.set()
+                #stagedate_event.set()         # NOTE: this would set the q_counter, etc. But it SHOULD work.
+                scr.show_staged_date(date_reader.date)
+                scr.show_venue(date_reader.venue())
+                playstate_event.set()
             if stagedate_event.is_set():
                 sleep(0.5)
                 last_sdevent = now; q_counter = True
@@ -264,9 +279,9 @@ def event_loop(state,scr):
                 scr.show_playstate()
                 playstate_event.clear()
             if q_counter and config.DATE and ((now-last_sdevent).seconds) > config.QUIESCENT_TIME:
-               logger.debug(F"Reverting staged date back to selected date {(now-last_sdevent).seconds}> {config.QUIESCENT_TIME}")
-               scr.show_staged_date(config.DATE)
-               q_counter = False
+                logger.debug(F"Reverting staged date back to selected date {(now-last_sdevent).seconds}> {config.QUIESCENT_TIME}")
+                scr.show_staged_date(config.DATE)
+                q_counter = False
     except KeyboardInterrupt:
         exit(0)
 
