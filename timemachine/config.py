@@ -10,6 +10,7 @@ PLAY_STATE = INIT
 #PLAY_STATES = ['Init','Ready','Paused','Stopped','Playing']
 SELECT_STAGED_DATE = False
 DATE = None
+VENUE = None
 STAGED_DATE = None
 
 ON_TOUR = False
