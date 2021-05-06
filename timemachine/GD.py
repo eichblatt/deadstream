@@ -606,7 +606,7 @@ class GDPlayer(MPV):
     remote_urls = [y for y in urls if not y.startswith('file:')]
     filenames = [url2filename(y,pathname) for y in remote_urls]
     targets = [(remote_urls[i],filenames[i]) for i,f in enumerate(filenames) if not os.path.exists(f)]
-    results = ThreadPool(6).imap_unordered(download_url,targets)
+    results = ThreadPool(3).imap_unordered(download_url,targets)
     return results
   
   def create_playlist(self):
