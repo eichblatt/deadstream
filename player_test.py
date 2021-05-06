@@ -12,8 +12,8 @@ tapedate = '1982-11-25'
 tapedate = '1980-10-29'
 tapes = archive.tape_dates[tapedate]
 
-tape = tapes[8]
 tape = tapes[9]
+tape = tapes[8]
 
 p = GD.GDPlayer(tape)
 @p.property_observer('playlist-pos')
@@ -29,7 +29,7 @@ p.fseek(300)
 # Start playback.
 p.play()
 
-time.sleep(5)
+time.sleep(10)
 
 p.pause()
     
