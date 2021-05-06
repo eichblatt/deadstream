@@ -28,6 +28,7 @@ stagedate_event = Event()
 select_event = Event()
 track_event = Event()
 playstate_event = Event()
+busy_event = Event()
 stop_event = Event()
 
 
@@ -54,6 +55,7 @@ if parms.verbose:
 
 def select_tape(tape,state):
    current = state.get_current()
+   if tape.identifier == current['TAPE_ID']: return # already selected.
    current['PLAY_STATE'] = config.READY  #  eject current tape, insert new one in player
    current['TAPE_ID'] = tape.identifier
    logger.info(F"Set TAPE_ID to {current['TAPE_ID']}")
@@ -64,13 +66,13 @@ def select_tape(tape,state):
    state.set(current)
 
 def select_button(button,state):
+   busy_event.set()
    logger.debug ("pressing select")
    current = state.get_current()
-   if current['EXPERIENCE']: return 
-   if not state.date_reader.tape_available(): return 
+   if current['EXPERIENCE']: busy_event.clear(); return 
+   if not state.date_reader.tape_available(): busy_event.clear(); return 
    date_reader = state.date_reader
    tapes = date_reader.archive.tape_dates[date_reader.fmtdate()]
-   state.set(current)
    sleep(button._hold_time)
    if button.is_pressed: return
    if button.is_held: return
@@ -79,11 +81,12 @@ def select_button(button,state):
      tape = tapes[0] 
      select_tape(tape,state)
      select_event.set()
+   busy_event.clear()
 
 def select_button_longpress(button,state,scr):
    logger.debug ("long pressing select")
-   stop_event.set()
-   if not state.date_reader.tape_available(): return 
+   busy_event.set()
+   if not state.date_reader.tape_available(): busy_event.clear(); return 
    current = state.get_current()
    date_reader = state.date_reader
    tapes = date_reader.archive.tape_dates[date_reader.fmtdate()]
@@ -103,12 +106,13 @@ def select_button_longpress(button,state,scr):
    tape = tapes[itape] 
    select_tape(tape,state)
    select_event.set()
-   stop_event.clear()
+   busy_event.clear()
 
 def play_pause_button(button,state,scr):
+   busy_event.set()
    current = state.get_current()
-   if current['EXPERIENCE']: return 
-   if not current['PLAY_STATE'] in [config.READY,config.PLAYING,config.PAUSED,config.STOPPED]: return 
+   if current['EXPERIENCE']: busy_event.clear(); return 
+   if not current['PLAY_STATE'] in [config.READY,config.PLAYING,config.PAUSED,config.STOPPED]: busy_event.clear(); return 
    logger.debug ("pressing play_pause")
    if current['PLAY_STATE'] == config.PLAYING: 
       logger.info("Pausing on player") 
@@ -120,10 +124,11 @@ def play_pause_button(button,state,scr):
       state.player.play()   # this is a blocking call. I could move the "wait_until_playing" to the event handler.
    state.set(current)
    playstate_event.set()
+   busy_event.clear()
 
 def play_pause_button_longpress(button,state):
    logger.debug (" longpress of play_pause -- choose random date and play it")
-   stop_event.set()
+   busy_event.set()
    current = state.get_current()
    if current['EXPERIENCE']: 
      current['EXPERIENCE'] = False
@@ -143,49 +148,56 @@ def play_pause_button_longpress(button,state):
    select_event.set()
    stagedate_event.set()
    playstate_event.set()
-   stop_event.clear()
+   busy_event.clear()
 
 def stop_button(button,state):
+   busy_event.set()
    current = state.get_current()
-   if current['EXPERIENCE']: return 
-   if current['PLAY_STATE'] in [config.READY,config.INIT,config.STOPPED]: return 
+   if current['EXPERIENCE']: busy_event.clear(); return 
+   if current['PLAY_STATE'] in [config.READY,config.INIT,config.STOPPED]: busy_event.clear(); return 
    state.player.stop()
    current['PLAY_STATE'] = config.STOPPED
    state.set(current)
    playstate_event.set()
+   busy_event.clear()
 
 def stop_button_longpress(button,state):
    logger.debug (F" longpress of {button.name} -- nyi")
 
 def rewind_button(button,state):
+   busy_event.set()
    current = state.get_current()
-   if current['EXPERIENCE']: return 
+   if current['EXPERIENCE']: busy_event.clear(); return 
    sleep(button._hold_time)
    if button.is_pressed: return # the button is being "held"
    if current['TRACK_NUM']<len(state.player.playlist): state.player.prev()
+   busy_event.clear()
 
 def rewind_button_longpress(button,state):
+   busy_event.set()
    logger.debug ("longpress of rewind")
-   stop_event.set()
    while button.is_held:
      state.player.fseek(-30)
-   stop_event.clear()
+   busy_event.clear()
 
 def ffwd_button(button,state):
+   busy_event.set()
    current = state.get_current()
-   if current['EXPERIENCE']: return 
+   if current['EXPERIENCE']: busy_event.clear(); return 
    sleep(button._hold_time)
    if button.is_pressed: return # the button is being "held"
    if current['TRACK_NUM']<len(state.player.playlist): state.player.next()
+   busy_event.clear()
 
 def ffwd_button_longpress(button,state):
+   busy_event.set()
    logger.debug ("longpress of ffwd")
-   stop_event.set()
    while button.is_held:
      state.player.fseek(30)
-   stop_event.clear()
+   busy_event.clear()
 
 def month_button(button,state):
+   busy_event.set()
    current = state.get_current()
    if current['EXPERIENCE']: 
      current['EXPERIENCE'] = False
@@ -193,23 +205,27 @@ def month_button(button,state):
      current['EXPERIENCE'] = True
    state.set(current)
    track_event.set()
+   busy_event.clear()
 
 def month_button_longpress(button,state):
    logger.debug (F" longpress of {button.name} -- nyi")
 
 def day_button(button,state):
+   busy_event.set()
    current = state.get_current()
-   if current['EXPERIENCE']: return 
+   if current['EXPERIENCE']: busy_event.clear(); return 
    new_date = state.date_reader.next_date() 
    state.date_reader.set_date(new_date)
    stagedate_event.set()
+   busy_event.clear()
  
 def day_button_longpress(button,state):
    logger.debug (F"long pressing {button.name}")
 
 def year_button(button,state):
+   busy_event.set()
    current = state.get_current()
-   if current['EXPERIENCE']: return 
+   if current['EXPERIENCE']: busy_event.clear(); return 
    today = datetime.date.today(); now_m = today.month; now_d = today.day
    m = state.date_reader.date.month; d = state.date_reader.date.day; y = state.date_reader.date.year
 
@@ -228,6 +244,7 @@ def year_button(button,state):
    else:
      state.date_reader.set_date(datetime.date(y,now_m,now_d))
    stagedate_event.set()
+   busy_event.clear()
  
 def year_button_longpress(button,state):
    logger.debug (F"long pressing {button.name} -- nyi")
@@ -262,15 +279,14 @@ def event_loop(state,scr):
     last_idle_second_hand = None
     clear_stagedate = False
     try:
-        while True:
-            if stop_event.wait(timeout=0.001): continue
+        while not stop_event.wait(timeout=0.001): 
+            if busy_event.wait(timeout=0.001): continue
             now = datetime.datetime.now()
             n_timer = n_timer + 1
             idle_seconds = (now-last_sdevent).seconds 
             idle_second_hand = divmod(idle_seconds,20)[1]
 
             if stagedate_event.is_set():
-                #sleep(0.5)
                 last_sdevent = now; q_counter = True
                 scr.show_staged_date(date_reader.date)
                 scr.show_venue(date_reader.venue())
