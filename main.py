@@ -59,6 +59,7 @@ def select_tape(tape,state):
    logger.info(F"Set TAPE_ID to {current['TAPE_ID']}")
    current['TRACK_NUM'] = -1
    current['DATE'] = state.date_reader.date
+   current['VENUE'] = state.date_reader.venue()
    state.player.insert_tape(tape)
    state.set(current)
 
@@ -72,13 +73,16 @@ def select_button(button,state):
    state.set(current)
    sleep(button._hold_time)
    if button.is_pressed: return
+   if button.is_held: return
    else: 
+     logger.debug ("pressing, not holding select")
      tape = tapes[0] 
      select_tape(tape,state)
      select_event.set()
 
 def select_button_longpress(button,state,scr):
    logger.debug ("long pressing select")
+   stop_event.set()
    if not state.date_reader.tape_available(): return 
    current = state.get_current()
    date_reader = state.date_reader
@@ -99,6 +103,7 @@ def select_button_longpress(button,state,scr):
    tape = tapes[itape] 
    select_tape(tape,state)
    select_event.set()
+   stop_event.clear()
 
 def play_pause_button(button,state,scr):
    current = state.get_current()
@@ -118,6 +123,7 @@ def play_pause_button(button,state,scr):
 
 def play_pause_button_longpress(button,state):
    logger.debug (" longpress of play_pause -- choose random date and play it")
+   stop_event.set()
    current = state.get_current()
    if current['EXPERIENCE']: 
      current['EXPERIENCE'] = False
@@ -125,6 +131,7 @@ def play_pause_button_longpress(button,state):
    tape = state.date_reader.archive.best_tape(new_date)
    current['DATE'] = to_date(new_date)
    state.date_reader.set_date(current['DATE'])
+   current['VENUE'] = state.date_reader.venue()
 
    if current['PLAY_STATE'] in [config.PLAYING,config.PAUSED]:
      state.player.stop()
@@ -136,6 +143,7 @@ def play_pause_button_longpress(button,state):
    select_event.set()
    stagedate_event.set()
    playstate_event.set()
+   stop_event.clear()
 
 def stop_button(button,state):
    current = state.get_current()
@@ -158,8 +166,10 @@ def rewind_button(button,state):
 
 def rewind_button_longpress(button,state):
    logger.debug ("longpress of rewind")
+   stop_event.set()
    while button.is_held:
      state.player.fseek(-30)
+   stop_event.clear()
 
 def ffwd_button(button,state):
    current = state.get_current()
@@ -170,8 +180,10 @@ def ffwd_button(button,state):
 
 def ffwd_button_longpress(button,state):
    logger.debug ("longpress of ffwd")
+   stop_event.set()
    while button.is_held:
      state.player.fseek(30)
+   stop_event.clear()
 
 def month_button(button,state):
    current = state.get_current()
@@ -247,26 +259,23 @@ def event_loop(state,scr):
     last_sdevent = datetime.datetime.now()
     q_counter = False
     n_timer = 0
+    last_idle_second_hand = None
+    clear_stagedate = False
     try:
-        while not stop_event.wait(timeout=0.001):
+        while True:
+            if stop_event.wait(timeout=0.001): continue
             now = datetime.datetime.now()
             n_timer = n_timer + 1
-            if divmod(n_timer,5000)[1] == 0: # a simple timer.
-                if config.DATE and ((now-last_sdevent).seconds) > config.QUIESCENT_TIME:
-                    scr.show_staged_date(config.DATE)
-                else:     
-                    scr.show_staged_date(date_reader.date)
-                track_event.set()
-                #stagedate_event.set()         # NOTE: this would set the q_counter, etc. But it SHOULD work.
-                scr.show_staged_date(date_reader.date)
-                scr.show_venue(date_reader.venue())
-                playstate_event.set()
+            idle_seconds = (now-last_sdevent).seconds 
+            idle_second_hand = divmod(idle_seconds,20)[1]
+
             if stagedate_event.is_set():
-                sleep(0.5)
+                #sleep(0.5)
                 last_sdevent = now; q_counter = True
                 scr.show_staged_date(date_reader.date)
                 scr.show_venue(date_reader.venue())
-                stagedate_event.clear()
+                if clear_stagedate: stagedate_event.clear()
+                clear_stagedate = not clear_stagedate   # only clear stagedate event after updating twice
             if track_event.is_set():
                 update_tracks(state,scr)
                 track_event.clear()
@@ -278,10 +287,29 @@ def event_loop(state,scr):
             if playstate_event.is_set():
                 scr.show_playstate()
                 playstate_event.clear()
-            if q_counter and config.DATE and ((now-last_sdevent).seconds) > config.QUIESCENT_TIME:
-                logger.debug(F"Reverting staged date back to selected date {(now-last_sdevent).seconds}> {config.QUIESCENT_TIME}")
+            if q_counter and config.DATE and idle_seconds > config.QUIESCENT_TIME:
+                logger.debug(F"Reverting staged date back to selected date {idle_seconds}> {config.QUIESCENT_TIME}")
                 scr.show_staged_date(config.DATE)
+                scr.show_venue(config.VENUE)
                 q_counter = False
+            if idle_second_hand in [4,9,14,19] and idle_second_hand != last_idle_second_hand:  
+                last_idle_second_hand = idle_second_hand
+                logger.debug(F"idle second hand from {idle_seconds}> {idle_second_hand}")
+                track_event.set()
+                playstate_event.set()
+                #stagedate_event.set()         # NOTE: this would set the q_counter, etc. But it SHOULD work.
+                #scr.show_staged_date(date_reader.date)
+                if idle_seconds > config.QUIESCENT_TIME:
+                  if idle_second_hand in [9]:
+                    if 'tape' in vars(state.player).keys():
+                      sbd = state.player.tape.stream_only()
+                      id_color = (0,255,255) if sbd else (0,0,255)
+                      scr.show_venue(state.player.tape.identifier,color=id_color)
+                  elif idle_second_hand in [19]:
+                    if config.VENUE: scr.show_venue(config.VENUE)
+                else:
+                  scr.show_staged_date(date_reader.date)
+                  scr.show_venue(date_reader.venue())
     except KeyboardInterrupt:
         exit(0)
 
