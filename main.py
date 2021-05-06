@@ -390,7 +390,7 @@ def main(parms):
     scr.show_text("Powered by\n archive.org",color=(0,255,255))
 
     event_loop(state,scr)
-
+ 
     [x.cleanup() for x in [y,m,d]] ## redundant, only one cleanup is needed!
 
 #parser.print_help()
