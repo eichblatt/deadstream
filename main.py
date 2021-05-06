@@ -303,7 +303,7 @@ def event_loop(state,scr):
                   if idle_second_hand in [9]:
                     if 'tape' in vars(state.player).keys():
                       sbd = state.player.tape.stream_only()
-                      id_color = (0,255,255) if sbd else (0,0,255)
+                      id_color = (255,255,255) if sbd else (0,0,255)
                       scr.show_venue(state.player.tape.identifier,color=id_color)
                   elif idle_second_hand in [19]:
                     if config.VENUE: scr.show_venue(config.VENUE)
