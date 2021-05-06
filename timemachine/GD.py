@@ -19,6 +19,7 @@ from importlib import reload
 from tenacity import retry
 from tenacity.stop import stop_after_delay
 from typing import Callable,List, Tuple
+from multiprocessing.pool import ThreadPool
 
 logging.basicConfig(format='%(asctime)s.%(msecs)03d %(levelname)s: %(name)s %(message)s', level=logging.INFO,datefmt='%Y-%m-%d %H:%M:%S')
 logger = logging.getLogger(__name__)
@@ -34,39 +35,16 @@ def url2filename(url,basepath):
   os.makedirs(os.path.join(basepath,dname),exist_ok=True)
   return os.path.join(basepath,dname,fname)
 
-async def download_chunk(response: ClientResponse, chunk_size=2048):
-    return await response.content.read(chunk_size)
-async def download(session: ClientSession, url: str, filename: str, semaphore: asyncio.Semaphore = None):
-    try:
-        if semaphore is not None:
-            await semaphore.acquire()
-        async with session.get(url) as response:
-            if response.status != 200:
-                raise RuntimeError(f"Unable to download {url}: {response.text()}")
-            async with aiofiles.open(filename, "wb") as output:
-                chunk = await download_chunk(response)
-                while chunk:
-                    await output.write(chunk)
-                    chunk = await download_chunk(response)
-        print(f"Downloaded {url} to {filename}")
-    except asyncio.TimeoutError:
-        print(f"ERROR: Timeout while downloading {url}")
-    finally:
-        if semaphore is not None:
-            semaphore.release()
+def download_url(url_filename):
+    url = url_filename[0]
+    filename = url_filename[1]
 
-async def download_all(targets: List[Tuple[(str, str)]], parallelism: int = None):
-    """
-    targets: list of tuples of (url, download path)
-    parallelism: max number of files to download simultaneously (None for unlimited)
-    """
-    # allow up to 30 seconds for connection, request sending, and response reading
-    timeout = ClientTimeout(connect=30,total=900)
-    semaphore = asyncio.Semaphore(parallelism) if parallelism is not None else None
-    async with ClientSession(timeout=timeout) as session:
-        tasks = [download(session, url, outfile, semaphore=semaphore) for url, outfile in targets]
-        await asyncio.gather(*tasks)
-
+    r = requests.get(url,stream=True)
+    if r.status_code == requests.codes.ok:
+      with open(filename, 'wb') as f:
+        for data in r:
+          f.write(data)
+    return url
 
 @retry(stop=stop_after_delay(30))
 def retry_call(callable: Callable, *args, **kwargs):
@@ -579,22 +557,6 @@ class GDSet:
     retstr = F"Grateful Dead set data"
     return retstr
 
-@asyncio.coroutine
-def download_url(url, session, semaphore, basepath = '/home/steve/tracks',chunk_size=1<<15):
-    with (yield from semaphore): # limit number of concurrent downloads
-        filename = url2filename(url,basepath)
-        logging.info('downloading %s', filename)
-        response = yield from session.get(url)
-        with closing(response), open(filename, 'wb') as file:
-            while True: # save file
-                chunk = yield from response.content.read(chunk_size)
-                if not chunk:
-                    break
-                file.write(chunk)
-        logging.info('done %s', filename)
-    return filename, (response.status, tuple(response.headers.items()))
-
-  
 class GDPlayer(MPV):
   """ A media player to play a GDTape """
   def __init__(self,tape=None):
@@ -644,17 +606,18 @@ class GDPlayer(MPV):
     remote_urls = [y for y in urls if not y.startswith('file:')]
     filenames = [url2filename(y,pathname) for y in remote_urls]
     targets = [(remote_urls[i],filenames[i]) for i,f in enumerate(filenames) if not os.path.exists(f)]
-    asyncio.run(download_all(targets, parallelism=None))
-    return [url2fileurl(x,pathname) for x in urls]
+    results = ThreadPool(6).imap_unordered(download_url,targets)
+    return results
   
   def create_playlist(self):
     self.playlist_clear()
     urls = self.extract_urls(self.tape);
+    pathname = os.path.join(self.tape.dbpath,'audience')
     if not self.tape.stream_only():
-      get_urls = threading.Thread(target = self.load_files, args = (urls,self.tape.dbpath))
-      get_urls.run()
+      get_urls = self.load_files(urls,pathname)
       logger.debug('running the get_urls')
-      urls = [url2fileurl(y,self.tape.dbpath) for y in urls]
+      time.sleep(5)
+      urls = [url2fileurl(y,pathname) for y in urls]
     self.command('loadfile',urls[0])
     if len(urls)>0: _ = [self.command('loadfile',x,'append') for x in urls[1:]]
     self.playlist_pos = 0 

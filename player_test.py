@@ -13,6 +13,7 @@ tapedate = '1980-10-29'
 tapes = archive.tape_dates[tapedate]
 
 tape = tapes[8]
+tape = tapes[9]
 
 p = GD.GDPlayer(tape)
 @p.property_observer('playlist-pos')
