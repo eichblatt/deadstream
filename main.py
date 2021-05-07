@@ -175,7 +175,8 @@ def stop_button(button,state):
    playstate_event.set()
 
 def stop_button_longpress(button,state):
-   logger.debug (F" longpress of {button.name} -- nyi")
+   logger.debug (" longpress of stop button -- restarting" )
+   os.system("sudo service timemachine restart")  
 
 @sequential
 def rewind_button(button,state):
@@ -403,10 +404,10 @@ def main(parms):
     m_button = retry_call(Button, config.month_pins[2])
     d_button = retry_call(Button, config.day_pins[2])
     select = retry_call(Button, config.select_pin,hold_time = 0.5,hold_repeat = False)
-    play_pause = retry_call(Button, config.play_pause_pin,hold_time = 5)
+    play_pause = retry_call(Button, config.play_pause_pin,hold_time = 7)
     ffwd = retry_call(Button, config.ffwd_pin,hold_time = 0.5,hold_repeat = False)
     rewind = retry_call(Button, config.rewind_pin,hold_time = 0.5,hold_repeat = False)
-    stop = retry_call(Button, config.stop_pin,hold_time = 5)
+    stop = retry_call(Button, config.stop_pin,hold_time = 7)
 
     play_pause.when_pressed = lambda button: play_pause_button(button,state,scr)
     play_pause.when_held = lambda button: play_pause_button_longpress(button,state) 
