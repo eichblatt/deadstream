@@ -14,6 +14,9 @@ We are often faced with 45-button remote controls, and multi-level menus of opti
 
 The Time Machine needs to be controlled with knobs, a few buttons, and intuition. And if it doesn't do exactly what you want, maybe it will do something that you need anyway.
 
+
+See this [demonstration video](https://youtu.be/nq8CjzNKIPw) to see the features of the time machine.
+
 ## Gapless playback
 
 Yeah, we can't have glitchy interruptions between tracks. This is a technical challenge which is not completely solved yet, but it's definitely high on the agenda.
@@ -24,10 +27,21 @@ Even with gapless playback, one thing that doesn't quite work with the D*'s pick
 
 As a listener, if you are getting into the spirit of the show, you are not ready for that energy yet. So, I add a 10 minute silence (which could be crowd noises, or a [mixture of audio submissions from deadheads](#crowdsourced-background-noise) between sets.
 
-### crowdsourced background noise
+### crowdsourced background noise?
 
-## "On Tour" mode
-When in "On Tour" mode, the user chooses a year with the Year Knob, and then waits for the show to begin!
+## Every Tape is Findable
+The time machine automatically chooses what it estimates to be the "best" tape of a given show. But by pressing and holding the "select" button, you can select any tape from the stages date. 
+So, every tape from the archive is available. If you are a taper, thank you!
+
+
+## Experience Mode
+If you were at the show, you wouldn't know what the next song was going to be. 
+You might just have to wait for El Paso to come around to go to the bathroom, because there was no pause button. 
+By pressing the "month" knob, the time machine can take you there. Press "month" again to regain the illusion of control.
+
+
+## "On Tour" Mode
+When in "On Tour" mode, the user chooses a year with the Year Knob, and then waits for the show to begin! Once it begins,you remain in "Experience Mode" until the show ends, or you leave the tour. 
 
 ### start time
 Since we don't know the exact starting time of the shows, for now anyway, the show will start at a random time after the nominal start time (if we know that) or 8:00 pm (in your local time zone). We could play [crowd noise](#crowdsourced-background-noise) during the pre-show interval.
