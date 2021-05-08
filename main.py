@@ -358,7 +358,7 @@ def event_loop(state,scr):
                 q_counter = False
             if idle_second_hand in refresh_times and idle_second_hand != last_idle_second_hand:  
                 last_idle_second_hand = idle_second_hand
-                logger.debug(F"idle second hand from {idle_seconds}> {idle_second_hand}")
+                #logger.debug(F"idle second hand from {idle_seconds}> {idle_second_hand}")
                 track_event.set()
                 playstate_event.set()
                 #stagedate_event.set()         # NOTE: this would set the q_counter, etc. But it SHOULD work.
@@ -382,6 +382,7 @@ def main(parms):
     scr.show_text("(\);} \n  Time\n   Machine\n     Loading...",color=(0,255,255))
     archive = GD.GDArchive(parms.dbpath)
     player = GD.GDPlayer()
+
     @player.property_observer('playlist-pos')
     def on_track_event(_name, value):
       track_event.set()
