@@ -32,3 +32,4 @@ ffwd_pin = 26    # pin 26 ok with sound card.
 
 FADE_AWAY = "NOT"  # or "WEST_LA"
 QUIESCENT_TIME = 20 # -- cycles to wait until reverting staged date
+SCROLL_VENUE = False

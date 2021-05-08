@@ -4,16 +4,32 @@ import datetime
 import logging
 import digitalio
 import board
+import functools
 from  . import config
 import adafruit_rgb_display.st7735 as st7735
 from adafruit_rgb_display import color565
 from PIL import Image, ImageDraw, ImageFont
 import pkg_resources
 from gpiozero import RotaryEncoder, Button
+from threading import BoundedSemaphore
 
 logging.basicConfig(format='%(asctime)s.%(msecs)03d %(levelname)s: %(name)s %(message)s', level=logging.DEBUG,datefmt='%Y-%m-%d %H:%M:%S')
 logger = logging.getLogger(__name__)
 print (F"Name of controls logger is {__name__}")
+
+screen_semaphore = BoundedSemaphore(1)
+
+def with_semaphore(func):
+    def inner(*args,**kwargs):
+      try: 
+        acquired = screen_semaphore.acquire(timeout=5)
+        if not acquired: 
+          logger.warn ("Screen semaphore not acquired after 5 seconds!")
+          raise Exception('screen semaphore not acquired')
+        func(*args, **kwargs)
+      except: raise 
+      finally: screen_semaphore.release()
+    return inner
 
 class date_knob_reader:
   def __init__(self,y:RotaryEncoder,m:RotaryEncoder,d:RotaryEncoder,archive=None):
@@ -137,21 +153,19 @@ class screen:
     self.sbd_bbox = Bbox(155,100,160,108)
     self.exp_bbox = Bbox(0,55,160,100)
 
+    self.update_now = True
 
+  @with_semaphore
   def refresh(self):
     self.disp.image(self.image)
 
   def clear_area(self,bbox,now=False):
     self.draw.rectangle(bbox.corners,outline=0,fill=(0,0,0))
-    if now: self.refresh()
+    if self.update_now: self.refresh()
  
   def clear(self):
     self.draw.rectangle((0,0,self.width,self.height),outline=0,fill=(0,0,0))
     self.refresh()
-
-  def rectangle(self,loc,size,color=(0,0,255)):
-    x,y = loc; w,h = size;
-    self.disp.fill_rectangle(x,y,w,h,color565(color))
 
   def show_text(self,text,loc=(0,0),font=None,color=(255,255,255),stroke_width=0,now=True):
     if font==None: font = self.font
@@ -191,11 +205,11 @@ class screen:
 
   def show_experience(self,text="Press Month to\nExit Experience",color=(255,255,255),now=True):
     self.clear_area(self.exp_bbox)
-    self.show_text(text,self.exp_bbox.origin(),font=self.smallfont,color=color,stroke_width=1,now=now)
+    self.show_text(text,self.exp_bbox.origin(),font=self.smallfont,color=color,stroke_width=1,now=self.update_now)
 
   def show_venue(self,text,color=(0,255,255),now=True):
     self.clear_area(self.venue_bbox)
-    self.show_text(text,self.venue_bbox.origin(),font=self.boldsmall,color=color,now=now)
+    self.show_text(text,self.venue_bbox.origin(),font=self.boldsmall,color=color,now=self.update_now)
 
   def show_staged_date(self,date,color=(0,255,255),now=True):
     if date == self.staged_date: return
@@ -205,7 +219,7 @@ class screen:
     year = str(divmod(date.year,100)[1]).rjust(2)
     text = month + '-' + day + '-' + year
     logger.debug (F"staged date string {text}")
-    self.show_text(text,self.staged_date_bbox.origin(),self.boldfont,color=color,now=now)
+    self.show_text(text,self.staged_date_bbox.origin(),self.boldfont,color=color,now=self.update_now)
     self.staged_date = date
 
   def show_selected_date(self,date,color=(255,255,255),now=True):
@@ -215,7 +229,7 @@ class screen:
     day = str(date.day).rjust(2)
     year = str(date.year).rjust(4)
     text = month + '-' + day + '-' + year
-    self.show_text(text,self.selected_date_bbox.origin(),self.boldsmall,color=color,now=now)
+    self.show_text(text,self.selected_date_bbox.origin(),self.boldsmall,color=color,now=self.update_now)
     self.selected_date = date
 
   def show_track(self,text,trackpos,color=(120,0,255)):

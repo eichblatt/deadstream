@@ -31,6 +31,7 @@ playstate_event = Event()
 #busy_event = Event()
 free_event = Event()
 stop_event = Event()
+screen_event = Event()
 
 
 @retry(stop=stop_after_delay(10))
@@ -284,6 +285,10 @@ def play_tape(tape,player):
 @sequential
 def refresh_venue(state,idle_second_hand,refresh_times,venue,scr):
      venue = config.VENUE if config.VENUE else venue
+     if not config.SCROLL_VENUE:
+        scr.show_venue(venue)
+        return
+
      stream_only = False
      tape_color = (0,255,255)
      if 'tape' in vars(state.player).keys():
@@ -298,7 +303,7 @@ def refresh_venue(state,idle_second_hand,refresh_times,venue,scr):
      else:
        display_string = tape_id
        id_color = tape_color
-
+        
      if idle_second_hand in refresh_times[:2]:
         scr.show_venue(display_string,color=id_color)
      elif idle_second_hand in [refresh_times[2],refresh_times[6]]:
@@ -326,6 +331,7 @@ def event_loop(state,scr):
     max_second_hand = 40
     clear_stagedate = False
     free_event.set()
+    scr.update_now = False
     try:
         while not stop_event.wait(timeout=0.001): 
             if not free_event.wait(timeout=0.01): continue
@@ -334,28 +340,36 @@ def event_loop(state,scr):
             idle_seconds = (now-last_sdevent).seconds 
             idle_second_hand = divmod(idle_seconds,max_second_hand)[1]
 
+            if screen_event.is_set():
+                scr.refresh()
+                screen_event.clear()
             if stagedate_event.is_set():
                 last_sdevent = now; q_counter = True
                 scr.show_staged_date(date_reader.date)
                 scr.show_venue(date_reader.venue())
                 if clear_stagedate: stagedate_event.clear()
                 clear_stagedate = not clear_stagedate   # only clear stagedate event after updating twice
+                screen_event.set()
             if track_event.is_set():
                 update_tracks(state,scr)
                 track_event.clear()
+                screen_event.set()
             if select_event.is_set():
                 current = state.get_current()
                 scr.show_selected_date(current['DATE'])
                 update_tracks(state,scr)
                 select_event.clear()
+                screen_event.set()
             if playstate_event.is_set():
                 scr.show_playstate()
                 playstate_event.clear()
+                screen_event.set()
             if q_counter and config.DATE and idle_seconds > config.QUIESCENT_TIME:
                 logger.debug(F"Reverting staged date back to selected date {idle_seconds}> {config.QUIESCENT_TIME}")
                 scr.show_staged_date(config.DATE)
                 scr.show_venue(config.VENUE)
                 q_counter = False
+                screen_event.set()
             if idle_second_hand in refresh_times and idle_second_hand != last_idle_second_hand:  
                 last_idle_second_hand = idle_second_hand
                 #logger.debug(F"idle second hand from {idle_seconds}> {idle_second_hand}")
@@ -367,6 +381,7 @@ def event_loop(state,scr):
                 else:  
                    scr.show_staged_date(date_reader.date)
                    scr.show_venue(date_reader.venue())
+                screen_event.set()
 
     except KeyboardInterrupt:
         exit(0)
