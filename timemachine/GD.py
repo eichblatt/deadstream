@@ -1,27 +1,50 @@
 import abc
-import aiohttp
-import asyncio
+import aiohttp,asyncio,aiofiles
+from aiohttp import ClientResponse, ClientSession, ClientTimeout
 import logging
 import requests
 import json
 import os
-import pdb
 import csv
 import difflib
 import datetime,time,math
 import pkg_resources
 import pickle5 as pickle
 import codecs
+import threading
+from contextlib import closing
 from operator import attrgetter,methodcaller
 from mpv import MPV
 from importlib import reload
 from tenacity import retry
 from tenacity.stop import stop_after_delay
-from typing import Callable
+from typing import Callable,List, Tuple
+from multiprocessing.pool import ThreadPool
 
 logging.basicConfig(format='%(asctime)s.%(msecs)03d %(levelname)s: %(name)s %(message)s', level=logging.INFO,datefmt='%Y-%m-%d %H:%M:%S')
 logger = logging.getLogger(__name__)
 
+def url2fileurl(url,basepath):
+  if url.startswith('file://'): return url
+  return 'file://'+url2filename(url,basepath)
+
+def url2filename(url,basepath):
+  urlsplit = os.path.split(url)
+  dname = os.path.split(urlsplit[0])[1]
+  fname = urlsplit[1]
+  os.makedirs(os.path.join(basepath,dname),exist_ok=True)
+  return os.path.join(basepath,dname,fname)
+
+def download_url(url_filename):
+    url = url_filename[0]
+    filename = url_filename[1]
+
+    r = requests.get(url,stream=True)
+    if r.status_code == requests.codes.ok:
+      with open(filename, 'wb') as f:
+        for data in r:
+          f.write(data)
+    return url
 
 @retry(stop=stop_after_delay(30))
 def retry_call(callable: Callable, *args, **kwargs):
@@ -437,6 +460,7 @@ class GDTape:
     self._breaks_added = True
     self._tracks = newtracks.copy()
 
+
 class GDTrack:
   """ A track from a GDTape recording """
   def __init__(self,tdict,parent_id,break_track=False):
@@ -532,7 +556,7 @@ class GDSet:
   def __repr__(self):
     retstr = F"Grateful Dead set data"
     return retstr
-  
+
 class GDPlayer(MPV):
   """ A media player to play a GDTape """
   def __init__(self,tape=None):
@@ -575,10 +599,25 @@ class GDPlayer(MPV):
       if best_track == None and len(candidates)>0: best_track = candidates[0]
       urls.append(best_track)
     return urls
+
+
+  def load_files(self,urls,pathname):
+    logger.debug(F'loading files to {pathname}')
+    remote_urls = [y for y in urls if not y.startswith('file:')]
+    filenames = [url2filename(y,pathname) for y in remote_urls]
+    targets = [(remote_urls[i],filenames[i]) for i,f in enumerate(filenames) if not os.path.exists(f)]
+    results = ThreadPool(3).imap_unordered(download_url,targets)
+    return results
   
   def create_playlist(self):
     self.playlist_clear()
     urls = self.extract_urls(self.tape);
+    pathname = os.path.join(self.tape.dbpath,'audience')
+    if not self.tape.stream_only():
+      get_urls = self.load_files(urls,pathname)
+      logger.debug('running the get_urls')
+      time.sleep(5)
+      urls = [url2fileurl(y,pathname) for y in urls]
     self.command('loadfile',urls[0])
     if len(urls)>0: _ = [self.command('loadfile',x,'append') for x in urls[1:]]
     self.playlist_pos = 0 
@@ -617,7 +656,7 @@ class GDPlayer(MPV):
       if current_track != track_no:
         self._set_property('playlist-pos',track_no)
         #self.wait_for_event('file-loaded')   # NOTE: this could wait forever!
-        sleep(5)
+        time.sleep(5)
       duration = self.get_prop('duration')
       if destination < 0: destination = duration + destination
       if (destination > duration) or (destination < 0):
