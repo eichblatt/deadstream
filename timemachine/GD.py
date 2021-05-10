@@ -23,6 +23,7 @@ from multiprocessing.pool import ThreadPool
 
 logging.basicConfig(format='%(asctime)s.%(msecs)03d %(levelname)s: %(name)s %(message)s', level=logging.INFO,datefmt='%Y-%m-%d %H:%M:%S')
 logger = logging.getLogger(__name__)
+ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
 
 def url2fileurl(url,basepath):
   if url.startswith('file://'): return url
@@ -230,7 +231,7 @@ class AsyncTapeDownloader(BaseTapeDownloader):
 
 class GDArchive:
   """ The Grateful Dead Collection on Archive.org """
-  def __init__(self,dbpath,url='https://archive.org',reload_ids=False, sync=False):
+  def __init__(self,dbpath=os.path.join(ROOT_DIR,'metadata'),url='https://archive.org',reload_ids=False, sync=False):
     """Create a new GDArchive.
 
     Parameters:
