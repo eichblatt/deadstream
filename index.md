@@ -1,5 +1,9 @@
 # The Grateful Dead Time Machine
 
+<a href="http://www.youtube.com/watch?feature=player_embedded&v=nq8CjzNKIPw
+" target="_blank"><img src="http://img.youtube.com/vi/nq8CjzNKIPw/0.jpg" 
+alt="IMAGE ALT TEXT HERE" width="480" height="360" border="10" /></a>
+
 # Features of the Time Machine (some implemented, some just ideas at this point)
 
 The Deadstreamer is a machine designed to take the listener back in time to a Greatful Dead experience in the past. Although it operates on digital data using a computer, it's purpose is to conjure up spirits. As such it will do, and not do, many things that seem unusual to users of digital devices. 
