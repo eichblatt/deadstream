@@ -389,7 +389,6 @@ def event_loop(state,scr):
 def main(parms):
     if parms.box == 'v0': 
        upside_down=True
-       os.system("amixer sset 'Headphone' 100%")
     else: 
        upside_down = False
     scr = controls.screen(upside_down=upside_down)
@@ -397,6 +396,9 @@ def main(parms):
     scr.show_text("(\);} \n  Time\n   Machine\n     Loading...",color=(0,255,255))
     archive = GD.GDArchive(parms.dbpath)
     player = GD.GDPlayer()
+    try:
+       os.system("amixer sset 'Headphone' 100%")
+    except: pass
 
     @player.property_observer('playlist-pos')
     def on_track_event(_name, value):
