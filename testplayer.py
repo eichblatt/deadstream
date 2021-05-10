@@ -7,7 +7,7 @@ GD.logger.setLevel(10)
 
 track_event = Event()
 
-archive = GD.GDArchive("~/projects/deadstream/metadata")
+archive = GD.GDArchive()
 tapedate = '1982-11-25'
 tapedate = '1980-10-29'
 tapes = archive.tape_dates[tapedate]
