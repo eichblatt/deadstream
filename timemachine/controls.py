@@ -255,7 +255,7 @@ class screen:
        self.draw.line([(bbox.x0+20,bbox.y0+4),(bbox.x0+20,bbox.y0+20)],width=4,fill=color)
     elif config.PLAY_STATE == config.STOPPED :  
        self.draw.regular_polygon((bbox.center(),10),4,rotation=0,fill=color)
-    elif config.PLAY_STATE in [config.INIT,config.READY] :  
+    elif config.PLAY_STATE in [config.INIT,config.READY,config.ENDED] :  
        pass
     if sbd: self.show_soundboard(sbd)
     self.refresh()
