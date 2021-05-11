@@ -159,20 +159,20 @@ class screen:
   def refresh(self):
     self.disp.image(self.image)
 
-  def clear_area(self,bbox,now=False):
+  def clear_area(self,bbox,force=False):
     self.draw.rectangle(bbox.corners,outline=0,fill=(0,0,0))
-    if self.update_now: self.refresh()
+    if self.update_now or force: self.refresh()
  
   def clear(self):
     self.draw.rectangle((0,0,self.width,self.height),outline=0,fill=(0,0,0))
     self.refresh()
 
-  def show_text(self,text,loc=(0,0),font=None,color=(255,255,255),stroke_width=0,now=True):
+  def show_text(self,text,loc=(0,0),font=None,color=(255,255,255),stroke_width=0,force=False):
     if font==None: font = self.font
     (text_width,text_height)= font.getsize(text)
     logger.debug(F' show_text {text}. text_size {text_height},{text_width}')
     self.draw.text(loc, text, font=font,stroke_width=stroke_width,fill=color)
-    if now: self.refresh()
+    if self.update_now or force: self.refresh()
 
   def scroll_venue(self,color=(0,255,255),stroke_width=0,inc=15):
     """ This function can be called in a thread from the main. 
@@ -203,15 +203,15 @@ class screen:
          sleep(1)
          self.clear_area(bbox)
 
-  def show_experience(self,text="Press Month to\nExit Experience",color=(255,255,255),now=True):
+  def show_experience(self,text="Press Month to\nExit Experience",color=(255,255,255),force=False):
     self.clear_area(self.exp_bbox)
-    self.show_text(text,self.exp_bbox.origin(),font=self.smallfont,color=color,stroke_width=1,now=self.update_now)
+    self.show_text(text,self.exp_bbox.origin(),font=self.smallfont,color=color,stroke_width=1,force=force)
 
-  def show_venue(self,text,color=(0,255,255),now=True):
+  def show_venue(self,text,color=(0,255,255),force=False):
     self.clear_area(self.venue_bbox)
-    self.show_text(text,self.venue_bbox.origin(),font=self.boldsmall,color=color,now=self.update_now)
+    self.show_text(text,self.venue_bbox.origin(),font=self.boldsmall,color=color,force=force)
 
-  def show_staged_date(self,date,color=(0,255,255),now=True):
+  def show_staged_date(self,date,color=(0,255,255),force=False):
     if date == self.staged_date: return
     self.clear_area(self.staged_date_bbox)
     month = str(date.month).rjust(2)
@@ -219,17 +219,17 @@ class screen:
     year = str(divmod(date.year,100)[1]).rjust(2)
     text = month + '-' + day + '-' + year
     logger.debug (F"staged date string {text}")
-    self.show_text(text,self.staged_date_bbox.origin(),self.boldfont,color=color,now=self.update_now)
+    self.show_text(text,self.staged_date_bbox.origin(),self.boldfont,color=color,force=force)
     self.staged_date = date
 
-  def show_selected_date(self,date,color=(255,255,255),now=True):
+  def show_selected_date(self,date,color=(255,255,255),force=False):
     if date == self.selected_date: return
     self.clear_area(self.selected_date_bbox)
     month = str(date.month).rjust(2)
     day = str(date.day).rjust(2)
     year = str(date.year).rjust(4)
     text = month + '-' + day + '-' + year
-    self.show_text(text,self.selected_date_bbox.origin(),self.boldsmall,color=color,now=self.update_now)
+    self.show_text(text,self.selected_date_bbox.origin(),self.boldsmall,color=color,force=force)
     self.selected_date = date
 
   def show_track(self,text,trackpos,color=(120,0,255)):
