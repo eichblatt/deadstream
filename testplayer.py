@@ -19,6 +19,8 @@ p = GD.GDPlayer(tape)
 @p.property_observer('playlist-pos')
 def on_track_event(_name, value):
   track_event.set()
+  if value == None:
+    
   print(F'in track event callback {_name}, {value}')
 
     
