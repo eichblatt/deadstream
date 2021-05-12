@@ -6,6 +6,7 @@ READY = 1
 PAUSED = 2
 STOPPED = 3
 PLAYING = 4
+ENDED = 5
 PLAY_STATE = INIT
 #PLAY_STATES = ['Init','Ready','Paused','Stopped','Playing']
 SELECT_STAGED_DATE = False
@@ -32,4 +33,5 @@ ffwd_pin = 26    # pin 26 ok with sound card.
 
 FADE_AWAY = "NOT"  # or "WEST_LA"
 QUIESCENT_TIME = 20 # -- cycles to wait until reverting staged date
-SCROLL_VENUE = False
+SCROLL_VENUE = True
+FAVORED_TAPER = "miller"

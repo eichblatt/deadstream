@@ -92,9 +92,8 @@ def select_button(button,state):
    if not state.date_reader.tape_available(): return 
    date_reader = state.date_reader
    tapes = date_reader.archive.tape_dates[date_reader.fmtdate()]
-   sleep(button._hold_time)
-   if button.is_pressed: return
-   if button.is_held: return
+   sleep(button._hold_time * 1.01)
+   if button.is_pressed or button.is_held: return
    else: 
      logger.debug ("pressing, not holding select")
      tape = tapes[0] 
@@ -115,10 +114,10 @@ def select_button_longpress(button,state,scr):
      sbd = tapes[itape].stream_only()
      id_color = (0,255,255) if sbd else (0,0,255)
      logger.info (F"Selecting Tape: {tape_id}, the {itape}th of {len(tapes)} choices. SBD:{sbd}")
-     if len(tape_id)<16: scr.show_venue(tape_id,color=id_color)
+     if len(tape_id)<16: scr.show_venue(tape_id,color=id_color,force=True)
      else:
        for i in range(0,max(1,len(tape_id)),2):
-         scr.show_venue(tape_id[i:],color=id_color)
+         scr.show_venue(tape_id[i:],color=id_color,force=True)
          if not button.is_held: break
    scr.show_venue(tape_id,color=id_color)
    tape = tapes[itape] 
@@ -285,10 +284,6 @@ def play_tape(tape,player):
 @sequential
 def refresh_venue(state,idle_second_hand,refresh_times,venue,scr):
      venue = config.VENUE if config.VENUE else venue
-     if not config.SCROLL_VENUE:
-        scr.show_venue(venue)
-        return
-
      stream_only = False
      tape_color = (0,255,255)
      if 'tape' in vars(state.player).keys():
@@ -303,6 +298,10 @@ def refresh_venue(state,idle_second_hand,refresh_times,venue,scr):
      else:
        display_string = tape_id
        id_color = tape_color
+
+     if not config.SCROLL_VENUE:
+        scr.show_venue(display_string,color=id_color)
+        return
         
      if idle_second_hand in refresh_times[:2]:
         scr.show_venue(display_string,color=id_color)
@@ -372,7 +371,6 @@ def event_loop(state,scr):
                 screen_event.set()
             if idle_second_hand in refresh_times and idle_second_hand != last_idle_second_hand:  
                 last_idle_second_hand = idle_second_hand
-                #logger.debug(F"idle second hand from {idle_seconds}> {idle_second_hand}")
                 track_event.set()
                 playstate_event.set()
                 #stagedate_event.set()         # NOTE: this would set the q_counter, etc. But it SHOULD work.
@@ -402,8 +400,11 @@ def main(parms):
 
     @player.property_observer('playlist-pos')
     def on_track_event(_name, value):
-      track_event.set()
       logger.debug(F'in track event callback {_name}, {value}')
+      if value == None:  
+         config.PLAY_STATE = config.ENDED
+         select_button(select,state)
+      track_event.set()
 
     @player.event_callback('file-loaded')
     def my_handler(event):
