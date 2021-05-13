@@ -168,7 +168,7 @@ def stop_button(button,state):
 
 def stop_button_longpress(button,state):
    logger.debug (" longpress of stop button -- loading options menu" )
-   os.system("sudo service timemachine restart")  
+   os.system(F"sh {GD.ROOT_DIR}/update.sh")  
 
 @sequential
 def rewind_button(button,state):
