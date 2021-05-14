@@ -19,9 +19,9 @@ EXPERIENCE = False
 
 # Hardware pins
 
-year_pins = (16,22,23)   # cl, dt, sw
-month_pins = (12,5,6)
-day_pins = (13,17,27)
+year_pins = (22,16,23)   # cl, dt, sw
+month_pins = (5,12,6)
+day_pins = (17,13,27)
 
 select_pin = 4   # pin 4 ok w/ Sound card
 play_pause_pin = 20 # pin 18 interferes with sound card
