@@ -154,25 +154,37 @@ class screen:
     self.exp_bbox = Bbox(0,55,160,100)
 
     self.update_now = True
+    self.sleeping = False
 
   @with_semaphore
-  def refresh(self):
-    self.disp.image(self.image)
+  def refresh(self,force=True):
+    if self.sleeping: return
+    if self.update_now or force: self.disp.image(self.image)
 
   def clear_area(self,bbox,force=False):
     self.draw.rectangle(bbox.corners,outline=0,fill=(0,0,0))
-    if self.update_now or force: self.refresh()
+    self.refresh(force)
  
   def clear(self):
     self.draw.rectangle((0,0,self.width,self.height),outline=0,fill=(0,0,0))
-    self.refresh()
+    self.refresh(True)
+
+  def sleep(self):
+    pixels = self.image.tobytes()
+    self.clear()
+    self.sleeping = True
+    self.image.frombytes(pixels)
+
+  def wake_up(self):
+    self.sleeping = False
+    self.refresh(force=False)
 
   def show_text(self,text,loc=(0,0),font=None,color=(255,255,255),stroke_width=0,force=False):
     if font==None: font = self.font
     (text_width,text_height)= font.getsize(text)
     logger.debug(F' show_text {text}. text_size {text_height},{text_width}')
     self.draw.text(loc, text, font=font,stroke_width=stroke_width,fill=color)
-    if self.update_now or force: self.refresh()
+    self.refresh(force)
 
   def scroll_venue(self,color=(0,255,255),stroke_width=0,inc=15):
     """ This function can be called in a thread from the main. 
@@ -232,13 +244,13 @@ class screen:
     self.show_text(text,self.selected_date_bbox.origin(),self.boldsmall,color=color,force=force)
     self.selected_date = date
 
-  def show_track(self,text,trackpos,color=(120,0,255)):
+  def show_track(self,text,trackpos,color=(120,0,255),force=False):
     bbox = self.track1_bbox if trackpos == 0 else self.track2_bbox
     self.clear_area(bbox)
     self.draw.text(bbox.origin(), text, font=self.smallfont,fill=color,stroke_width=1);
-    self.refresh()
+    self.refresh(force)
 
-  def show_playstate(self,staged_play=False,color=(0,100,255),sbd=None):
+  def show_playstate(self,staged_play=False,color=(0,100,255),sbd=None,force=False):
     logger.debug(F"showing playstate {config.PLAY_STATE}")
     bbox = self.playstate_bbox
     self.clear_area(bbox)
@@ -246,7 +258,7 @@ class screen:
     if staged_play:
        self.draw.regular_polygon((bbox.center(),10),3,rotation=30,fill=color)
        self.draw.regular_polygon((bbox.center(),8),3,rotation=30,fill=(0,0,0))
-       self.refresh()
+       self.refresh(force)
        return
     if config.PLAY_STATE == config.PLAYING:  
        self.draw.regular_polygon((bbox.center(),10),3,rotation=30,fill=color)
@@ -258,7 +270,7 @@ class screen:
     elif config.PLAY_STATE in [config.INIT,config.READY,config.ENDED] :  
        pass
     if sbd: self.show_soundboard(sbd)
-    self.refresh()
+    self.refresh(force)
 
   def show_soundboard(self,sbd,color=(255,255,255)):
     if not sbd: 
