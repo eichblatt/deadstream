@@ -4,7 +4,7 @@
 
 ### Raspberry Pi
 
-The [Raspberry Pi 3 A](https://www.adafruit.com/product/4027?gclid=CjwKCAjw9r-DBhBxEiwA9qYUpRtAxcMfSCYvHXumkkVY1CEXW6kAsdKQHBr-JPaOwqJELiOx9J3UohoCxocQAvD_BwE) is probably the best for this task. It will be significantly faster than the Zero, and relatively inexpensive (about $25).
+The [Raspberry Pi 3 A+](https://www.adafruit.com/product/4027?gclid=CjwKCAjw9r-DBhBxEiwA9qYUpRtAxcMfSCYvHXumkkVY1CEXW6kAsdKQHBr-JPaOwqJELiOx9J3UohoCxocQAvD_BwE) is probably the best for this task. It will be significantly faster than the Zero, and relatively inexpensive (about $25).
 
 ### Micro SD card
 16 GB is more than sufficient. I have not tested 8 GB, but I would guess that will work also.
