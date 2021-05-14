@@ -81,5 +81,9 @@ I'd like to have a favorites feature. But that would be completely local to your
 ## Open Source
 Of course.
 
+## Build Your Own
+
+See [build your own](https://eichblatt.github.io/deadstream/BuildYourOwn.md)
+
 [Edit this file](https://github.com/eichblatt/deadstream/edit/gh-pages/index.md)
 
