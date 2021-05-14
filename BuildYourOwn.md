@@ -2,6 +2,12 @@
 
 ## Parts List
 
+### Grateful Dead Time Machine Board
+The easiest way to get a Time Machine working is to use the custom printed circuit board, along with the components in this page. 
+![time_machine_v1.png](time_machine_v1.png)
+
+To obtain a Time Machine Board, send an email to gdtimemachine@gmail.com
+
 ### Raspberry Pi
 
 The [Raspberry Pi 3 A+](https://www.adafruit.com/product/4027?gclid=CjwKCAjw9r-DBhBxEiwA9qYUpRtAxcMfSCYvHXumkkVY1CEXW6kAsdKQHBr-JPaOwqJELiOx9J3UohoCxocQAvD_BwE) is probably the best for this task. It will be significantly faster than the Zero, and relatively inexpensive (about $25).
@@ -31,11 +37,7 @@ The screw size for the raspberry pi and the accessories is M 2.5
 
 I bought a set of nylon screws, nuts, and standoffs on [Amazon](https://www.amazon.com/dp/B07XJWF7HM?psc=1&smid=A3EBPEC0WM8MKE&ref_=cm_sw_r_apa_typT1_K9zzGb047TKXE)
 
-## Grateful Dead Time Machine Board
 
-To obtain a Time Machine Board, send an email to gdtimemachine@gmail.com
-
-![time_machine_v1.png](time_machine_v1.png)
 
 ## Hard Core Do It Yourself:
 If you are a maker and want to avoid using the Printed Circuit Board (you may want a different layout, for example), then here are the pinouts which will help you build it. Please let me know if there are any errors here, but it should be very very close.
