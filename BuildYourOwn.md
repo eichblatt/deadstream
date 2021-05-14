@@ -35,7 +35,7 @@ I bought a set of nylon screws, nuts, and standoffs on [Amazon](https://www.amaz
 
 To obtain a Time Machine Board, send an email to gdtimemachine@gmail.com
 
-![time_machine.png](:/time_machine.png)
+![time_machine_v1.png](time_machine_v1.png)
 
 ## Hard Core Do It Yourself:
 If you are a maker and want to avoid using the Printed Circuit Board (you may want a different layout, for example), then here are the pinouts which will help you build it. Please let me know if there are any errors here, but it should be very very close.
