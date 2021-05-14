@@ -35,8 +35,12 @@ These buttons are pretty standard, and work with the Grateful Dead Time Machine 
 
 The screw size for the raspberry pi and the accessories is M 2.5
 
-I bought a set of nylon screws, nuts, and standoffs on [Amazon](https://www.amazon.com/dp/B07XJWF7HM?psc=1&smid=A3EBPEC0WM8MKE&ref_=cm_sw_r_apa_typT1_K9zzGb047TKXE)
+A set of [nylon screws, nuts, and standoffs](https://www.amazon.com/dp/B07XJWF7HM?psc=1&smid=A3EBPEC0WM8MKE&ref_=cm_sw_r_apa_typT1_K9zzGb047TKXE) comes in handy.
 
+### 40-pin Connector
+
+You will only need one of these, but this is for a set of 20!
+[Antrader 20pcs Dual Female Pin Header Socket Connector Strip](https://www.amazon.com/gp/product/B07D48WZTR/ref=ppx_yo_dt_b_asin_image_o00_s00?ie=UTF8&psc=1)
 
 
 ## Hard Core Do It Yourself:
