@@ -6,7 +6,7 @@
 The easiest way to get a Time Machine working is to use the custom printed circuit board, along with the components in this page. 
 ![time_machine_v1.png](time_machine_v1.png)
 
-To obtain a Time Machine Board, send an email to gdtimemachine@gmail.com
+To obtain a Time Machine Board, send an email to [gdtimemachine@gmail.com](mailto:gdtimemachine@gmail.com)
 
 ### Raspberry Pi
 
