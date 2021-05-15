@@ -39,14 +39,6 @@ def retry_call(callable: Callable, *args, **kwargs):
     """Retry a call."""
     return callable(*args, **kwargs)
 
-#def wait_for_sequential(func):
-#    def inner(*args,**kwargs):
-#     free_event.wait()
-#     try: func(*args, **kwargs)
-#     except: raise 
-#     finally: free_event.set()
-#   return inner
-
 def sequential(func):
     def inner(*args,**kwargs):
       free_event.wait()
@@ -92,9 +84,8 @@ def select_button(button,state):
    if not state.date_reader.tape_available(): return 
    date_reader = state.date_reader
    tapes = date_reader.archive.tape_dates[date_reader.fmtdate()]
-   sleep(button._hold_time)
-   if button.is_pressed: return
-   if button.is_held: return
+   sleep(button._hold_time * 1.01)
+   if button.is_pressed or button.is_held: return
    else: 
      logger.debug ("pressing, not holding select")
      tape = tapes[0] 
@@ -115,10 +106,10 @@ def select_button_longpress(button,state,scr):
      sbd = tapes[itape].stream_only()
      id_color = (0,255,255) if sbd else (0,0,255)
      logger.info (F"Selecting Tape: {tape_id}, the {itape}th of {len(tapes)} choices. SBD:{sbd}")
-     if len(tape_id)<16: scr.show_venue(tape_id,color=id_color)
+     if len(tape_id)<16: scr.show_venue(tape_id,color=id_color,force=True)
      else:
        for i in range(0,max(1,len(tape_id)),2):
-         scr.show_venue(tape_id[i:],color=id_color)
+         scr.show_venue(tape_id[i:],color=id_color,force=True)
          if not button.is_held: break
    scr.show_venue(tape_id,color=id_color)
    tape = tapes[itape] 
@@ -176,8 +167,8 @@ def stop_button(button,state):
    playstate_event.set()
 
 def stop_button_longpress(button,state):
-   logger.debug (" longpress of stop button -- restarting" )
-   os.system("sudo service timemachine restart")  
+   logger.debug (" longpress of stop button -- loading options menu" )
+   os.system(F"sh {GD.ROOT_DIR}/update.sh")  
 
 @sequential
 def rewind_button(button,state):
@@ -220,18 +211,22 @@ def month_button(button,state):
    track_event.set()
 
 def month_button_longpress(button,state):
-   logger.debug (F" longpress of {button.name} -- nyi")
+   logger.debug (F" longpress of month button -- go to on tour mode -- nyi")
 
 @sequential
 def day_button(button,state):
+   sleep(button._hold_time * 1.01)
+   if button.is_pressed or button.is_held: return
+   logger.debug (F"pressing day button")
    current = state.get_current()
    #if current['EXPERIENCE']: return 
    new_date = state.date_reader.next_date() 
    state.date_reader.set_date(new_date)
    stagedate_event.set()
  
-def day_button_longpress(button,state):
-   logger.debug (F"long pressing {button.name}")
+def day_button_longpress(button,state,scr):
+   logger.debug (F"long pressing day button")
+   scr.sleep() 
 
 @sequential
 def year_button(button,state):
@@ -285,10 +280,6 @@ def play_tape(tape,player):
 @sequential
 def refresh_venue(state,idle_second_hand,refresh_times,venue,scr):
      venue = config.VENUE if config.VENUE else venue
-     if not config.SCROLL_VENUE:
-        scr.show_venue(venue)
-        return
-
      stream_only = False
      tape_color = (0,255,255)
      if 'tape' in vars(state.player).keys():
@@ -303,6 +294,10 @@ def refresh_venue(state,idle_second_hand,refresh_times,venue,scr):
      else:
        display_string = tape_id
        id_color = tape_color
+
+     if not config.SCROLL_VENUE:
+        scr.show_venue(display_string,color=id_color)
+        return
         
      if idle_second_hand in refresh_times[:2]:
         scr.show_venue(display_string,color=id_color)
@@ -347,8 +342,10 @@ def event_loop(state,scr):
                 last_sdevent = now; q_counter = True
                 scr.show_staged_date(date_reader.date)
                 scr.show_venue(date_reader.venue())
-                if clear_stagedate: stagedate_event.clear()
-                clear_stagedate = not clear_stagedate   # only clear stagedate event after updating twice
+                #if clear_stagedate: stagedate_event.clear()
+                #clear_stagedate = not clear_stagedate   # only clear stagedate event after updating twice
+                stagedate_event.clear()
+                scr.wake_up()
                 screen_event.set()
             if track_event.is_set():
                 update_tracks(state,scr)
@@ -359,6 +356,7 @@ def event_loop(state,scr):
                 scr.show_selected_date(current['DATE'])
                 update_tracks(state,scr)
                 select_event.clear()
+                scr.wake_up()
                 screen_event.set()
             if playstate_event.is_set():
                 scr.show_playstate()
@@ -372,7 +370,6 @@ def event_loop(state,scr):
                 screen_event.set()
             if idle_second_hand in refresh_times and idle_second_hand != last_idle_second_hand:  
                 last_idle_second_hand = idle_second_hand
-                #logger.debug(F"idle second hand from {idle_seconds}> {idle_second_hand}")
                 track_event.set()
                 playstate_event.set()
                 #stagedate_event.set()         # NOTE: this would set the q_counter, etc. But it SHOULD work.
@@ -386,72 +383,80 @@ def event_loop(state,scr):
     except KeyboardInterrupt:
         exit(0)
 
-def main(parms):
-    if parms.box == 'v0': 
-       upside_down=True
-       os.system("amixer sset 'Headphone' 100%")
-    else: 
-       upside_down = False
-    scr = controls.screen(upside_down=upside_down)
-    scr.clear()
-    scr.show_text("(\);} \n  Time\n   Machine\n     Loading...",color=(0,255,255))
-    archive = GD.GDArchive(parms.dbpath)
-    player = GD.GDPlayer()
+#def main(parms):
+if parms.box == 'v0': 
+   upside_down=True
+else: 
+   upside_down = False
+scr = controls.screen(upside_down=upside_down)
+scr.clear()
+scr.show_text("(\);} \n  Time\n   Machine\n     Loading...",color=(0,255,255))
+archive = GD.GDArchive(parms.dbpath)
+player = GD.GDPlayer()
+try:
+   os.system("amixer sset 'Headphone' 100%")
+except: pass
 
-    @player.property_observer('playlist-pos')
-    def on_track_event(_name, value):
-      track_event.set()
-      logger.debug(F'in track event callback {_name}, {value}')
+@player.property_observer('playlist-pos')
+def on_track_event(_name, value):
+  logger.debug(F'in track event callback {_name}, {value}')
+  if value == None:  
+     config.PLAY_STATE = config.ENDED
+     select_button(select,state)
+  track_event.set()
 
-    @player.event_callback('file-loaded')
-    def my_handler(event):
-      logger.debug('file-loaded')
+@player.event_callback('file-loaded')
+def my_handler(event):
+  logger.debug('file-loaded')
 
-    y = retry_call(RotaryEncoder, config.year_pins[1], config.year_pins[0],max_steps = 0,threshold_steps = (0,30))
-    m = retry_call(RotaryEncoder, config.month_pins[1], config.month_pins[0],max_steps = 0,threshold_steps = (1,12))
-    d = retry_call(RotaryEncoder, config.day_pins[1], config.day_pins[0],max_steps = 0,threshold_steps = (1,31))
-    y.steps = 1979-1965; m.steps = 11; d.steps = 2;
-    date_reader = controls.date_knob_reader(y,m,d,archive)
-    state = controls.state(date_reader,player)
-    y.when_rotated = lambda x: twist_knob(y, "year",date_reader)
-    m.when_rotated = lambda x: twist_knob(m, "month",date_reader)
-    d.when_rotated = lambda x: twist_knob(d, "day",date_reader)
-    y_button = retry_call(Button, config.year_pins[2])
-    m_button = retry_call(Button, config.month_pins[2])
-    d_button = retry_call(Button, config.day_pins[2])
-    select = retry_call(Button, config.select_pin,hold_time = 0.5,hold_repeat = False)
-    play_pause = retry_call(Button, config.play_pause_pin,hold_time = 7)
-    ffwd = retry_call(Button, config.ffwd_pin,hold_time = 0.5,hold_repeat = False)
-    rewind = retry_call(Button, config.rewind_pin,hold_time = 0.5,hold_repeat = False)
-    stop = retry_call(Button, config.stop_pin,hold_time = 7)
+y = retry_call(RotaryEncoder, config.year_pins[1], config.year_pins[0],max_steps = 0,threshold_steps = (0,30))
+m = retry_call(RotaryEncoder, config.month_pins[1], config.month_pins[0],max_steps = 0,threshold_steps = (1,12))
+d = retry_call(RotaryEncoder, config.day_pins[1], config.day_pins[0],max_steps = 0,threshold_steps = (1,31))
+y.steps = 1979-1965; m.steps = 11; d.steps = 2;
+date_reader = controls.date_knob_reader(y,m,d,archive)
+state = controls.state(date_reader,player)
+y.when_rotated = lambda x: twist_knob(y, "year",date_reader)
+m.when_rotated = lambda x: twist_knob(m, "month",date_reader)
+d.when_rotated = lambda x: twist_knob(d, "day",date_reader)
+y_button = retry_call(Button, config.year_pins[2])
+m_button = retry_call(Button, config.month_pins[2])
+d_button = retry_call(Button, config.day_pins[2],hold_time = 0.3, hold_repeat = False)
+select = retry_call(Button, config.select_pin,hold_time = 0.5,hold_repeat = False)
+play_pause = retry_call(Button, config.play_pause_pin,hold_time = 7)
+ffwd = retry_call(Button, config.ffwd_pin,hold_time = 0.5,hold_repeat = False)
+rewind = retry_call(Button, config.rewind_pin,hold_time = 0.5,hold_repeat = False)
+stop = retry_call(Button, config.stop_pin,hold_time = 7)
 
-    play_pause.when_pressed = lambda button: play_pause_button(button,state,scr)
-    play_pause.when_held = lambda button: play_pause_button_longpress(button,state) 
+play_pause.when_pressed = lambda button: play_pause_button(button,state,scr)
+play_pause.when_held = lambda button: play_pause_button_longpress(button,state) 
 
-    select.when_pressed = lambda button: select_button(button,state)
-    select.when_held = lambda button: select_button_longpress(button,state,scr)
+select.when_pressed = lambda button: select_button(button,state)
+select.when_held = lambda button: select_button_longpress(button,state,scr)
 
-    ffwd.when_pressed = lambda button: ffwd_button(button,state)
-    ffwd.when_held = lambda button: ffwd_button_longpress(button,state)
+ffwd.when_pressed = lambda button: ffwd_button(button,state)
+ffwd.when_held = lambda button: ffwd_button_longpress(button,state)
 
-    rewind.when_pressed = lambda button: rewind_button(button,state)
-    rewind.when_held = lambda button: rewind_button_longpress(button,state)
+rewind.when_pressed = lambda button: rewind_button(button,state)
+rewind.when_held = lambda button: rewind_button_longpress(button,state)
 
-    stop.when_pressed = lambda button: stop_button(button,state)
-    stop.when_held = lambda button: stop_button_longpress(button,state)
- 
-    m_button.when_pressed = lambda button: month_button(button,state)
-    d_button.when_pressed = lambda button: day_button(button,state)
-    y_button.when_pressed = lambda button: year_button(button,state)
+stop.when_pressed = lambda button: stop_button(button,state)
+stop.when_held = lambda button: stop_button_longpress(button,state)
 
-    scr.clear()
-    scr.show_text("Powered by\n archive.org",color=(0,255,255))
+m_button.when_pressed = lambda button: month_button(button,state)
+d_button.when_pressed = lambda button: day_button(button,state)
+y_button.when_pressed = lambda button: year_button(button,state)
 
-    event_loop(state,scr)
- 
-    [x.cleanup() for x in [y,m,d]] ## redundant, only one cleanup is needed!
+d_button.when_held = lambda button: day_button_longpress(button,state,scr)
+
+scr.clear()
+scr.show_text("Powered by\n archive.org",color=(0,255,255))
+
+eloop = threading.Thread(target=event_loop,args=(state,scr))
+
+#[x.cleanup() for x in [y,m,d]] ## redundant, only one cleanup is needed!
 
 #parser.print_help()
 for k in parms.__dict__.keys(): print (F"{k:20s} : {parms.__dict__[k]}")
 if __name__ == "__main__" and parms.debug==0:
-  main(parms)
+  #main(parms)
+  eloop.run()

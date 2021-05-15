@@ -12,6 +12,7 @@ import pkg_resources
 import pickle5 as pickle
 import codecs
 import threading
+from  . import config
 from contextlib import closing
 from operator import attrgetter,methodcaller
 from mpv import MPV
@@ -330,6 +331,8 @@ class GDTape:
     """ compute a score for sorting the tape. High score means it should be played first """    
     score = 0
     if self.stream_only(): score = score + 10
+    if not config.FAVORED_TAPER == None:
+       if config.FAVORED_TAPER.lower() in self.identifier.lower(): score = score + 3
     score = score + math.log(1+self.downloads) 
     score = score + self.avg_rating - 2.0/math.sqrt(self.num_reviews)
     return score
@@ -567,6 +570,7 @@ class GDPlayer(MPV):
     #self._set_property('cache-on-disk','yes')
     self._set_property('audio-buffer',10.0)  ## This allows to play directly from the html without a gap!
     self._set_property('cache','yes')  
+    self.download_when_possible = False
     if tape != None:
       self.insert_tape(tape)
 
@@ -614,7 +618,7 @@ class GDPlayer(MPV):
     self.playlist_clear()
     urls = self.extract_urls(self.tape);
     pathname = os.path.join(self.tape.dbpath,'audience')
-    if not self.tape.stream_only():
+    if self.download_when_possible and not self.tape.stream_only():
       get_urls = self.load_files(urls,pathname)
       logger.debug('running the get_urls')
       time.sleep(5)

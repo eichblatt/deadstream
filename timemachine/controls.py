@@ -154,25 +154,37 @@ class screen:
     self.exp_bbox = Bbox(0,55,160,100)
 
     self.update_now = True
+    self.sleeping = False
 
   @with_semaphore
-  def refresh(self):
-    self.disp.image(self.image)
+  def refresh(self,force=True):
+    if self.sleeping: return
+    if self.update_now or force: self.disp.image(self.image)
 
-  def clear_area(self,bbox,now=False):
+  def clear_area(self,bbox,force=False):
     self.draw.rectangle(bbox.corners,outline=0,fill=(0,0,0))
-    if self.update_now: self.refresh()
+    self.refresh(force)
  
   def clear(self):
     self.draw.rectangle((0,0,self.width,self.height),outline=0,fill=(0,0,0))
-    self.refresh()
+    self.refresh(True)
 
-  def show_text(self,text,loc=(0,0),font=None,color=(255,255,255),stroke_width=0,now=True):
+  def sleep(self):
+    pixels = self.image.tobytes()
+    self.clear()
+    self.sleeping = True
+    self.image.frombytes(pixels)
+
+  def wake_up(self):
+    self.sleeping = False
+    self.refresh(force=False)
+
+  def show_text(self,text,loc=(0,0),font=None,color=(255,255,255),stroke_width=0,force=False):
     if font==None: font = self.font
     (text_width,text_height)= font.getsize(text)
     logger.debug(F' show_text {text}. text_size {text_height},{text_width}')
     self.draw.text(loc, text, font=font,stroke_width=stroke_width,fill=color)
-    if now: self.refresh()
+    self.refresh(force)
 
   def scroll_venue(self,color=(0,255,255),stroke_width=0,inc=15):
     """ This function can be called in a thread from the main. 
@@ -203,15 +215,15 @@ class screen:
          sleep(1)
          self.clear_area(bbox)
 
-  def show_experience(self,text="Press Month to\nExit Experience",color=(255,255,255),now=True):
+  def show_experience(self,text="Press Month to\nExit Experience",color=(255,255,255),force=False):
     self.clear_area(self.exp_bbox)
-    self.show_text(text,self.exp_bbox.origin(),font=self.smallfont,color=color,stroke_width=1,now=self.update_now)
+    self.show_text(text,self.exp_bbox.origin(),font=self.smallfont,color=color,stroke_width=1,force=force)
 
-  def show_venue(self,text,color=(0,255,255),now=True):
+  def show_venue(self,text,color=(0,255,255),force=False):
     self.clear_area(self.venue_bbox)
-    self.show_text(text,self.venue_bbox.origin(),font=self.boldsmall,color=color,now=self.update_now)
+    self.show_text(text,self.venue_bbox.origin(),font=self.boldsmall,color=color,force=force)
 
-  def show_staged_date(self,date,color=(0,255,255),now=True):
+  def show_staged_date(self,date,color=(0,255,255),force=False):
     if date == self.staged_date: return
     self.clear_area(self.staged_date_bbox)
     month = str(date.month).rjust(2)
@@ -219,26 +231,26 @@ class screen:
     year = str(divmod(date.year,100)[1]).rjust(2)
     text = month + '-' + day + '-' + year
     logger.debug (F"staged date string {text}")
-    self.show_text(text,self.staged_date_bbox.origin(),self.boldfont,color=color,now=self.update_now)
+    self.show_text(text,self.staged_date_bbox.origin(),self.boldfont,color=color,force=force)
     self.staged_date = date
 
-  def show_selected_date(self,date,color=(255,255,255),now=True):
+  def show_selected_date(self,date,color=(255,255,255),force=False):
     if date == self.selected_date: return
     self.clear_area(self.selected_date_bbox)
     month = str(date.month).rjust(2)
     day = str(date.day).rjust(2)
     year = str(date.year).rjust(4)
     text = month + '-' + day + '-' + year
-    self.show_text(text,self.selected_date_bbox.origin(),self.boldsmall,color=color,now=self.update_now)
+    self.show_text(text,self.selected_date_bbox.origin(),self.boldsmall,color=color,force=force)
     self.selected_date = date
 
-  def show_track(self,text,trackpos,color=(120,0,255)):
+  def show_track(self,text,trackpos,color=(120,0,255),force=False):
     bbox = self.track1_bbox if trackpos == 0 else self.track2_bbox
     self.clear_area(bbox)
     self.draw.text(bbox.origin(), text, font=self.smallfont,fill=color,stroke_width=1);
-    self.refresh()
+    self.refresh(force)
 
-  def show_playstate(self,staged_play=False,color=(0,100,255),sbd=None):
+  def show_playstate(self,staged_play=False,color=(0,100,255),sbd=None,force=False):
     logger.debug(F"showing playstate {config.PLAY_STATE}")
     bbox = self.playstate_bbox
     self.clear_area(bbox)
@@ -246,7 +258,7 @@ class screen:
     if staged_play:
        self.draw.regular_polygon((bbox.center(),10),3,rotation=30,fill=color)
        self.draw.regular_polygon((bbox.center(),8),3,rotation=30,fill=(0,0,0))
-       self.refresh()
+       self.refresh(force)
        return
     if config.PLAY_STATE == config.PLAYING:  
        self.draw.regular_polygon((bbox.center(),10),3,rotation=30,fill=color)
@@ -255,10 +267,10 @@ class screen:
        self.draw.line([(bbox.x0+20,bbox.y0+4),(bbox.x0+20,bbox.y0+20)],width=4,fill=color)
     elif config.PLAY_STATE == config.STOPPED :  
        self.draw.regular_polygon((bbox.center(),10),4,rotation=0,fill=color)
-    elif config.PLAY_STATE in [config.INIT,config.READY] :  
+    elif config.PLAY_STATE in [config.INIT,config.READY,config.ENDED] :  
        pass
     if sbd: self.show_soundboard(sbd)
-    self.refresh()
+    self.refresh(force)
 
   def show_soundboard(self,sbd,color=(255,255,255)):
     if not sbd: 
