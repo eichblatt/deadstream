@@ -13,6 +13,7 @@ from tenacity import retry
 from tenacity.stop import stop_after_delay
 from PIL import Image, ImageDraw, ImageFont
 import pkg_resources
+import subprocess,re
 
 controls.logger.setLevel(50) 
 
@@ -52,65 +53,50 @@ select_event = Event()
 done_event = Event()
 screen_event = Event()
 
-scr = controls.screen(upside_down=True)
+scr = controls.screen(upside_down=False)
 scr.clear()
 
 def select_option(scr,y,message,choices):
   scr.clear()
   selected = None
   y.steps = 0 
+  screen_height = 5
   update_now = scr.update_now
   scr.update_now = False
   done_event.clear()
   select_event.clear()
+  step = divmod(y.steps,len(choices))[1]
 
   scr.show_text(message,loc=(0,0),font=scr.smallfont,color=(0,255,255),force=True)
   (text_width,text_height)= scr.smallfont.getsize(message)
 
   y_origin = text_height*(1+message.count('\n'))
-  selection_bbox = controls.Bbox(0,y_origin,160,y_origin+23)
-  selected_bbox = controls.Bbox(0,y_origin+23,160,128)
+  selection_bbox = controls.Bbox(0,y_origin,160,128)
 
-  while not done_event.is_set(): 
-    while not select_event.is_set() and not done_event.is_set(): 
+  while not select_event.is_set():
       scr.clear_area(selection_bbox,force=False)
-      #scr.draw.rectangle((0,0,scr.width,scr.height),outline=0,fill=(0,0,0))
       x_loc = 0
       y_loc = y_origin
+      step = divmod(y.steps,len(choices))[1]
 
-      text = 'DEL' 
-      (text_width,text_height)= scr.smallfont.getsize(text)
-      if y.steps<0: 
-        scr.show_text(text,loc=(x_loc,y_loc),font=scr.smallfont,color=(0,0,255),force=False)
-        scr.show_text(printable_chars[:screen_width],loc=(x_loc + text_width,y_loc),font=scr.smallfont,force=True)
-        continue
-      scr.show_text(text,loc=(x_loc,y_loc),font=scr.smallfont,force=False)
-      x_loc = x_loc + text_width
-
-      text = printable_chars[max(0,y.steps-int(screen_width/2)):y.steps] 
-      (text_width,text_height)= scr.smallfont.getsize(text)
-      scr.show_text(text,loc=(x_loc,y_loc),font=scr.smallfont,force=False)
-      x_loc = x_loc + text_width
+      text = '\n'.join(choices[max(0,step-int(screen_height/2)):step])
+      (text_width,text_height)= scr.oldfont.getsize(text)
+      scr.show_text(text,loc=(x_loc,y_loc),font=scr.oldfont,force=False)
+      y_loc = y_loc + text_height*(1+text.count('\n'))
       
-      text = printable_chars[y.steps] 
-      (text_width,text_height)= scr.smallfont.getsize(text)
-      scr.show_text(text,loc=(x_loc,y_loc),font=scr.smallfont,color=(0,0,255),force=False)
-      x_loc = x_loc + text_width
+      text = choices[step] 
+      (text_width,text_height)= scr.oldfont.getsize(text)
+      scr.show_text(text,loc=(x_loc,y_loc),font=scr.oldfont,color=(0,0,255),force=False)
+      y_loc = y_loc + text_height
 
-      text = printable_chars[y.steps+1:min(y.steps+screen_width,len(printable_chars))] 
-      (text_width,text_height)= scr.smallfont.getsize(text)
-      scr.show_text(text,loc=(x_loc,y_loc),font=scr.smallfont,force=True)
-      x_loc = x_loc + text_width
+      text = '\n'.join(choices[step+1:min(step+screen_height,len(choices))])
+      (text_width,text_height)= scr.oldfont.getsize(text)
+      scr.show_text(text,loc=(x_loc,y_loc),font=scr.oldfont,force=True)
       
-      sleep(0.1)
-    select_event.clear()
-    if done_event.is_set(): continue
-    if y.steps<0:
-      selected = selected[:-1]
-      scr.clear_area(selected_bbox,force=False)
-    else:
-      selected = selected + printable_chars[y.steps] 
-    scr.show_text(F"So far: \n{selected}",loc=selected_bbox.origin(),color=(255,255,255),font=scr.smallfont,force=True)
+      sleep(0.01)
+  select_event.clear()
+  selected = choices[step] 
+  #scr.show_text(F"So far: \n{selected}",loc=selected_bbox.origin(),color=(255,255,255),font=scr.smallfont,force=True)
  
   print(F"word selected {selected}")
   scr.update_now = update_now
@@ -122,7 +108,7 @@ def select_chars(scr,y,message):
   printable_chars = string.printable
   selected = ''
   y.steps = 0 
-  screen_width = 15
+  screen_width = 12
   update_now = scr.update_now
   scr.update_now = False
   done_event.clear()
@@ -132,8 +118,8 @@ def select_chars(scr,y,message):
   (text_width,text_height)= scr.smallfont.getsize(message)
 
   y_origin = text_height*(1+message.count('\n'))
-  selection_bbox = controls.Bbox(0,y_origin,160,y_origin+23)
-  selected_bbox = controls.Bbox(0,y_origin+23,160,128)
+  selection_bbox = controls.Bbox(0,y_origin,160,y_origin+22)
+  selected_bbox = controls.Bbox(0,y_origin+21,160,128)
 
   while not done_event.is_set(): 
     while not select_event.is_set() and not done_event.is_set(): 
@@ -143,27 +129,27 @@ def select_chars(scr,y,message):
       y_loc = y_origin
 
       text = 'DEL' 
-      (text_width,text_height)= scr.smallfont.getsize(text)
+      (text_width,text_height)= scr.oldfont.getsize(text)
       if y.steps<0: 
-        scr.show_text(text,loc=(x_loc,y_loc),font=scr.smallfont,color=(0,0,255),force=False)
-        scr.show_text(printable_chars[:screen_width],loc=(x_loc + text_width,y_loc),font=scr.smallfont,force=True)
+        scr.show_text(text,loc=(x_loc,y_loc),font=scr.oldfont,color=(0,0,255),force=False)
+        scr.show_text(printable_chars[:screen_width],loc=(x_loc + text_width,y_loc),font=scr.oldfont,force=True)
         continue
-      scr.show_text(text,loc=(x_loc,y_loc),font=scr.smallfont,force=False)
+      scr.show_text(text,loc=(x_loc,y_loc),font=scr.oldfont,force=False)
       x_loc = x_loc + text_width
 
       text = printable_chars[max(0,y.steps-int(screen_width/2)):y.steps] 
-      (text_width,text_height)= scr.smallfont.getsize(text)
-      scr.show_text(text,loc=(x_loc,y_loc),font=scr.smallfont,force=False)
+      (text_width,text_height)= scr.oldfont.getsize(text)
+      scr.show_text(text,loc=(x_loc,y_loc),font=scr.oldfont,force=False)
       x_loc = x_loc + text_width
       
       text = printable_chars[y.steps] 
-      (text_width,text_height)= scr.smallfont.getsize(text)
-      scr.show_text(text,loc=(x_loc,y_loc),font=scr.smallfont,color=(0,0,255),force=False)
+      (text_width,text_height)= scr.oldfont.getsize(text)
+      scr.show_text(text,loc=(x_loc,y_loc),font=scr.oldfont,color=(0,0,255),force=False)
       x_loc = x_loc + text_width
 
       text = printable_chars[y.steps+1:min(y.steps+screen_width,len(printable_chars))] 
-      (text_width,text_height)= scr.smallfont.getsize(text)
-      scr.show_text(text,loc=(x_loc,y_loc),font=scr.smallfont,force=True)
+      (text_width,text_height)= scr.oldfont.getsize(text)
+      scr.show_text(text,loc=(x_loc,y_loc),font=scr.oldfont,force=True)
       x_loc = x_loc + text_width
       
       sleep(0.1)
@@ -180,7 +166,17 @@ def select_chars(scr,y,message):
   scr.update_now = update_now
   return selected
 
-wifi = select_chars(scr,y,"Input Wifi Name\nTurn Year then Select\nPress Stop to end")
+def get_wifi_choices():
+  cmd = "sudo iwlist wlan0 scan | grep ESSID:"
+  raw = subprocess.check_output(cmd,shell=True)
+  choices = [x.lstrip().replace('ESSID:','').replace('"','') for x in raw.decode().split('\n')]
+  [x for x in choices if bool(re.search('[a-z,0-9]',x,re.IGNORECASE))]
+  return choices
+
+wifi_choices = get_wifi_choices()
+
+wifi = select_option(scr,y,"Select Wifi Name",wifi_choices)
+#wifi = select_chars(scr,y,"Input Wifi Name\nTurn Year then Select\nPress Stop to end")
 passkey = select_chars(scr,y,"Input Passkey\nTurn Year then Select\nPress Stop to end")
 
 scr.clear()
