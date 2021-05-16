@@ -39,7 +39,7 @@ def stop_button(button):
    done_event.set()
 
 
-y = retry_call(RotaryEncoder, config.year_pins[1], config.year_pins[0],max_steps = 0,threshold_steps = (-1,99))
+y = retry_call(RotaryEncoder, config.year_pins[1], config.year_pins[0],max_steps = 0,threshold_steps = (-1,93))
 y.when_rotated = lambda x: twist_knob(screen_event, y, "year")
 y_button = retry_call(Button, config.year_pins[2])
 select = retry_call(Button, config.select_pin,hold_time = 2,hold_repeat = True)
@@ -69,7 +69,7 @@ def select_chars(scr,y,message,y_origin=30):
   selection_bbox = controls.Bbox(0,y_origin,160,y_origin+23)
   selected_bbox = controls.Bbox(0,y_origin+22,160,128)
 
-  scr.show_text(message,loc=(x_origin,0),font=scr.smallfont,force=True)
+  scr.show_text(message,loc=(x_origin,0),font=scr.smallfont,color=(0,255,255),force=True)
 
   while not done_event.is_set(): 
     while not select_event.is_set() and not done_event.is_set(): 
@@ -116,8 +116,8 @@ def select_chars(scr,y,message,y_origin=30):
   scr.update_now = update_now
   return selected
 
-wifi = select_chars(scr,y,"Input WiFi Name\nUse year knob and select\nstop button to end",y_origin=65)
-passkey = select_chars(scr,y,"Input Passkey\nUse year knob and select\nstop button to end",y_origin=65)
+wifi = select_chars(scr,y,"Input Wifi Name\nTurn Year then Select\nPress Stop to end",y_origin=65)
+passkey = select_chars(scr,y,"Input Passkey\nTurn Year then Select\nPress Stop to end",y_origin=65)
 
 scr.clear()
 scr.show_text(F"wifi: {wifi}\npasskey:{passkey}",loc=(0,0),color=(255,255,255),font=scr.smallfont,force=True)
