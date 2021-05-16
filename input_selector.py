@@ -39,37 +39,18 @@ def stop_button(button):
    done_event.set()
 
 
-y = retry_call(RotaryEncoder, config.year_pins[1], config.year_pins[0],max_steps = 0,threshold_steps = (0,99))
-m = retry_call(RotaryEncoder, config.month_pins[1], config.month_pins[0],max_steps = 0,threshold_steps = (0,127))
-d = retry_call(RotaryEncoder, config.day_pins[1], config.day_pins[0],max_steps = 0,threshold_steps = (0,127))
-#y.steps = 1979-1965; m.steps = 11; d.steps = 2;
+y = retry_call(RotaryEncoder, config.year_pins[1], config.year_pins[0],max_steps = 0,threshold_steps = (-1,99))
 y.when_rotated = lambda x: twist_knob(screen_event, y, "year")
-m.when_rotated = lambda x: twist_knob(screen_event, m, "month")
-d.when_rotated = lambda x: twist_knob(screen_event, d, "day")
 y_button = retry_call(Button, config.year_pins[2])
-m_button = retry_call(Button, config.month_pins[2])
-d_button = retry_call(Button, config.day_pins[2])
 select = retry_call(Button, config.select_pin,hold_time = 2,hold_repeat = True)
-play_pause = retry_call(Button, config.play_pause_pin,hold_time = 5)
-ffwd = retry_call(Button, config.ffwd_pin,hold_time = 1,hold_repeat = True)
-rewind = retry_call(Button, config.rewind_pin,hold_repeat = True)
 stop = retry_call(Button, config.stop_pin)
-
-
-play_pause.when_pressed = lambda x: print (F"pressing {x}")
-play_pause.when_held = lambda x: print ("nyi")
 
 select.when_pressed = lambda x: select_button(x)
 stop.when_pressed = lambda x: stop_button(x)
-select.when_held = lambda x: print (F"long pressing {x}")
-
-ffwd.when_released = lambda x: print (F"releasing {x}")
-ffwd.when_held = lambda x: print (F"long pressing {x}")
 
 select_event = Event()
 done_event = Event()
 screen_event = Event()
-
 
 scr = controls.screen(upside_down=True)
 scr.clear()
@@ -85,7 +66,8 @@ def select_chars(scr,y,message,y_origin=30):
   done_event.clear()
   select_event.clear()
   x_origin = 0
-  selection_bbox = controls.Bbox(0,y_origin,160,y_origin+29)
+  selection_bbox = controls.Bbox(0,y_origin,160,y_origin+23)
+  selected_bbox = controls.Bbox(0,y_origin+22,160,128)
 
   scr.show_text(message,loc=(x_origin,0),font=scr.smallfont,force=True)
 
@@ -95,6 +77,15 @@ def select_chars(scr,y,message,y_origin=30):
       #scr.draw.rectangle((0,0,scr.width,scr.height),outline=0,fill=(0,0,0))
       x_loc = x_origin
       y_loc = y_origin
+
+      text = 'DEL' 
+      (text_width,text_height)= scr.smallfont.getsize(text)
+      if y.steps<0: 
+        scr.show_text(text,loc=(x_loc,y_loc),font=scr.smallfont,color=(0,0,255),force=False)
+        scr.show_text(printable_chars[:screen_width],loc=(x_loc + text_width,y_loc),font=scr.smallfont,force=True)
+        continue
+      scr.show_text(text,loc=(x_loc,y_loc),font=scr.smallfont,force=False)
+      x_loc = x_loc + text_width
 
       text = printable_chars[max(0,y.steps-int(screen_width/2)):y.steps] 
       (text_width,text_height)= scr.smallfont.getsize(text)
@@ -114,7 +105,11 @@ def select_chars(scr,y,message,y_origin=30):
       sleep(0.1)
     select_event.clear()
     if done_event.is_set(): continue
-    selected = selected + printable_chars[y.steps] 
+    if y.steps<0:
+      selected = selected[:-1]
+      scr.clear_area(selected_bbox,force=False)
+    else:
+      selected = selected + printable_chars[y.steps] 
     scr.show_text(F"So far: \n{selected}",loc=(x_origin,y_origin+22),color=(255,255,255),font=scr.smallfont,force=True)
  
   print(F"word selected {selected}")
