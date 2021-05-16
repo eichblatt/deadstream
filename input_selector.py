@@ -55,27 +55,27 @@ screen_event = Event()
 scr = controls.screen(upside_down=True)
 scr.clear()
 
-def select_chars(scr,y,message,y_origin=30):
+def select_option(scr,y,message,choices):
   scr.clear()
-  printable_chars = string.printable
-  selected = ''
+  selected = None
   y.steps = 0 
-  screen_width = 15
   update_now = scr.update_now
   scr.update_now = False
   done_event.clear()
   select_event.clear()
-  x_origin = 0
-  selection_bbox = controls.Bbox(0,y_origin,160,y_origin+23)
-  selected_bbox = controls.Bbox(0,y_origin+22,160,128)
 
-  scr.show_text(message,loc=(x_origin,0),font=scr.smallfont,color=(0,255,255),force=True)
+  scr.show_text(message,loc=(0,0),font=scr.smallfont,color=(0,255,255),force=True)
+  (text_width,text_height)= scr.smallfont.getsize(message)
+
+  y_origin = text_height*(1+message.count('\n'))
+  selection_bbox = controls.Bbox(0,y_origin,160,y_origin+23)
+  selected_bbox = controls.Bbox(0,y_origin+23,160,128)
 
   while not done_event.is_set(): 
     while not select_event.is_set() and not done_event.is_set(): 
       scr.clear_area(selection_bbox,force=False)
       #scr.draw.rectangle((0,0,scr.width,scr.height),outline=0,fill=(0,0,0))
-      x_loc = x_origin
+      x_loc = 0
       y_loc = y_origin
 
       text = 'DEL' 
@@ -110,14 +110,78 @@ def select_chars(scr,y,message,y_origin=30):
       scr.clear_area(selected_bbox,force=False)
     else:
       selected = selected + printable_chars[y.steps] 
-    scr.show_text(F"So far: \n{selected}",loc=(x_origin,y_origin+22),color=(255,255,255),font=scr.smallfont,force=True)
+    scr.show_text(F"So far: \n{selected}",loc=selected_bbox.origin(),color=(255,255,255),font=scr.smallfont,force=True)
  
   print(F"word selected {selected}")
   scr.update_now = update_now
   return selected
 
-wifi = select_chars(scr,y,"Input Wifi Name\nTurn Year then Select\nPress Stop to end",y_origin=65)
-passkey = select_chars(scr,y,"Input Passkey\nTurn Year then Select\nPress Stop to end",y_origin=65)
+
+def select_chars(scr,y,message):
+  scr.clear()
+  printable_chars = string.printable
+  selected = ''
+  y.steps = 0 
+  screen_width = 15
+  update_now = scr.update_now
+  scr.update_now = False
+  done_event.clear()
+  select_event.clear()
+
+  scr.show_text(message,loc=(0,0),font=scr.smallfont,color=(0,255,255),force=True)
+  (text_width,text_height)= scr.smallfont.getsize(message)
+
+  y_origin = text_height*(1+message.count('\n'))
+  selection_bbox = controls.Bbox(0,y_origin,160,y_origin+23)
+  selected_bbox = controls.Bbox(0,y_origin+23,160,128)
+
+  while not done_event.is_set(): 
+    while not select_event.is_set() and not done_event.is_set(): 
+      scr.clear_area(selection_bbox,force=False)
+      #scr.draw.rectangle((0,0,scr.width,scr.height),outline=0,fill=(0,0,0))
+      x_loc = 0
+      y_loc = y_origin
+
+      text = 'DEL' 
+      (text_width,text_height)= scr.smallfont.getsize(text)
+      if y.steps<0: 
+        scr.show_text(text,loc=(x_loc,y_loc),font=scr.smallfont,color=(0,0,255),force=False)
+        scr.show_text(printable_chars[:screen_width],loc=(x_loc + text_width,y_loc),font=scr.smallfont,force=True)
+        continue
+      scr.show_text(text,loc=(x_loc,y_loc),font=scr.smallfont,force=False)
+      x_loc = x_loc + text_width
+
+      text = printable_chars[max(0,y.steps-int(screen_width/2)):y.steps] 
+      (text_width,text_height)= scr.smallfont.getsize(text)
+      scr.show_text(text,loc=(x_loc,y_loc),font=scr.smallfont,force=False)
+      x_loc = x_loc + text_width
+      
+      text = printable_chars[y.steps] 
+      (text_width,text_height)= scr.smallfont.getsize(text)
+      scr.show_text(text,loc=(x_loc,y_loc),font=scr.smallfont,color=(0,0,255),force=False)
+      x_loc = x_loc + text_width
+
+      text = printable_chars[y.steps+1:min(y.steps+screen_width,len(printable_chars))] 
+      (text_width,text_height)= scr.smallfont.getsize(text)
+      scr.show_text(text,loc=(x_loc,y_loc),font=scr.smallfont,force=True)
+      x_loc = x_loc + text_width
+      
+      sleep(0.1)
+    select_event.clear()
+    if done_event.is_set(): continue
+    if y.steps<0:
+      selected = selected[:-1]
+      scr.clear_area(selected_bbox,force=False)
+    else:
+      selected = selected + printable_chars[y.steps] 
+    scr.show_text(F"So far: \n{selected}",loc=selected_bbox.origin(),color=(255,255,255),font=scr.smallfont,force=True)
+ 
+  print(F"word selected {selected}")
+  scr.update_now = update_now
+  return selected
+
+wifi = select_chars(scr,y,"Input Wifi Name\nTurn Year then Select\nPress Stop to end")
+passkey = select_chars(scr,y,"Input Passkey\nTurn Year then Select\nPress Stop to end")
 
 scr.clear()
 scr.show_text(F"wifi: {wifi}\npasskey:{passkey}",loc=(0,0),color=(255,255,255),font=scr.smallfont,force=True)
