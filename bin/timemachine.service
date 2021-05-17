@@ -1,6 +1,8 @@
 [Unit]
 Description=Grateful Dead Time Machine
-After=multi-user.target
+Requires=check_network.service
+After=check_network.service
+BindsTo=check_network.service
 [Service]
 # change this to a non-steve user
 Type=simple
