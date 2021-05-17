@@ -1,0 +1,32 @@
+country,name,tz,offset
+US,  United States,  America/Adak , UTC -09:00
+US,  United States,  America/Anchorage,  UTC -08:00
+US,  United States,  America/Boise,  UTC -06:00
+US,  United States,  America/Chicago,  UTC -05:00
+US,  United States,  America/Denver,  UTC -06:00
+US,  United States,  America/Detroit,  UTC -04:00
+US,  United States,  America/Indiana/Indianapolis , UTC -04:00
+US,  United States,  America/Indiana/Knox , UTC -05:00
+US,  United States,  America/Indiana/Marengo,  UTC -04:00
+US,  United States,  America/Indiana/Petersburg , UTC -04:00
+US,  United States,  America/Indiana/Tell_City , UTC -05:00
+US,  United States,  America/Indiana/Vevay,  UTC -04:00
+US,  United States,  America/Indiana/Vincennes , UTC -04:00
+US,  United States,  America/Indiana/Winamac , UTC -04:00
+US,  United States,  America/Juneau , UTC -08:00
+US,  United States,  America/Kentucky/Louisville , UTC -04:00
+US,  United States,  America/Kentucky/Monticello , UTC -04:00
+US,  United States,  America/Los_Angeles,  UTC -07:00
+US,  United States,  America/Menominee , UTC -05:00
+US,  United States,  America/Metlakatla , UTC -08:00
+US,  United States,  America/New_York , UTC -04:00
+US,  United States,  America/Nome , UTC -08:00
+US,  United States,  America/North_Dakota/Beulah , UTC -05:00
+US,  United States,  America/North_Dakota/Center , UTC -05:00
+US,  United States,  America/North_Dakota/New_Salem,  UTC -05:00
+US,  United States,  America/Phoenix , UTC -07:00
+US,  United States,  America/Sitka , UTC -08:00
+US,  United States,  America/Yakutat,  UTC -08:00
+US,  United States,  Pacific/Honolulu,  UTC -10:00
+UM,  United States Minor Outlying Islands,  Pacific/Midway,  UTC -11:00
+UM,  United States Minor Outlying Islands,  Pacific/Wake,  UTC +12:00
