@@ -1,0 +1,11 @@
+[Unit]
+Description=Check Network Exists or Setup Network
+After=multi-user.target
+[Service]
+# change this to a non-steve user
+Type=oneshot
+RemainAfterExit=yes
+User=pi
+ExecStart=/usr/bin/python3 /home/steve/deadstream/setup_network.py --debug 0 
+[Install]
+WantedBy=multi-user.target
