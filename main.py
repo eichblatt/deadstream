@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 import optparse,random,logging,os,datetime
-import threading
+import threading,subprocess
 from timemachine import GD
 from timemachine import controls
 from timemachine import config
@@ -128,7 +128,7 @@ def play_pause_button(button,state,scr):
       current['PLAY_STATE'] = config.PAUSED
    elif current['PLAY_STATE'] in [config.PAUSED,config.STOPPED,config.READY]: 
       current['PLAY_STATE'] = config.PLAYING
-      scr.show_playstate(staged_play=True) # show that we've registered the button-press before blocking call.
+      scr.show_playstate(staged_play=True,force=True) # show that we've registered the button-press before blocking call.
       state.player.play()   # this is a blocking call. I could move the "wait_until_playing" to the event handler.
    state.set(current)
    playstate_event.set()
@@ -385,6 +385,12 @@ def event_loop(state,scr):
     except KeyboardInterrupt:
         exit(0)
 
+def get_ip():
+   cmd = "hostname -I"
+   ip = subprocess.check_output(cmd,shell=True)
+   ip = ip.decode().split(' ')[0]
+   return ip
+
 #def main(parms):
 if parms.box == 'v0': 
    upside_down=True
@@ -392,7 +398,8 @@ else:
    upside_down = False
 scr = controls.screen(upside_down=upside_down)
 scr.clear()
-scr.show_text("(\);} \n  Time\n   Machine\n     Loading...",color=(0,255,255))
+ip_address = get_ip()
+scr.show_text(F"Time\n  Machine\n   Loading...\n{ip_address}",color=(0,255,255))
 archive = GD.GDArchive(parms.dbpath)
 player = GD.GDPlayer()
 try:
@@ -451,7 +458,8 @@ y_button.when_pressed = lambda button: year_button(button,state)
 d_button.when_held = lambda button: day_button_longpress(button,state,scr)
 
 scr.clear()
-scr.show_text("Powered by\n archive.org",color=(0,255,255))
+#scr.show_text(F"Powered by\n archive.org\n\n{ip_address}",color=(0,255,255))
+scr.show_text(F"Powered by\n archive.org\n",color=(0,255,255))
 
 eloop = threading.Thread(target=event_loop,args=(state,scr))
 
