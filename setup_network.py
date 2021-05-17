@@ -191,7 +191,8 @@ def wifi_connected():
   address = raw.split("\n")[0].split()[3]
   logger.debug(F"wifi address read as {address}")
   connected = '"' in str.replace(address,"ESSID:","")
-  return connected
+  #return connected
+  return False
 
 def get_wifi_choices():
   cmd = "sudo iwlist wlan0 scan | grep ESSID:"
@@ -203,15 +204,15 @@ def get_wifi_choices():
 def update_wpa_conf(wpa_path,wifi,passkey):
   logger.info (F"Updating the wpa_conf file {wpa_path}")
   if not os.path.exists(wpa_path): raise Exception('File Missing')
-  with open(wpa_path,'r') as f: wpa = f.read()
-  new_wpa = wpa.split() + ['network={', F'ssid="{wifi}"', F'psk="{passkey}"', '}']
+  with open(wpa_path,'r') as f: wpa_lines = [x.rstrip() for x in f.readlines()]
+  wpa = wpa_lines + ['','network={', F'        ssid="{wifi}"', F'        psk="{passkey}"', '    }']
   new_wpa_path = os.path.join(os.getenv('HOME'),'wpa_supplicant.conf')
   f = open(new_wpa_path,'w')
-  f.write('\n'.join(new_wpa))
-  cmd1 = F"sudo mv {wpa_path} {wpa_path}.bak"
+  f.write('\n'.join(wpa))
+  cmd1 = F"sudo cp {wpa_path} {wpa_path}.bak"
   cmd2 = F"sudo mv {new_wpa_path} {wpa_path}"
   raw = subprocess.check_output(cmd1,shell=True)
-  raw = subprocess.check_output(cmd2,shell=True)
+  #raw = subprocess.check_output(cmd2,shell=True)
 
 sleep(5)
 if wifi_connected():

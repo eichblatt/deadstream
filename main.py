@@ -375,7 +375,7 @@ def event_loop(state,scr):
                 #stagedate_event.set()         # NOTE: this would set the q_counter, etc. But it SHOULD work.
                 #scr.show_staged_date(date_reader.date)
                 if idle_seconds > config.QUIESCENT_TIME: 
-                   scr.show_staged_date(config.DATE)
+                   if config.DATE: scr.show_staged_date(config.DATE)
                    refresh_venue(state,idle_second_hand,refresh_times,date_reader.venue(),scr)
                 else:  
                    scr.show_staged_date(date_reader.date)
