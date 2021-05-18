@@ -222,9 +222,6 @@ def get_ip():
 
 def exit_success(status=0,sleeptime=5):
   sleep(sleeptime)
-  #logger.info ("Launching timemachine")
-  #cmd = "sudo service timemachine start &"
-  #os.system(cmd)
   sys.exit(status)
 
 sleep(5)
