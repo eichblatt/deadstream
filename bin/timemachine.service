@@ -1,8 +1,8 @@
 [Unit]
 Description=Grateful Dead Time Machine
-Requires=check_network.service
-After=check_network.service
-BindsTo=check_network.service
+Requires=connect_network.service
+After=connect_network.service
+#BindsTo=check_network.service
 [Service]
 # change this to a non-steve user
 Type=simple

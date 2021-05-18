@@ -191,8 +191,8 @@ def wifi_connected():
   address = raw.split("\n")[0].split()[3]
   logger.debug(F"wifi address read as {address}")
   connected = '"' in str.replace(address,"ESSID:","")
-  #return connected
-  return False
+  return connected
+  #return False
 
 def get_wifi_choices():
   cmd = "sudo iwlist wlan0 scan | grep ESSID:"
