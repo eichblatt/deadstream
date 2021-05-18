@@ -214,9 +214,18 @@ def update_wpa_conf(wpa_path,wifi,passkey):
   raw = subprocess.check_output(cmd1,shell=True)
   raw = subprocess.check_output(cmd2,shell=True)
 
+def get_ip():
+   cmd = "hostname -I"
+   ip = subprocess.check_output(cmd,shell=True)
+   ip = ip.decode().split(' ')[0]
+   return ip
+
 sleep(5)
 if wifi_connected():
-  logger.debug ("Wifi is connected")
+  ip = get_ip()
+  scr.show_text(F"Wifi is connected\n{ip}",force=True)
+  logger.debug (F"Wifi is connected\n{ip}")
+  sleep(2)
   sys.exit(0)
 else:
   wifi_choices = get_wifi_choices()
