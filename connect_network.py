@@ -226,9 +226,11 @@ def exit_success(status=0,sleeptime=5):
 
 sleep(5)
 
+scr.show_text("Connect wifi",force=True)
 icounter = 0
 while (not wifi_connected()) and icounter < 5:
-  scr.show_text(F"Wifi not connected\n{icounter}",force=True)
+  scr.clear()
+  scr.show_text(F"Wifi not connected\n{icounter}",font=scr.smallfont,force=True)
   icounter = icounter + 1
   wifi_choices = get_wifi_choices()
   wifi = select_option(scr,y,"Select Wifi Name\nTurn Year, Select",wifi_choices)
@@ -242,8 +244,8 @@ while (not wifi_connected()) and icounter < 5:
 
 if wifi_connected():
   ip = get_ip()
-  scr.show_text(F"Wifi is connected\n{ip}",force=True)
-  logger.info (F"Wifi is connected\n{ip}")
+  scr.show_text(F"Wifi connected\n{ip}",font=scr.smallfont,force=True)
+  logger.info (F"Wifi connected\n{ip}")
   exit_success()
 else:
   sys.exit(-1)
