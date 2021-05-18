@@ -1,6 +1,7 @@
 [Unit]
 Description=Grateful Dead Time Machine
-Wants=connect_network.service
+#Wants=connect_network.service
+Requires=connect_network.service
 After=connect_network.service
 #BindsTo=check_network.service
 [Service]
