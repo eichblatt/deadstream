@@ -232,7 +232,7 @@ if wifi_connected():
   exit_success()
 else:
   wifi_choices = get_wifi_choices()
-  wifi = select_option(scr,y,"Select Wifi Name",wifi_choices)
+  wifi = select_option(scr,y,"Select Wifi Name\nTurn Year, Select",wifi_choices)
   passkey = select_chars(scr,y,"Input Passkey\nTurn Year then Select\nPress Stop to end")
   scr.clear()
   scr.show_text(F"wifi: {wifi}\npasskey:{passkey}",loc=(0,0),color=(255,255,255),font=scr.smallfont,force=True)
