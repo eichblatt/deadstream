@@ -7,4 +7,4 @@ RemainAfterExit=yes
 User=steve
 ExecStart=/usr/bin/python3 /home/steve/deadstream/connect_network.py --debug 0 
 [Install]
-WantedBy=multi-user.target
+WantedBy=timemachine.service
