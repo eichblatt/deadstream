@@ -212,7 +212,7 @@ def update_wpa_conf(wpa_path,wifi,passkey):
   cmd1 = F"sudo cp {wpa_path} {wpa_path}.bak"
   cmd2 = F"sudo mv {new_wpa_path} {wpa_path}"
   raw = subprocess.check_output(cmd1,shell=True)
-  #raw = subprocess.check_output(cmd2,shell=True)
+  raw = subprocess.check_output(cmd2,shell=True)
 
 sleep(5)
 if wifi_connected():
@@ -221,13 +221,12 @@ if wifi_connected():
 else:
   wifi_choices = get_wifi_choices()
   wifi = select_option(scr,y,"Select Wifi Name",wifi_choices)
-  #wifi = select_chars(scr,y,"Input Wifi Name\nTurn Year then Select\nPress Stop to end")
   passkey = select_chars(scr,y,"Input Passkey\nTurn Year then Select\nPress Stop to end")
   scr.clear()
   scr.show_text(F"wifi: {wifi}\npasskey:{passkey}",loc=(0,0),color=(255,255,255),font=scr.smallfont,force=True)
   update_wpa_conf(parms.wpa_path,wifi,passkey)
 
 if not parms.debug:
-  cmd = "sudo reboot"
+  cmd = "sudo killall -HUP wpa_supplicant"
   _ = subprocess.run(cmd)
   
