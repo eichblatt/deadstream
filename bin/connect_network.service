@@ -1,10 +1,9 @@
 [Unit]
 Description=Check Network Exists or Setup Network
-After=multi-user.target
 [Service]
 Type=oneshot
+ExecStart=/usr/bin/python3 /home/steve/deadstream/connect_network.py --debug 0 
 RemainAfterExit=yes
 User=steve
-ExecStart=/usr/bin/python3 /home/steve/deadstream/connect_network.py --debug 0 
 [Install]
-WantedBy=timemachine.service
+WantedBy=multi-user.target

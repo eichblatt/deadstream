@@ -221,9 +221,10 @@ def get_ip():
    return ip
 
 def exit_success(status=0,sleeptime=5):
-  cmd = "sudo service timemachine start"
-  raw = subprocess.check_output(cmd,shell=True)
   sleep(sleeptime)
+  #logger.info ("Launching timemachine")
+  #cmd = "sudo service timemachine start &"
+  #os.system(cmd)
   sys.exit(status)
 
 sleep(5)
@@ -242,5 +243,5 @@ else:
 
 if not parms.debug:
   cmd = "sudo killall -HUP wpa_supplicant"
-  raw = subprocess.check_output(cmd,shell=True)
+  os.system(cmd)
   exit_success()

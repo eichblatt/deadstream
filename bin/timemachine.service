@@ -1,12 +1,12 @@
 [Unit]
 Description=Grateful Dead Time Machine
-Requires=connect_network.service
+Wants=connect_network.service
 After=connect_network.service
 #BindsTo=check_network.service
 [Service]
-# change this to a non-steve user
-Type=simple
+Type=oneshot
 User=steve
 ExecStart=/usr/bin/python3 /home/steve/deadstream/main.py --debug 0 --box v1 -v
+#Restart=on-failure
 [Install]
 WantedBy=multi-user.target
