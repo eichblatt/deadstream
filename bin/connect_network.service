@@ -4,7 +4,7 @@ After=multi-user.target
 [Service]
 Type=oneshot
 RemainAfterExit=yes
-User=pi
+User=steve
 ExecStart=/usr/bin/python3 /home/steve/deadstream/connect_network.py --debug 0 
 [Install]
 WantedBy=multi-user.target

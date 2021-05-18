@@ -228,5 +228,4 @@ else:
 
 if not parms.debug:
   cmd = "sudo killall -HUP wpa_supplicant"
-  _ = subprocess.run(cmd)
-  
+  raw = subprocess.check_output(cmd,shell=True)
