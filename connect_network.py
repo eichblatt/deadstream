@@ -29,7 +29,7 @@ if parms.verbose:
   logger.setLevel(logging.DEBUG) 
   controlsLogger.setLevel(logging.DEBUG)
 else:
-  logger.setLevel(logging.DEBUG) 
+  logger.setLevel(logging.INFO) 
   controlsLogger.setLevel(logging.INFO) 
 
 for k in parms.__dict__.keys(): print (F"{k:20s} : {parms.__dict__[k]}")
@@ -184,12 +184,12 @@ def select_chars(scr,y,message):
   return selected
 
 def wifi_connected():
-  logger.debug("Checking if Wifi connected")
+  logger.info("Checking if Wifi connected")
   cmd = "iwconfig"
   raw = subprocess.check_output(cmd,shell=True)
   raw = raw.decode()
   address = raw.split("\n")[0].split()[3]
-  logger.debug(F"wifi address read as {address}")
+  logger.info(F"wifi address read as {address}")
   connected = '"' in str.replace(address,"ESSID:","")
   return connected
   #return False
@@ -228,7 +228,7 @@ sleep(5)
 if wifi_connected():
   ip = get_ip()
   scr.show_text(F"Wifi is connected\n{ip}",force=True)
-  logger.debug (F"Wifi is connected\n{ip}")
+  logger.info (F"Wifi is connected\n{ip}")
   exit_success()
 else:
   wifi_choices = get_wifi_choices()
@@ -241,4 +241,10 @@ else:
 if not parms.debug:
   cmd = "sudo killall -HUP wpa_supplicant"
   os.system(cmd)
-  exit_success()
+  if wifi_connected():
+    ip = get_ip()
+    scr.show_text(F"Wifi is connected\n{ip}",force=True)
+    logger.info(F"Wifi is connected\n{ip}")
+    exit_success()
+  else:
+    sys.exit(-1)
