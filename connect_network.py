@@ -220,13 +220,18 @@ def get_ip():
    ip = ip.decode().split(' ')[0]
    return ip
 
+def exit_success(status=0,sleeptime=5):
+  cmd = "sudo service timemachine start"
+  raw = subprocess.check_output(cmd,shell=True)
+  sleep(sleeptime)
+  sys.exit(status)
+
 sleep(5)
 if wifi_connected():
   ip = get_ip()
   scr.show_text(F"Wifi is connected\n{ip}",force=True)
   logger.debug (F"Wifi is connected\n{ip}")
-  sleep(2)
-  sys.exit(0)
+  exit_success()
 else:
   wifi_choices = get_wifi_choices()
   wifi = select_option(scr,y,"Select Wifi Name",wifi_choices)
@@ -238,3 +243,4 @@ else:
 if not parms.debug:
   cmd = "sudo killall -HUP wpa_supplicant"
   raw = subprocess.check_output(cmd,shell=True)
+  exit_success()
