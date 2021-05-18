@@ -225,26 +225,25 @@ def exit_success(status=0,sleeptime=5):
   sys.exit(status)
 
 sleep(5)
-if wifi_connected():
-  ip = get_ip()
-  scr.show_text(F"Wifi is connected\n{ip}",force=True)
-  logger.info (F"Wifi is connected\n{ip}")
-  exit_success()
-else:
+
+icounter = 0
+while not wifi_connected() and icounter < 5:
+  icounter = icounter + 1
   wifi_choices = get_wifi_choices()
   wifi = select_option(scr,y,"Select Wifi Name\nTurn Year, Select",wifi_choices)
   passkey = select_chars(scr,y,"Input Passkey\nTurn Year then Select\nPress Stop to end")
   scr.clear()
   scr.show_text(F"wifi: {wifi}\npasskey:{passkey}",loc=(0,0),color=(255,255,255),font=scr.smallfont,force=True)
   update_wpa_conf(parms.wpa_path,wifi,passkey)
-
-if not parms.debug:
   cmd = "sudo killall -HUP wpa_supplicant"
   os.system(cmd)
-  if wifi_connected():
-    ip = get_ip()
-    scr.show_text(F"Wifi is connected\n{ip}",force=True)
-    logger.info(F"Wifi is connected\n{ip}")
-    exit_success()
-  else:
-    sys.exit(-1)
+  sleep(5)
+
+if wifi_connected():
+  ip = get_ip()
+  scr.show_text(F"Wifi is connected\n{ip}",force=True)
+  logger.info (F"Wifi is connected\n{ip}")
+  exit_success()
+else 
+  sys.exit(-1)
+
