@@ -325,8 +325,9 @@ def event_loop(state,scr):
     refresh_times = [4,9,14,19,24,29,34,39]
     max_second_hand = 40
     clear_stagedate = False
-    free_event.set()
     scr.update_now = False
+    free_event.set()
+    stagedate_event.set()
     try:
         while not stop_event.wait(timeout=0.001): 
             if not free_event.wait(timeout=0.01): continue
@@ -421,7 +422,7 @@ def my_handler(event):
 y = retry_call(RotaryEncoder, config.year_pins[1], config.year_pins[0],max_steps = 0,threshold_steps = (0,30))
 m = retry_call(RotaryEncoder, config.month_pins[1], config.month_pins[0],max_steps = 0,threshold_steps = (1,12))
 d = retry_call(RotaryEncoder, config.day_pins[1], config.day_pins[0],max_steps = 0,threshold_steps = (1,31))
-y.steps = 1979-1965; m.steps = 11; d.steps = 2;
+y.steps = 1975-1965; m.steps = 8; d.steps = 13;
 date_reader = controls.date_knob_reader(y,m,d,archive)
 state = controls.state(date_reader,player)
 y.when_rotated = lambda x: twist_knob(y, "year",date_reader)
