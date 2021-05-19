@@ -30,7 +30,10 @@ A list of characters will be shown in white, with one "selectable" letter shown 
 Once the correct Wifi name and password are entered, the Time Machine will launch the main program. You will not need to re-enter this information again as long as it remains valid. If you take the time machine to a new Wifi or change your password, the Wifi/passkey entry program will run again after a reboot.
 
 ## The Audio Output
+### Analog Output
 The Time Machine is currently configured to output analog audio from the headphone jack. You can plug this into your stereo using [a cable like this](https://www.amazon.com/Rankie-3-5mm-2-Male-Adapter-Cable/dp/B071R4R5B8/ref=sr_1_4?dchild=1&keywords=headphone+to+RCA+male&qid=1621462242&sr=8-4), or [an adapter like this](https://www.amazon.com/CERRXIAN-LEMENG-2-Pack-Adapter-Splitter/dp/B018V7GTNK/ref=sr_1_16?dchild=1&keywords=headphone+to+RCA+female&qid=1621462318&sr=8-16)
+### Digital Output
+The Time Machine can be configured to output Digital Audio through the HDMI connector. 
 
 ## Using the Time Machine
 
