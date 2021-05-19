@@ -89,3 +89,4 @@ Each knob can be turned, and also pressed as a button. Each button may be "press
 - Pressing the Stop button will stop the playback and move the play head to the beginning of the show.
 - Holding the Stop button (*for 8 seconds*) will download the latest version of the software and restart the program. **USE WITH CAUTION**
 
+**Enjoy!**
