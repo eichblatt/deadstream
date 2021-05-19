@@ -11,7 +11,7 @@ Plug in a micro USB connector to the PWR IN connector on the Raspberry Pi (there
 ## Connecting to Wifi
 
 The Time Machine screen will come on when power is connected to the Raspberry Pi.
-When the Time Machine is powered up, if will prompt you to select a Wifi name and input the passkey.
+When the Time Machine is powered up, it will prompt you to select a Wifi name and input the passkey.
 
 ### Selecting the Wifi 
 Turning the "year" knob will change which Wifi name will be displayed in red. 
