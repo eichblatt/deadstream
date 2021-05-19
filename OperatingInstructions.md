@@ -14,7 +14,7 @@ The Time Machine screen will come on when power is connected to the Raspberry Pi
 When the Time Machine is powered up, it will prompt you to select a Wifi name and input the passkey.
 
 ### Selecting the Wifi 
-Turning the **year** knob will change which Wifi name will be displayed in red. 
+Turning the **year** knob changes which Wifi name will be displayed in red. 
 To select the Wifi displayed in red, press the **select** button.
 
 ### Entering the Wifi Passkey
@@ -25,7 +25,7 @@ A list of characters will be shown in white, with one "selectable" letter shown 
 - Turn the **year** knob to change which character is shown in red. 
 - Press **select** button to select the red character.
 - Once the entire password has been entered, press the **stop** button to indicate that you have finished. 
-- If you make a mistake, turn the **year** knob all the way back until the "DEL" is shown in red. Pressing the **select** button will erase the last character selected.
+- If you make a mistake, turn the **year** knob all the way back until the "DEL" is shown in red. Pressing the **select** button erases the last character selected.
 
 Once the correct Wifi name and password are entered, the Time Machine will launch the main program. You will not need to re-enter this information again as long as it remains valid. If you take the time machine to a new Wifi or change your password, the Wifi/passkey entry program will run again after a reboot.
 
@@ -48,7 +48,7 @@ The top of the screen shows the **staged date** in a large font in the MM-DD-YY 
 
 If there is a show on the staged date, the **venue, city, state** is shown below the staged date. If there is a tape from the archive on that date, which is not a show, this area shows the tape identifier (usually something like "gdYYYY-MM-DD..."). Note that the venue, city, and state usually do not fit on the screen and will "scroll" over time. 
 
-The area showing venue, city, state will alternately display the **tape identifier**. If the tape is soundboard recording, the tape identifier will be in white text. If the tape is an audience recording, the tape identifier will be shown in red text.
+The area of the screen showing the venue, city, state will alternately display the **tape identifier**. If the tape is soundboard recording, the tape identifier is shown in white text. If the tape is an audience recording, the tape identifier is shown in red text.
 
 If the staged date is selected (by pressing the **select** button) it becomed the **selected date**, and is shown in a smaller font at the bottom of the screen in MM-DD-YYYY format.
 
@@ -66,16 +66,16 @@ Each knob can be turned, and also pressed as a button. Each button may be "press
 
 #### Day Knob
 - Turning the Day knob changes the day of the **staged date** from 1 to 31 (depending on the Month (and Year if a Leap Year))
-- Pressing the Day knob makes the **staged date** become the **selected date**.
+- Pressing the Day knob moves the **staged date** to the next date on which there is a tape in the archive.
 - Holding the Day knob (*for 5 seconds*) turns off the screen. Turning or pressing any of the 3 knobs will wake up the screen.
 
 #### Year Knob
 - Turning the Year knob changes the year of the **staged date** from 1965 to 1995.
-- Pressing the Year knob moved the **staged date** to today in history from the currently staged year. Pressing the Year knob *again* will move the **staged date** to the next **today in history*** on which there is a tape in the archive (or, if this is the last it will start over again from 1965).
+- Pressing the Year knob moves the **staged date** to today's month/day during the currently staged year (**today in history**, whether there is a tape on that date or not). Pressing the Year knob *again* will move the **staged date** to the next **today in history** on which there *is* a tape in the archive (or, if this is the last, it will start over again from 1965).
 
 #### Select Button
-- Pressing the Select button will select the **staged date**, and make it the **selected date**. This will stop any currently playing tape.
-- Holding the Select button will cycle through the **tape identifiers** of the **staged date**. The identifiers are shown in the venue, city, state field. Red text indicates audience recordings. Releasing the Select button selects the **tape identifier** currently displayed. In this way, all tapes from the archive are reachable.
+- Pressing the Select button selects the **staged date**, making it the **selected date**. This stops any currently playing tape.
+- Holding the Select button cycles through the **tape identifiers** of the **staged date**. The identifiers are shown in the venue, city, state field. Red text indicates audience recordings. Releasing the Select button selects the **tape identifier** currently displayed. In this way, all tapes from the archive are reachable.
 
 #### Play/Pause Button
 - Pressing the Play/Pause button plays or pauses the tape from the selected date.
@@ -86,7 +86,7 @@ Each knob can be turned, and also pressed as a button. Each button may be "press
 - Holding Rewind or Fast Forward advances or moves back the play head by 30 seconds every 2 seconds.
 
 #### Stop Button
-- Pressing the Stop button will stop the playback and move the play head to the beginning of the show.
-- Holding the Stop button (*for 8 seconds*) will download the latest version of the software and restart the program. **USE WITH CAUTION**
+- Pressing the Stop button stops the playback and moves the play head to the beginning of the show.
+- Holding the Stop button (*for 8 seconds*) downloads the latest version of the software and restarts the program. **USE WITH CAUTION**
 
 **Enjoy!**
