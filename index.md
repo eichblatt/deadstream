@@ -81,7 +81,9 @@ I'd like to have a favorites feature. But that would be completely local to your
 ## Open Source
 Of course.
 
-## Build Your Own
+## [Operating Instructions](https://eichblatt.github.io/deadstream/OperatingInstructions)
+
+## [Build Your Own](https://eichblatt.github.io/deadstream/BuildYourOwn)
 
 See [build your own](https://eichblatt.github.io/deadstream/BuildYourOwn)
 
