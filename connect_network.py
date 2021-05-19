@@ -19,7 +19,7 @@ import subprocess,re,os
 parser = optparse.OptionParser()
 parser.add_option('--wpa_path',dest='wpa_path',type="string",default='/etc/wpa_supplicant/wpa_supplicant.conf',help="path to wpa_supplicant file [default %default]")
 parser.add_option('-d','--debug',dest='debug',type="int",default=1,help="If > 0, don't run the main script on loading [default %default]")
-parser.add_option('--sleep_time',dest='sleep_time',type="int",default=5,help="how long to sleep before checking network status [default %default]")
+parser.add_option('--sleep_time',dest='sleep_time',type="int",default=10,help="how long to sleep before checking network status [default %default]")
 parser.add_option('-v','--verbose',dest='verbose',action="store_true",default=False,help="Print more verbose information [default %default]")
 parms,remainder = parser.parse_args()
 
@@ -229,7 +229,7 @@ sleep(parms.sleep_time)
 
 scr.show_text("Connect wifi",force=True)
 icounter = 0
-while (not wifi_connected()) and icounter < 5:
+while (not wifi_connected()) and icounter < 3:
   scr.clear()
   scr.show_text(F"Wifi not connected\n{icounter}",font=scr.smallfont,force=True)
   icounter = icounter + 1
@@ -241,7 +241,7 @@ while (not wifi_connected()) and icounter < 5:
   update_wpa_conf(parms.wpa_path,wifi,passkey)
   cmd = "sudo killall -HUP wpa_supplicant"
   os.system(cmd)
-  sleep(parms.sleep_time)
+  sleep(2*parms.sleep_time)
 
 if wifi_connected():
   ip = get_ip()
