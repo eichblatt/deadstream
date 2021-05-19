@@ -5,9 +5,9 @@ Requires=connect_network.service
 After=connect_network.service
 #BindsTo=check_network.service
 [Service]
-Type=oneshot
+Type=simple
 User=steve
-ExecStart=/usr/bin/python3 /home/steve/deadstream/main.py --debug 0 --box v1 -v
+ExecStart=/usr/bin/python3 /home/steve/deadstream/main.py --debug 0 --box v1 
 #Restart=on-failure
 [Install]
 WantedBy=multi-user.target
