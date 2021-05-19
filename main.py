@@ -328,6 +328,7 @@ def event_loop(state,scr):
     scr.update_now = False
     free_event.set()
     stagedate_event.set()
+    scr.clear()
     try:
         while not stop_event.wait(timeout=0.001): 
             if not free_event.wait(timeout=0.01): continue
