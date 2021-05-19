@@ -14,28 +14,28 @@ The Time Machine screen will come on when power is connected to the Raspberry Pi
 When the Time Machine is powered up, it will prompt you to select a Wifi name and input the passkey.
 
 ### Selecting the Wifi 
-Turning the "year" knob will change which Wifi name will be displayed in red. 
-To select the Wifi displayed in red, press the "select" button.
+Turning the **year** knob will change which Wifi name will be displayed in red. 
+To select the Wifi displayed in red, press the **select** button.
 
 ### Entering the Wifi Passkey
 The screen will prompt you to input the passkey for the selected Wifi. 
 
 A list of characters will be shown in white, with one "selectable" letter shown in red. 
 
-- Turn the "year" knob to change which character is shown in red. 
-- Press "select" button to select the red character.
-- Once the entire password has been entered, press the "stop" button to indicate that you have finished. 
-- If you make a mistake, turn the "year" knob all the way back until the "DEL" is shown in red. Pressing the "select" button will erase the last character selected.
+- Turn the **year** knob to change which character is shown in red. 
+- Press **select** button to select the red character.
+- Once the entire password has been entered, press the **stop** button to indicate that you have finished. 
+- If you make a mistake, turn the **year** knob all the way back until the "DEL" is shown in red. Pressing the **select** button will erase the last character selected.
 
 Once the correct Wifi name and password are entered, the Time Machine will launch the main program. You will not need to re-enter this information again as long as it remains valid. If you take the time machine to a new Wifi or change your password, the Wifi/passkey entry program will run again after a reboot.
 
 ## Using the Time Machine
 
 Using the Time Machine should be very intuitive. 
- - Select a Month, Day, and Year by turning the Month, Day, and Year knobs. 
- - Press the "select" button to select the date
- - Press the "play/pause" button to play the show.
- - "Stop", "Rewind", "Fast Fwd" behave as expected. See details below.
+ - Select a Month, Day, and Year by turning the **Month**, **Day**, and **Year** knobs. 
+ - Press the **select** button to select the date
+ - Press the **play/pause** button to play the show.
+ - **Stop**, **Rewind**, **Fast Fwd** behave as expected. See details below.
 
 ### The Screen Layout
 The top of the screen shows the **staged date** in a large font in the MM-DD-YY format. 
