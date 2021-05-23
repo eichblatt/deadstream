@@ -21,25 +21,63 @@ logger = logging.getLogger(__name__)
 class StringGenerator(object):
     @cherrypy.expose
     def index(self):
-        f = open(parms.options_path,'r')
-        opt_dict = json.loads(f.read())
-        form_strings = [F'<label>{x[0]} <input type="text" value="{x[1]}" name="{x[0]}" /></label> <p>' for x in opt_dict.items()]
-        form_string = '\n'.join(form_strings)
-        total_string = """<html>
-          <head></head>
-          <body>
-            <form method="get" action="save_values">""" + form_string + """
-              <button type="submit">Submit</button>
-            </form>
-          </body>
-        </html>"""
-        return total_string
+       f = open(parms.options_path,'r')
+       opt_dict = json.loads(f.read())
+       form_strings = [F'<label>{x[0]} <input type="text" value="{x[1]}" name="{x[0]}" /></label> <p>' for x in opt_dict.items() if  x[0]!='TIMEZONE']
+       form_string = '\n'.join(form_strings)
+       tz_list = ["America/New_York", "America/Chicago", "America/Phoenix","America/Los_Angeles","America/Mexico_City","America/Anchorage","Pacific/Honolulu"]
+       tz_strings = [F'<option value="{x}" {self.current_choice(opt_dict,"TIMEZONE",x)}>{x}</option>' for x in tz_list]
+       tz_string = '\n'.join(tz_strings)
+       logger.info (f'tz string {tz_string}')
+       page_string = """<html>
+         <head></head>
+         <body>
+           <form method="get" action="save_values">""" + form_string + """
+             <label for="timezone"> Choose a Time Zone:</label>
+             <select id="timezone" name="TIMEZONE">""" + tz_string + """ </select><p>
+             <button type="submit">Submit</button>
+             <button type="reset">Reset</button>
+           </form>
+           <form method="get" action="shutdown">
+             <button type="submit">Shutdown</button>
+           </form>
+         </body>
+       </html>"""
+       return page_string
+
+    def current_choice(self,d,k,v):
+      if d[k]==v: return "selected"
+      else: return ""
 
     @cherrypy.expose
     def save_values(self,*args,**kwargs):
        with open(parms.options_path, 'w') as outfile:
          opt_dict = json.dump(kwargs,outfile,indent=1)
        print(F'args: {args},kwargs:{kwargs},\nType: {type(kwargs)}')
+       form_strings = [F'<label>{x[0]}:{x[1]}</label> <p>' for x in kwargs.items()]
+       form_string = '\n'.join(form_strings)
+       page_string = """<html>
+         <head></head>
+         <body> Options set to <p> """ + form_string + """
+           <form method="get" action="index">
+             <button type="submit">Return</button>
+           </form>
+         </body>
+       </html>"""
+       return page_string
+ 
+    @cherrypy.expose
+    def shutdown(self,*args,**kwargs):
+       cmd = "sudo halt"
+       page_string = """<html>
+         <head></head>
+         <body> Shutting Down <p> Command: """ + cmd + """
+         </body>
+       </html>"""
+       print(F'Shutting Down command {cmd}')
+       sleep(parms.sleep_time)
+       #os.system(cmd)
+       return page_string
 
 def main(parms):
   cherrypy.config.update({'server.socket_host':'192.168.0.21','server.socket_port':9090})
