@@ -3,5 +3,6 @@
  "SCROLL_VENUE": "False",
  "FAVORED_TAPER": "miller",
  "PWR_LED_ON": "True",
+ "AUDIO_OUT": "Analog",
  "TIMEZONE": "America/New_York"
 }
