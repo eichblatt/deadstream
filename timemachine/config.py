@@ -26,10 +26,3 @@ play_pause_pin = 20 # pin 18 interferes with sound card
 rewind_pin = 3  # from the I2C bus (may need to connect to ground)
 stop_pin = 2   # from the I2C bus (may need to connect to ground) 
 ffwd_pin = 26    # pin 26 ok with sound card.
-
-# Options
-
-FADE_AWAY = "NOT"  # or "WEST_LA"
-QUIESCENT_TIME = 20 # -- cycles to wait until reverting staged date
-SCROLL_VENUE = True
-FAVORED_TAPER = "miller"

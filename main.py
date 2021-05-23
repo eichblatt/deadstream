@@ -1,6 +1,7 @@
 #!/usr/bin/python3
 import optparse,random,logging,os,datetime
 import threading,subprocess
+import json,time
 from timemachine import GD
 from timemachine import controls
 from timemachine import config
@@ -15,6 +16,7 @@ import pkg_resources
 parser = optparse.OptionParser()
 parser.add_option('--box',dest='box',type="string",default='v1',help="v0 box has screen at 270. [default %default]")
 parser.add_option('--dbpath',dest='dbpath',type="string",default=os.path.join(GD.ROOT_DIR,'metadata'),help="path to database [default %default]")
+parser.add_option('--options_path',dest='options_path',type="string",default=os.path.join(GD.ROOT_DIR,'options.txt'),help="path to options file [default %default]")
 parser.add_option('-d','--debug',dest='debug',type="int",default=1,help="If > 0, don't run the main script on loading [default %default]")
 parser.add_option('-v','--verbose',dest='verbose',action="store_true",default=False,help="Print more verbose information [default %default]")
 parms,remainder = parser.parse_args()
@@ -48,6 +50,17 @@ def sequential(func):
       finally: free_event.set()
     return inner
 
+def load_options(parms):
+    f = open(parms.options_path,'r')
+    optd = json.loads(f.read())
+    optd['QUIESCENT_TIME'] = int(optd['QUIESCENT_TIME'])
+    optd['PWR_LED_ON'] = bool(optd['PWR_LED_ON'])
+    config.options_dict = optd
+    os.environ['TZ'] = optd['TIMEZONE']
+    time.tzset()
+    led_cmd = F'sudo bash -c "echo {"default-on" if optd["PWR_LED_ON"] else "none"} > /sys/class/leds/led1/trigger"'
+    os.system(led_cmd)
+   
 def twist_knob(knob: RotaryEncoder, label, date_reader:controls.date_knob_reader):
     if knob.is_active:
       logger.debug(f"Knob {label} steps={knob.steps} value={knob.value}")
@@ -295,7 +308,7 @@ def refresh_venue(state,idle_second_hand,refresh_times,venue,scr):
        display_string = tape_id
        id_color = tape_color
 
-     if not config.SCROLL_VENUE:
+     if not config.options_dict['SCROLL_VENUE']:
         scr.show_venue(display_string,color=id_color)
         return
         
@@ -364,8 +377,8 @@ def event_loop(state,scr):
                 scr.show_playstate()
                 playstate_event.clear()
                 screen_event.set()
-            if q_counter and config.DATE and idle_seconds > config.QUIESCENT_TIME:
-                logger.debug(F"Reverting staged date back to selected date {idle_seconds}> {config.QUIESCENT_TIME}")
+            if q_counter and config.DATE and idle_seconds > config.options_dict['QUIESCENT_TIME']:
+                logger.debug(F"Reverting staged date back to selected date {idle_seconds}> {config.options_dict['QUIESCENT_TIME']}")
                 scr.show_staged_date(config.DATE)
                 scr.show_venue(config.VENUE)
                 q_counter = False
@@ -376,7 +389,7 @@ def event_loop(state,scr):
                 playstate_event.set()
                 #stagedate_event.set()         # NOTE: this would set the q_counter, etc. But it SHOULD work.
                 #scr.show_staged_date(date_reader.date)
-                if idle_seconds > config.QUIESCENT_TIME: 
+                if idle_seconds > config.options_dict['QUIESCENT_TIME']: 
                    if config.DATE: scr.show_staged_date(config.DATE)
                    refresh_venue(state,idle_second_hand,refresh_times,date_reader.venue(),scr)
                 else:  
@@ -394,6 +407,7 @@ def get_ip():
    return ip
 
 #def main(parms):
+load_options(parms)
 if parms.box == 'v0': 
    upside_down=True
 else: 
@@ -402,12 +416,9 @@ scr = controls.screen(upside_down=upside_down)
 scr.clear()
 ip_address = get_ip()
 scr.show_text(F"Time\n  Machine\n   Loading...\n{ip_address}",color=(0,255,255))
+
 archive = GD.GDArchive(parms.dbpath)
 player = GD.GDPlayer()
-try:
-   os.system("amixer sset 'Headphone' 100%")
-except: pass
-
 @player.property_observer('playlist-pos')
 def on_track_event(_name, value):
   logger.debug(F'in track event callback {_name}, {value}')
@@ -419,6 +430,10 @@ def on_track_event(_name, value):
 @player.event_callback('file-loaded')
 def my_handler(event):
   logger.debug('file-loaded')
+
+try:
+   os.system("amixer sset 'Headphone' 100%")
+except: pass
 
 y = retry_call(RotaryEncoder, config.year_pins[1], config.year_pins[0],max_steps = 0,threshold_steps = (0,30))
 m = retry_call(RotaryEncoder, config.month_pins[1], config.month_pins[0],max_steps = 0,threshold_steps = (1,12))

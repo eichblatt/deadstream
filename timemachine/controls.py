@@ -351,7 +351,7 @@ def controlLoop(item_list,callback,state=None,scr=None):
               last_active = now
               refreshed = False
       time_since_active = (now - last_active).seconds
-      if (time_since_active > config.QUIESCENT_TIME) and not refreshed:
+      if (time_since_active > config.options_dict['QUIESCENT_TIME']) and not refreshed:
          callback(scr,state,scr)
          refreshed = True
       if (now - last_timer).seconds > 5:

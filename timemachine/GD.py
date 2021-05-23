@@ -309,8 +309,8 @@ class GDTape:
     """ compute a score for sorting the tape. High score means it should be played first """    
     score = 0
     if self.stream_only(): score = score + 10
-    if not config.FAVORED_TAPER == None:
-       if config.FAVORED_TAPER.lower() in self.identifier.lower(): score = score + 3
+    if len(config.options_dict['FAVORED_TAPER']) > 0:
+       if config.options_dict['FAVORED_TAPER'].lower() in self.identifier.lower(): score = score + 3
     score = score + math.log(1+self.downloads) 
     score = score + self.avg_rating - 2.0/math.sqrt(self.num_reviews)
     return score
