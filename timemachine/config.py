@@ -1,5 +1,3 @@
-import datetime
-
 # State variables
 INIT = 0
 READY = 1
