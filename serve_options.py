@@ -21,11 +21,11 @@ logger = logging.getLogger(__name__)
 class StringGenerator(object):
     @cherrypy.expose
     def index(self):
-        f =open(parms.options_path,'r')
+        f = open(parms.options_path,'r')
         opt_dict = json.loads(f.read())
         form_strings = [F'<label>{x[0]} <input type="text" value="{x[1]}" name="{x[0]}" /></label> <p>' for x in opt_dict.items()]
         form_string = '\n'.join(form_strings)
-        return """<html>
+        total_string = """<html>
           <head></head>
           <body>
             <form method="get" action="save_values">""" + form_string + """
@@ -33,12 +33,13 @@ class StringGenerator(object):
             </form>
           </body>
         </html>"""
+        return total_string
 
     @cherrypy.expose
     def save_values(self,*args,**kwargs):
        with open(parms.options_path, 'w') as outfile:
-         opt_dict = json.dumps(kwargs,indent=0)
-       print(F'args: {args},kwargs:{kwargs}')
+         opt_dict = json.dump(kwargs,outfile,indent=1)
+       print(F'args: {args},kwargs:{kwargs},\nType: {type(kwargs)}')
 
 def main(parms):
   cherrypy.config.update({'server.socket_host':'192.168.0.21','server.socket_port':9090})
