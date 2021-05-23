@@ -1,7 +1,8 @@
 {
  "FADE_AWAY": "NOT",
- "QUIESCENT_TIME": "20",
- "SCROLL_VENUE": "True",
+ "QUIESCENT_TIME": "10",
+ "SCROLL_VENUE": "False",
  "FAVORED_TAPER": "miller",
- "PWR_LED_ON": "True"
+ "PWR_LED_ON": "True",
+ "TIMEZONE": "America/New_York"
 }
