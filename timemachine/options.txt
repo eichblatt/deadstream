@@ -1,0 +1,7 @@
+{
+ "FADE_AWAY": "NOT",
+ "QUIESCENT_TIME": "20",
+ "SCROLL_VENUE": "True",
+ "FAVORED_TAPER": "miller",
+ "PWR_LED_ON": "True"
+}
