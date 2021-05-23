@@ -1,5 +1,4 @@
 {
- "FADE_AWAY": "NOT",
  "QUIESCENT_TIME": "10",
  "SCROLL_VENUE": "False",
  "FAVORED_TAPER": "miller",
