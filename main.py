@@ -56,8 +56,9 @@ def load_options(parms):
     optd['QUIESCENT_TIME'] = int(optd['QUIESCENT_TIME'])
     optd['PWR_LED_ON'] = optd['PWR_LED_ON'].lower() == 'true'
     optd['SCROLL_VENUE'] = optd['SCROLL_VENUE'].lower() == 'true'
+    optd['AUTO_PLAY'] = optd['AUTO_PLAY'].lower() == 'true'
     logger.info (F"in load_options, optd {optd}")
-    config.options_dict = optd
+    config.optd = optd
     os.environ['TZ'] = optd['TIMEZONE']
     time.tzset()
     led_cmd = F'sudo bash -c "echo {"default-on" if optd["PWR_LED_ON"] else "none"} > /sys/class/leds/led1/trigger"'
@@ -89,7 +90,11 @@ def select_tape(tape,state):
    current['TRACK_NUM'] = -1
    current['DATE'] = state.date_reader.date
    current['VENUE'] = state.date_reader.venue()
-   state.player.insert_tape(tape)
+   state.player.insert_tape(tape) 
+   if config.optd['AUTO_PLAY']: 
+      logger.debug("Autoplaying tape")
+      state.player.play()
+      current['PLAY_STATE'] = config.PLAYING
    state.set(current)
 
 @sequential
@@ -106,6 +111,7 @@ def select_button(button,state):
      logger.debug ("pressing, not holding select")
      tape = tapes[0] 
      select_tape(tape,state)
+     current = state.get_current()
      select_event.set()
 
 @sequential
@@ -287,10 +293,14 @@ def fast_timer(state,scr):
 def to_date(d): return datetime.datetime.strptime(d,'%Y-%m-%d').date()
 
 @sequential
-def play_tape(tape,player):
+def play_tape(tape,state):
+    current = state.get_current()
     logger.info(F"Playing tape {tape}")
-    player.insert_tape(tape)
-    player.play()
+    state.player.insert_tape(tape)
+    state.player.play()
+    current['PLAY_STATE'] = config.PLAYING
+    #scr.show_playstate(staged_play=True,force=True) 
+    state.set(current)
     return player
 
 @sequential
@@ -311,7 +321,7 @@ def refresh_venue(state,idle_second_hand,refresh_times,venue,scr):
        display_string = tape_id
        id_color = tape_color
 
-     if not config.options_dict['SCROLL_VENUE']:
+     if not config.optd['SCROLL_VENUE']:
         scr.show_venue(display_string,color=id_color)
         return
         
@@ -380,8 +390,8 @@ def event_loop(state,scr):
                 scr.show_playstate()
                 playstate_event.clear()
                 screen_event.set()
-            if q_counter and config.DATE and idle_seconds > config.options_dict['QUIESCENT_TIME']:
-                logger.debug(F"Reverting staged date back to selected date {idle_seconds}> {config.options_dict['QUIESCENT_TIME']}")
+            if q_counter and config.DATE and idle_seconds > config.optd['QUIESCENT_TIME']:
+                logger.debug(F"Reverting staged date back to selected date {idle_seconds}> {config.optd['QUIESCENT_TIME']}")
                 scr.show_staged_date(config.DATE)
                 scr.show_venue(config.VENUE)
                 q_counter = False
@@ -392,7 +402,7 @@ def event_loop(state,scr):
                 playstate_event.set()
                 #stagedate_event.set()         # NOTE: this would set the q_counter, etc. But it SHOULD work.
                 #scr.show_staged_date(date_reader.date)
-                if idle_seconds > config.options_dict['QUIESCENT_TIME']: 
+                if idle_seconds > config.optd['QUIESCENT_TIME']: 
                    if config.DATE: scr.show_staged_date(config.DATE)
                    refresh_venue(state,idle_second_hand,refresh_times,date_reader.venue(),scr)
                 else:  
