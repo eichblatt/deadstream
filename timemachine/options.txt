@@ -1,8 +1,9 @@
 {
- "QUIESCENT_TIME": "10",
- "SCROLL_VENUE": "False",
+ "QUIESCENT_TIME": "20",
+ "SCROLL_VENUE": "true",
  "FAVORED_TAPER": "miller",
- "PWR_LED_ON": "True",
+ "PWR_LED_ON": "false",
  "AUDIO_OUT": "Analog",
+ "AUTO_PLAY": "true",
  "TIMEZONE": "America/New_York"
 }
