@@ -23,8 +23,11 @@ class StringGenerator(object):
     def index(self):
        f = open(parms.options_path,'r')
        opt_dict = json.loads(f.read())
-       form_strings = [F'<label>{x[0]} <input type="text" value="{x[1]}" name="{x[0]}" /></label> <p>' for x in opt_dict.items() if  x[0]!='TIMEZONE']
+       print(F"opt dict {opt_dict}")
+       form_strings = [self.get_form_item(x) for x in opt_dict.items() if x[0]!='TIMEZONE']
+       #form_strings = [F'<label>{x[0]} <input type="text" value="{x[1]}" name="{x[0]}" /></label> <p>' for x in opt_dict.items() if  x[0]!='TIMEZONE']
        form_string = '\n'.join(form_strings)
+       print(F"form_string {form_string}")
        tz_list = ["America/New_York", "America/Chicago", "America/Phoenix","America/Los_Angeles","America/Mexico_City","America/Anchorage","Pacific/Honolulu"]
        tz_strings = [F'<option value="{x}" {self.current_choice(opt_dict,"TIMEZONE",x)}>{x}</option>' for x in tz_list]
        tz_string = '\n'.join(tz_strings)
@@ -48,6 +51,18 @@ class StringGenerator(object):
     def current_choice(self,d,k,v):
       if d[k]==v: return "selected"
       else: return ""
+
+    def get_form_item(self,item):
+      k,v = item
+      input_type = "text"
+      if type(v) == int: input_type = "number"      
+      outstring = F'<label> {k} <input type="{input_type}" name="{k}" value={v}'
+      if type(v) == bool: 
+        outstring += ' pattern="true|false" title="true or false"> <p>'
+      else: 
+        outstring += '> <p>'
+      outstring += '</label>'
+      return outstring
 
     @cherrypy.expose
     def save_values(self,*args,**kwargs):
