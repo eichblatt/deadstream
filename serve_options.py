@@ -3,7 +3,7 @@ from time import sleep
 from threading import Event
 import datetime,string,os,optparse,logging,json
 import pkg_resources
-import cherrypy
+import cherrypy,subprocess
 
 
 ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -94,8 +94,15 @@ class StringGenerator(object):
        #os.system(cmd)
        return page_string
 
+def get_ip():
+   cmd = "hostname -I"
+   ip = subprocess.check_output(cmd,shell=True)
+   ip = ip.decode().split(' ')[0]
+   return ip
+
 def main(parms):
-  cherrypy.config.update({'server.socket_host':'192.168.0.21','server.socket_port':9090})
+  ip_address = get_ip()
+  cherrypy.config.update({'server.socket_host':ip_address,'server.socket_port':9090})
   cherrypy.quickstart(StringGenerator())
 
 for k in parms.__dict__.keys(): print (F"{k:20s} : {parms.__dict__[k]}")
