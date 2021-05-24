@@ -54,8 +54,8 @@ def load_options(parms):
     f = open(parms.options_path,'r')
     optd = json.loads(f.read())
     optd['QUIESCENT_TIME'] = int(optd['QUIESCENT_TIME'])
-    optd['PWR_LED_ON'] = optd['PWR_LED_ON'] == True
-    optd['SCROLL_VENUE'] = optd['SCROLL_VENUE'] == True
+    optd['PWR_LED_ON'] = optd['PWR_LED_ON'].lower() == 'true'
+    optd['SCROLL_VENUE'] = optd['SCROLL_VENUE'].lower() == 'true'
     logger.info (F"in load_options, optd {optd}")
     config.options_dict = optd
     os.environ['TZ'] = optd['TIMEZONE']
