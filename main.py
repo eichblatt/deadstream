@@ -54,11 +54,14 @@ def load_options(parms):
     f = open(parms.options_path,'r')
     optd = json.loads(f.read())
     optd['QUIESCENT_TIME'] = int(optd['QUIESCENT_TIME'])
-    optd['PWR_LED_ON'] = bool(optd['PWR_LED_ON'])
+    optd['PWR_LED_ON'] = optd['PWR_LED_ON'] == True
+    optd['SCROLL_VENUE'] = optd['SCROLL_VENUE'] == True
+    logger.info (F"in load_options, optd {optd}")
     config.options_dict = optd
     os.environ['TZ'] = optd['TIMEZONE']
     time.tzset()
     led_cmd = F'sudo bash -c "echo {"default-on" if optd["PWR_LED_ON"] else "none"} > /sys/class/leds/led1/trigger"'
+    logger.info (F"in load_options, running {led_cmd}")
     os.system(led_cmd)
    
 def twist_knob(knob: RotaryEncoder, label, date_reader:controls.date_knob_reader):
