@@ -26,28 +26,6 @@ logging.basicConfig(format='%(asctime)s.%(msecs)03d %(levelname)s: %(name)s %(me
 logger = logging.getLogger(__name__)
 ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
 
-def url2fileurl(url,basepath):
-  if url.startswith('file://'): return url
-  return 'file://'+url2filename(url,basepath)
-
-def url2filename(url,basepath):
-  urlsplit = os.path.split(url)
-  dname = os.path.split(urlsplit[0])[1]
-  fname = urlsplit[1]
-  os.makedirs(os.path.join(basepath,dname),exist_ok=True)
-  return os.path.join(basepath,dname,fname)
-
-def download_url(url_filename):
-    url = url_filename[0]
-    filename = url_filename[1]
-
-    r = requests.get(url,stream=True)
-    if r.status_code == requests.codes.ok:
-      with open(filename, 'wb') as f:
-        for data in r:
-          f.write(data)
-    return url
-
 @retry(stop=stop_after_delay(30))
 def retry_call(callable: Callable, *args, **kwargs):
     """Retry a call."""
@@ -331,8 +309,8 @@ class GDTape:
     """ compute a score for sorting the tape. High score means it should be played first """    
     score = 0
     if self.stream_only(): score = score + 10
-    if not config.FAVORED_TAPER == None:
-       if config.FAVORED_TAPER.lower() in self.identifier.lower(): score = score + 3
+    if len(config.optd['FAVORED_TAPER']) > 0:
+       if config.optd['FAVORED_TAPER'].lower() in self.identifier.lower(): score = score + 3
     score = score + math.log(1+self.downloads) 
     score = score + self.avg_rating - 2.0/math.sqrt(self.num_reviews)
     return score
@@ -605,24 +583,10 @@ class GDPlayer(MPV):
       urls.append(best_track)
     return urls
 
-
-  def load_files(self,urls,pathname):
-    logger.debug(F'loading files to {pathname}')
-    remote_urls = [y for y in urls if not y.startswith('file:')]
-    filenames = [url2filename(y,pathname) for y in remote_urls]
-    targets = [(remote_urls[i],filenames[i]) for i,f in enumerate(filenames) if not os.path.exists(f)]
-    results = ThreadPool(3).imap_unordered(download_url,targets)
-    return results
-  
   def create_playlist(self):
     self.playlist_clear()
     urls = self.extract_urls(self.tape);
     pathname = os.path.join(self.tape.dbpath,'audience')
-    if self.download_when_possible and not self.tape.stream_only():
-      get_urls = self.load_files(urls,pathname)
-      logger.debug('running the get_urls')
-      time.sleep(5)
-      urls = [url2fileurl(y,pathname) for y in urls]
     self.command('loadfile',urls[0])
     if len(urls)>0: _ = [self.command('loadfile',x,'append') for x in urls[1:]]
     self.playlist_pos = 0 

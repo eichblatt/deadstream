@@ -15,6 +15,7 @@ setup(
         'Pillow',
         'gpiozero',
         'tenacity',
+        'cherrypy',
         'pickle5'
     ],
     package_data={
