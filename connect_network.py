@@ -208,11 +208,13 @@ def wifi_connected():
   #return False
 
 def get_wifi_choices():
+  logger.info ("Getting Wifi Choices")
   cmd = "sudo iwlist wlan0 scan | grep ESSID:"
   raw = retry_call(subprocess.check_output,cmd,shell=True)
   #raw = subprocess.check_output(cmd,shell=True)
   choices = [x.lstrip().replace('ESSID:','').replace('"','') for x in raw.decode().split('\n')]
   [x for x in choices if bool(re.search('[a-z,0-9]',x,re.IGNORECASE))]
+  logger.info (F"Wifi Choices {choices}")
   return choices
 
 def update_wpa_conf(wpa_path,wifi,passkey):
