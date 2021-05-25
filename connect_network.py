@@ -49,6 +49,10 @@ def twist_knob(screen_event: Event, knob: RotaryEncoder, label):
       logger.debug(f"Knob {label} is inactive")
     screen_event.set()
 
+def rewind_button(button):
+   logger.debug ("pressing rewind")
+   rewind_event.set()
+
 def select_button(button):
    logger.debug ("pressing select")
    select_event.set()
@@ -61,12 +65,15 @@ def stop_button(button):
 y = retry_call(RotaryEncoder, config.year_pins[1], config.year_pins[0],max_steps = 0,threshold_steps = (-1,93))
 y.when_rotated = lambda x: twist_knob(screen_event, y, "year")
 y_button = retry_call(Button, config.year_pins[2])
+
+rewind = retry_call(Button, config.rewind_pin)
 select = retry_call(Button, config.select_pin,hold_time = 2,hold_repeat = True)
 stop = retry_call(Button, config.stop_pin)
 
 select.when_pressed = lambda x: select_button(x)
 stop.when_pressed = lambda x: stop_button(x)
 
+rewind_event = Event()
 select_event = Event()
 done_event = Event()
 screen_event = Event()
@@ -74,7 +81,8 @@ screen_event = Event()
 scr = controls.screen(upside_down=False)
 scr.clear()
 
-def select_option(scr,y,message,choices):
+def select_option(scr,y,message):
+  choices = get_wifi_choices()
   scr.clear()
   selected = None
   y.steps = 0 
@@ -82,6 +90,7 @@ def select_option(scr,y,message,choices):
   update_now = scr.update_now
   scr.update_now = False
   done_event.clear()
+  rewind_event.clear()
   select_event.clear()
   step = divmod(y.steps,len(choices))[1]
 
@@ -92,6 +101,9 @@ def select_option(scr,y,message,choices):
   selection_bbox = controls.Bbox(0,y_origin,160,128)
 
   while not select_event.is_set():
+      if rewind_event.is_set():
+        choices = get_wifi_choices()
+        rewind_event.clear()
       scr.clear_area(selection_bbox,force=False)
       x_loc = 0
       y_loc = y_origin
@@ -215,6 +227,10 @@ def update_wpa_conf(wpa_path,wifi,passkey):
   cmd2 = F"sudo mv {new_wpa_path} {wpa_path}"
   raw = subprocess.check_output(cmd1,shell=True)
   raw = subprocess.check_output(cmd2,shell=True)
+  cmd = F"sudo chown root {wpa_path}"
+  _ = subprocess.check_output(cmd,shell=True)
+  cmd = F"sudo chgrp root {wpa_path}"
+  _ = subprocess.check_output(cmd,shell=True)
 
 def get_ip():
    cmd = "hostname -I"
@@ -234,8 +250,7 @@ while (not wifi_connected()) and icounter < 3:
   scr.clear()
   scr.show_text(F"Wifi not connected\n{icounter}",font=scr.smallfont,force=True)
   icounter = icounter + 1
-  wifi_choices = get_wifi_choices()
-  wifi = select_option(scr,y,"Select Wifi Name\nTurn Year, Select",wifi_choices)
+  wifi = select_option(scr,y,"Select Wifi Name\nTurn Year, Select")
   passkey = select_chars(scr,y,"Input Passkey\nTurn Year then Select\nPress Stop to end")
   scr.clear()
   scr.show_text(F"wifi: {wifi}\npasskey:{passkey}",loc=(0,0),color=(255,255,255),font=scr.smallfont,force=True)
