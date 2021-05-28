@@ -238,11 +238,36 @@ class GDArchive:
     return retstr
   
   def best_tape(self,date):
+    if type(date) == datetime.date: date = date.strftime('%Y-%m-%d')
     if not date in self.dates: 
       logger.info ("No Tape for date {}".format(date))
       return None
     return self.tape_dates[date][0]
      
+  def tape_at_date(self,dt,which_tape=0):
+    then_date = dt.date()
+    then = then_date.strftime('%Y-%m-%d')
+    try: tape = self.tape_dates[then]
+    except KeyError: return None
+    return tape[which_tape]
+ 
+  def tape_start_time(self,dt,default_start=datetime.time(19,0)):
+    tape = self.tape_at_date(dt)
+    if not tape: return None
+    tape_start_time = tape.set_data['start_time'] if tape.set_data else None
+    if tape_start_time == None: tape_start_time = default_start
+    tape_start = datetime.datetime.combine(dt.date(),tape_start_time)  # date + time
+    return tape_start
+
+  def tape_at_time(self,dt,default_start=datetime.time(19,0)):
+    tape = self.tape_at_date(dt)
+    if not tape: return None
+    tape_start = self.tape_start_time(dt,default_start)
+    tape_end = tape_start + datetime.timedelta(hours=7)
+    if (dt > tape_start) and dt < tape_end:
+      return self.best_tape(dt.date())
+    else: return None
+
   def get_tape_dates(self):
     tape_dates = {}
     for tape in self.tapes:
@@ -487,8 +512,9 @@ class GDSet:
     headers = r[0] 
     for row in r[1:]:
       d = dict(zip(headers,row))
-      date = d['date']; song = d['song'];
+      date = d['date']; time = d['time']; song = d['song']; 
       if not date in set_data.keys(): set_data[date] = {}
+      set_data[date]['start_time'] = datetime.datetime.strptime(time,'%H:%M:%S.%f').time() if len(time)>0 else None
       if int(d['ievent'])==1: set_data[date]['location'] = (d['venue'],d['city'],d['state']); prevsong = song;
       if int(d['ievent'])==2: set_data[date]['location2'] = (d['venue'],d['city'],d['state']); set_data[date]['locationbreak'] = [prevsong]
       if d['break_length']=='long':
@@ -660,7 +686,7 @@ class GDPlayer(MPV):
         if abs(destination)<abs(sleeptime*5):
           destination = destination - sleeptime*5
         self.seek_to(current_track-1,destination)
-      elif destination > duration:
+      if destination > duration:
         self.seek_to(current_track+1,destination-duration)
       else:
         self.seek_to(current_track,destination)
@@ -680,6 +706,7 @@ class GDPlayer(MPV):
     if self.raw.time_pos == None: logger.info (F"Track not started"); return None
     duration = self.get_prop('duration')
     logger.info(F"duration: {duration}. time: {datetime.timedelta(seconds=int(self.raw.time_pos))}, time remaining: {datetime.timedelta(seconds=int(self.raw.time_remaining))}")
+    return int(self.raw.time_remaining)
 
   def close(self): self.terminate()
 

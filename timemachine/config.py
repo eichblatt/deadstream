@@ -14,6 +14,8 @@ STAGED_DATE = None
 
 ON_TOUR = False
 EXPERIENCE = False
+TOUR_YEAR = None
+TOUR_STATE = 0
 
 # Hardware pins
 
