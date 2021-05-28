@@ -4,7 +4,7 @@
 " target="_blank"><img src="http://img.youtube.com/vi/nq8CjzNKIPw/0.jpg" 
 alt="IMAGE ALT TEXT HERE" width="480" height="360" border="10" /></a>
 
-[See Pictures of the Machine Here](https://photos.app.goo.gl/v283UjHjqFkScDVX6)
+See Pictures of the Machine, mounted on a box on top of the stereo [here](https://photos.app.goo.gl/v283UjHjqFkScDVX6). I put a heavy weight inside the cardboard box to keep it stable. 
 
 # Features of the Time Machine (some implemented, some just ideas at this point)
 
