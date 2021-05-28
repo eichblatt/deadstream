@@ -84,6 +84,9 @@ if parms.verbose:
 def select_tape(tape,state):
    current = state.get_current()
    if tape.identifier == current['TAPE_ID']: return # already selected.
+   logger.debug(F"current state at entry {current}")
+   EOT = False
+   if current['PLAY_STATE'] == config.ENDED: EOT = True
    current['PLAY_STATE'] = config.READY  #  eject current tape, insert new one in player
    current['TAPE_ID'] = tape.identifier
    logger.info(F"Set TAPE_ID to {current['TAPE_ID']}")
@@ -91,7 +94,8 @@ def select_tape(tape,state):
    current['DATE'] = state.date_reader.date
    current['VENUE'] = state.date_reader.venue()
    state.player.insert_tape(tape) 
-   if config.optd['AUTO_PLAY']: 
+   logger.debug(F"current state {current}")
+   if config.optd['AUTO_PLAY'] and not EOT:
       logger.debug("Autoplaying tape")
       state.player.play()
       current['PLAY_STATE'] = config.PLAYING
@@ -307,23 +311,6 @@ def update_tracks(state,scr):
 
 def to_date(d): return datetime.datetime.strptime(d,'%Y-%m-%d').date()
 
-def select_tape(tape,state):
-   current = state.get_current()
-   if tape.identifier == current['TAPE_ID']: return # already selected.
-   current['PLAY_STATE'] = config.READY  #  eject current tape, insert new one in player
-   current['TAPE_ID'] = tape.identifier
-   logger.info(F"Set TAPE_ID to {current['TAPE_ID']}")
-   current['TRACK_NUM'] = -1
-   current['DATE'] = state.date_reader.date
-   current['VENUE'] = state.date_reader.venue()
-   state.player.insert_tape(tape) 
-   if config.optd['AUTO_PLAY']: 
-      logger.debug("Autoplaying tape")
-      state.player.play()
-      current['PLAY_STATE'] = config.PLAYING
-   state.set(current)
-
-
 @sequential
 def play_on_tour(tape,state,scr,seek_to=0,seek_by=60):
    logger.debug ("play_on_tour -- nyi ")
@@ -505,7 +492,7 @@ archive = GD.GDArchive(parms.dbpath)
 player = GD.GDPlayer()
 @player.property_observer('playlist-pos')
 def on_track_event(_name, value):
-  logger.debug(F'in track event callback {_name}, {value}')
+  logger.info(F'in track event callback {_name}, {value}')
   if value == None:  
      config.PLAY_STATE = config.ENDED
      select_button(select,state)
