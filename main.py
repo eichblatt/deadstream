@@ -57,6 +57,7 @@ def load_options(parms):
     optd['PWR_LED_ON'] = optd['PWR_LED_ON'].lower() == 'true'
     optd['SCROLL_VENUE'] = optd['SCROLL_VENUE'].lower() == 'true'
     optd['AUTO_PLAY'] = optd['AUTO_PLAY'].lower() == 'true'
+    optd['DEFAULT_START_TIME'] = datetime.datetime.strptime(optd['DEFAULT_START_TIME'],"%H:%M:%S")
     logger.info (F"in load_options, optd {optd}")
     config.optd = optd
     os.environ['TZ'] = optd['TIMEZONE']
@@ -393,16 +394,17 @@ def event_loop(state,scr):
             idle_seconds = (now-last_sdevent).seconds 
             idle_second_hand = divmod(idle_seconds,max_second_hand)[1]
             current = state.get_current()
+            default_start = config.optd['DEFAULT_START_TIME']
  
             if current['ON_TOUR'] and current['TOUR_STATE'] != config.PLAYING:
                 then_time = now.replace(year=current['TOUR_YEAR'])
-                tape = state.date_reader.archive.tape_at_time(then_time)  # At the "scheduled time", stop whatever is playing and wait.
+                tape = state.date_reader.archive.tape_at_time(then_time,default_start=default_start)  # At the "scheduled time", stop whatever is playing and wait.
                 if not tape: 
                   current['TOUR_STATE'] = config.INIT
                 else:
                   current['TOUR_STATE'] = config.READY
                   state.player.stop()
-                  start_time = state.date_reader.archive.tape_start_time(then_time)  
+                  start_time = state.date_reader.archive.tape_start_time(then_time,default_start=default_start)  
                   scr.show_experience(text=F"ON_TOUR:{current['TOUR_YEAR']}\nWaiting for show",force=True)
                   random.seed(then_time.date())
                   wait_time = random.randrange(60,60*10)
