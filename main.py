@@ -429,7 +429,7 @@ def event_loop(state,scr):
                      point_in_show = (then_time - (start_time+datetime.timedelta(seconds=wait_time))).seconds
                      play_on_tour(tape,state,scr,seek_to=point_in_show) 
             if current['ON_TOUR'] and current['TOUR_STATE'] == config.PLAYING:
-                if not player.status(): 
+                if player.playlist_pos == None:
                   current['TOUR_STATE'] = config.INIT
                   state.set(current)
                   track_event.set()
