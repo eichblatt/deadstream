@@ -426,7 +426,7 @@ def event_loop(state,scr):
                   logger.info(F"On Tour Tape Found on {then_time}. Sleeping 10 seconds. Waiting for {start_time + datetime.timedelta(seconds=wait_time)}")
                   sleep(10)
                   if now.time() >= (start_time + datetime.timedelta(seconds=wait_time)).time(): 
-                     point_in_show = then_time - start_time+datetime.timedelta(seconds=wait_time)).seconds
+                     point_in_show = (then_time - (start_time+datetime.timedelta(seconds=wait_time))).seconds
                      play_on_tour(tape,state,scr,seek_to=point_in_show) 
             if current['ON_TOUR'] and current['TOUR_STATE'] == config.PLAYING:
                 if not player.status(): 
