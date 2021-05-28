@@ -263,7 +263,7 @@ class GDArchive:
     tape = self.tape_at_date(dt)
     if not tape: return None
     tape_start = self.tape_start_time(dt,default_start)
-    tape_end = tape_start + datetime.timedelta(hours=7)
+    tape_end = tape_start + datetime.timedelta(hours=3)
     if (dt > tape_start) and dt < tape_end:
       return self.best_tape(dt.date())
     else: return None
