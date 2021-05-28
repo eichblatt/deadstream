@@ -19,6 +19,7 @@ import subprocess,re,os
 parser = optparse.OptionParser()
 parser.add_option('--wpa_path',dest='wpa_path',type="string",default='/etc/wpa_supplicant/wpa_supplicant.conf',help="path to wpa_supplicant file [default %default]")
 parser.add_option('-d','--debug',dest='debug',type="int",default=1,help="If > 0, don't run the main script on loading [default %default]")
+parser.add_option('--force',dest='force',action="store_true",default=False,help="Force reconnection (for testing) [default %default]")
 parser.add_option('--sleep_time',dest='sleep_time',type="int",default=10,help="how long to sleep before checking network status [default %default]")
 parser.add_option('-v','--verbose',dest='verbose',action="store_true",default=False,help="Print more verbose information [default %default]")
 parms,remainder = parser.parse_args()
@@ -30,7 +31,7 @@ if parms.verbose:
   logger.setLevel(logging.DEBUG) 
   controlsLogger.setLevel(logging.DEBUG)
 else:
-  logger.setLevel(logging.INFO) 
+  logger.setLevel(logging.DEBUG) 
   controlsLogger.setLevel(logging.INFO) 
 
 for k in parms.__dict__.keys(): print (F"{k:20s} : {parms.__dict__[k]}")
@@ -70,6 +71,7 @@ rewind = retry_call(Button, config.rewind_pin)
 select = retry_call(Button, config.select_pin,hold_time = 2,hold_repeat = True)
 stop = retry_call(Button, config.stop_pin)
 
+rewind.when_pressed = lambda x: rewind_button(x)
 select.when_pressed = lambda x: select_button(x)
 stop.when_pressed = lambda x: stop_button(x)
 
@@ -213,7 +215,7 @@ def get_wifi_choices():
   raw = retry_call(subprocess.check_output,cmd,shell=True)
   #raw = subprocess.check_output(cmd,shell=True)
   choices = [x.lstrip().replace('ESSID:','').replace('"','') for x in raw.decode().split('\n')]
-  [x for x in choices if bool(re.search('[a-z,0-9]',x,re.IGNORECASE))]
+  choices = [x for x in choices if bool(re.search(r'[a-z,0-9]',x,re.IGNORECASE))]
   logger.info (F"Wifi Choices {choices}")
   return choices
 
@@ -248,14 +250,14 @@ sleep(parms.sleep_time)
 
 scr.show_text("Connect wifi",force=True)
 icounter = 0
-while (not wifi_connected()) and icounter < 3:
+while ((not wifi_connected()) and icounter < 3) or (parms.force and icounter<1):
   scr.clear()
   scr.show_text(F"Wifi not connected\n{icounter}",font=scr.smallfont,force=True)
   icounter = icounter + 1
   wifi = select_option(scr,y,"Select Wifi Name\nTurn Year, Select")
   passkey = select_chars(scr,y,"Input Passkey\nTurn Year then Select\nPress Stop to end")
   scr.clear()
-  scr.show_text(F"wifi: {wifi}\npasskey:{passkey}",loc=(0,0),color=(255,255,255),font=scr.smallfont,force=True)
+  scr.show_text(F"wifi:\n{wifi}\npasskey:\n{passkey}",loc=(0,0),color=(255,255,255),font=scr.smallfont,force=True)
   update_wpa_conf(parms.wpa_path,wifi,passkey)
   cmd = "sudo killall -HUP wpa_supplicant"
   os.system(cmd)
