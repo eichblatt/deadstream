@@ -241,14 +241,16 @@ def month_button(button,state):
 
 @sequential
 def month_button_longpress(button,state,scr):
-   logger.debug (F" longpress of month button -- going to/from ON_TOUR mode")
+   logger.debug (" longpress of month button")
    current = state.get_current()
    if current['ON_TOUR']:
+     logger.info ("   EXITING ON_TOUR mode")
      current['ON_TOUR'] = False
      current['TOUR_YEAR'] = None
    else:
      current['ON_TOUR'] = True
      current['TOUR_YEAR'] = state.date_reader.date.year
+     logger.info (F" ---> ON_TOUR:{current['TOUR_YEAR']}")
    scr.show_experience(text=F"ON_TOUR:{current['TOUR_YEAR']}",force=True)
    sleep(3)
    track_event.set()
