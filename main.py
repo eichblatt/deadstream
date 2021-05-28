@@ -314,7 +314,7 @@ def update_tracks(state,scr):
 def to_date(d): return datetime.datetime.strptime(d,'%Y-%m-%d').date()
 
 @sequential
-def play_on_tour(tape,state,scr,seek_to=0,seek_by=60):
+def play_on_tour(tape,state,scr,seek_to=0):
    logger.debug ("play_on_tour -- nyi ")
    current = state.get_current()
    if tape.identifier == current['TAPE_ID']: return # already playing.
@@ -325,14 +325,8 @@ def play_on_tour(tape,state,scr,seek_to=0,seek_by=60):
    current['DATE'] = to_date(tape.date)
    current['VENUE'] = tape.venue()
    state.player.insert_tape(tape) 
+   state.player.seek_in_tape_to(seek_to,ticking=True)
    state.player.play()
-   """
-   big,small = divmod(seek_to,seek_by)
-   for i in range(big): state.player.fseek(seek_by,sleeptime=.5)
-   big,small = divmod(small + big,seek_by)
-   for i in range(big): state.player.fseek(seek_by,sleeptime=.5)
-   state.player.fseek(small,sleeptime=.5)
-   """  
    current['PLAY_STATE'] = config.PLAYING
    current['TOUR_STATE'] = current['PLAY_STATE']
    state.set(current)
