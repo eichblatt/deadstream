@@ -632,14 +632,52 @@ class GDPlayer(MPV):
     self.playlist_pos = 0
     self.pause()
 
-  def next(self): 
+  def next(self,blocking=False): 
     if self.get_prop('playlist-pos')+1 == len(self.playlist): return
     self.command('playlist-next'); 
+    self.wait_for_event('file-loaded')   
 
   def prev(self): 
     if self.get_prop('playlist-pos') == 0: return
     self.command('playlist-prev'); 
 
+  def time_remaining(self,max_counts=40):
+    time_remaining = None
+    count = 0
+    while (time_remaining == None) and count < max_counts:
+      time_remaining = self.get_prop('time-remaining')
+      time.sleep(0.5)
+      count = count + 1
+    return time_remaining
+
+  def seek_in_tape_to(self,destination,ticking=True,threshold=1):
+    """ Seek to a time position in a tape. Since this can take some
+        time, the ticking option allows to take into account the time
+        required to seek (the slippage).
+        destination -- seconds from current tape location (from beginning?)
+    """
+    logger.debug(F'seek_in_tape_to {destination}')
+
+    start_tick = datetime.datetime.now()
+    slippage = 0; skipped = 0; dest_orig = destination
+    time_remaining = self.time_remaining()
+    playlist_pos = self.get_prop('playlist-pos') 
+    while (destination > time_remaining) and self.get_prop('playlist-pos')+1 < len(self.playlist):
+       duration = self.get_prop('duration')
+       logger.debug(F'seek_in_tape_to dest:{destination},time-remainig:{time_remaining},playlist-pos:{playlist_pos}, duration: {duration}, slippage {slippage}')
+       self.next(blocking=True)
+       skipped = skipped + time_remaining
+       destination = dest_orig - skipped
+       time_remaining = self.time_remaining()
+       if ticking: 
+          now_tick = datetime.datetime.now()
+          slippage = (now_tick - start_tick).seconds 
+          destination = destination + slippage
+       playlist_pos = self.get_prop('playlist-pos') 
+    self.seek(destination)
+    self.status()
+    return 
+ 
   def seek_to(self,track_no,destination=0.0,threshold=1):
     logger.debug(F'seek_to {track_no},{destination}')
     try:
