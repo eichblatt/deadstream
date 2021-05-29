@@ -16,6 +16,7 @@ import pkg_resources
 parser = optparse.OptionParser()
 parser.add_option('--box',dest='box',type="string",default='v1',help="v0 box has screen at 270. [default %default]")
 parser.add_option('--dbpath',dest='dbpath',type="string",default=os.path.join(GD.ROOT_DIR,'metadata'),help="path to database [default %default]")
+parser.add_option('--state_path',dest='state_path',type="string",default=os.path.join(GD.ROOT_DIR,'state.json'),help="path to state [default %default]")
 parser.add_option('--options_path',dest='options_path',type="string",default=os.path.join(GD.ROOT_DIR,'options.txt'),help="path to options file [default %default]")
 parser.add_option('-d','--debug',dest='debug',type="int",default=1,help="If > 0, don't run the main script on loading [default %default]")
 parser.add_option('-v','--verbose',dest='verbose',action="store_true",default=False,help="Print more verbose information [default %default]")
@@ -49,6 +50,12 @@ def sequential(func):
       except: raise 
       finally: free_event.set()
     return inner
+
+def load_state(parms):
+    f = open(parms.state_path,'r')
+    pass
+def save_state(state,parms):
+    pass
 
 def load_options(parms):
     f = open(parms.options_path,'r')
@@ -456,6 +463,7 @@ def event_loop(state,scr):
                 playstate_event.set()
                 #stagedate_event.set()         # NOTE: this would set the q_counter, etc. But it SHOULD work.
                 #scr.show_staged_date(date_reader.date)
+                save_state(state)
                 if idle_seconds > config.optd['QUIESCENT_TIME']: 
                    if config.DATE: scr.show_staged_date(config.DATE)
                    refresh_venue(state,idle_second_hand,refresh_times,date_reader.venue(),scr)
