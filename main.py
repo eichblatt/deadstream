@@ -51,10 +51,10 @@ def sequential(func):
       finally: free_event.set()
     return inner
 
-def load_state(parms):
+def load_state():
     f = open(parms.state_path,'r')
     pass
-def save_state(state,parms):
+def save_state(state):
     pass
 
 def load_options(parms):
@@ -64,7 +64,7 @@ def load_options(parms):
     optd['PWR_LED_ON'] = optd['PWR_LED_ON'].lower() == 'true'
     optd['SCROLL_VENUE'] = optd['SCROLL_VENUE'].lower() == 'true'
     optd['AUTO_PLAY'] = optd['AUTO_PLAY'].lower() == 'true'
-    optd['DEFAULT_START_TIME'] = datetime.datetime.strptime(optd['DEFAULT_START_TIME'],"%H:%M:%S")
+    optd['DEFAULT_START_TIME'] = datetime.datetime.strptime(optd['DEFAULT_START_TIME'],"%H:%M:%S").time()
     logger.info (F"in load_options, optd {optd}")
     config.optd = optd
     os.environ['TZ'] = optd['TIMEZONE']
@@ -106,6 +106,7 @@ def select_tape(tape,state):
    if config.optd['AUTO_PLAY'] and not EOT:
       logger.debug("Autoplaying tape")
       state.player.play()
+      scr.show_playstate(staged_play=True,force=True) 
       current['PLAY_STATE'] = config.PLAYING
    state.set(current)
 
@@ -128,7 +129,7 @@ def select_button(button,state):
      select_event.set()
 
 @sequential
-def select_button_longpress(button,state,scr):
+def select_button_longpress(button,state):
    logger.debug ("long pressing select")
    if not state.date_reader.tape_available(): return 
    current = state.get_current()
@@ -152,7 +153,7 @@ def select_button_longpress(button,state,scr):
    select_event.set()
 
 @sequential
-def play_pause_button(button,state,scr):
+def play_pause_button(button,state):
    current = state.get_current()
    if not current['PLAY_STATE'] in [config.READY,config.PLAYING,config.PAUSED,config.STOPPED]: return 
    if current['EXPERIENCE'] and current['PLAY_STATE'] in [config.PLAYING,config.PAUSED]: return 
@@ -242,8 +243,6 @@ def ffwd_button_longpress(button,state):
 @sequential
 def month_button(button,state):
    current = state.get_current()
-   sleep(button._hold_time)
-   if button.is_pressed: return # the button is being "held"
    if current['EXPERIENCE']: 
      current['EXPERIENCE'] = False
    else:
@@ -251,22 +250,8 @@ def month_button(button,state):
    state.set(current)
    track_event.set()
 
-@sequential
-def month_button_longpress(button,state,scr):
-   logger.debug (" longpress of month button")
-   current = state.get_current()
-   if current['ON_TOUR']:
-     logger.info ("   EXITING ON_TOUR mode")
-     current['ON_TOUR'] = False
-     current['TOUR_YEAR'] = None
-   else:
-     current['ON_TOUR'] = True
-     current['TOUR_YEAR'] = state.date_reader.date.year
-     logger.info (F" ---> ON_TOUR:{current['TOUR_YEAR']}")
-   scr.show_experience(text=F"ON_TOUR:{current['TOUR_YEAR']}",force=True)
-   sleep(3)
-   track_event.set()
-   state.set(current)
+def month_button_longpress(button,state):
+   logger.debug (F"long pressing {button.name} -- nyi")
 
 @sequential
 def day_button(button,state):
@@ -279,7 +264,7 @@ def day_button(button,state):
    state.date_reader.set_date(new_date)
    stagedate_event.set()
  
-def day_button_longpress(button,state,scr):
+def day_button_longpress(button,state):
    logger.debug (F"long pressing day button")
    scr.sleep() 
 
@@ -287,6 +272,8 @@ def day_button_longpress(button,state,scr):
 def year_button(button,state):
    current = state.get_current()
    #if current['EXPERIENCE']: return 
+   sleep(button._hold_time)
+   if button.is_pressed: return # the button is being "held"
    today = datetime.date.today(); now_m = today.month; now_d = today.day
    m = state.date_reader.date.month; d = state.date_reader.date.day; y = state.date_reader.date.year
 
@@ -305,11 +292,30 @@ def year_button(button,state):
    else:
      state.date_reader.set_date(datetime.date(y,now_m,now_d))
    stagedate_event.set()
- 
-def year_button_longpress(button,state):
-   logger.debug (F"long pressing {button.name} -- nyi")
 
-def update_tracks(state,scr):
+@sequential
+def year_button_longpress(button,state):
+   logger.debug (" longpress of month button")
+   current = state.get_current()
+   if current['ON_TOUR']:
+     scr.show_experience(text=F"ON_TOUR:{current['TOUR_YEAR']}\nHold 3s to exit",force=True)
+     sleep(3)
+     if button.is_held:
+       logger.info ("   EXITING ON_TOUR mode")
+       current['ON_TOUR'] = False
+       current['TOUR_YEAR'] = None
+       scr.show_experience(text="ON_TOUR: Finished",force=True)
+   else:
+     current['ON_TOUR'] = True
+     current['TOUR_YEAR'] = state.date_reader.date.year
+     logger.info (F" ---> ON_TOUR:{current['TOUR_YEAR']}")
+     scr.show_experience(text=F"ON_TOUR:{current['TOUR_YEAR']}",force=True)
+   sleep(3)
+   track_event.set()
+   state.set(current)
+
+ 
+def update_tracks(state):
    current = state.get_current()
    if current['EXPERIENCE']: 
       scr.show_experience()
@@ -322,7 +328,7 @@ def update_tracks(state,scr):
 def to_date(d): return datetime.datetime.strptime(d,'%Y-%m-%d').date()
 
 @sequential
-def play_on_tour(tape,state,scr,seek_to=0):
+def play_on_tour(tape,state,seek_to=0):
    logger.debug ("play_on_tour -- nyi ")
    current = state.get_current()
    if tape.identifier == current['TAPE_ID']: return # already playing.
@@ -342,7 +348,7 @@ def play_on_tour(tape,state,scr,seek_to=0):
    return
 
 @sequential
-def refresh_venue(state,idle_second_hand,refresh_times,venue,scr):
+def refresh_venue(state,idle_second_hand,refresh_times,venue):
      venue = config.VENUE if config.VENUE else venue
      stream_only = False
      tape_color = (0,255,255)
@@ -380,7 +386,7 @@ def refresh_venue(state,idle_second_hand,refresh_times,venue,scr):
      elif idle_second_hand == refresh_times[5]:
         scr.show_venue(display_string,color=id_color)
 
-def event_loop(state,scr):
+def event_loop(state):
     date_reader = state.date_reader
     last_sdevent = datetime.datetime.now()
     q_counter = False
@@ -419,7 +425,7 @@ def event_loop(state,scr):
                   sleep(10)
                   if now.time() >= (start_time + datetime.timedelta(seconds=wait_time)).time(): 
                      point_in_show = (then_time - (start_time+datetime.timedelta(seconds=wait_time))).seconds
-                     play_on_tour(tape,state,scr,seek_to=point_in_show) 
+                     play_on_tour(tape,state,seek_to=point_in_show) 
             if current['ON_TOUR'] and current['TOUR_STATE'] == config.PLAYING:
                 if player.playlist_pos == None:
                   current['TOUR_STATE'] = config.INIT
@@ -439,13 +445,13 @@ def event_loop(state,scr):
                 scr.wake_up()
                 screen_event.set()
             if track_event.is_set():
-                update_tracks(state,scr)
+                update_tracks(state)
                 track_event.clear()
                 screen_event.set()
             if select_event.is_set():
                 current = state.get_current()
                 scr.show_selected_date(current['DATE'])
-                update_tracks(state,scr)
+                update_tracks(state)
                 select_event.clear()
                 scr.wake_up()
                 screen_event.set()
@@ -468,7 +474,7 @@ def event_loop(state,scr):
                 save_state(state)
                 if idle_seconds > config.optd['QUIESCENT_TIME']: 
                    if config.DATE: scr.show_staged_date(config.DATE)
-                   refresh_venue(state,idle_second_hand,refresh_times,date_reader.venue(),scr)
+                   refresh_venue(state,idle_second_hand,refresh_times,date_reader.venue())
                 else:  
                    scr.show_staged_date(date_reader.date)
                    scr.show_venue(date_reader.venue())
@@ -530,11 +536,11 @@ ffwd = retry_call(Button, config.ffwd_pin,hold_time = 0.5,hold_repeat = False)
 rewind = retry_call(Button, config.rewind_pin,hold_time = 0.5,hold_repeat = False)
 stop = retry_call(Button, config.stop_pin,hold_time = 7)
 
-play_pause.when_pressed = lambda button: play_pause_button(button,state,scr)
+play_pause.when_pressed = lambda button: play_pause_button(button,state)
 play_pause.when_held = lambda button: play_pause_button_longpress(button,state) 
 
 select.when_pressed = lambda button: select_button(button,state)
-select.when_held = lambda button: select_button_longpress(button,state,scr)
+select.when_held = lambda button: select_button_longpress(button,state)
 
 ffwd.when_pressed = lambda button: ffwd_button(button,state)
 ffwd.when_held = lambda button: ffwd_button_longpress(button,state)
@@ -549,14 +555,15 @@ m_button.when_pressed = lambda button: month_button(button,state)
 d_button.when_pressed = lambda button: day_button(button,state)
 y_button.when_pressed = lambda button: year_button(button,state)
 
-d_button.when_held = lambda button: day_button_longpress(button,state,scr)
-m_button.when_held = lambda button: month_button_longpress(button,state,scr)
+d_button.when_held = lambda button: day_button_longpress(button,state)
+#m_button.when_held = lambda button: month_button_longpress(button,state)
+y_button.when_held = lambda button: year_button_longpress(button,state)
 
 scr.clear()
 #scr.show_text(F"Powered by\n archive.org\n\n{ip_address}",color=(0,255,255))
 scr.show_text(F"Powered by\n archive.org\n",color=(0,255,255))
 
-eloop = threading.Thread(target=event_loop,args=(state,scr))
+eloop = threading.Thread(target=event_loop,args=(state))
 
 #[x.cleanup() for x in [y,m,d]] ## redundant, only one cleanup is needed!
 
