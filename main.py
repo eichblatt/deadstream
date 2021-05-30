@@ -51,11 +51,46 @@ def sequential(func):
       finally: free_event.set()
     return inner
 
-def load_state():
-    f = open(parms.state_path,'r')
-    pass
+def load_saved_state(state):
+    """ This function loads a subset of the fields from the state, which was saved with json
+        Not Yet Working !!! 
+    """ 
+    logger.info (F"Loading Saved State from {parms.state_path}")
+    state_orig = state
+    try:
+      current = state.get_current()
+      f = open(parms.state_path,'r')
+      loaded_state = json.loads(f.read())
+      fields_to_load = ['DATE','VENUE','STAGED_DATE','ON_TOUR','TOUR_YEAR','TOUR_STATE','EXPERIENCE','TRACK_NUM','TAPE_ID','TRACK_TITLE','NEXT_TRACK_TITLE','TRACK_ID','DATE_READER']
+      for field in fields_to_load:
+         if field in ['DATE','STAGED_DATE','DATE_READER']: current[field] = to_date(loaded_state[field])
+         else: current[field] = loaded_state[field] 
+      if current['STAGED_DATE']:
+        state.date_reader.m.steps = current['STAGED_DATE'].month
+        state.date_reader.d.steps = current['STAGED_DATE'].day
+        state.date_reader.y.steps = current['STAGED_DATE'].year - 1965
+        state.date_reader.update()
+      elif current['DATE_READER']:
+        state.date_reader.m.steps = current['DATE_READER'].month
+        state.date_reader.d.steps = current['DATE_READER'].day
+        state.date_reader.y.steps = current['DATE_READER'].year - 1965
+        state.date_reader.update()
+ 
+      current['DATE_READER'] = state.date_reader
+      state.set(current)
+      stagedate_event.set()
+    except:
+      logger.warning(F"Failed while Loading Saved State from {parms.state_path}")
+      raise
+      return(state_orig)  
+    return state
+
+@sequential
 def save_state(state):
-    pass
+    #logger.debug (F"Saving state to {parms.state_path}")
+    current = state.get_current()
+    with open(parms.state_path, 'w') as statefile:
+         json.dump(current,statefile,indent=1,default=str)
 
 def load_options(parms):
     f = open(parms.options_path,'r')
@@ -64,6 +99,7 @@ def load_options(parms):
     optd['PWR_LED_ON'] = optd['PWR_LED_ON'].lower() == 'true'
     optd['SCROLL_VENUE'] = optd['SCROLL_VENUE'].lower() == 'true'
     optd['AUTO_PLAY'] = optd['AUTO_PLAY'].lower() == 'true'
+    optd['RELOAD_STATE_ON_START'] = optd['RELOAD_STATE_ON_START'].lower() == 'true'
     optd['DEFAULT_START_TIME'] = datetime.datetime.strptime(optd['DEFAULT_START_TIME'],"%H:%M:%S").time()
     logger.info (F"in load_options, optd {optd}")
     config.optd = optd
@@ -320,16 +356,18 @@ def update_tracks(state):
    if current['EXPERIENCE']: 
       scr.show_experience()
    elif current['ON_TOUR'] and current['TOUR_STATE'] in [config.READY,config.PLAYING]: 
-      scr.show_experience(text=F"Hold Month to\nExit TOUR {current['TOUR_YEAR']}")
+      scr.show_experience(text=F"Hold Year to\nExit TOUR {current['TOUR_YEAR']}")
    else:
      scr.show_track(current['TRACK_TITLE'],0)
      scr.show_track(current['NEXT_TRACK_TITLE'],1)
 
-def to_date(d): return datetime.datetime.strptime(d,'%Y-%m-%d').date()
+def to_date(d): 
+   if not d: return d
+   return datetime.datetime.strptime(d,'%Y-%m-%d').date()
 
 @sequential
 def play_on_tour(tape,state,seek_to=0):
-   logger.debug ("play_on_tour -- nyi ")
+   logger.debug ("play_on_tour")
    current = state.get_current()
    if tape.identifier == current['TAPE_ID']: return # already playing.
    current['PLAY_STATE'] = config.READY  #  eject current tape, insert new one in player
@@ -417,11 +455,12 @@ def event_loop(state):
                 else:
                   current['TOUR_STATE'] = config.READY
                   state.player.stop()
+                  current['TAPE_ID'] = None
                   start_time = state.date_reader.archive.tape_start_time(then_time,default_start=default_start)  
                   scr.show_experience(text=F"ON_TOUR:{current['TOUR_YEAR']}\nWaiting for show",force=True)
                   random.seed(then_time.date())
                   wait_time = random.randrange(60,60*10)
-                  logger.info(F"On Tour Tape Found on {then_time}. Sleeping 10 seconds. Waiting for {start_time + datetime.timedelta(seconds=wait_time)}")
+                  logger.info(F"On Tour Tape Found on {then_time}. Sleeping 10 seconds. Waiting for {(start_time + datetime.timedelta(seconds=wait_time)).time()}")
                   sleep(10)
                   if now.time() >= (start_time + datetime.timedelta(seconds=wait_time)).time(): 
                      point_in_show = (then_time - (start_time+datetime.timedelta(seconds=wait_time))).seconds
@@ -563,7 +602,8 @@ scr.clear()
 #scr.show_text(F"Powered by\n archive.org\n\n{ip_address}",color=(0,255,255))
 scr.show_text(F"Powered by\n archive.org\n",color=(0,255,255))
 
-eloop = threading.Thread(target=event_loop,args=(state))
+if config.optd['RELOAD_STATE_ON_START']: load_saved_state(state)
+eloop = threading.Thread(target=event_loop,args=[state])
 
 #[x.cleanup() for x in [y,m,d]] ## redundant, only one cleanup is needed!
 
