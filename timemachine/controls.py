@@ -18,6 +18,20 @@ logger = logging.getLogger(__name__)
 print (F"Name of controls logger is {__name__}")
 
 screen_semaphore = BoundedSemaphore(1)
+state_semaphore = BoundedSemaphore(1)
+
+def with_state_semaphore(func):
+    def inner(*args,**kwargs):
+      try: 
+        acquired = state_semaphore.acquire(timeout=5)
+        if not acquired: 
+          logger.warn ("State semaphore not acquired after 5 seconds!")
+          raise Exception('state semaphore not acquired')
+        func(*args, **kwargs)
+      except: raise 
+      finally: state_semaphore.release()
+    return inner
+
 
 def with_semaphore(func):
     def inner(*args,**kwargs):
@@ -311,6 +325,7 @@ class state:
     current = self.get_current()
     return self.dict_diff(previous,current)
 
+  @with_state_semaphore
   def set(self,new_state):
    for k in new_state.keys():
       config.__dict__[k] = new_state[k]   # NOTE This directly names config, which I'd like to be a variable.
