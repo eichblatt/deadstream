@@ -6,5 +6,6 @@
  "AUDIO_OUT": "Analog",
  "AUTO_PLAY": "true",
  "TIMEZONE": "America/New_York",
+ "RELOAD_STATE_ON_START": "true",
  "DEFAULT_START_TIME": "17:00:00"
 }
