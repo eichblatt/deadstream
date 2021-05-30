@@ -81,7 +81,7 @@ def load_saved_state(state):
       stagedate_event.set()
     except:
       logger.warning(F"Failed while Loading Saved State from {parms.state_path}")
-      raise
+      #raise
       return(state_orig)  
     return state
 
