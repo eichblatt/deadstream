@@ -125,7 +125,7 @@ if parms.verbose:
   GDLogger.setLevel(logging.DEBUG)
   controlsLogger.setLevel(logging.INFO)
 
-def select_tape(tape,state):
+def select_tape(tape,state,autoplay=False):
    current = state.get_current()
    if tape.identifier == current['TAPE_ID']: return # already selected.
    logger.debug(F"current state at entry {current}")
@@ -139,30 +139,37 @@ def select_tape(tape,state):
    current['VENUE'] = state.date_reader.venue()
    state.player.insert_tape(tape) 
    logger.debug(F"current state {current}")
-   if config.optd['AUTO_PLAY'] and not EOT:
+   if autoplay and not EOT:
       logger.debug("Autoplaying tape")
-      state.player.play()
       scr.show_playstate(staged_play=True,force=True) 
+      state.player.play()
       current['PLAY_STATE'] = config.PLAYING
+      playstate_event.set()
    state.set(current)
+   return state
+
+def select_current_date(state,autoplay=False):
+   if not state.date_reader.tape_available(): return 
+   date_reader = state.date_reader
+   tapes = date_reader.archive.tape_dates[date_reader.fmtdate()]
+   tape = tapes[0] 
+   state = select_tape(tape,state,autoplay=autoplay)
+   
+   logger.debug(F"current state after selecting tape {state}")
+   select_event.set()
+   return state
 
 @sequential
 def select_button(button,state):
+   sleep(button._hold_time * 1.01)
+   if button.is_pressed or button.is_held: return
    logger.debug ("pressing select")
    current = state.get_current()
    #if current['EXPERIENCE']: return 
    if current['ON_TOUR'] and current['TOUR_STATE'] in [config.READY,config.PLAYING]: return 
-   if not state.date_reader.tape_available(): return 
-   date_reader = state.date_reader
-   tapes = date_reader.archive.tape_dates[date_reader.fmtdate()]
-   sleep(button._hold_time * 1.01)
-   if button.is_pressed or button.is_held: return
-   else: 
-     logger.debug ("pressing, not holding select")
-     tape = tapes[0] 
-     select_tape(tape,state)
-     current = state.get_current()
-     select_event.set()
+   state = select_current_date(state,autoplay=config.optd['AUTO_PLAY'])
+   logger.debug(F"current state after select button {state}")
+   return state
 
 @sequential
 def select_button_longpress(button,state):
@@ -185,19 +192,24 @@ def select_button_longpress(button,state):
          if not button.is_held: break
    scr.show_venue(tape_id,color=id_color)
    tape = tapes[itape] 
-   select_tape(tape,state)
+   state = select_tape(tape,state)
    select_event.set()
 
 @sequential
 def play_pause_button(button,state):
    current = state.get_current()
-   if not current['PLAY_STATE'] in [config.READY,config.PLAYING,config.PAUSED,config.STOPPED]: return 
+   if current['PLAY_STATE'] in [config.ENDED]: return
    if current['EXPERIENCE'] and current['PLAY_STATE'] in [config.PLAYING,config.PAUSED]: return 
    if current['ON_TOUR'] and current['TOUR_STATE'] in [config.READY,config.PLAYING]: return 
    logger.debug ("pressing play_pause")
-   if current['PLAY_STATE'] == config.PLAYING: 
+   if current['PLAY_STATE'] in [config.INIT]: 
+      logger.info("Selecting current date, and play") 
+      state = select_current_date(state,autoplay=True)
+      current = state.get_current()
+   elif current['PLAY_STATE'] == config.PLAYING: 
       logger.info("Pausing on player") 
       state.player.pause()
+      current['PAUSED_AT'] = datetime.datetime.now()
       current['PLAY_STATE'] = config.PAUSED
    elif current['PLAY_STATE'] in [config.PAUSED,config.STOPPED,config.READY]: 
       current['PLAY_STATE'] = config.PLAYING
@@ -510,6 +522,12 @@ def event_loop(state):
                 playstate_event.set()
                 #stagedate_event.set()         # NOTE: this would set the q_counter, etc. But it SHOULD work.
                 #scr.show_staged_date(date_reader.date)
+                if current['PLAY_STATE'] == config.PAUSED:  # prevent overnight pauses 
+                   if (now - current['PAUSED_AT']).seconds > 3 * 3600:
+                      state.player.stop()  
+                      current['PLAY_STATE'] = config.STOPPED
+                      state.set(current)
+                      playstate_event.set()
                 save_state(state)
                 if idle_seconds > config.optd['QUIESCENT_TIME']: 
                    if config.DATE: scr.show_staged_date(config.DATE)
