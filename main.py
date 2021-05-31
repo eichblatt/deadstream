@@ -523,7 +523,7 @@ def event_loop(state):
                 #stagedate_event.set()         # NOTE: this would set the q_counter, etc. But it SHOULD work.
                 #scr.show_staged_date(date_reader.date)
                 if current['PLAY_STATE'] == config.PAUSED:  # prevent overnight pauses 
-                   if (now - current['PAUSED_AT']).seconds > 3 * 3600:
+                   if (now - current['PAUSED_AT']).seconds > 1 * 3600:
                       state.player.stop()  
                       current['PLAY_STATE'] = config.STOPPED
                       state.set(current)
