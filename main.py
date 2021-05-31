@@ -1,5 +1,5 @@
 #!/usr/bin/python3
-import optparse,random,logging,os,datetime,random
+import optparse,random,logging,os,datetime
 import threading,subprocess
 import json,time
 from timemachine import GD
@@ -36,6 +36,7 @@ free_event = Event()
 stop_event = Event()
 screen_event = Event()
 
+random.seed(datetime.datetime.now())  # to ensure that random show will be new each time.
 
 @retry(stop=stop_after_delay(10))
 def retry_call(callable: Callable, *args, **kwargs):
