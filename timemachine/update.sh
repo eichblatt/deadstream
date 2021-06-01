@@ -5,6 +5,6 @@ date >> $HOME/update.log
 
 cd $HOME/deadstream
 
-git pull
+git pull >> $HOME/update.log
 
 sudo service timemachine restart
