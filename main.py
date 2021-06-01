@@ -253,9 +253,10 @@ def stop_button(button,state):
    state.set(current)
    playstate_event.set()
 
+@sequential
 def stop_button_longpress(button,state):
    logger.debug (" longpress of stop button -- loading options menu" )
-   scr.show_experience(text="Hold 5s to Update Code",force=True)
+   scr.show_experience(text="Hold 5s to Update\nCode and Restart",force=True)
    sleep(5)
    if button.is_held:
      os.system(F"sh {GD.ROOT_DIR}/update.sh")  
