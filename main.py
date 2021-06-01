@@ -1,5 +1,5 @@
 #!/usr/bin/python3
-import optparse,random,logging,os,datetime,random
+import optparse,random,logging,os,datetime
 import threading,subprocess
 import json,time
 from timemachine import GD
@@ -36,6 +36,7 @@ free_event = Event()
 stop_event = Event()
 screen_event = Event()
 
+random.seed(datetime.datetime.now())  # to ensure that random show will be new each time.
 
 @retry(stop=stop_after_delay(10))
 def retry_call(callable: Callable, *args, **kwargs):
@@ -252,9 +253,13 @@ def stop_button(button,state):
    state.set(current)
    playstate_event.set()
 
+@sequential
 def stop_button_longpress(button,state):
    logger.debug (" longpress of stop button -- loading options menu" )
-   os.system(F"sh {GD.ROOT_DIR}/update.sh")  
+   scr.show_experience(text="Hold 5s to Update\nCode and Restart",force=True)
+   sleep(5)
+   if button.is_held:
+     os.system(F"sh {GD.ROOT_DIR}/update.sh")  
 
 @sequential
 def rewind_button(button,state):

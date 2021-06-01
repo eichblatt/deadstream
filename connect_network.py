@@ -19,7 +19,7 @@ import subprocess,re,os
 parser = optparse.OptionParser()
 parser.add_option('--wpa_path',dest='wpa_path',type="string",default='/etc/wpa_supplicant/wpa_supplicant.conf',help="path to wpa_supplicant file [default %default]")
 parser.add_option('-d','--debug',dest='debug',type="int",default=1,help="If > 0, don't run the main script on loading [default %default]")
-parser.add_option('--force',dest='force',action="store_true",default=False,help="Force reconnection (for testing) [default %default]")
+parser.add_option('--test',dest='test',action="store_true",default=False,help="Force reconnection (for testing) [default %default]")
 parser.add_option('--sleep_time',dest='sleep_time',type="int",default=10,help="how long to sleep before checking network status [default %default]")
 parser.add_option('-v','--verbose',dest='verbose',action="store_true",default=False,help="Print more verbose information [default %default]")
 parms,remainder = parser.parse_args()
@@ -63,7 +63,7 @@ def stop_button(button):
    done_event.set()
 
 
-y = retry_call(RotaryEncoder, config.year_pins[1], config.year_pins[0],max_steps = 0,threshold_steps = (-1,93))
+y = retry_call(RotaryEncoder, config.year_pins[1], config.year_pins[0],max_steps = 0,threshold_steps = (-1,100))
 y.when_rotated = lambda x: twist_knob(screen_event, y, "year")
 y_button = retry_call(Button, config.year_pins[2])
 
@@ -162,24 +162,41 @@ def select_chars(scr,y,message):
 
       text = 'DEL' 
       (text_width,text_height)= scr.oldfont.getsize(text)
-      if y.steps<0: 
+      if y.steps<0:  # we are deleting
         scr.show_text(text,loc=(x_loc,y_loc),font=scr.oldfont,color=(0,0,255),force=False)
         scr.show_text(printable_chars[:screen_width],loc=(x_loc + text_width,y_loc),font=scr.oldfont,force=True)
         continue
       scr.show_text(text,loc=(x_loc,y_loc),font=scr.oldfont,force=False)
       x_loc = x_loc + text_width
 
+      # print the white before the red, if applicable
       text = printable_chars[max(0,y.steps-int(screen_width/2)):y.steps] 
+      for x in printable_chars[94:]: text = text.replace(x,u'\u25A1')
       (text_width,text_height)= scr.oldfont.getsize(text)
       scr.show_text(text,loc=(x_loc,y_loc),font=scr.oldfont,force=False)
       x_loc = x_loc + text_width
       
+      # print the red character
       text = printable_chars[y.steps] 
+      if text == ' ':
+        text = "SPC"
+      elif text == '\t':
+        text = "\\t"
+      elif text == '\n':
+        text = "\\n"
+      elif text == '\r':
+        text = "\\r"
+      elif text == '\v':
+        text = "\\v"
+      elif text == '\f':
+        text = "\\f"
       (text_width,text_height)= scr.oldfont.getsize(text)
       scr.show_text(text,loc=(x_loc,y_loc),font=scr.oldfont,color=(0,0,255),force=False)
       x_loc = x_loc + text_width
 
+      # print the white after the red, if applicable
       text = printable_chars[y.steps+1:min(y.steps+screen_width,len(printable_chars))] 
+      for x in printable_chars[94:]: text = text.replace(x,u'\u25A1')
       (text_width,text_height)= scr.oldfont.getsize(text)
       scr.show_text(text,loc=(x_loc,y_loc),font=scr.oldfont,force=True)
       x_loc = x_loc + text_width
@@ -192,7 +209,7 @@ def select_chars(scr,y,message):
       scr.clear_area(selected_bbox,force=False)
     else:
       selected = selected + printable_chars[y.steps] 
-    scr.show_text(F"So far: \n{selected}",loc=selected_bbox.origin(),color=(255,255,255),font=scr.smallfont,force=True)
+    scr.show_text(F"So far: \n{selected}",loc=selected_bbox.origin(),color=(255,255,255),font=scr.oldfont,force=True)
  
   logger.info (F"word selected {selected}")
   scr.update_now = update_now
@@ -250,17 +267,18 @@ sleep(parms.sleep_time)
 
 scr.show_text("Connect wifi",force=True)
 icounter = 0
-while ((not wifi_connected()) and icounter < 3) or (parms.force and icounter<1):
+while ((not wifi_connected()) and icounter < 3) or (parms.test and icounter<1):
   scr.clear()
   scr.show_text(F"Wifi not connected\n{icounter}",font=scr.smallfont,force=True)
   icounter = icounter + 1
   wifi = select_option(scr,y,"Select Wifi Name\nTurn Year, Select")
-  passkey = select_chars(scr,y,"Input Passkey\nTurn Year then Select\nPress Stop to end")
+  passkey = select_chars(scr,y,"Passkey:Turn Year\nSelect. Stop to end")
   scr.clear()
-  scr.show_text(F"wifi:\n{wifi}\npasskey:\n{passkey}",loc=(0,0),color=(255,255,255),font=scr.smallfont,force=True)
+  scr.show_text(F"wifi:\n{wifi}\npasskey:\n{passkey}",loc=(0,0),color=(255,255,255),font=scr.oldfont,force=True)
   update_wpa_conf(parms.wpa_path,wifi,passkey)
   cmd = "sudo killall -HUP wpa_supplicant"
-  os.system(cmd)
+  if not parms.test: os.system(cmd)
+  else: print(F"not issuing command {cmd}")
   sleep(2*parms.sleep_time)
 
 if wifi_connected():
