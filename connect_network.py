@@ -83,8 +83,8 @@ screen_event = Event()
 scr = controls.screen(upside_down=False)
 scr.clear()
 
-def select_option(scr,y,message):
-  choices = get_wifi_choices()
+def select_option(scr,y,message,choices):
+  if type(choices) == type(lambda: None): choices = choices()
   scr.clear()
   selected = None
   y.steps = 0 
@@ -103,7 +103,7 @@ def select_option(scr,y,message):
 
   while not select_event.is_set():
       if rewind_event.is_set():
-        choices = get_wifi_choices()
+        choices = choice_fn()
         rewind_event.clear()
       scr.clear_area(selection_bbox,force=False)
       x_loc = 0
@@ -240,12 +240,14 @@ def get_wifi_choices():
   logger.info (F"Wifi Choices {choices}")
   return choices
 
-def update_wpa_conf(wpa_path,wifi,passkey):
+def update_wpa_conf(wpa_path,wifi,passkey,extra_dict={}):
   logger.info (F"Updating the wpa_conf file {wpa_path}")
   #if not os.path.exists(wpa_path): raise Exception('File Missing')
   #with open(wpa_path,'r') as f: wpa_lines = [x.rstrip() for x in f.readlines()]
   wpa_lines = ['ctrl_interface=DIR=/var/run/wpa_supplicant GROUP=netdev','update_config=1','country=US']
-  wpa = wpa_lines + ['','network={', F'        ssid="{wifi}"', F'        psk="{passkey}"', '    }']
+  wpa = wpa_lines + ['','network={', F'        ssid="{wifi}"', F'        psk="{passkey}"']
+  for (k,v) in extra_dict.items(): wpa = wpa + [F'        {k}="{v}"'] 
+  wpa = wpa + ['    }']
   new_wpa_path = os.path.join(os.getenv('HOME'),'wpa_supplicant.conf')
   f = open(new_wpa_path,'w')
   f.write('\n'.join(wpa))
@@ -268,6 +270,19 @@ def exit_success(status=0,sleeptime=5):
   sleep(sleeptime)
   sys.exit(status)
 
+def get_wifi_params():
+  wifi = select_option(scr,y,"Select Wifi Name\nTurn Year, Select",get_wifi_choices)
+  passkey = select_chars(scr,y,"Passkey:Turn Year\nSelect. Stop to end",message2=wifi)
+  need_extra_fields = 'no'
+  extra_dict = {}
+  need_extra_fields = select_option(scr,y,"Extra Fields\nRequired?",['no','yes'])
+  while need_extra_fields == 'yes':
+    field_name = select_chars(scr,y,"Field Name:Turn Year\nSelect. Stop to end")
+    field_value = select_chars(scr,y,"Field Value:Turn Year\nSelect. Stop to end")
+    extra_dict[field_name] = field_value 
+    need_extra_fields = select_option(scr,y,"More Fields\nRequired?",['no','yes'])
+  return wifi,passkey,extra_dict
+ 
 sleep(parms.sleep_time)
 
 scr.show_text("Connect wifi",force=True)
@@ -276,16 +291,15 @@ while ((not wifi_connected()) and icounter < 3) or (parms.test and icounter<1):
   scr.clear()
   scr.show_text(F"Wifi not connected\n{icounter}",font=scr.smallfont,force=True)
   icounter = icounter + 1
-  wifi = select_option(scr,y,"Select Wifi Name\nTurn Year, Select")
-  passkey = select_chars(scr,y,"Passkey:Turn Year\nSelect. Stop to end",message2=wifi)
+  wifi,passkey,extra_dict = get_wifi_params()
   scr.clear()
   scr.show_text(F"wifi:\n{wifi}\npasskey:\n{passkey}",loc=(0,0),color=(255,255,255),font=scr.oldfont,force=True)
-  update_wpa_conf(parms.wpa_path,wifi,passkey)
+  update_wpa_conf(parms.wpa_path,wifi,passkey,extra_dict)
   cmd = "sudo killall -HUP wpa_supplicant"
-  os.system(cmd)
-  print(F"command {cmd}")
-  #if not parms.test: os.system(cmd)
-  #else: print(F"not issuing command {cmd}")
+  #os.system(cmd)
+  #print(F"command {cmd}")
+  if not parms.test: os.system(cmd)
+  else: print(F"not issuing command {cmd}")
   sleep(2*parms.sleep_time)
 
 if wifi_connected():
