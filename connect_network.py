@@ -94,7 +94,6 @@ def select_option(scr,y,message):
   done_event.clear()
   rewind_event.clear()
   select_event.clear()
-  step = divmod(y.steps,len(choices))[1]
 
   scr.show_text(message,loc=(0,0),font=scr.smallfont,color=(0,255,255),force=True)
   (text_width,text_height)= scr.smallfont.getsize(message)
@@ -135,7 +134,7 @@ def select_option(scr,y,message):
   return selected
 
 
-def select_chars(scr,y,message):
+def select_chars(scr,y,message,message2="So Far"):
   scr.clear()
   printable_chars = string.printable
   selected = ''
@@ -209,20 +208,25 @@ def select_chars(scr,y,message):
       scr.clear_area(selected_bbox,force=False)
     else:
       selected = selected + printable_chars[y.steps] 
-    scr.show_text(F"So far: \n{selected}",loc=selected_bbox.origin(),color=(255,255,255),font=scr.oldfont,force=True)
+    scr.show_text(F"{message2}:\n{selected}",loc=selected_bbox.origin(),color=(255,255,255),font=scr.oldfont,force=True)
  
   logger.info (F"word selected {selected}")
   scr.update_now = update_now
   return selected
 
-def wifi_connected():
+def wifi_connected(max_attempts=3):
   logger.info("Checking if Wifi connected")
   cmd = "iwconfig"
-  raw = subprocess.check_output(cmd,shell=True)
-  raw = raw.decode()
-  address = raw.split("\n")[0].split()[3]
-  logger.info(F"wifi address read as {address}")
-  connected = '"' in str.replace(address,"ESSID:","")
+  connected = False
+  attempt = 0
+  while not connected and attempt < max_attempts:
+    if attempt>0: sleep(parms.sleep_time)
+    attempt = attempt + 1
+    raw = subprocess.check_output(cmd,shell=True)
+    raw = raw.decode()
+    address = raw.split("\n")[0].split()[3]
+    logger.info(F"wifi address read as {address}")
+    connected = '"' in str.replace(address,"ESSID:","")
   return connected
   #return False
 
@@ -273,13 +277,15 @@ while ((not wifi_connected()) and icounter < 3) or (parms.test and icounter<1):
   scr.show_text(F"Wifi not connected\n{icounter}",font=scr.smallfont,force=True)
   icounter = icounter + 1
   wifi = select_option(scr,y,"Select Wifi Name\nTurn Year, Select")
-  passkey = select_chars(scr,y,"Passkey:Turn Year\nSelect. Stop to end")
+  passkey = select_chars(scr,y,"Passkey:Turn Year\nSelect. Stop to end",message2=wifi)
   scr.clear()
   scr.show_text(F"wifi:\n{wifi}\npasskey:\n{passkey}",loc=(0,0),color=(255,255,255),font=scr.oldfont,force=True)
   update_wpa_conf(parms.wpa_path,wifi,passkey)
   cmd = "sudo killall -HUP wpa_supplicant"
-  if not parms.test: os.system(cmd)
-  else: print(F"not issuing command {cmd}")
+  os.system(cmd)
+  print(F"command {cmd}")
+  #if not parms.test: os.system(cmd)
+  #else: print(F"not issuing command {cmd}")
   sleep(2*parms.sleep_time)
 
 if wifi_connected():
