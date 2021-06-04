@@ -238,8 +238,9 @@ def get_wifi_choices():
 
 def update_wpa_conf(wpa_path,wifi,passkey):
   logger.info (F"Updating the wpa_conf file {wpa_path}")
-  if not os.path.exists(wpa_path): raise Exception('File Missing')
-  with open(wpa_path,'r') as f: wpa_lines = [x.rstrip() for x in f.readlines()]
+  #if not os.path.exists(wpa_path): raise Exception('File Missing')
+  #with open(wpa_path,'r') as f: wpa_lines = [x.rstrip() for x in f.readlines()]
+  wpa_lines = ['ctrl_interface=DIR=/var/run/wpa_supplicant GROUP=netdev','update_config=1','country=US']
   wpa = wpa_lines + ['','network={', F'        ssid="{wifi}"', F'        psk="{passkey}"', '    }']
   new_wpa_path = os.path.join(os.getenv('HOME'),'wpa_supplicant.conf')
   f = open(new_wpa_path,'w')
