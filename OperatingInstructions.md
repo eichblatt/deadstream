@@ -29,6 +29,37 @@ A list of characters will be shown in white, with one "selectable" letter shown 
 
 Once the correct Wifi name and password are entered, the Time Machine will launch the main program. You will not need to re-enter this information again as long as it remains valid. If you take the time machine to a new Wifi or change your password, the Wifi/passkey entry program will run again after a reboot.
 
+### If Wifi Connection Fails
+In the early prototypes, one failed password entry, etc, would put the Time Machine in a state where it would failt to connect to wifi without special intervention. If you are locked out of the Wifi connection, the procedure is:
+- Remove the SD card, and plug it into your PC. You should see a folder called **/boot**.
+- Create a file in the /boot folder called **wpa_supplicant.conf** with the following contents:
+```
+ctrl_interface=DIR=/var/run/wpa_supplicant GROUP=netdev
+update_config=1
+country=US
+
+network={
+        ssid="your wifi name"
+        psk="your wifi password"
+    }
+```
+**NOTE** replace your wifi name with the name of your wifi *in quotes*. For example if your wifi name is **MyWifi** and your password is **MyPassword**, then the file would look like:
+
+```
+ctrl_interface=DIR=/var/run/wpa_supplicant GROUP=netdev
+update_config=1
+country=US
+
+network={
+        ssid="MyWifi"
+        psk="MyPassword"
+    }
+```
+- *Windows users*: Make sure that the file is called **wpa_supplicant.conf**, and that it does not have a hidden file extension (like wpa_supplicant.conf.txt).
+- Place the SD card into the Raspberry Pi and re-boot. 
+- If this does not fix the Wifi connection problem, check the SD card contents again. The **wpa_supplicant.conf** file should no longer be in the **/boot** folder. The Raspberry Pi automatically moves it when it boots up. If that file is still there, then see the above instruction regarding hidden file extensions. If the file is not in the **/boot** folder, then check the contents of the **wpa_supplicant.conf** file. It should have worked, unless your Wifi name/passkey is incorrect, or you have a special type of Wifi. If so, please let me know.
+
+
 ## The Audio Output
 ### Analog Output
 The Time Machine is currently configured to output analog audio from the headphone jack. You can plug this into your stereo using [a cable like this](https://www.amazon.com/Rankie-3-5mm-2-Male-Adapter-Cable/dp/B071R4R5B8/ref=sr_1_4?dchild=1&keywords=headphone+to+RCA+male&qid=1621462242&sr=8-4), or [an adapter like this](https://www.amazon.com/CERRXIAN-LEMENG-2-Pack-Adapter-Splitter/dp/B018V7GTNK/ref=sr_1_16?dchild=1&keywords=headphone+to+RCA+female&qid=1621462318&sr=8-16)
