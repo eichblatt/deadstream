@@ -576,6 +576,10 @@ class GDPlayer(MPV):
     #self._set_property('cache-on-disk','yes')
     self._set_property('audio-buffer',10.0)  ## This allows to play directly from the html without a gap!
     self._set_property('cache','yes')  
+    #self._set_property('audio-device','alsa')
+    self.default_audio_device = 'auto'
+    audio_device = self.default_audio_device
+    self._set_property('audio-device',audio_device)
     self.download_when_possible = False
     if tape != None:
       self.insert_tape(tape)
@@ -624,11 +628,15 @@ class GDPlayer(MPV):
 
   def play(self): 
     if self.get_prop('audio-device') == 'null':
-       logger.info ("changing audio-device to 'alsa'")
-       self._set_property('audio-device','alsa')
+       logger.info (F"changing audio-device to {self.default_audio_device}")
+       audio_device = self.default_audio_device
+       self._set_property('audio-device',audio_device)
        time.sleep(2)
        self.pause()
        time.sleep(2)
+       self._set_property('audio-device',audio_device)
+       if self.get_prop('audio-device') != audio_device: 
+         logger.warning(F"Failed to set audio-device to {audio_device}")
     logger.info ("playing")
     self._set_property('pause',False)
     self.wait_until_playing()

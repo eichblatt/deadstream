@@ -530,7 +530,7 @@ def event_loop(state):
                 #stagedate_event.set()         # NOTE: this would set the q_counter, etc. But it SHOULD work.
                 #scr.show_staged_date(date_reader.date)
                 if current['PLAY_STATE'] == config.PAUSED:  # deal with overnight pauses, which freeze the alsa player.
-                   if (now - current['PAUSED_AT']).seconds > 1 * 3600:
+                   if (now - current['PAUSED_AT']).seconds > 3 * 3.600:
                       state.player._set_property('audio-device','null')
                       playstate_event.set()
                 save_state(state)
