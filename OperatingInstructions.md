@@ -72,6 +72,7 @@ Each knob can be turned, and also pressed as a button. Each button may be "press
 #### Year Knob
 - Turning the Year knob changes the year of the **staged date** from 1965 to 1995.
 - Pressing the Year knob moves the **staged date** to today's month/day during the currently staged year (**today in history**, whether there is a tape on that date or not). Pressing the Year knob *again* will move the **staged date** to the next **today in history** on which there *is* a tape in the archive (or, if this is the last, it will start over again from 1965).
+- Holding the year knob puts the Time Machine **on tour** in the currently selected year. This means that, whatever else the Time Machine is playing, it will play the Today In History show for the "on tour year" at the time that the show began (if known) or the default start time. To exit **on tour** mode, hold the year knob until it says that the Tour is finished (It will require an extra 3 seconds of holding the year button, in order to confirm).
 
 #### Select Button
 - Pressing the Select button selects the **staged date**, making it the **selected date**. This stops any currently playing tape.
