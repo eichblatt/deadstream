@@ -1,5 +1,7 @@
 import abc
-import aiohttp,asyncio,aiofiles
+import aiohttp
+import asyncio
+import aiofiles
 from aiohttp import ClientResponse, ClientSession, ClientTimeout
 import logging
 import requests
@@ -7,29 +9,33 @@ import json
 import os
 import csv
 import difflib
-import datetime,time,math
+import datetime
+import time
+import math
 import pkg_resources
 import pickle5 as pickle
 import codecs
 import threading
-from  . import config
+from . import config
 from contextlib import closing
-from operator import attrgetter,methodcaller
+from operator import attrgetter, methodcaller
 from mpv import MPV
 from importlib import reload
 from tenacity import retry
 from tenacity.stop import stop_after_delay
-from typing import Callable,List, Tuple
+from typing import Callable, List, Tuple
 from multiprocessing.pool import ThreadPool
 
-logging.basicConfig(format='%(asctime)s.%(msecs)03d %(levelname)s: %(name)s %(message)s', level=logging.INFO,datefmt='%Y-%m-%d %H:%M:%S')
+logging.basicConfig(format='%(asctime)s.%(msecs)03d %(levelname)s: %(name)s %(message)s', level=logging.INFO, datefmt='%Y-%m-%d %H:%M:%S')
 logger = logging.getLogger(__name__)
 ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
+
 
 @retry(stop=stop_after_delay(30))
 def retry_call(callable: Callable, *args, **kwargs):
     """Retry a call."""
     return callable(*args, **kwargs)
+
 
 class BaseTapeDownloader(abc.ABC):
     """Abstract base class for a Grateful Dead tape downloader.
@@ -209,562 +215,636 @@ class AsyncTapeDownloader(BaseTapeDownloader):
 
 
 class GDArchive:
-  """ The Grateful Dead Collection on Archive.org """
-  def __init__(self,dbpath=os.path.join(ROOT_DIR,'metadata'),url='https://archive.org',reload_ids=False, sync=False):
-    """Create a new GDArchive.
+    """ The Grateful Dead Collection on Archive.org """
 
-    Parameters:
+    def __init__(self, dbpath=os.path.join(ROOT_DIR, 'metadata'), url='https://archive.org', reload_ids=False, sync=False):
+        """Create a new GDArchive.
 
-      dbpath: Path to filesystem location where data are stored
-      url: URL for the internet archive
-      reload_ids: If True, force re-download of tape data
-      sync: If True use the slower synchronous downloader
-    """
-    self.url = url
-    self.dbpath = dbpath
-    self.idpath = os.path.join(self.dbpath,'ids.json')
-    self.idpath_pkl = os.path.join(self.dbpath,'ids.pkl')
-    self.set_data = GDSet()
-    self.downloader = (TapeDownloader if sync else AsyncTapeDownloader)(url)
-    self.tapes = self.load_tapes(reload_ids)
-    self.tape_dates = self.get_tape_dates()
-    self.dates = sorted(self.tape_dates.keys())
+        Parameters:
 
-  def __str__(self):
-    return self.__repr__()
+          dbpath: Path to filesystem location where data are stored
+          url: URL for the internet archive
+          reload_ids: If True, force re-download of tape data
+          sync: If True use the slower synchronous downloader
+        """
+        self.url = url
+        self.dbpath = dbpath
+        self.idpath = os.path.join(self.dbpath, 'ids.json')
+        self.idpath_pkl = os.path.join(self.dbpath, 'ids.pkl')
+        self.set_data = GDSet()
+        self.downloader = (TapeDownloader if sync else AsyncTapeDownloader)(url)
+        self.tapes = self.load_tapes(reload_ids)
+        self.tape_dates = self.get_tape_dates()
+        self.dates = sorted(self.tape_dates.keys())
 
-  def __repr__(self):
-    retstr = F"Grateful Dead Archive with {len(self.tapes)} tapes on {len(self.dates)} dates from {self.dates[0]} to {self.dates[-1]} "
-    return retstr
-  
-  def best_tape(self,date):
-    if type(date) == datetime.date: date = date.strftime('%Y-%m-%d')
-    if not date in self.dates: 
-      logger.info ("No Tape for date {}".format(date))
-      return None
-    return self.tape_dates[date][0]
-     
-  def tape_at_date(self,dt,which_tape=0):
-    then_date = dt.date()
-    then = then_date.strftime('%Y-%m-%d')
-    try: tape = self.tape_dates[then]
-    except KeyError: return None
-    return tape[which_tape]
- 
-  def tape_start_time(self,dt,default_start=datetime.time(19,0)):
-    tape = self.tape_at_date(dt)
-    if not tape: return None
-    tape_start_time = tape.set_data['start_time'] if tape.set_data else None
-    if tape_start_time == None: tape_start_time = default_start
-    tape_start = datetime.datetime.combine(dt.date(),tape_start_time)  # date + time
-    return tape_start
+    def __str__(self):
+        return self.__repr__()
 
-  def tape_at_time(self,dt,default_start=datetime.time(19,0)):
-    tape = self.tape_at_date(dt)
-    if not tape: return None
-    tape_start = self.tape_start_time(dt,default_start)
-    tape_end = tape_start + datetime.timedelta(hours=3)
-    if (dt > tape_start) and dt < tape_end:
-      return self.best_tape(dt.date())
-    else: return None
+    def __repr__(self):
+        retstr = F"Grateful Dead Archive with {len(self.tapes)} tapes on {len(self.dates)} dates from {self.dates[0]} to {self.dates[-1]} "
+        return retstr
 
-  def get_tape_dates(self):
-    tape_dates = {}
-    for tape in self.tapes:
-      k = tape.date
-      if not k in tape_dates.keys():
-        tape_dates[k] = [tape]
-      else:
-        tape_dates[k].append(tape)
-    # Now that we have all tape for a date, put them in the right order
-    self.tape_dates = {}
-    for k,v in tape_dates.items():
-      self.tape_dates[k] = sorted(v,key=methodcaller('compute_score'),reverse=True) 
-    return self.tape_dates
+    def best_tape(self, date):
+        if type(date) == datetime.date:
+            date = date.strftime('%Y-%m-%d')
+        if not date in self.dates:
+            logger.info("No Tape for date {}".format(date))
+            return None
+        return self.tape_dates[date][0]
 
-  def write_tapes(self,tapes):
-    os.makedirs(os.path.dirname(self.idpath),exist_ok=True)
-    json.dump(tapes,open(self.idpath,'w'))
-    pickle.dump(tapes,open(self.idpath_pkl,'wb'),pickle.HIGHEST_PROTOCOL)
-   
+    def tape_at_date(self, dt, which_tape=0):
+        then_date = dt.date()
+        then = then_date.strftime('%Y-%m-%d')
+        try:
+            tape = self.tape_dates[then]
+        except KeyError:
+            return None
+        return tape[which_tape]
 
-  def load_tapes(self,reload_ids=False):
-    if (not reload_ids) and os.path.exists(self.idpath_pkl):
-      tapes = pickle.load(open(self.idpath_pkl,'rb'))
-    elif (not reload_ids) and os.path.exists(self.idpath):
-      tapes = json.load(open(self.idpath,'r'))
-    else:
-      logger.info ("Loading Tapes from the Archive...this will take a few minutes")
-      tapes = self.downloader.get_tapes(list(range(1965, 1996, 1)))
-      self.write_tapes(tapes)
-    return [GDTape(self.dbpath,tape,self.set_data) for tape in tapes]
+    def tape_start_time(self, dt, default_start=datetime.time(19, 0)):
+        tape = self.tape_at_date(dt)
+        if not tape:
+            return None
+        tape_start_time = tape.set_data['start_time'] if tape.set_data else None
+        if tape_start_time == None:
+            tape_start_time = default_start
+        tape_start = datetime.datetime.combine(dt.date(), tape_start_time)  # date + time
+        return tape_start
+
+    def tape_at_time(self, dt, default_start=datetime.time(19, 0)):
+        tape = self.tape_at_date(dt)
+        if not tape:
+            return None
+        tape_start = self.tape_start_time(dt, default_start)
+        tape_end = tape_start + datetime.timedelta(hours=3)
+        if (dt > tape_start) and dt < tape_end:
+            return self.best_tape(dt.date())
+        else:
+            return None
+
+    def get_tape_dates(self):
+        tape_dates = {}
+        for tape in self.tapes:
+            k = tape.date
+            if not k in tape_dates.keys():
+                tape_dates[k] = [tape]
+            else:
+                tape_dates[k].append(tape)
+        # Now that we have all tape for a date, put them in the right order
+        self.tape_dates = {}
+        for k, v in tape_dates.items():
+            self.tape_dates[k] = sorted(v, key=methodcaller('compute_score'), reverse=True)
+        return self.tape_dates
+
+    def write_tapes(self, tapes):
+        os.makedirs(os.path.dirname(self.idpath), exist_ok=True)
+        json.dump(tapes, open(self.idpath, 'w'))
+        pickle.dump(tapes, open(self.idpath_pkl, 'wb'), pickle.HIGHEST_PROTOCOL)
+
+    def load_tapes(self, reload_ids=False):
+        if (not reload_ids) and os.path.exists(self.idpath_pkl):
+            tapes = pickle.load(open(self.idpath_pkl, 'rb'))
+        elif (not reload_ids) and os.path.exists(self.idpath):
+            tapes = json.load(open(self.idpath, 'r'))
+        else:
+            logger.info("Loading Tapes from the Archive...this will take a few minutes")
+            tapes = self.downloader.get_tapes(list(range(1965, 1996, 1)))
+            self.write_tapes(tapes)
+        return [GDTape(self.dbpath, tape, self.set_data) for tape in tapes]
 
 
 class GDTape:
-  """ A Grateful Dead Identifier Item -- does not contain tracks """
-  def __init__(self,dbpath,raw_json,set_data):
-    self.dbpath = dbpath
-    self._playable_formats = ['Ogg Vorbis','VBR MP3','Shorten','MP3']  # had to remove Flac because mpv can't play them!!!
-    self._breaks_added = False
-    self.meta_loaded = False
-    attribs = ['date','identifier','avg_rating','format','collection','num_reviews','downloads']
-    for k,v in raw_json.items():
-       if k in attribs: setattr(self,k,v)
-    self.url_metadata = 'https://archive.org/metadata/'+self.identifier
-    self.url_details = 'https://archive.org/details/'+self.identifier
-    self.date = str((datetime.datetime.strptime(raw_json['date'] ,'%Y-%m-%dT%H:%M:%SZ')).date()) 
-    self.set_data = set_data.get(self.date)
-    if 'avg_rating' in raw_json.keys(): self.avg_rating = float(self.avg_rating)
-    else: self.avg_rating = 2.0
-    if 'num_reviews' in raw_json.keys(): self.num_reviews = int(self.num_reviews)
-    else: self.num_reviews = 1
-    if 'downloads' in raw_json.keys(): self.downloads = int(self.num_reviews)
-    else: self.downloads = 1
+    """ A Grateful Dead Identifier Item -- does not contain tracks """
 
-  def __str__(self):
-    return self.__repr__()
+    def __init__(self, dbpath, raw_json, set_data):
+        self.dbpath = dbpath
+        self._playable_formats = ['Ogg Vorbis', 'VBR MP3', 'Shorten', 'MP3']  # had to remove Flac because mpv can't play them!!!
+        self._breaks_added = False
+        self.meta_loaded = False
+        attribs = ['date', 'identifier', 'avg_rating', 'format', 'collection', 'num_reviews', 'downloads']
+        for k, v in raw_json.items():
+            if k in attribs:
+                setattr(self, k, v)
+        self.url_metadata = 'https://archive.org/metadata/'+self.identifier
+        self.url_details = 'https://archive.org/details/'+self.identifier
+        self.date = str((datetime.datetime.strptime(raw_json['date'], '%Y-%m-%dT%H:%M:%SZ')).date())
+        self.set_data = set_data.get(self.date)
+        if 'avg_rating' in raw_json.keys():
+            self.avg_rating = float(self.avg_rating)
+        else:
+            self.avg_rating = 2.0
+        if 'num_reviews' in raw_json.keys():
+            self.num_reviews = int(self.num_reviews)
+        else:
+            self.num_reviews = 1
+        if 'downloads' in raw_json.keys():
+            self.downloads = int(self.num_reviews)
+        else:
+            self.downloads = 1
 
-  def __repr__(self):
-    tag = "SBD" if self.stream_only() else "aud"
-    retstr = '{} - {} - {:5.2f} - {}\n'.format(self.date,tag,self.avg_rating,self.identifier)
-    return retstr
+    def __str__(self):
+        return self.__repr__()
 
-  def stream_only(self):
-    return 'stream_only' in self.collection 
+    def __repr__(self):
+        tag = "SBD" if self.stream_only() else "aud"
+        retstr = '{} - {} - {:5.2f} - {}\n'.format(self.date, tag, self.avg_rating, self.identifier)
+        return retstr
 
-  def compute_score(self):
-    """ compute a score for sorting the tape. High score means it should be played first """    
-    score = 0
-    if self.stream_only(): score = score + 10
-    if len(config.optd['FAVORED_TAPER']) > 0:
-       if config.optd['FAVORED_TAPER'].lower() in self.identifier.lower(): score = score + 3
-    score = score + math.log(1+self.downloads) 
-    score = score + self.avg_rating - 2.0/math.sqrt(self.num_reviews)
-    return score
+    def stream_only(self):
+        return 'stream_only' in self.collection
 
-  def contains_sound(self):
-    return len(list(set(self._playable_formats) & set(self.format)))>0
+    def compute_score(self):
+        """ compute a score for sorting the tape. High score means it should be played first """
+        score = 0
+        if self.stream_only():
+            score = score + 10
+        if len(config.optd['FAVORED_TAPER']) > 0:
+            if config.optd['FAVORED_TAPER'].lower() in self.identifier.lower():
+                score = score + 3
+        score = score + math.log(1+self.downloads)
+        score = score + self.avg_rating - 2.0/math.sqrt(self.num_reviews)
+        return score
 
-  def tracks(self):
-    self.get_metadata()
-    return self._tracks
+    def contains_sound(self):
+        return len(list(set(self._playable_formats) & set(self.format))) > 0
 
-  def tracklist(self):
-    for i,t in enumerate(self._tracks):
-      logger.info(i)
-    
-  def track(self,n):
-    if not self.meta_loaded: self.get_metadata()
-    return self._tracks[n-1]
- 
-  def get_metadata(self):
-    if self.meta_loaded: return
-    self._tracks = []
-    date = datetime.datetime.strptime(self.date,'%Y-%m-%d').date() 
-    meta_path = os.path.join(self.dbpath,str(date.year),str(date.month),self.identifier+'.json')
-    try:     # I used to check if file exists, but it may also be corrupt, so this is safer.
-      page_meta = json.load(open(meta_path,'r'))
-    except:
-      r = requests.get(self.url_metadata)
-      logger.info("url is {}".format(r.url))
-      if r.status_code != 200: logger.warn ("error pulling data for {}".format(self.identifier)); raise Exception('Download','Error {} url {}'.format(r.status_code,self.url_metadata))
-      try:
-        page_meta = r.json()
-      except ValueError:
-        logger.warn ("Json Error {}".format(r.url))
-        return None
-      except:
-        logger.warn ("Json Error, probably")
-        return None
+    def tracks(self):
+        self.get_metadata()
+        return self._tracks
 
-    # self.reviews = page_meta['reviews'] if 'reviews' in page_meta.keys() else []
-    for ifile in page_meta['files']:
-       try:
-         if ifile['format'] in self._playable_formats:
-           self.append_track(ifile)
-       except KeyError: pass
-       except Exception as e:   # TODO handle this!!!
-         raise (e)
-    os.makedirs(os.path.dirname(meta_path),exist_ok=True)
-    json.dump(page_meta,open(meta_path,'w'))
-    self.meta_loaded = True
-    #return page_meta
-    self.insert_breaks()
-    return 
+    def tracklist(self):
+        for i, t in enumerate(self._tracks):
+            logger.info(i)
 
-  def append_track(self,tdict):
-    source = tdict['source']
-    if source == 'original':
-      orig = tdict['name']
-    else:
-      orig = tdict['original']
-    trackindex = None
-    for i,t in enumerate(self._tracks):
-      if orig == t.original:  # add in alternate formats
-        trackindex = i
-        # make sure that this isn't a duplicate!!!
-        t.add_file(tdict)
-        return t
-    self._tracks.append(GDTrack(tdict,self.identifier))
+    def track(self, n):
+        if not self.meta_loaded:
+            self.get_metadata()
+        return self._tracks[n-1]
 
-  def venue(self,tracknum=0):
-    """return the venue, city, state"""
-    # Note, if tracknum > 0, this could be a second show...check after running insert_breaks 
-    # 1970-02-14 is an example with 2 shows.
-    sd = self.set_data
-    if sd == None: return self.identifier
-    venue_string = ""
-    l = sd['location']
-    if tracknum > 0:    # only pull the metadata if the query is about a late track.
-      self.get_metadata()
-      breaks = self._compute_breaks()
-      if (len(breaks['location'])>0) and (tracknum > breaks['location'][0]): l = sd['location2']
-    venue_string = F"{l[0]}, {l[1]}, {l[2]}"
-    return venue_string 
+    def get_metadata(self):
+        if self.meta_loaded:
+            return
+        self._tracks = []
+        date = datetime.datetime.strptime(self.date, '%Y-%m-%d').date()
+        meta_path = os.path.join(self.dbpath, str(date.year), str(date.month), self.identifier+'.json')
+        try:     # I used to check if file exists, but it may also be corrupt, so this is safer.
+            page_meta = json.load(open(meta_path, 'r'))
+        except:
+            r = requests.get(self.url_metadata)
+            logger.info("url is {}".format(r.url))
+            if r.status_code != 200:
+                logger.warn("error pulling data for {}".format(self.identifier))
+                raise Exception('Download', 'Error {} url {}'.format(r.status_code, self.url_metadata))
+            try:
+                page_meta = r.json()
+            except ValueError:
+                logger.warn("Json Error {}".format(r.url))
+                return None
+            except:
+                logger.warn("Json Error, probably")
+                return None
 
-  def _compute_breaks(self):
-    if not self.meta_loaded: self.get_metadata()
-    tlist = [x.title for x in self._tracks]
-    sd = self.set_data
-    if sd == None: sd = {}
-    lb = sd['longbreaks'] if 'longbreaks' in sd.keys() else []
-    sb = sd['shortbreaks'] if 'shortbreaks' in sd.keys() else []
-    locb = sd['locationbreak'] if 'locationbreak' in sd.keys() else []
-    long_breaks = []; short_breaks = []; location_breaks = []
-    try:
-      long_breaks = [difflib.get_close_matches(x,tlist)[0] for x in lb]
-      short_breaks = [difflib.get_close_matches(x,tlist)[0] for x in sb]
-      location_breaks = [difflib.get_close_matches(x,tlist)[0] for x in locb]
-    except:
-      pass
-    lb_locations = []; sb_locations = []; locb_locations = [];
-    lb_locations = [j+1 for j,t in enumerate(tlist) if t in long_breaks] 
-    sb_locations = [j+1 for j,t in enumerate(tlist) if t in short_breaks]
-    locb_locations = [j+1 for j,t in enumerate(tlist) if t in location_breaks]
-    # At this point, i need to add "longbreak" and "shortbreak" tracks to the tape.
-    # This will require creating special GDTracks, I guess.
-    # for now, return the location indices.
-    return {'long':lb_locations,'short':sb_locations,'location':locb_locations}
+        # self.reviews = page_meta['reviews'] if 'reviews' in page_meta.keys() else []
+        for ifile in page_meta['files']:
+            try:
+                if ifile['format'] in self._playable_formats:
+                    self.append_track(ifile)
+            except KeyError:
+                pass
+            except Exception as e:   # TODO handle this!!!
+                raise (e)
+        os.makedirs(os.path.dirname(meta_path), exist_ok=True)
+        json.dump(page_meta, open(meta_path, 'w'))
+        self.meta_loaded = True
+        # return page_meta
+        self.insert_breaks()
+        return
 
+    def append_track(self, tdict):
+        source = tdict['source']
+        if source == 'original':
+            orig = tdict['name']
+        else:
+            orig = tdict['original']
+        trackindex = None
+        for i, t in enumerate(self._tracks):
+            if orig == t.original:  # add in alternate formats
+                trackindex = i
+                # make sure that this isn't a duplicate!!!
+                t.add_file(tdict)
+                return t
+        self._tracks.append(GDTrack(tdict, self.identifier))
 
-  def insert_breaks(self):
-    if not self.meta_loaded: self.get_metadata()
-    if self._breaks_added: return
-    breaks = self._compute_breaks()
-    breakd = {'track':-1,'original':'setbreak','title':'Set Break','format':'Ogg Vorbis','size':1,'source':'original','path':self.dbpath}
-    lbreakd =dict(list(breakd.items()) + [('title','Set Break'),('name','silence600.ogg')])
-    sbreakd =dict(list(breakd.items()) + [('title','Encore Break'),('name','silence300.ogg')])
-    locbreakd =dict(list(breakd.items()) + [('title','Location Break'),('name','silence600.ogg')])
-    
-    # make the tracks
-    newtracks = []
-    for i,t in enumerate(self._tracks):
-       for j in breaks['long']:
-         if i==j: newtracks.append(GDTrack(lbreakd,'',True))
-       for j in breaks['short']:
-         if i==j: newtracks.append(GDTrack(sbreakd,'',True))
-       for j in breaks['location']:
-         if i==j: newtracks.append(GDTrack(locbreakd,'',True))
-       newtracks.append(t)
-    self._breaks_added = True
-    self._tracks = newtracks.copy()
+    def venue(self, tracknum=0):
+        """return the venue, city, state"""
+        # Note, if tracknum > 0, this could be a second show...check after running insert_breaks
+        # 1970-02-14 is an example with 2 shows.
+        sd = self.set_data
+        if sd == None:
+            return self.identifier
+        venue_string = ""
+        l = sd['location']
+        if tracknum > 0:    # only pull the metadata if the query is about a late track.
+            self.get_metadata()
+            breaks = self._compute_breaks()
+            if (len(breaks['location']) > 0) and (tracknum > breaks['location'][0]):
+                l = sd['location2']
+        venue_string = F"{l[0]}, {l[1]}, {l[2]}"
+        return venue_string
+
+    def _compute_breaks(self):
+        if not self.meta_loaded:
+            self.get_metadata()
+        tlist = [x.title for x in self._tracks]
+        sd = self.set_data
+        if sd == None:
+            sd = {}
+        lb = sd['longbreaks'] if 'longbreaks' in sd.keys() else []
+        sb = sd['shortbreaks'] if 'shortbreaks' in sd.keys() else []
+        locb = sd['locationbreak'] if 'locationbreak' in sd.keys() else []
+        long_breaks = []
+        short_breaks = []
+        location_breaks = []
+        try:
+            long_breaks = [difflib.get_close_matches(x, tlist)[0] for x in lb]
+            short_breaks = [difflib.get_close_matches(x, tlist)[0] for x in sb]
+            location_breaks = [difflib.get_close_matches(x, tlist)[0] for x in locb]
+        except:
+            pass
+        lb_locations = []
+        sb_locations = []
+        locb_locations = []
+        lb_locations = [j+1 for j, t in enumerate(tlist) if t in long_breaks]
+        sb_locations = [j+1 for j, t in enumerate(tlist) if t in short_breaks]
+        locb_locations = [j+1 for j, t in enumerate(tlist) if t in location_breaks]
+        # At this point, i need to add "longbreak" and "shortbreak" tracks to the tape.
+        # This will require creating special GDTracks, I guess.
+        # for now, return the location indices.
+        return {'long': lb_locations, 'short': sb_locations, 'location': locb_locations}
+
+    def insert_breaks(self):
+        if not self.meta_loaded:
+            self.get_metadata()
+        if self._breaks_added:
+            return
+        breaks = self._compute_breaks()
+        breakd = {'track': -1, 'original': 'setbreak', 'title': 'Set Break', 'format': 'Ogg Vorbis', 'size': 1, 'source': 'original', 'path': self.dbpath}
+        lbreakd = dict(list(breakd.items()) + [('title', 'Set Break'), ('name', 'silence600.ogg')])
+        sbreakd = dict(list(breakd.items()) + [('title', 'Encore Break'), ('name', 'silence300.ogg')])
+        locbreakd = dict(list(breakd.items()) + [('title', 'Location Break'), ('name', 'silence600.ogg')])
+
+        # make the tracks
+        newtracks = []
+        for i, t in enumerate(self._tracks):
+            for j in breaks['long']:
+                if i == j:
+                    newtracks.append(GDTrack(lbreakd, '', True))
+            for j in breaks['short']:
+                if i == j:
+                    newtracks.append(GDTrack(sbreakd, '', True))
+            for j in breaks['location']:
+                if i == j:
+                    newtracks.append(GDTrack(locbreakd, '', True))
+            newtracks.append(t)
+        self._breaks_added = True
+        self._tracks = newtracks.copy()
 
 
 class GDTrack:
-  """ A track from a GDTape recording """
-  def __init__(self,tdict,parent_id,break_track=False):
-    self.parent_id = parent_id
-    attribs = ['track','original','title']
-    if not 'title' in tdict.keys(): tdict['title'] = 'unknown'
-    for k,v in tdict.items():
-       if k in attribs: setattr(self,k,v)
-    # if these don't exist, i'll throw an error!
-    if tdict['source'] == 'original': self.original = tdict['name']
-    try:
-      self.track = int(self.track) if 'track' in dir(self) else None
-    except ValueError:
-      self.track = None 
-    self.files = []
-    self.add_file(tdict,break_track)
+    """ A track from a GDTape recording """
 
-  def __str__(self):
-    return self.__repr__()
+    def __init__(self, tdict, parent_id, break_track=False):
+        self.parent_id = parent_id
+        attribs = ['track', 'original', 'title']
+        if not 'title' in tdict.keys():
+            tdict['title'] = 'unknown'
+        for k, v in tdict.items():
+            if k in attribs:
+                setattr(self, k, v)
+        # if these don't exist, i'll throw an error!
+        if tdict['source'] == 'original':
+            self.original = tdict['name']
+        try:
+            self.track = int(self.track) if 'track' in dir(self) else None
+        except ValueError:
+            self.track = None
+        self.files = []
+        self.add_file(tdict, break_track)
 
-  def __repr__(self):
-    retstr = 'track {}. {}'.format(self.track,self.title)
-    return retstr
-      
-  def add_file(self,tdict,break_track=False):
-    attribs = ['name','format','size','source','path']
-    d = {k:v for (k,v) in tdict.items() if k in attribs}
-    d['size'] = int(d['size'])
-    if not break_track: d['url'] = 'https://archive.org/download/'+self.parent_id+'/'+d['name']
-    else :              d['url'] = 'file://'+os.path.join(d['path'],d['name'])
-    self.files.append(d)
-  # method to play(), pause(). 
+    def __str__(self):
+        return self.__repr__()
+
+    def __repr__(self):
+        retstr = 'track {}. {}'.format(self.track, self.title)
+        return retstr
+
+    def add_file(self, tdict, break_track=False):
+        attribs = ['name', 'format', 'size', 'source', 'path']
+        d = {k: v for (k, v) in tdict.items() if k in attribs}
+        d['size'] = int(d['size'])
+        if not break_track:
+            d['url'] = 'https://archive.org/download/'+self.parent_id+'/'+d['name']
+        else:
+            d['url'] = 'file://'+os.path.join(d['path'], d['name'])
+        self.files.append(d)
+    # method to play(), pause().
+
 
 class GDSet:
-  """ Set Information from a Grateful Dead date """
-  def __init__(self):
-    set_data = {}
-    prevsong = None;
-    set_breaks = pkg_resources.resource_stream(__name__,"set_breaks.csv")
-    utf8_reader = codecs.getreader("utf-8")
-    r = [r for r in  csv.reader(utf8_reader(set_breaks))]                                                                                                                                         
-    headers = r[0] 
-    for row in r[1:]:
-      d = dict(zip(headers,row))
-      date = d['date']; time = d['time']; song = d['song']; 
-      if not date in set_data.keys(): set_data[date] = {}
-      set_data[date]['start_time'] = datetime.datetime.strptime(time,'%H:%M:%S.%f').time() if len(time)>0 else None
-      if int(d['ievent'])==1: set_data[date]['location'] = (d['venue'],d['city'],d['state']); prevsong = song;
-      if int(d['ievent'])==2: set_data[date]['location2'] = (d['venue'],d['city'],d['state']); set_data[date]['locationbreak'] = [prevsong]
-      if d['break_length']=='long':
-         try: set_data[date]['longbreaks'].append(song)
-         except KeyError: set_data[date]['longbreaks'] = [song]
-      if d['break_length']=='short':
-         try: set_data[date]['shortbreaks'].append(song)
-         except KeyError: set_data[date]['shortbreaks'] = [song]
-     
-    self.set_data = set_data
-    """
+    """ Set Information from a Grateful Dead date """
+
+    def __init__(self):
+        set_data = {}
+        prevsong = None
+        set_breaks = pkg_resources.resource_stream(__name__, "set_breaks.csv")
+        utf8_reader = codecs.getreader("utf-8")
+        r = [r for r in csv.reader(utf8_reader(set_breaks))]
+        headers = r[0]
+        for row in r[1:]:
+            d = dict(zip(headers, row))
+            date = d['date']
+            time = d['time']
+            song = d['song']
+            if not date in set_data.keys():
+                set_data[date] = {}
+            set_data[date]['start_time'] = datetime.datetime.strptime(time, '%H:%M:%S.%f').time() if len(time) > 0 else None
+            if int(d['ievent']) == 1:
+                set_data[date]['location'] = (d['venue'], d['city'], d['state'])
+                prevsong = song
+            if int(d['ievent']) == 2:
+                set_data[date]['location2'] = (d['venue'], d['city'], d['state'])
+                set_data[date]['locationbreak'] = [prevsong]
+            if d['break_length'] == 'long':
+                try:
+                    set_data[date]['longbreaks'].append(song)
+                except KeyError:
+                    set_data[date]['longbreaks'] = [song]
+            if d['break_length'] == 'short':
+                try:
+                    set_data[date]['shortbreaks'].append(song)
+                except KeyError:
+                    set_data[date]['shortbreaks'] = [song]
+
+        self.set_data = set_data
+        """
     for k,v in set_data.items():
        setattr(self,k,v)
-    """ 
-  def get(self,date):
-    return self.set_data[date] if date in self.set_data.keys() else None
+    """
 
-  def multi_location(self,date):
-    d = self.get(date)
-    return 'location2' in d.keys()
-    
-  def location(self,date):
-    d = self.get(date)
-    return d['location']
+    def get(self, date):
+        return self.set_data[date] if date in self.set_data.keys() else None
 
-  def shortbreaks(self,date):
-    d = self.get(date)
-    return d['shortbreaks'] 
+    def multi_location(self, date):
+        d = self.get(date)
+        return 'location2' in d.keys()
 
-  def longbreaks(self,date):
-    d = self.get(date)
-    return d['longbreaks'] 
+    def location(self, date):
+        d = self.get(date)
+        return d['location']
 
-  def location2(self,date):
-    d = self.get(date)
-    if self.multi_location(date): return d['location2']
-    else: return None
+    def shortbreaks(self, date):
+        d = self.get(date)
+        return d['shortbreaks']
 
-  def locationbreaks(self,date):
-    d = self.get(date)
-    if self.multi_location(date): return d['locationbreak'] 
-    else: return None
+    def longbreaks(self, date):
+        d = self.get(date)
+        return d['longbreaks']
 
-  def __str__(self):
-    return self.__repr__()
+    def location2(self, date):
+        d = self.get(date)
+        if self.multi_location(date):
+            return d['location2']
+        else:
+            return None
 
-  def __repr__(self):
-    retstr = F"Grateful Dead set data"
-    return retstr
+    def locationbreaks(self, date):
+        d = self.get(date)
+        if self.multi_location(date):
+            return d['locationbreak']
+        else:
+            return None
+
+    def __str__(self):
+        return self.__repr__()
+
+    def __repr__(self):
+        retstr = F"Grateful Dead set data"
+        return retstr
+
 
 class GDPlayer(MPV):
-  """ A media player to play a GDTape """
-  def __init__(self,tape=None):
-    super().__init__()
-    #self._set_property('prefetch-playlist','yes')
-    #self._set_property('cache-dir','/home/steve/cache')
-    #self._set_property('cache-on-disk','yes')
-    self._set_property('audio-buffer',10.0)  ## This allows to play directly from the html without a gap!
-    self._set_property('cache','yes')  
-    #self._set_property('audio-device','alsa')
-    self.default_audio_device = 'auto'
-    audio_device = self.default_audio_device
-    self._set_property('audio-device',audio_device)
-    self.download_when_possible = False
-    if tape != None:
-      self.insert_tape(tape)
+    """ A media player to play a GDTape """
 
-  def __str__(self):
-    return self.__repr__()
-    
-  def __repr__(self):
-    retstr = str(self.playlist)
-    return retstr
-    
-  def insert_tape(self,tape):
-    self.tape = tape
-    self.create_playlist()
+    def __init__(self, tape=None):
+        super().__init__()
+        # self._set_property('prefetch-playlist','yes')
+        # self._set_property('cache-dir','/home/steve/cache')
+        # self._set_property('cache-on-disk','yes')
+        self._set_property('audio-buffer', 10.0)  # This allows to play directly from the html without a gap!
+        self._set_property('cache', 'yes')
+        # self._set_property('audio-device','alsa')
+        self.default_audio_device = 'auto'
+        audio_device = self.default_audio_device
+        self._set_property('audio-device', audio_device)
+        self.download_when_possible = False
+        if tape != None:
+            self.insert_tape(tape)
 
-  def eject_tape(self):
-    self.stop()
-    self.tape = None
-    self.playlist_clear()
+    def __str__(self):
+        return self.__repr__()
 
-  def extract_urls(self,tape):  ## NOTE this should also give a list of backup URL's.
-    tape.get_metadata()
-    urls = [] 
-    playable_formats = tape._playable_formats
-    preferred_format = playable_formats[0]
-    for track_files in [x.files for x in tape.tracks()]: 
-      best_track = None
-      candidates = []
-      for f in track_files: 
-        if f['format'] == preferred_format: best_track = f['url']
-        elif f['format'] in playable_formats: candidates.append(f['url'])
-      if best_track == None and len(candidates)>0: best_track = candidates[0]
-      urls.append(best_track)
-    return urls
+    def __repr__(self):
+        retstr = str(self.playlist)
+        return retstr
 
-  def create_playlist(self):
-    self.playlist_clear()
-    urls = self.extract_urls(self.tape);
-    pathname = os.path.join(self.tape.dbpath,'audience')
-    self.command('loadfile',urls[0])
-    if len(urls)>0: _ = [self.command('loadfile',x,'append') for x in urls[1:]]
-    self.playlist_pos = 0 
-    self.pause()
-    logger.info (F"Playlist {self.playlist}")
-    return
+    def insert_tape(self, tape):
+        self.tape = tape
+        self.create_playlist()
 
-  def play(self): 
-    if self.get_prop('audio-device') == 'null':
-       logger.info (F"changing audio-device to {self.default_audio_device}")
-       audio_device = self.default_audio_device
-       self._set_property('audio-device',audio_device)
-       time.sleep(1)
-       self.pause()
-       time.sleep(3)
-       self._set_property('audio-device',audio_device)
-       if self.get_prop('audio-device') != audio_device: 
-         logger.warning(F"Failed to set audio-device to {audio_device}")
-       self._set_property('pause',True)
-       self._set_property('pause',False)
-    logger.info ("playing")
-    self._set_property('pause',False)
-    self.wait_until_playing()
+    def eject_tape(self):
+        self.stop()
+        self.tape = None
+        self.playlist_clear()
 
-  def pause(self):
-    logger.info ("pausing")
-    self._set_property('pause',True)
-    self.wait_until_paused()
+    def extract_urls(self, tape):  # NOTE this should also give a list of backup URL's.
+        tape.get_metadata()
+        urls = []
+        playable_formats = tape._playable_formats
+        preferred_format = playable_formats[0]
+        for track_files in [x.files for x in tape.tracks()]:
+            best_track = None
+            candidates = []
+            for f in track_files:
+                if f['format'] == preferred_format:
+                    best_track = f['url']
+                elif f['format'] in playable_formats:
+                    candidates.append(f['url'])
+            if best_track == None and len(candidates) > 0:
+                best_track = candidates[0]
+            urls.append(best_track)
+        return urls
 
-  def stop(self): 
-    self.playlist_pos = 0
-    self.pause()
+    def create_playlist(self):
+        self.playlist_clear()
+        urls = self.extract_urls(self.tape)
+        pathname = os.path.join(self.tape.dbpath, 'audience')
+        self.command('loadfile', urls[0])
+        if len(urls) > 0:
+            _ = [self.command('loadfile', x, 'append') for x in urls[1:]]
+        self.playlist_pos = 0
+        self.pause()
+        logger.info(F"Playlist {self.playlist}")
+        return
 
-  def next(self,blocking=False): 
-    if self.get_prop('playlist-pos')+1 == len(self.playlist): return
-    self.command('playlist-next'); 
-    self.wait_for_event('file-loaded')   
+    def play(self):
+        if self.get_prop('audio-device') == 'null':
+            logger.info(F"changing audio-device to {self.default_audio_device}")
+            audio_device = self.default_audio_device
+            self._set_property('audio-device', audio_device)
+            time.sleep(1)
+            self.pause()
+            time.sleep(3)
+            self._set_property('audio-device', audio_device)
+            if self.get_prop('audio-device') != audio_device:
+                logger.warning(F"Failed to set audio-device to {audio_device}")
+            self._set_property('pause', True)
+            self._set_property('pause', False)
+        logger.info("playing")
+        self._set_property('pause', False)
+        self.wait_until_playing()
 
-  def prev(self): 
-    if self.get_prop('playlist-pos') == 0: return
-    self.command('playlist-prev'); 
+    def pause(self):
+        logger.info("pausing")
+        self._set_property('pause', True)
+        self.wait_until_paused()
 
-  def time_remaining(self,max_counts=40):
-    time_remaining = None
-    count = 0
-    while (time_remaining == None) and count < max_counts:
-      time_remaining = self.get_prop('time-remaining')
-      time.sleep(0.5)
-      count = count + 1
-    return time_remaining
+    def stop(self):
+        self.playlist_pos = 0
+        self.pause()
 
-  def seek_in_tape_to(self,destination,ticking=True,threshold=1):
-    """ Seek to a time position in a tape. Since this can take some
-        time, the ticking option allows to take into account the time
-        required to seek (the slippage).
-        destination -- seconds from current tape location (from beginning?)
-    """
-    logger.debug(F'seek_in_tape_to {destination}')
+    def next(self, blocking=False):
+        if self.get_prop('playlist-pos')+1 == len(self.playlist):
+            return
+        self.command('playlist-next')
+        self.wait_for_event('file-loaded')
 
-    start_tick = datetime.datetime.now()
-    slippage = 0; skipped = 0; dest_orig = destination
-    time_remaining = self.time_remaining()
-    playlist_pos = self.get_prop('playlist-pos') 
-    while (destination > time_remaining) and self.get_prop('playlist-pos')+1 < len(self.playlist):
-       duration = self.get_prop('duration')
-       logger.debug(F'seek_in_tape_to dest:{destination},time-remainig:{time_remaining},playlist-pos:{playlist_pos}, duration: {duration}, slippage {slippage}')
-       self.next(blocking=True)
-       skipped = skipped + time_remaining
-       destination = dest_orig - skipped
-       time_remaining = self.time_remaining()
-       if ticking: 
-          now_tick = datetime.datetime.now()
-          slippage = (now_tick - start_tick).seconds 
-          destination = destination + slippage
-       playlist_pos = self.get_prop('playlist-pos') 
-    self.seek(destination)
-    self.status()
-    return 
- 
-  def seek_to(self,track_no,destination=0.0,threshold=1):
-    logger.debug(F'seek_to {track_no},{destination}')
-    try:
-      if track_no<0 or track_no > len(self.playlist):
-        raise Exception(F'seek_to track {track_no} out of bounds')
-      paused = self.get_prop('pause')
-      current_track = self.get_prop('playlist-pos')
-      self.status()
-      if current_track != track_no:
-        self._set_property('playlist-pos',track_no)
-        #self.wait_for_event('file-loaded')   # NOTE: this could wait forever!
-        time.sleep(5)
-      duration = self.get_prop('duration')
-      if destination < 0: destination = duration + destination
-      if (destination > duration) or (destination < 0):
-        raise Exception(F'seek_to destination {destination} out of bounds (0,{duration})')
-      
-      self.seek(destination,reference = 'absolute')
-      if not paused: self.play()
-      time_pos = self.get_prop('time-pos')
-      if abs(time_pos - destination) > threshold:
-        raise Exception(F'Not close enough: time_pos {time_pos} - destination ({time_pos - destination})>{threshold}')
-    except Exception as e:
-      logger.warning (e)
-    finally: 
-      pass
+    def prev(self):
+        if self.get_prop('playlist-pos') == 0:
+            return
+        self.command('playlist-prev')
 
-  def fseek(self,jumpsize=30,sleeptime=2):
-    try:
-      logger.debug(F'seeking {jumpsize}')
-    
-      current_track = self.get_prop('playlist-pos')
-      time_remaining = self.get_prop('time-remaining')
-      time_pos = self.get_prop('time-pos')
-      if time_pos == None: time_pos = 0
-      time_pos = max(0,time_pos)
-      duration = self.get_prop('duration')
-      
-      destination = time_pos + jumpsize
+    def time_remaining(self, max_counts=40):
+        time_remaining = None
+        count = 0
+        while (time_remaining == None) and count < max_counts:
+            time_remaining = self.get_prop('time-remaining')
+            time.sleep(0.5)
+            count = count + 1
+        return time_remaining
 
-      logger.debug (F'destination {destination} time_pos {time_pos} duration {duration}')
+    def seek_in_tape_to(self, destination, ticking=True, threshold=1):
+        """ Seek to a time position in a tape. Since this can take some
+            time, the ticking option allows to take into account the time
+            required to seek (the slippage).
+            destination -- seconds from current tape location (from beginning?)
+        """
+        logger.debug(F'seek_in_tape_to {destination}')
 
-      if destination < 0:
-        if abs(destination)<abs(sleeptime*5):
-          destination = destination - sleeptime*5
-        self.seek_to(current_track-1,destination)
-      if destination > duration:
-        self.seek_to(current_track+1,destination-duration)
-      else:
-        self.seek_to(current_track,destination)
-    except Exception as e:
-      logger.warning (F'exception in seeking {e}')
-    finally:
-      time.sleep(sleeptime)
+        start_tick = datetime.datetime.now()
+        slippage = 0
+        skipped = 0
+        dest_orig = destination
+        time_remaining = self.time_remaining()
+        playlist_pos = self.get_prop('playlist-pos')
+        while (destination > time_remaining) and self.get_prop('playlist-pos')+1 < len(self.playlist):
+            duration = self.get_prop('duration')
+            logger.debug(F'seek_in_tape_to dest:{destination},time-remainig:{time_remaining},playlist-pos:{playlist_pos}, duration: {duration}, slippage {slippage}')
+            self.next(blocking=True)
+            skipped = skipped + time_remaining
+            destination = dest_orig - skipped
+            time_remaining = self.time_remaining()
+            if ticking:
+                now_tick = datetime.datetime.now()
+                slippage = (now_tick - start_tick).seconds
+                destination = destination + slippage
+            playlist_pos = self.get_prop('playlist-pos')
+        self.seek(destination)
+        self.status()
+        return
 
-  def get_prop(self,property_name):
-    return retry_call(self._get_property, property_name)
+    def seek_to(self, track_no, destination=0.0, threshold=1):
+        logger.debug(F'seek_to {track_no},{destination}')
+        try:
+            if track_no < 0 or track_no > len(self.playlist):
+                raise Exception(F'seek_to track {track_no} out of bounds')
+            paused = self.get_prop('pause')
+            current_track = self.get_prop('playlist-pos')
+            self.status()
+            if current_track != track_no:
+                self._set_property('playlist-pos', track_no)
+                # self.wait_for_event('file-loaded')   # NOTE: this could wait forever!
+                time.sleep(5)
+            duration = self.get_prop('duration')
+            if destination < 0:
+                destination = duration + destination
+            if (destination > duration) or (destination < 0):
+                raise Exception(F'seek_to destination {destination} out of bounds (0,{duration})')
 
-  def status(self):
-    if self.playlist_pos == None: logger.info (F"Playlist not started"); return None
-    playlist_pos = self.get_prop('playlist-pos')
-    paused = self.get_prop('pause')
-    logger.info (F"Playlist at track {playlist_pos}, Paused {paused}")
-    if self.raw.time_pos == None: logger.info (F"Track not started"); return None
-    duration = self.get_prop('duration')
-    logger.info(F"duration: {duration}. time: {datetime.timedelta(seconds=int(self.raw.time_pos))}, time remaining: {datetime.timedelta(seconds=int(self.raw.time_remaining))}")
-    return int(self.raw.time_remaining)
+            self.seek(destination, reference='absolute')
+            if not paused:
+                self.play()
+            time_pos = self.get_prop('time-pos')
+            if abs(time_pos - destination) > threshold:
+                raise Exception(F'Not close enough: time_pos {time_pos} - destination ({time_pos - destination})>{threshold}')
+        except Exception as e:
+            logger.warning(e)
+        finally:
+            pass
 
-  def close(self): self.terminate()
+    def fseek(self, jumpsize=30, sleeptime=2):
+        try:
+            logger.debug(F'seeking {jumpsize}')
 
+            current_track = self.get_prop('playlist-pos')
+            time_remaining = self.get_prop('time-remaining')
+            time_pos = self.get_prop('time-pos')
+            if time_pos == None:
+                time_pos = 0
+            time_pos = max(0, time_pos)
+            duration = self.get_prop('duration')
+
+            destination = time_pos + jumpsize
+
+            logger.debug(F'destination {destination} time_pos {time_pos} duration {duration}')
+
+            if destination < 0:
+                if abs(destination) < abs(sleeptime*5):
+                    destination = destination - sleeptime*5
+                self.seek_to(current_track-1, destination)
+            if destination > duration:
+                self.seek_to(current_track+1, destination-duration)
+            else:
+                self.seek_to(current_track, destination)
+        except Exception as e:
+            logger.warning(F'exception in seeking {e}')
+        finally:
+            time.sleep(sleeptime)
+
+    def get_prop(self, property_name):
+        return retry_call(self._get_property, property_name)
+
+    def status(self):
+        if self.playlist_pos == None:
+            logger.info(F"Playlist not started")
+            return None
+        playlist_pos = self.get_prop('playlist-pos')
+        paused = self.get_prop('pause')
+        logger.info(F"Playlist at track {playlist_pos}, Paused {paused}")
+        if self.raw.time_pos == None:
+            logger.info(F"Track not started")
+            return None
+        duration = self.get_prop('duration')
+        logger.info(F"duration: {duration}. time: {datetime.timedelta(seconds=int(self.raw.time_pos))}, time remaining: {datetime.timedelta(seconds=int(self.raw.time_remaining))}")
+        return int(self.raw.time_remaining)
+
+    def close(self): self.terminate()

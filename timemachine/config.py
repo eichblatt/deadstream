@@ -1,13 +1,15 @@
 import subprocess
 
+
 def get_board_version():
-  cmd = "$HOME/deadstream/bin/board_version.sh"
-  raw = subprocess.check_output(cmd,shell=True)
-  raw = raw.decode()
-  if raw == 'version 2\n':
-    return 2
-  else: 
-    return 1
+    cmd = "$HOME/deadstream/bin/board_version.sh"
+    raw = subprocess.check_output(cmd, shell=True)
+    raw = raw.decode()
+    if raw == 'version 2\n':
+        return 2
+    else:
+        return 1
+
 
 # State variables
 INIT = 0
@@ -31,16 +33,16 @@ TOUR_STATE = 0
 
 # Hardware pins
 
-year_pins = (22,16,23)   # cl, dt, sw
-month_pins = (5,12,6)
-day_pins = (17,13,27)
+year_pins = (22, 16, 23)   # cl, dt, sw
+month_pins = (5, 12, 6)
+day_pins = (17, 13, 27)
 
 select_pin = 4   # pin 4 ok w/ Sound card
-play_pause_pin = 20 # pin 18 interferes with sound card
-stop_pin = 2   # from the I2C bus (may need to connect to ground) 
+play_pause_pin = 20  # pin 18 interferes with sound card
+stop_pin = 2   # from the I2C bus (may need to connect to ground)
 ffwd_pin = 26    # pin 26 ok with sound card.
 
-if get_board_version() == 2: 
-  rewind_pin = 21  
+if get_board_version() == 2:
+    rewind_pin = 21
 else:
-  rewind_pin = 3  
+    rewind_pin = 3
