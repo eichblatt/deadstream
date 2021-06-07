@@ -106,7 +106,9 @@ def load_options(parms):
     config.optd = optd
     os.environ['TZ'] = optd['TIMEZONE']
     time.tzset()
-    led_cmd = F'sudo bash -c "echo {"default-on" if optd["PWR_LED_ON"] else "none"} > /sys/class/leds/led1/trigger"'
+    led_cmd = 'sudo bash -c "echo default-on > /sys/class/leds/led1/trigger"'
+    os.system(led_cmd)
+    if not optd["PWR_LED_ON"]: led_cmd = 'sudo bash -c "echo none > /sys/class/leds/led1/trigger"'
     logger.info (F"in load_options, running {led_cmd}")
     os.system(led_cmd)
    
@@ -527,11 +529,9 @@ def event_loop(state):
                 playstate_event.set()
                 #stagedate_event.set()         # NOTE: this would set the q_counter, etc. But it SHOULD work.
                 #scr.show_staged_date(date_reader.date)
-                if current['PLAY_STATE'] == config.PAUSED:  # prevent overnight pauses 
+                if current['PLAY_STATE'] == config.PAUSED:  # deal with overnight pauses, which freeze the alsa player.
                    if (now - current['PAUSED_AT']).seconds > 1 * 3600:
-                      state.player.stop()  
-                      current['PLAY_STATE'] = config.STOPPED
-                      state.set(current)
+                      state.player._set_property('audio-device','null')
                       playstate_event.set()
                 save_state(state)
                 if idle_seconds > config.optd['QUIESCENT_TIME']: 

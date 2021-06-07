@@ -621,10 +621,18 @@ class GDPlayer(MPV):
     return
 
   def play(self): 
+    if self.get_prop('audio-device') == 'null':
+       logger.info ("changing audio-device to 'alsa'")
+       self._set_property('audio-device','alsa')
+       time.sleep(2)
+       self.pause()
+       time.sleep(2)
+    logger.info ("playing")
     self._set_property('pause',False)
     self.wait_until_playing()
 
   def pause(self):
+    logger.info ("pausing")
     self._set_property('pause',True)
     self.wait_until_paused()
 
