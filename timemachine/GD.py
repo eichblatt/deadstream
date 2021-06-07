@@ -318,6 +318,8 @@ class GDTape:
     else: self.avg_rating = 2.0
     if 'num_reviews' in raw_json.keys(): self.num_reviews = int(self.num_reviews)
     else: self.num_reviews = 1
+    if 'downloads' in raw_json.keys(): self.downloads = int(self.num_reviews)
+    else: self.downloads = 1
 
   def __str__(self):
     return self.__repr__()
