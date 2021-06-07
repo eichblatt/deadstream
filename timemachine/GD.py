@@ -631,12 +631,14 @@ class GDPlayer(MPV):
        logger.info (F"changing audio-device to {self.default_audio_device}")
        audio_device = self.default_audio_device
        self._set_property('audio-device',audio_device)
-       time.sleep(2)
+       time.sleep(1)
        self.pause()
-       time.sleep(2)
+       time.sleep(3)
        self._set_property('audio-device',audio_device)
        if self.get_prop('audio-device') != audio_device: 
          logger.warning(F"Failed to set audio-device to {audio_device}")
+       self._set_property('pause',True)
+       self._set_property('pause',False)
     logger.info ("playing")
     self._set_property('pause',False)
     self.wait_until_playing()
