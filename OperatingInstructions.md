@@ -4,7 +4,7 @@
 
 Remove the micro SD card from the adapter, and insert into the Raspbery Pi. The SD card goes into a small metal cage on the back side of the raspberry pi (the opposite side from the 40-pin connector).
 
-Plug the Raspberry Pi into the connector on the Time Machine board. Use screws to secure the Raspberry Pi to the Time Machine.
+Plug the Raspberry Pi into the connector on the Time Machine board. The Pi must be plugged in such that the USB power, and the headphone jack are on the **left side** when the Time Machine is viewed from the front. Use screws to secure the Raspberry Pi to the Time Machine.
 
 Plug in a micro USB connector to the PWR IN connector on the Raspberry Pi (there is only one such connector on a Raspberry Pi 3A...other Pi's have separate Power and USB connectors...look for "PWR" on the board if in doubt).
 
