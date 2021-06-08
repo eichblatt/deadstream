@@ -1,23 +1,23 @@
 #!/usr/bin/python3
-import optparse
-import random
-import logging
-import os
 import datetime
-import threading
-import subprocess
 import json
+import logging
+import optparse
+import os
+import random
+import subprocess
+import threading
 import time
-from timemachine import GD
-from timemachine import controls
-from timemachine import config
-from time import sleep
 from threading import Event
-from typing import Callable
-from gpiozero import RotaryEncoder, Button
+from time import sleep
+
+from gpiozero import Button, RotaryEncoder
 from tenacity import retry
 from tenacity.stop import stop_after_delay
+from typing import Callable
+
 import pkg_resources
+from timemachine import config,controls,GD
 
 parser = optparse.OptionParser()
 parser.add_option('--box', dest='box', type="string", default='v1', help="v0 box has screen at 270. [default %default]")
