@@ -7,5 +7,5 @@ sudo chown root /etc/wpa_supplicant/wpa_supplicant.conf
 sudo chgrp root /etc/wpa_supplicant/wpa_supplicant.conf
 
 sudo systemctl daemon-reload
-sudo systemctl enable timemachine.service 
+sudo systemctl enable timemachine.service
 sudo systemctl enable connect_network.service

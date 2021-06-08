@@ -152,7 +152,7 @@ class screen:
         self.disp = st7735.ST7735R(spi, rotation=rotation_angle, cs=cs_pin, dc=dc_pin, rst=reset_pin, baudrate=BAUDRATE)
 
         self.bgcolor = color565(0, 0, 0)
-        self.led = LED(config.screen_led_pin,initial_value=True)
+        self.led = LED(config.screen_led_pin, initial_value=True)
         # --- swap width/height, if
         if self.disp.rotation % 180 == 90:
             height, width = self.disp.width, self.disp.height
@@ -318,6 +318,7 @@ class screen:
             return
         logger.debug("showing soundboard status")
         self.draw.regular_polygon((self.sbd_bbox.center(), 3), 4, rotation=45, fill=color)
+
 
 class state:
     def __init__(self, date_reader, player=None):

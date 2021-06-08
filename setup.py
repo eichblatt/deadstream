@@ -19,6 +19,6 @@ setup(
         'pickle5'
     ],
     package_data={
-        "timemachine": ["FreeMono.ttf", "ariallgt.ttf", "DejaVuSansMono-Bold.ttf","set_breaks.csv"]
+        "timemachine": ["FreeMono.ttf", "ariallgt.ttf", "DejaVuSansMono-Bold.ttf", "set_breaks.csv"]
     }
 )
