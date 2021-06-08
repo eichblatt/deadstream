@@ -1,25 +1,26 @@
-from timemachine import controls
-from timemachine import config
-from time import sleep
-from threading import Event
-from typing import Callable
 import datetime
-import string
-import sys
-import optparse
 import logging
+import optparse
+import os
+import re
+import string
+import subprocess
+import sys
+from threading import Event
+from time import sleep
+
 import board
 import digitalio
-from adafruit_rgb_display.st7735 import ST7735R
 from adafruit_rgb_display import color565
+from adafruit_rgb_display.st7735 import ST7735R
 from gpiozero import RotaryEncoder, Button
+from PIL import Image, ImageDraw, ImageFont
 from tenacity import retry
 from tenacity.stop import stop_after_delay
-from PIL import Image, ImageDraw, ImageFont
+from typing import Callable
+
 import pkg_resources
-import subprocess
-import re
-import os
+from timemachine import config, controls
 
 
 parser = optparse.OptionParser()
