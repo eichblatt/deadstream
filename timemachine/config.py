@@ -37,6 +37,8 @@ year_pins = (22, 16, 23)   # cl, dt, sw
 month_pins = (5, 12, 6)
 day_pins = (17, 13, 27)
 
+screen_led_pin = 19
+
 select_pin = 4   # pin 4 ok w/ Sound card
 play_pause_pin = 20  # pin 18 interferes with sound card
 stop_pin = 2   # from the I2C bus (may need to connect to ground)
