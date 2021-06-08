@@ -17,7 +17,7 @@ from tenacity.stop import stop_after_delay
 from typing import Callable
 
 import pkg_resources
-from timemachine import config,controls,GD
+from timemachine import config, controls, GD
 
 parser = optparse.OptionParser()
 parser.add_option('--box', dest='box', type="string", default='v1', help="v0 box has screen at 270. [default %default]")
@@ -97,7 +97,7 @@ def load_saved_state(state):
     except BaseException:
         logger.warning(F"Failed while Loading Saved State from {parms.state_path}")
         # raise
-        return(state_orig)
+        return (state_orig)
     return state
 
 
@@ -407,7 +407,7 @@ def year_button(button, state):
                 if dt.year > y:
                     cut = i
                     break
-            tapedate = (tih_tapedates[cut:]+tih_tapedates[:cut])[0]
+            tapedate = (tih_tapedates[cut:] + tih_tapedates[:cut])[0]
             logger.debug(F"tapedate is {tapedate}")
             state.date_reader.set_date(datetime.date(tapedate.year, now_m, now_d))
     else:
@@ -545,7 +545,7 @@ def event_loop(state):
                 continue
             now = datetime.datetime.now()
             n_timer = n_timer + 1
-            idle_seconds = (now-last_sdevent).seconds
+            idle_seconds = (now - last_sdevent).seconds
             idle_second_hand = divmod(idle_seconds, max_second_hand)[1]
             current = state.get_current()
             default_start = config.optd['DEFAULT_START_TIME']
