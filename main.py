@@ -57,7 +57,7 @@ def sequential(func):
         free_event.clear()
         try:
             func(*args, **kwargs)
-        except:
+        except BaseException:
             raise
         finally:
             free_event.set()
@@ -66,7 +66,7 @@ def sequential(func):
 
 def load_saved_state(state):
     """ This function loads a subset of the fields from the state, which was saved with json
-        Not Yet Working !!! 
+        Not Yet Working !!!
     """
     logger.info(F"Loading Saved State from {parms.state_path}")
     state_orig = state
@@ -94,7 +94,7 @@ def load_saved_state(state):
         current['DATE_READER'] = state.date_reader
         state.set(current)
         stagedate_event.set()
-    except:
+    except BaseException:
         logger.warning(F"Failed while Loading Saved State from {parms.state_path}")
         # raise
         return(state_orig)
@@ -569,7 +569,7 @@ def event_loop(state):
                         point_in_show = (then_time - (start_time+datetime.timedelta(seconds=wait_time))).seconds
                         play_on_tour(tape, state, seek_to=point_in_show)
             if current['ON_TOUR'] and current['TOUR_STATE'] == config.PLAYING:
-                if player.playlist_pos == None:
+                if player.playlist_pos is None:
                     current['TOUR_STATE'] = config.INIT
                     state.set(current)
                     track_event.set()
@@ -659,7 +659,7 @@ player = GD.GDPlayer()
 @player.property_observer('playlist-pos')
 def on_track_event(_name, value):
     logger.info(F'in track event callback {_name}, {value}')
-    if value == None:
+    if value is None:
         config.PLAY_STATE = config.ENDED
         select_button(select, state)
     track_event.set()
@@ -672,13 +672,13 @@ def my_handler(event):
 
 try:
     os.system("amixer sset 'Headphone' 100%")
-except:
+except BaseException:
     pass
 
 y = retry_call(RotaryEncoder, config.year_pins[1], config.year_pins[0], max_steps=0, threshold_steps=(0, 30))
 m = retry_call(RotaryEncoder, config.month_pins[1], config.month_pins[0], max_steps=0, threshold_steps=(1, 12))
 d = retry_call(RotaryEncoder, config.day_pins[1], config.day_pins[0], max_steps=0, threshold_steps=(1, 31))
-y.steps = 1975-1965
+y.steps = 1975 - 1965
 m.steps = 8
 d.steps = 13
 date_reader = controls.date_knob_reader(y, m, d, archive)
