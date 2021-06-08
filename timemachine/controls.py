@@ -29,7 +29,7 @@ def with_state_semaphore(func):
                 logger.warn("State semaphore not acquired after 5 seconds!")
                 raise Exception('state semaphore not acquired')
             func(*args, **kwargs)
-        except:
+        except BaseException:
             raise
         finally:
             state_semaphore.release()
@@ -44,7 +44,7 @@ def with_semaphore(func):
                 logger.warn("Screen semaphore not acquired after 5 seconds!")
                 raise Exception('screen semaphore not acquired')
             func(*args, **kwargs)
-        except:
+        except BaseException:
             raise
         finally:
             screen_semaphore.release()
@@ -90,7 +90,7 @@ class date_knob_reader:
         self.update()
 
     def fmtdate(self):
-        if self.date == None:
+        if self.date is None:
             return None
         return self.date.strftime('%Y-%m-%d')
 
@@ -101,13 +101,13 @@ class date_knob_reader:
         return ""
 
     def tape_available(self):
-        if self.archive == None:
+        if self.archive is None:
             return False
         self.update()
         return self.fmtdate() in self.archive.dates
 
     def next_date(self):
-        if self.archive == None:
+        if self.archive is None:
             return None
         self.update()
         for d in self.archive.dates:
@@ -127,8 +127,8 @@ class Bbox:
     def __repr__(self):
         return F"Bbox: x0 {self.x0},y0 {self.y0},x1 {self.x1},y1 {self.y1}"
 
-    def width(self): return self.x1-self.x0
-    def height(self): return self.y1-self.y0
+    def width(self): return self.x1 - self.x0
+    def height(self): return self.y1 - self.y0
     def origin(self): return (self.x0, self.y0)
     def topright(self): return (self.x1, self.y1)
     def size(self): return (int(self.height()), int(self.width()))
@@ -210,7 +210,7 @@ class screen:
         self.refresh(force=False)
 
     def show_text(self, text, loc=(0, 0), font=None, color=(255, 255, 255), stroke_width=0, force=False):
-        if font == None:
+        if font is None:
             font = self.font
         (text_width, text_height) = font.getsize(text)
         logger.debug(F' show_text {text}. text_size {text_height},{text_width}')
@@ -218,8 +218,8 @@ class screen:
         self.refresh(force)
 
     def scroll_venue(self, color=(0, 255, 255), stroke_width=0, inc=15):
-        """ This function can be called in a thread from the main. 
-            eg. 
+        """ This function can be called in a thread from the main.
+            eg.
             venue_thread = threading.Thread(target=s.scroll_venue,name="venue_scroll",args=(),kwargs={'stroke_width':0,'inc':10})
             venue_thread.start()
             s.venue_name ="Fillmore West, San Francisco, CA"
@@ -368,7 +368,7 @@ class state:
                 self.dict['NEXT_TRACK_TITLE'] = self.player.tape.tracks()[next_track].title
             else:
                 self.dict['NEXT_TRACK_TITLE'] = ''
-        except:
+        except BaseException:
             self.dict['TRACK_NUM'] = -1
             self.dict['TAPE_ID'] = ''
             self.dict['TRACK_TITLE'] = ''
