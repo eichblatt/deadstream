@@ -645,7 +645,7 @@ class GDPlayer(MPV):
         self._set_property('audio-buffer', 10.0)  # This allows to play directly from the html without a gap!
         self._set_property('cache', 'yes')
         # self._set_property('audio-device','alsa')
-        self.default_audio_device = 'auto'
+        self.default_audio_device = 'pulse'
         audio_device = self.default_audio_device
         self._set_property('audio-device', audio_device)
         self.download_when_possible = False
@@ -698,19 +698,25 @@ class GDPlayer(MPV):
         logger.info(F"Playlist {self.playlist}")
         return
 
-    def play(self):
+    def reset_audio_device(self):
         if self.get_prop('audio-device') == 'null':
             logger.info(F"changing audio-device to {self.default_audio_device}")
             audio_device = self.default_audio_device
             self._set_property('audio-device', audio_device)
-            time.sleep(1)
+            self.wait_for_property('audio-device', lambda v: v == audio_device)
+            if self.get_prop('current-ao') is None:
+                logger.warning(F"Current-ao is None")
+                self.stop()
+                return False
             self.pause()
-            time.sleep(3)
-            self._set_property('audio-device', audio_device)
-            if self.get_prop('audio-device') != audio_device:
-                logger.warning(F"Failed to set audio-device to {audio_device}")
-            self._set_property('pause', True)
             self._set_property('pause', False)
+            self.wait_until_playing()
+            self.pause()
+        return True
+
+    def play(self):
+        if not self.reset_audio_device():
+            return
         logger.info("playing")
         self._set_property('pause', False)
         self.wait_until_playing()
