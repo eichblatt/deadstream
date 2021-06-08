@@ -1,17 +1,19 @@
 #!/usr/bin/python3
-from time import sleep
 import datetime
-import logging
-import digitalio
-import board
 import functools
-from . import config
-import adafruit_rgb_display.st7735 as st7735
-from adafruit_rgb_display import color565
-from PIL import Image, ImageDraw, ImageFont
-import pkg_resources
-from gpiozero import RotaryEncoder, Button
+import logging
+from time import sleep
 from threading import BoundedSemaphore
+
+import adafruit_rgb_display.st7735 as st7735
+import board
+import digitalio
+from adafruit_rgb_display import color565
+from gpiozero import Button, LED, RotaryEncoder
+from PIL import Image, ImageDraw, ImageFont
+
+from . import config
+import pkg_resources
 
 logging.basicConfig(format='%(asctime)s.%(msecs)03d %(levelname)s: %(name)s %(message)s', level=logging.DEBUG, datefmt='%Y-%m-%d %H:%M:%S')
 logger = logging.getLogger(__name__)
@@ -150,6 +152,7 @@ class screen:
         self.disp = st7735.ST7735R(spi, rotation=rotation_angle, cs=cs_pin, dc=dc_pin, rst=reset_pin, baudrate=BAUDRATE)
 
         self.bgcolor = color565(0, 0, 0)
+        self.led = LED(config.screen_led_pin,initial_value=True)
         # --- swap width/height, if
         if self.disp.rotation % 180 == 90:
             height, width = self.disp.width, self.disp.height
@@ -200,6 +203,7 @@ class screen:
         self.refresh(True)
 
     def sleep(self):
+        self.led.off()
         pixels = self.image.tobytes()
         self.clear()
         self.sleeping = True
@@ -207,6 +211,7 @@ class screen:
 
     def wake_up(self):
         self.sleeping = False
+        self.led.on()
         self.refresh(force=False)
 
     def show_text(self, text, loc=(0, 0), font=None, color=(255, 255, 255), stroke_width=0, force=False):
@@ -313,7 +318,6 @@ class screen:
             return
         logger.debug("showing soundboard status")
         self.draw.regular_polygon((self.sbd_bbox.center(), 3), 4, rotation=45, fill=color)
-
 
 class state:
     def __init__(self, date_reader, player=None):
