@@ -245,9 +245,9 @@ class GDArchive:
         return retstr
 
     def best_tape(self, date):
-        if type(date) == datetime.date:
+        if isinstance(date, datetime.date):
             date = date.strftime('%Y-%m-%d')
-        if not date in self.dates:
+        if date not in self.dates:
             logger.info("No Tape for date {}".format(date))
             return None
         return self.tape_dates[date][0]
@@ -266,7 +266,7 @@ class GDArchive:
         if not tape:
             return None
         tape_start_time = tape.set_data['start_time'] if tape.set_data else None
-        if tape_start_time == None:
+        if tape_start_time is None:
             tape_start_time = default_start
         tape_start = datetime.datetime.combine(dt.date(), tape_start_time)  # date + time
         return tape_start
@@ -286,7 +286,7 @@ class GDArchive:
         tape_dates = {}
         for tape in self.tapes:
             k = tape.date
-            if not k in tape_dates.keys():
+            if k not in tape_dates.keys():
                 tape_dates[k] = [tape]
             else:
                 tape_dates[k].append(tape)
@@ -325,8 +325,8 @@ class GDTape:
         for k, v in raw_json.items():
             if k in attribs:
                 setattr(self, k, v)
-        self.url_metadata = 'https://archive.org/metadata/'+self.identifier
-        self.url_details = 'https://archive.org/details/'+self.identifier
+        self.url_metadata = 'https://archive.org/metadata/' + self.identifier
+        self.url_details = 'https://archive.org/details/' + self.identifier
         self.date = str((datetime.datetime.strptime(raw_json['date'], '%Y-%m-%dT%H:%M:%SZ')).date())
         self.set_data = set_data.get(self.date)
         if 'avg_rating' in raw_json.keys():
@@ -389,7 +389,7 @@ class GDTape:
         meta_path = os.path.join(self.dbpath, str(date.year), str(date.month), self.identifier+'.json')
         try:     # I used to check if file exists, but it may also be corrupt, so this is safer.
             page_meta = json.load(open(meta_path, 'r'))
-        except:
+        except BaseException:
             r = requests.get(self.url_metadata)
             logger.info("url is {}".format(r.url))
             if r.status_code != 200:
@@ -400,7 +400,7 @@ class GDTape:
             except ValueError:
                 logger.warn("Json Error {}".format(r.url))
                 return None
-            except:
+            except BaseException:
                 logger.warn("Json Error, probably")
                 return None
 
@@ -440,7 +440,7 @@ class GDTape:
         # Note, if tracknum > 0, this could be a second show...check after running insert_breaks
         # 1970-02-14 is an example with 2 shows.
         sd = self.set_data
-        if sd == None:
+        if sd is None:
             return self.identifier
         venue_string = ""
         l = sd['location']
@@ -457,7 +457,7 @@ class GDTape:
             self.get_metadata()
         tlist = [x.title for x in self._tracks]
         sd = self.set_data
-        if sd == None:
+        if sd is None:
             sd = {}
         lb = sd['longbreaks'] if 'longbreaks' in sd.keys() else []
         sb = sd['shortbreaks'] if 'shortbreaks' in sd.keys() else []
@@ -469,7 +469,7 @@ class GDTape:
             long_breaks = [difflib.get_close_matches(x, tlist)[0] for x in lb]
             short_breaks = [difflib.get_close_matches(x, tlist)[0] for x in sb]
             location_breaks = [difflib.get_close_matches(x, tlist)[0] for x in locb]
-        except:
+        except BaseException:
             pass
         lb_locations = []
         sb_locations = []
@@ -516,7 +516,7 @@ class GDTrack:
     def __init__(self, tdict, parent_id, break_track=False):
         self.parent_id = parent_id
         attribs = ['track', 'original', 'title']
-        if not 'title' in tdict.keys():
+        if 'title' not in tdict.keys():
             tdict['title'] = 'unknown'
         for k, v in tdict.items():
             if k in attribs:
@@ -565,7 +565,7 @@ class GDSet:
             date = d['date']
             time = d['time']
             song = d['song']
-            if not date in set_data.keys():
+            if date not in set_data.keys():
                 set_data[date] = {}
             set_data[date]['start_time'] = datetime.datetime.strptime(time, '%H:%M:%S.%f').time() if len(time) > 0 else None
             if int(d['ievent']) == 1:
@@ -647,7 +647,7 @@ class GDPlayer(MPV):
         audio_device = self.default_audio_device
         self._set_property('audio-device', audio_device)
         self.download_when_possible = False
-        if tape != None:
+        if tape is not None:
             self.insert_tape(tape)
 
     def __str__(self):
@@ -679,7 +679,7 @@ class GDPlayer(MPV):
                     best_track = f['url']
                 elif f['format'] in playable_formats:
                     candidates.append(f['url'])
-            if best_track == None and len(candidates) > 0:
+            if best_track is None and len(candidates) > 0:
                 best_track = candidates[0]
             urls.append(best_track)
         return urls
@@ -723,7 +723,7 @@ class GDPlayer(MPV):
         self.pause()
 
     def next(self, blocking=False):
-        if self.get_prop('playlist-pos')+1 == len(self.playlist):
+        if self.get_prop('playlist-pos') + 1 == len(self.playlist):
             return
         self.command('playlist-next')
         self.wait_for_event('file-loaded')
@@ -736,7 +736,7 @@ class GDPlayer(MPV):
     def time_remaining(self, max_counts=40):
         time_remaining = None
         count = 0
-        while (time_remaining == None) and count < max_counts:
+        while (time_remaining is None) and count < max_counts:
             time_remaining = self.get_prop('time-remaining')
             time.sleep(0.5)
             count = count + 1
@@ -756,7 +756,7 @@ class GDPlayer(MPV):
         dest_orig = destination
         time_remaining = self.time_remaining()
         playlist_pos = self.get_prop('playlist-pos')
-        while (destination > time_remaining) and self.get_prop('playlist-pos')+1 < len(self.playlist):
+        while (destination > time_remaining) and self.get_prop('playlist-pos') + 1 < len(self.playlist):
             duration = self.get_prop('duration')
             logger.debug(F'seek_in_tape_to dest:{destination},time-remainig:{time_remaining},playlist-pos:{playlist_pos}, duration: {duration}, slippage {slippage}')
             self.next(blocking=True)
@@ -808,7 +808,7 @@ class GDPlayer(MPV):
             current_track = self.get_prop('playlist-pos')
             time_remaining = self.get_prop('time-remaining')
             time_pos = self.get_prop('time-pos')
-            if time_pos == None:
+            if time_pos is None:
                 time_pos = 0
             time_pos = max(0, time_pos)
             duration = self.get_prop('duration')
@@ -834,13 +834,13 @@ class GDPlayer(MPV):
         return retry_call(self._get_property, property_name)
 
     def status(self):
-        if self.playlist_pos == None:
+        if self.playlist_pos is None:
             logger.info(F"Playlist not started")
             return None
         playlist_pos = self.get_prop('playlist-pos')
         paused = self.get_prop('pause')
         logger.info(F"Playlist at track {playlist_pos}, Paused {paused}")
-        if self.raw.time_pos == None:
+        if self.raw.time_pos is None:
             logger.info(F"Track not started")
             return None
         duration = self.get_prop('duration')
