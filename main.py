@@ -619,6 +619,9 @@ def event_loop(state):
                         pass
                     elif (now - current['PAUSED_AT']).seconds > 1 * 3600:
                         state.player._set_property('audio-device', 'null')
+                        state.player.wait_for_property('audio-device', lambda x: x == 'null')
+                        current['PAUSED_AT'] = datetime.datetime.now()
+                        state.set(current)
                         playstate_event.set()
                 save_state(state)
                 if idle_seconds > config.optd['QUIESCENT_TIME']:
