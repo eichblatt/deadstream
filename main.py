@@ -24,7 +24,7 @@ parser.add_option('--box', dest='box', type="string", default='v1', help="v0 box
 parser.add_option('--dbpath', dest='dbpath', type="string", default=os.path.join(GD.ROOT_DIR, 'metadata'), help="path to database [default %default]")
 parser.add_option('--state_path', dest='state_path', type="string", default=os.path.join(GD.ROOT_DIR, 'state.json'), help="path to state [default %default]")
 parser.add_option('--options_path', dest='options_path', type="string", default=os.path.join(GD.ROOT_DIR, 'options.txt'), help="path to options file [default %default]")
-parser.add_option('-d', '--debug', dest='debug', type="int", default=1, help="If > 0, don't run the main script on loading [default %default]")
+parser.add_option('-d', '--debug', dest='debug', type="int", default=0, help="If > 0, don't run the main script on loading [default %default]")
 parser.add_option('-v', '--verbose', dest='verbose', action="store_true", default=False, help="Print more verbose information [default %default]")
 parms, remainder = parser.parse_args()
 
@@ -74,7 +74,8 @@ def load_saved_state(state):
         current = state.get_current()
         f = open(parms.state_path, 'r')
         loaded_state = json.loads(f.read())
-        fields_to_load = ['DATE', 'VENUE', 'STAGED_DATE', 'ON_TOUR', 'TOUR_YEAR', 'TOUR_STATE', 'EXPERIENCE', 'TRACK_NUM', 'TAPE_ID', 'TRACK_TITLE', 'NEXT_TRACK_TITLE', 'TRACK_ID', 'DATE_READER']
+        fields_to_load = ['DATE', 'VENUE', 'STAGED_DATE', 'ON_TOUR', 'TOUR_YEAR', 'TOUR_STATE', 'EXPERIENCE',
+                          'TRACK_NUM', 'TAPE_ID', 'TRACK_TITLE', 'NEXT_TRACK_TITLE', 'TRACK_ID', 'DATE_READER']
         for field in fields_to_load:
             if field in ['DATE', 'STAGED_DATE', 'DATE_READER']:
                 current[field] = to_date(loaded_state[field])
@@ -467,8 +468,8 @@ def play_on_tour(tape, state, seek_to=0):
     current['DATE'] = to_date(tape.date)
     current['VENUE'] = tape.venue()
     state.player.insert_tape(tape)
-    state.player.seek_in_tape_to(seek_to, ticking=True)
     state.player.play()
+    state.player.seek_in_tape_to(seek_to, ticking=True)
     current['PLAY_STATE'] = config.PLAYING
     current['TOUR_STATE'] = current['PLAY_STATE']
     state.set(current)
@@ -672,11 +673,6 @@ def on_track_event(_name, value):
 def my_handler(event):
     logger.debug('file-loaded')
 
-
-try:
-    os.system("amixer sset 'Headphone' 100%")
-except BaseException:
-    pass
 
 y = retry_call(RotaryEncoder, config.year_pins[1], config.year_pins[0], max_steps=0, threshold_steps=(0, 30))
 m = retry_call(RotaryEncoder, config.month_pins[1], config.month_pins[0], max_steps=0, threshold_steps=(1, 12))
