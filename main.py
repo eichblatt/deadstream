@@ -37,7 +37,7 @@ stagedate_event = Event()
 select_event = Event()
 track_event = Event()
 playstate_event = Event()
-#busy_event = Event()
+# busy_event = Event()
 free_event = Event()
 stop_event = Event()
 screen_event = Event()
@@ -104,7 +104,7 @@ def load_saved_state(state):
 
 @sequential
 def save_state(state):
-    #logger.debug (F"Saving state to {parms.state_path}")
+    # logger.debug (F"Saving state to {parms.state_path}")
     current = state.get_current()
     with open(parms.state_path, 'w') as statefile:
         json.dump(current, statefile, indent=1, default=str)
@@ -312,9 +312,9 @@ def stop_button_longpress(button, state):
 def rewind_button(button, state):
     logger.debug("press of rewind")
     current = state.get_current()
-    if current['EXPERIENCE']:
-        return
-    if current['ON_TOUR'] and current['TOUR_STATE'] in [config.READY, config.PLAYING]:
+    if current['EXPERIENCE'] or (current['ON_TOUR'] and current['TOUR_STATE'] in [config.READY, config.PLAYING]):
+        current_volume = state.player.get_prop('volume')
+        state.player._set_property('volume', max(current_volume*0.9, 50))
         return
     sleep(button._hold_time)
     if button.is_pressed:
@@ -334,9 +334,9 @@ def rewind_button_longpress(button, state):
 def ffwd_button(button, state):
     logger.debug("press of ffwd")
     current = state.get_current()
-    if current['EXPERIENCE']:
-        return
-    if current['ON_TOUR'] and current['TOUR_STATE'] in [config.READY, config.PLAYING]:
+    if current['EXPERIENCE'] or (current['ON_TOUR'] and current['TOUR_STATE'] in [config.READY, config.PLAYING):
+        current_volume = state.player.get_prop('volume')
+        state.player._set_property('volume', min(current_volume*1.1, 130))
         return
     sleep(button._hold_time)
     if button.is_pressed:
@@ -345,14 +345,14 @@ def ffwd_button(button, state):
         state.player.next()
 
 
-@sequential
+@ sequential
 def ffwd_button_longpress(button, state):
     logger.debug("longpress of ffwd")
     while button.is_held:
         state.player.fseek(30)
 
 
-@sequential
+@ sequential
 def month_button(button, state):
     current = state.get_current()
     if current['EXPERIENCE']:
@@ -367,7 +367,7 @@ def month_button_longpress(button, state):
     logger.debug(F"long pressing {button.name} -- nyi")
 
 
-@sequential
+@ sequential
 def day_button(button, state):
     sleep(button._hold_time * 1.01)
     if button.is_pressed or button.is_held:
@@ -385,7 +385,7 @@ def day_button_longpress(button, state):
     scr.sleep()
 
 
-@sequential
+@ sequential
 def year_button(button, state):
     current = state.get_current()
     # if current['EXPERIENCE']: return
@@ -416,7 +416,7 @@ def year_button(button, state):
     stagedate_event.set()
 
 
-@sequential
+@ sequential
 def year_button_longpress(button, state):
     logger.debug(" longpress of month button")
     current = state.get_current()
@@ -455,7 +455,7 @@ def to_date(d):
     return datetime.datetime.strptime(d, '%Y-%m-%d').date()
 
 
-@sequential
+@ sequential
 def play_on_tour(tape, state, seek_to=0):
     logger.debug("play_on_tour")
     current = state.get_current()
@@ -477,7 +477,7 @@ def play_on_tour(tape, state, seek_to=0):
     return
 
 
-@sequential
+@ sequential
 def refresh_venue(state, idle_second_hand, refresh_times, venue):
     venue = config.VENUE if config.VENUE else venue
     stream_only = False
@@ -583,7 +583,7 @@ def event_loop(state):
                 q_counter = True
                 scr.show_staged_date(date_reader.date)
                 scr.show_venue(date_reader.venue())
-                #if clear_stagedate: stagedate_event.clear()
+                # if clear_stagedate: stagedate_event.clear()
                 # clear_stagedate = not clear_stagedate   # only clear stagedate event after updating twice
                 stagedate_event.clear()
                 scr.wake_up()
@@ -621,7 +621,7 @@ def event_loop(state):
                     elif (now - current['PAUSED_AT']).seconds > 1 * 3600:
                         state.player._set_property('audio-device', 'null')
                         state.player.wait_for_property('audio-device', lambda x: x == 'null')
-                        current['PAUSED_AT'] = datetime.datetime.now()
+                        current['PAUSED_AT']=datetime.datetime.now()
                         state.set(current)
                         playstate_event.set()
                 save_state(state)
@@ -639,91 +639,91 @@ def event_loop(state):
 
 
 def get_ip():
-    cmd = "hostname -I"
-    ip = subprocess.check_output(cmd, shell=True)
-    ip = ip.decode().split(' ')[0]
+    cmd="hostname -I"
+    ip=subprocess.check_output(cmd, shell=True)
+    ip=ip.decode().split(' ')[0]
     return ip
 
 
 # def main(parms):
 load_options(parms)
 if parms.box == 'v0':
-    upside_down = True
+    upside_down=True
 else:
-    upside_down = False
-scr = controls.screen(upside_down=upside_down)
+    upside_down=False
+scr=controls.screen(upside_down=upside_down)
 scr.clear()
-ip_address = get_ip()
+ip_address=get_ip()
 scr.show_text(F"Time\n  Machine\n   Loading...\n{ip_address}", color=(0, 255, 255))
 
-archive = GD.GDArchive(parms.dbpath)
-player = GD.GDPlayer()
+archive=GD.GDArchive(parms.dbpath)
+player=GD.GDPlayer()
 
 
-@player.property_observer('playlist-pos')
+@ player.property_observer('playlist-pos')
 def on_track_event(_name, value):
     logger.info(F'in track event callback {_name}, {value}')
     if value is None:
-        config.PLAY_STATE = config.ENDED
+        config.PLAY_STATE=config.ENDED
         select_button(select, state)
     track_event.set()
 
 
-@player.event_callback('file-loaded')
+@ player.event_callback('file-loaded')
 def my_handler(event):
     logger.debug('file-loaded')
 
 
-y = retry_call(RotaryEncoder, config.year_pins[1], config.year_pins[0], max_steps=0, threshold_steps=(0, 30))
-m = retry_call(RotaryEncoder, config.month_pins[1], config.month_pins[0], max_steps=0, threshold_steps=(1, 12))
-d = retry_call(RotaryEncoder, config.day_pins[1], config.day_pins[0], max_steps=0, threshold_steps=(1, 31))
-y.steps = 1975 - 1965
-m.steps = 8
-d.steps = 13
-date_reader = controls.date_knob_reader(y, m, d, archive)
-state = controls.state(date_reader, player)
-y.when_rotated = lambda x: twist_knob(y, "year", date_reader)
-m.when_rotated = lambda x: twist_knob(m, "month", date_reader)
-d.when_rotated = lambda x: twist_knob(d, "day", date_reader)
-y_button = retry_call(Button, config.year_pins[2])
-m_button = retry_call(Button, config.month_pins[2])
-d_button = retry_call(Button, config.day_pins[2], hold_time=0.3, hold_repeat=False)
-select = retry_call(Button, config.select_pin, hold_time=0.5, hold_repeat=False)
-play_pause = retry_call(Button, config.play_pause_pin, hold_time=7)
-ffwd = retry_call(Button, config.ffwd_pin, hold_time=0.5, hold_repeat=False)
-rewind = retry_call(Button, config.rewind_pin, hold_time=0.5, hold_repeat=False)
-stop = retry_call(Button, config.stop_pin, hold_time=7)
+y=retry_call(RotaryEncoder, config.year_pins[1], config.year_pins[0], max_steps=0, threshold_steps=(0, 30))
+m=retry_call(RotaryEncoder, config.month_pins[1], config.month_pins[0], max_steps=0, threshold_steps=(1, 12))
+d=retry_call(RotaryEncoder, config.day_pins[1], config.day_pins[0], max_steps=0, threshold_steps=(1, 31))
+y.steps=1975 - 1965
+m.steps=8
+d.steps=13
+date_reader=controls.date_knob_reader(y, m, d, archive)
+state=controls.state(date_reader, player)
+y.when_rotated=lambda x: twist_knob(y, "year", date_reader)
+m.when_rotated=lambda x: twist_knob(m, "month", date_reader)
+d.when_rotated=lambda x: twist_knob(d, "day", date_reader)
+y_button=retry_call(Button, config.year_pins[2])
+m_button=retry_call(Button, config.month_pins[2])
+d_button=retry_call(Button, config.day_pins[2], hold_time=0.3, hold_repeat=False)
+select=retry_call(Button, config.select_pin, hold_time=0.5, hold_repeat=False)
+play_pause=retry_call(Button, config.play_pause_pin, hold_time=7)
+ffwd=retry_call(Button, config.ffwd_pin, hold_time=0.5, hold_repeat=False)
+rewind=retry_call(Button, config.rewind_pin, hold_time=0.5, hold_repeat=False)
+stop=retry_call(Button, config.stop_pin, hold_time=7)
 
-play_pause.when_pressed = lambda button: play_pause_button(button, state)
-play_pause.when_held = lambda button: play_pause_button_longpress(button, state)
+play_pause.when_pressed=lambda button: play_pause_button(button, state)
+play_pause.when_held=lambda button: play_pause_button_longpress(button, state)
 
-select.when_pressed = lambda button: select_button(button, state)
-select.when_held = lambda button: select_button_longpress(button, state)
+select.when_pressed=lambda button: select_button(button, state)
+select.when_held=lambda button: select_button_longpress(button, state)
 
-ffwd.when_pressed = lambda button: ffwd_button(button, state)
-ffwd.when_held = lambda button: ffwd_button_longpress(button, state)
+ffwd.when_pressed=lambda button: ffwd_button(button, state)
+ffwd.when_held=lambda button: ffwd_button_longpress(button, state)
 
-rewind.when_pressed = lambda button: rewind_button(button, state)
-rewind.when_held = lambda button: rewind_button_longpress(button, state)
+rewind.when_pressed=lambda button: rewind_button(button, state)
+rewind.when_held=lambda button: rewind_button_longpress(button, state)
 
-stop.when_pressed = lambda button: stop_button(button, state)
-stop.when_held = lambda button: stop_button_longpress(button, state)
+stop.when_pressed=lambda button: stop_button(button, state)
+stop.when_held=lambda button: stop_button_longpress(button, state)
 
-m_button.when_pressed = lambda button: month_button(button, state)
-d_button.when_pressed = lambda button: day_button(button, state)
-y_button.when_pressed = lambda button: year_button(button, state)
+m_button.when_pressed=lambda button: month_button(button, state)
+d_button.when_pressed=lambda button: day_button(button, state)
+y_button.when_pressed=lambda button: year_button(button, state)
 
-d_button.when_held = lambda button: day_button_longpress(button, state)
-#m_button.when_held = lambda button: month_button_longpress(button,state)
-y_button.when_held = lambda button: year_button_longpress(button, state)
+d_button.when_held=lambda button: day_button_longpress(button, state)
+# m_button.when_held = lambda button: month_button_longpress(button,state)
+y_button.when_held=lambda button: year_button_longpress(button, state)
 
 scr.clear()
-#scr.show_text(F"Powered by\n archive.org\n\n{ip_address}",color=(0,255,255))
+# scr.show_text(F"Powered by\n archive.org\n\n{ip_address}",color=(0,255,255))
 scr.show_text(F"Powered by\n archive.org\n", color=(0, 255, 255))
 
 if config.optd['RELOAD_STATE_ON_START']:
     load_saved_state(state)
-eloop = threading.Thread(target=event_loop, args=[state])
+eloop=threading.Thread(target=event_loop, args=[state])
 
 # [x.cleanup() for x in [y,m,d]] ## redundant, only one cleanup is needed!
 
