@@ -21,14 +21,38 @@ from timemachine import config, controls, GD
 
 parser = optparse.OptionParser()
 parser.add_option('--box', dest='box', type="string", default='v1', help="v0 box has screen at 270. [default %default]")
-parser.add_option('--dbpath', dest='dbpath', type="string", default=os.path.join(GD.ROOT_DIR, 'metadata'), help="path to database [default %default]")
-parser.add_option('--state_path', dest='state_path', type="string", default=os.path.join(GD.ROOT_DIR, 'state.json'), help="path to state [default %default]")
-parser.add_option('--options_path', dest='options_path', type="string", default=os.path.join(GD.ROOT_DIR, 'options.txt'), help="path to options file [default %default]")
-parser.add_option('-d', '--debug', dest='debug', type="int", default=0, help="If > 0, don't run the main script on loading [default %default]")
-parser.add_option('-v', '--verbose', dest='verbose', action="store_true", default=False, help="Print more verbose information [default %default]")
+parser.add_option('--dbpath',
+                  dest='dbpath',
+                  type="string",
+                  default=os.path.join(GD.ROOT_DIR, 'metadata'),
+                  help="path to database [default %default]")
+parser.add_option('--state_path',
+                  dest='state_path',
+                  type="string",
+                  default=os.path.join(GD.ROOT_DIR, 'state.json'),
+                  help="path to state [default %default]")
+parser.add_option('--options_path',
+                  dest='options_path',
+                  type="string",
+                  default=os.path.join(GD.ROOT_DIR, 'options.txt'),
+                  help="path to options file [default %default]")
+parser.add_option('-d',
+                  '--debug',
+                  dest='debug',
+                  type="int",
+                  default=0,
+                  help="If > 0, don't run the main script on loading [default %default]")
+parser.add_option('-v',
+                  '--verbose',
+                  dest='verbose',
+                  action="store_true",
+                  default=False,
+                  help="Print more verbose information [default %default]")
 parms, remainder = parser.parse_args()
 
-logging.basicConfig(format='%(asctime)s.%(msecs)03d %(levelname)s: %(name)s %(message)s', level=logging.INFO, datefmt='%Y-%m-%d %H:%M:%S')
+logging.basicConfig(format='%(asctime)s.%(msecs)03d %(levelname)s: %(name)s %(message)s',
+                    level=logging.INFO,
+                    datefmt='%Y-%m-%d %H:%M:%S')
 logger = logging.getLogger(__name__)
 GDLogger = logging.getLogger('timemachine.GD')
 controlsLogger = logging.getLogger('timemachine.controls')
@@ -42,7 +66,7 @@ free_event = Event()
 stop_event = Event()
 screen_event = Event()
 
-random.seed(datetime.datetime.now())  # to ensure that random show will be new each time.
+random.seed(datetime.datetime.now()) # to ensure that random show will be new each time.
 
 
 @retry(stop=stop_after_delay(10))
@@ -61,6 +85,7 @@ def sequential(func):
             raise
         finally:
             free_event.set()
+
     return inner
 
 
@@ -74,8 +99,9 @@ def load_saved_state(state):
         current = state.get_current()
         f = open(parms.state_path, 'r')
         loaded_state = json.loads(f.read())
-        fields_to_load = ['DATE', 'VENUE', 'STAGED_DATE', 'ON_TOUR', 'TOUR_YEAR', 'TOUR_STATE', 'EXPERIENCE',
-                          'TRACK_NUM', 'TAPE_ID', 'TRACK_TITLE', 'NEXT_TRACK_TITLE', 'TRACK_ID', 'DATE_READER']
+        fields_to_load = [
+            'DATE', 'VENUE', 'STAGED_DATE', 'ON_TOUR', 'TOUR_YEAR', 'TOUR_STATE', 'EXPERIENCE', 'TRACK_NUM', 'TAPE_ID',
+            'TRACK_TITLE', 'NEXT_TRACK_TITLE', 'TRACK_ID', 'DATE_READER']
         for field in fields_to_load:
             if field in ['DATE', 'STAGED_DATE', 'DATE_READER']:
                 current[field] = to_date(loaded_state[field])
@@ -154,12 +180,12 @@ if parms.verbose:
 def select_tape(tape, state, autoplay=False):
     current = state.get_current()
     if tape.identifier == current['TAPE_ID']:
-        return  # already selected.
+        return                           # already selected.
     logger.debug(F"current state at entry {current}")
     EOT = False
     if current['PLAY_STATE'] == config.ENDED:
         EOT = True
-    current['PLAY_STATE'] = config.READY  # eject current tape, insert new one in player
+    current['PLAY_STATE'] = config.READY # eject current tape, insert new one in player
     current['TAPE_ID'] = tape.identifier
     logger.info(F"Set TAPE_ID to {current['TAPE_ID']}")
     current['TRACK_NUM'] = -1
@@ -254,8 +280,8 @@ def play_pause_button(button, state):
         current['PLAY_STATE'] = config.PAUSED
     elif current['PLAY_STATE'] in [config.PAUSED, config.STOPPED, config.READY]:
         current['PLAY_STATE'] = config.PLAYING
-        scr.show_playstate(staged_play=True, force=True)  # show that we've registered the button-press before blocking call.
-        state.player.play()   # this is a blocking call. I could move the "wait_until_playing" to the event handler.
+        scr.show_playstate(staged_play=True, force=True) # show that we've registered the button-press before blocking call.
+        state.player.play()                              # this is a blocking call. I could move the "wait_until_playing" to the event handler.
     state.set(current)
     playstate_event.set()
 
@@ -276,7 +302,7 @@ def play_pause_button_longpress(button, state):
         state.player.stop()
     state.player.insert_tape(tape)
     current['PLAY_STATE'] = config.PLAYING
-    state.player.play()   # this is a blocking call. I could move the "wait_until_playing" to the event handler.
+    state.player.play() # this is a blocking call. I could move the "wait_until_playing" to the event handler.
 
     state.set(current)
     select_event.set()
@@ -314,11 +340,11 @@ def rewind_button(button, state):
     current = state.get_current()
     if current['EXPERIENCE'] or (current['ON_TOUR'] and current['TOUR_STATE'] in [config.READY, config.PLAYING]):
         current_volume = state.player.get_prop('volume')
-        state.player._set_property('volume', max(current_volume*0.9, 50))
+        state.player._set_property('volume', max(current_volume * 0.9, 50))
         return
     sleep(button._hold_time)
     if button.is_pressed:
-        return  # the button is being "held"
+        return     # the button is being "held"
     if current['TRACK_NUM'] < len(state.player.playlist):
         state.player.prev()
 
@@ -334,25 +360,26 @@ def rewind_button_longpress(button, state):
 def ffwd_button(button, state):
     logger.debug("press of ffwd")
     current = state.get_current()
-    if current['EXPERIENCE'] or (current['ON_TOUR'] and current['TOUR_STATE'] in [config.READY, config.PLAYING):
+    if current['EXPERIENCE'] or (current['ON_TOUR'] and current['TOUR_STATE'] in [config.READY, config.PLAYING]):
         current_volume = state.player.get_prop('volume')
-        state.player._set_property('volume', min(current_volume*1.1, 130))
+        state.player._set_property('volume', min(current_volume * 1.1, 130))
         return
     sleep(button._hold_time)
     if button.is_pressed:
-        return  # the button is being "held"
+        return     # the button is being "held"
     if current['TRACK_NUM'] < len(state.player.playlist):
         state.player.next()
+    return
 
 
-@ sequential
+@sequential
 def ffwd_button_longpress(button, state):
     logger.debug("longpress of ffwd")
     while button.is_held:
         state.player.fseek(30)
 
 
-@ sequential
+@sequential
 def month_button(button, state):
     current = state.get_current()
     if current['EXPERIENCE']:
@@ -367,7 +394,7 @@ def month_button_longpress(button, state):
     logger.debug(F"long pressing {button.name} -- nyi")
 
 
-@ sequential
+@sequential
 def day_button(button, state):
     sleep(button._hold_time * 1.01)
     if button.is_pressed or button.is_held:
@@ -385,13 +412,13 @@ def day_button_longpress(button, state):
     scr.sleep()
 
 
-@ sequential
+@sequential
 def year_button(button, state):
     current = state.get_current()
     # if current['EXPERIENCE']: return
     sleep(button._hold_time)
     if button.is_pressed:
-        return  # the button is being "held"
+        return     # the button is being "held"
     today = datetime.date.today()
     now_m = today.month
     now_d = today.day
@@ -399,7 +426,7 @@ def year_button(button, state):
     d = state.date_reader.date.day
     y = state.date_reader.date.year
 
-    if m == now_m and d == now_d:   # move to the next year where there is a tape available
+    if m == now_m and d == now_d: # move to the next year where there is a tape available
         tihstring = F"{m:0>2d}-{d:0>2d}"
         tih_tapedates = [to_date(d) for d in state.date_reader.archive.dates if d.endswith(tihstring)]
         if len(tih_tapedates) > 0:
@@ -416,7 +443,7 @@ def year_button(button, state):
     stagedate_event.set()
 
 
-@ sequential
+@sequential
 def year_button_longpress(button, state):
     logger.debug(" longpress of month button")
     current = state.get_current()
@@ -455,13 +482,13 @@ def to_date(d):
     return datetime.datetime.strptime(d, '%Y-%m-%d').date()
 
 
-@ sequential
+@sequential
 def play_on_tour(tape, state, seek_to=0):
     logger.debug("play_on_tour")
     current = state.get_current()
     if tape.identifier == current['TAPE_ID']:
-        return  # already playing.
-    current['PLAY_STATE'] = config.READY  # eject current tape, insert new one in player
+        return                           # already playing.
+    current['PLAY_STATE'] = config.READY # eject current tape, insert new one in player
     current['TAPE_ID'] = tape.identifier
     logger.info(F"Set TAPE_ID to {current['TAPE_ID']}")
     current['TRACK_NUM'] = -1
@@ -477,7 +504,7 @@ def play_on_tour(tape, state, seek_to=0):
     return
 
 
-@ sequential
+@sequential
 def refresh_venue(state, idle_second_hand, refresh_times, venue):
     venue = config.VENUE if config.VENUE else venue
     stream_only = False
@@ -553,7 +580,8 @@ def event_loop(state):
 
             if current['ON_TOUR'] and current['TOUR_STATE'] != config.PLAYING:
                 then_time = now.replace(year=current['TOUR_YEAR'])
-                tape = state.date_reader.archive.tape_at_time(then_time, default_start=default_start)  # At the "scheduled time", stop whatever is playing and wait.
+                tape = state.date_reader.archive.tape_at_time(
+                    then_time, default_start=default_start)                                                                                                  # At the "scheduled time", stop whatever is playing and wait.
                 if not tape:
                     current['TOUR_STATE'] = config.INIT
                 else:
@@ -563,11 +591,13 @@ def event_loop(state):
                     start_time = state.date_reader.archive.tape_start_time(then_time, default_start=default_start)
                     scr.show_experience(text=F"ON_TOUR:{current['TOUR_YEAR']}\nWaiting for show", force=True)
                     random.seed(then_time.date())
-                    wait_time = random.randrange(60, 60*10)
-                    logger.info(F"On Tour Tape Found on {then_time}. Sleeping 10 seconds. Waiting for {(start_time + datetime.timedelta(seconds=wait_time)).time()}")
+                    wait_time = random.randrange(60, 60 * 10)
+                    logger.info(
+                        F"On Tour Tape Found on {then_time}. Sleeping 10 seconds. Waiting for {(start_time + datetime.timedelta(seconds=wait_time)).time()}"
+                    )
                     sleep(10)
                     if now.time() >= (start_time + datetime.timedelta(seconds=wait_time)).time():
-                        point_in_show = (then_time - (start_time+datetime.timedelta(seconds=wait_time))).seconds
+                        point_in_show = (then_time - (start_time + datetime.timedelta(seconds=wait_time))).seconds
                         play_on_tour(tape, state, seek_to=point_in_show)
             if current['ON_TOUR'] and current['TOUR_STATE'] == config.PLAYING:
                 if player.playlist_pos is None:
@@ -615,13 +645,13 @@ def event_loop(state):
                 playstate_event.set()
                 # stagedate_event.set()         # NOTE: this would set the q_counter, etc. But it SHOULD work.
                 # scr.show_staged_date(date_reader.date)
-                if current['PLAY_STATE'] == config.PAUSED:  # deal with overnight pauses, which freeze the alsa player.
+                if current['PLAY_STATE'] == config.PAUSED: # deal with overnight pauses, which freeze the alsa player.
                     if state.player.get_prop('audio-device') == 'null':
                         pass
                     elif (now - current['PAUSED_AT']).seconds > 1 * 3600:
                         state.player._set_property('audio-device', 'null')
                         state.player.wait_for_property('audio-device', lambda x: x == 'null')
-                        current['PAUSED_AT']=datetime.datetime.now()
+                        current['PAUSED_AT'] = datetime.datetime.now()
                         state.set(current)
                         playstate_event.set()
                 save_state(state)
@@ -639,83 +669,83 @@ def event_loop(state):
 
 
 def get_ip():
-    cmd="hostname -I"
-    ip=subprocess.check_output(cmd, shell=True)
-    ip=ip.decode().split(' ')[0]
+    cmd = "hostname -I"
+    ip = subprocess.check_output(cmd, shell=True)
+    ip = ip.decode().split(' ')[0]
     return ip
 
 
 # def main(parms):
 load_options(parms)
 if parms.box == 'v0':
-    upside_down=True
+    upside_down = True
 else:
-    upside_down=False
-scr=controls.screen(upside_down=upside_down)
+    upside_down = False
+scr = controls.screen(upside_down=upside_down)
 scr.clear()
-ip_address=get_ip()
+ip_address = get_ip()
 scr.show_text(F"Time\n  Machine\n   Loading...\n{ip_address}", color=(0, 255, 255))
 
-archive=GD.GDArchive(parms.dbpath)
-player=GD.GDPlayer()
+archive = GD.GDArchive(parms.dbpath)
+player = GD.GDPlayer()
 
 
-@ player.property_observer('playlist-pos')
+@player.property_observer('playlist-pos')
 def on_track_event(_name, value):
     logger.info(F'in track event callback {_name}, {value}')
     if value is None:
-        config.PLAY_STATE=config.ENDED
+        config.PLAY_STATE = config.ENDED
         select_button(select, state)
     track_event.set()
 
 
-@ player.event_callback('file-loaded')
+@player.event_callback('file-loaded')
 def my_handler(event):
     logger.debug('file-loaded')
 
 
-y=retry_call(RotaryEncoder, config.year_pins[1], config.year_pins[0], max_steps=0, threshold_steps=(0, 30))
-m=retry_call(RotaryEncoder, config.month_pins[1], config.month_pins[0], max_steps=0, threshold_steps=(1, 12))
-d=retry_call(RotaryEncoder, config.day_pins[1], config.day_pins[0], max_steps=0, threshold_steps=(1, 31))
-y.steps=1975 - 1965
-m.steps=8
-d.steps=13
-date_reader=controls.date_knob_reader(y, m, d, archive)
-state=controls.state(date_reader, player)
-y.when_rotated=lambda x: twist_knob(y, "year", date_reader)
-m.when_rotated=lambda x: twist_knob(m, "month", date_reader)
-d.when_rotated=lambda x: twist_knob(d, "day", date_reader)
-y_button=retry_call(Button, config.year_pins[2])
-m_button=retry_call(Button, config.month_pins[2])
-d_button=retry_call(Button, config.day_pins[2], hold_time=0.3, hold_repeat=False)
-select=retry_call(Button, config.select_pin, hold_time=0.5, hold_repeat=False)
-play_pause=retry_call(Button, config.play_pause_pin, hold_time=7)
-ffwd=retry_call(Button, config.ffwd_pin, hold_time=0.5, hold_repeat=False)
-rewind=retry_call(Button, config.rewind_pin, hold_time=0.5, hold_repeat=False)
-stop=retry_call(Button, config.stop_pin, hold_time=7)
+y = retry_call(RotaryEncoder, config.year_pins[1], config.year_pins[0], max_steps=0, threshold_steps=(0, 30))
+m = retry_call(RotaryEncoder, config.month_pins[1], config.month_pins[0], max_steps=0, threshold_steps=(1, 12))
+d = retry_call(RotaryEncoder, config.day_pins[1], config.day_pins[0], max_steps=0, threshold_steps=(1, 31))
+y.steps = 1975 - 1965
+m.steps = 8
+d.steps = 13
+date_reader = controls.date_knob_reader(y, m, d, archive)
+state = controls.state(date_reader, player)
+y.when_rotated = lambda x: twist_knob(y, "year", date_reader)
+m.when_rotated = lambda x: twist_knob(m, "month", date_reader)
+d.when_rotated = lambda x: twist_knob(d, "day", date_reader)
+y_button = retry_call(Button, config.year_pins[2])
+m_button = retry_call(Button, config.month_pins[2])
+d_button = retry_call(Button, config.day_pins[2], hold_time=0.3, hold_repeat=False)
+select = retry_call(Button, config.select_pin, hold_time=0.5, hold_repeat=False)
+play_pause = retry_call(Button, config.play_pause_pin, hold_time=7)
+ffwd = retry_call(Button, config.ffwd_pin, hold_time=0.5, hold_repeat=False)
+rewind = retry_call(Button, config.rewind_pin, hold_time=0.5, hold_repeat=False)
+stop = retry_call(Button, config.stop_pin, hold_time=7)
 
-play_pause.when_pressed=lambda button: play_pause_button(button, state)
-play_pause.when_held=lambda button: play_pause_button_longpress(button, state)
+play_pause.when_pressed = lambda button: play_pause_button(button, state)
+play_pause.when_held = lambda button: play_pause_button_longpress(button, state)
 
-select.when_pressed=lambda button: select_button(button, state)
-select.when_held=lambda button: select_button_longpress(button, state)
+select.when_pressed = lambda button: select_button(button, state)
+select.when_held = lambda button: select_button_longpress(button, state)
 
-ffwd.when_pressed=lambda button: ffwd_button(button, state)
-ffwd.when_held=lambda button: ffwd_button_longpress(button, state)
+ffwd.when_pressed = lambda button: ffwd_button(button, state)
+ffwd.when_held = lambda button: ffwd_button_longpress(button, state)
 
-rewind.when_pressed=lambda button: rewind_button(button, state)
-rewind.when_held=lambda button: rewind_button_longpress(button, state)
+rewind.when_pressed = lambda button: rewind_button(button, state)
+rewind.when_held = lambda button: rewind_button_longpress(button, state)
 
-stop.when_pressed=lambda button: stop_button(button, state)
-stop.when_held=lambda button: stop_button_longpress(button, state)
+stop.when_pressed = lambda button: stop_button(button, state)
+stop.when_held = lambda button: stop_button_longpress(button, state)
 
-m_button.when_pressed=lambda button: month_button(button, state)
-d_button.when_pressed=lambda button: day_button(button, state)
-y_button.when_pressed=lambda button: year_button(button, state)
+m_button.when_pressed = lambda button: month_button(button, state)
+d_button.when_pressed = lambda button: day_button(button, state)
+y_button.when_pressed = lambda button: year_button(button, state)
 
-d_button.when_held=lambda button: day_button_longpress(button, state)
+d_button.when_held = lambda button: day_button_longpress(button, state)
 # m_button.when_held = lambda button: month_button_longpress(button,state)
-y_button.when_held=lambda button: year_button_longpress(button, state)
+y_button.when_held = lambda button: year_button_longpress(button, state)
 
 scr.clear()
 # scr.show_text(F"Powered by\n archive.org\n\n{ip_address}",color=(0,255,255))
@@ -723,7 +753,7 @@ scr.show_text(F"Powered by\n archive.org\n", color=(0, 255, 255))
 
 if config.optd['RELOAD_STATE_ON_START']:
     load_saved_state(state)
-eloop=threading.Thread(target=event_loop, args=[state])
+eloop = threading.Thread(target=event_loop, args=[state])
 
 # [x.cleanup() for x in [y,m,d]] ## redundant, only one cleanup is needed!
 
