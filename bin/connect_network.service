@@ -2,7 +2,7 @@
 Description=Check Network Exists or Setup Network
 [Service]
 Type=oneshot
-ExecStart=/usr/bin/python3 /home/steve/deadstream/connect_network.py --debug 0 
+ExecStart=/usr/bin/python3 /home/steve/deadstream/connect_network.py --debug 0
 RemainAfterExit=yes
 User=steve
 [Install]

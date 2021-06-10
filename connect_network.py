@@ -150,9 +150,9 @@ def select_option(scr, y, message, choices):
     return selected
 
 
-def select_chars(scr, y, message, message2="So Far"):
+def select_chars(scr, y, message, message2="So Far", character_set=string.printable):
     scr.clear()
-    printable_chars = string.printable
+    #character_set = string.printable
     selected = ''
     y.steps = 0
     screen_width = 12
@@ -179,21 +179,21 @@ def select_chars(scr, y, message, message2="So Far"):
             (text_width, text_height) = scr.oldfont.getsize(text)
             if y.steps < 0:  # we are deleting
                 scr.show_text(text, loc=(x_loc, y_loc), font=scr.oldfont, color=(0, 0, 255), force=False)
-                scr.show_text(printable_chars[:screen_width], loc=(x_loc + text_width, y_loc), font=scr.oldfont, force=True)
+                scr.show_text(character_set[:screen_width], loc=(x_loc + text_width, y_loc), font=scr.oldfont, force=True)
                 continue
             scr.show_text(text, loc=(x_loc, y_loc), font=scr.oldfont, force=False)
             x_loc = x_loc + text_width
 
             # print the white before the red, if applicable
-            text = printable_chars[max(0, y.steps-int(screen_width/2)):y.steps]
-            for x in printable_chars[94:]:
+            text = character_set[max(0, y.steps-int(screen_width/2)):y.steps]
+            for x in character_set[94:]:
                 text = text.replace(x, u'\u25A1')
             (text_width, text_height) = scr.oldfont.getsize(text)
             scr.show_text(text, loc=(x_loc, y_loc), font=scr.oldfont, force=False)
             x_loc = x_loc + text_width
 
             # print the red character
-            text = printable_chars[y.steps]
+            text = character_set[y.steps]
             if text == ' ':
                 text = "SPC"
             elif text == '\t':
@@ -211,8 +211,8 @@ def select_chars(scr, y, message, message2="So Far"):
             x_loc = x_loc + text_width
 
             # print the white after the red, if applicable
-            text = printable_chars[y.steps+1:min(y.steps+screen_width, len(printable_chars))]
-            for x in printable_chars[94:]:
+            text = character_set[y.steps+1:min(y.steps+screen_width, len(character_set))]
+            for x in character_set[94:]:
                 text = text.replace(x, u'\u25A1')
             (text_width, text_height) = scr.oldfont.getsize(text)
             scr.show_text(text, loc=(x_loc, y_loc), font=scr.oldfont, force=True)
@@ -226,7 +226,7 @@ def select_chars(scr, y, message, message2="So Far"):
             selected = selected[:-1]
             scr.clear_area(selected_bbox, force=False)
         else:
-            selected = selected + printable_chars[y.steps]
+            selected = selected + character_set[y.steps]
         scr.show_text(F"{message2}:\n{selected}", loc=selected_bbox.origin(), color=(255, 255, 255), font=scr.oldfont, force=True)
 
     logger.info(F"word selected {selected}")
@@ -259,18 +259,21 @@ def get_wifi_choices():
     #raw = subprocess.check_output(cmd,shell=True)
     choices = [x.lstrip().replace('ESSID:', '').replace('"', '') for x in raw.decode().split('\n')]
     choices = [x for x in choices if bool(re.search(r'[a-z,0-9]', x, re.IGNORECASE))]
+    choices = choices + ['HIDDEN_WIFI']
     logger.info(F"Wifi Choices {choices}")
     return choices
 
 
-def update_wpa_conf(wpa_path, wifi, passkey, extra_dict={}):
+def update_wpa_conf(wpa_path, wifi, passkey, extra_dict):
     logger.info(F"Updating the wpa_conf file {wpa_path}")
     #if not os.path.exists(wpa_path): raise Exception('File Missing')
     #with open(wpa_path,'r') as f: wpa_lines = [x.rstrip() for x in f.readlines()]
-    wpa_lines = ['ctrl_interface=DIR=/var/run/wpa_supplicant GROUP=netdev', 'update_config=1', 'country=US']
+    wpa_lines = ['ctrl_interface=DIR=/var/run/wpa_supplicant GROUP=netdev', 'update_config=1', F'country={extra_dict["country"]}']
     wpa = wpa_lines + ['', 'network={', F'        ssid="{wifi}"', F'        psk="{passkey}"']
     for (k, v) in extra_dict.items():
-        wpa = wpa + [F'        {k}="{v}"']
+        if k == 'country':
+            continue
+        wpa = wpa + [F'        {k}={v}']
     wpa = wpa + ['    }']
     new_wpa_path = os.path.join(os.getenv('HOME'), 'wpa_supplicant.conf')
     f = open(new_wpa_path, 'w')
@@ -283,6 +286,14 @@ def update_wpa_conf(wpa_path, wifi, passkey, extra_dict={}):
     _ = subprocess.check_output(cmd, shell=True)
     cmd = F"sudo chgrp root {wpa_path}"
     _ = subprocess.check_output(cmd, shell=True)
+
+
+def get_mac_address():
+    cmd = "cat /sys/class/net/eth0/address"
+    eth_mac_address = subprocess.check_output(cmd, shell=True).decode().strip()
+    cmd = "cat /sys/class/net/wlan0/address"
+    wlan_mac_address = subprocess.check_output(cmd, shell=True).decode().strip()
+    return eth_mac_address, wlan_mac_address
 
 
 def get_ip():
@@ -298,14 +309,23 @@ def exit_success(status=0, sleeptime=5):
 
 
 def get_wifi_params():
+    extra_dict = {}
+    country_code = select_option(scr, y, "Country Code\nTurn Year, Select", ['US', 'CA', 'GB', 'AU', 'FR', 'other'])
+    if country_code == 'other':
+        country_code = select_chars(scr, y, "2 Letter\ncountry code\nSelect. Stop to end", character_set=string.printable[36:62])
+    extra_dict['country'] = country_code
     wifi = select_option(scr, y, "Select Wifi Name\nTurn Year, Select", get_wifi_choices)
+    if wifi == 'HIDDEN_WIFI':
+        wifi = select_chars(scr, y, "Input Wifi Name\nSelect. Stop to end")
     passkey = select_chars(scr, y, "Passkey:Turn Year\nSelect. Stop to end", message2=wifi)
     need_extra_fields = 'no'
-    extra_dict = {}
     need_extra_fields = select_option(scr, y, "Extra Fields\nRequired?", ['no', 'yes'])
     while need_extra_fields == 'yes':
-        field_name = select_chars(scr, y, "Field Name:Turn Year\nSelect. Stop to end")
-        field_value = select_chars(scr, y, "Field Value:Turn Year\nSelect. Stop to end")
+        fields = ['priority', 'scan_ssid', 'key_mgmt', 'bssid', 'mode', 'proto', 'auth_alg', 'pairwise', 'group', 'eapol_flags', 'eap', 'other']
+        field_name = select_option(scr, y, "Field Name\nTurn Year, Select", fields)
+        if field_name == 'other':
+            field_name = select_chars(scr, y, "Field Name:Turn Year\nSelect. Stop to end")
+        field_value = select_chars(scr, y, "Field Value:Turn Year\nSelect. Stop to end", message2=field_name)
         extra_dict[field_name] = field_value
         need_extra_fields = select_option(scr, y, "More Fields\nRequired?", ['no', 'yes'])
     return wifi, passkey, extra_dict
@@ -313,7 +333,10 @@ def get_wifi_params():
 
 sleep(parms.sleep_time)
 
-scr.show_text("Connect wifi", force=True)
+eth_mac_address, wlan_mac_address = get_mac_address()
+scr.show_text(F"Connect wifi")
+scr.show_text(F"MAC addresses\neth0, wlan0\n{eth_mac_address}\n{wlan_mac_address}", loc=(0, 30), color=(0, 255, 255), font=scr.smallfont, force=True)
+sleep(4)
 icounter = 0
 while ((not wifi_connected()) and icounter < 3) or (parms.test and icounter < 1):
     scr.clear()

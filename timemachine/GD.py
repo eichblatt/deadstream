@@ -644,7 +644,7 @@ class GDPlayer(MPV):
         # self._set_property('cache-on-disk','yes')
         self._set_property('audio-buffer', 10.0)  # This allows to play directly from the html without a gap!
         self._set_property('cache', 'yes')
-        # self._set_property('audio-device','alsa')
+        #self.default_audio_device = 'pulse'
         self.default_audio_device = 'auto'
         audio_device = self.default_audio_device
         self._set_property('audio-device', audio_device)
@@ -698,19 +698,25 @@ class GDPlayer(MPV):
         logger.info(F"Playlist {self.playlist}")
         return
 
-    def play(self):
+    def reset_audio_device(self):
         if self.get_prop('audio-device') == 'null':
             logger.info(F"changing audio-device to {self.default_audio_device}")
             audio_device = self.default_audio_device
             self._set_property('audio-device', audio_device)
-            time.sleep(1)
+            self.wait_for_property('audio-device', lambda v: v == audio_device)
+            if self.get_prop('current-ao') is None:
+                logger.warning(F"Current-ao is None")
+                self.stop()
+                return False
             self.pause()
-            time.sleep(3)
-            self._set_property('audio-device', audio_device)
-            if self.get_prop('audio-device') != audio_device:
-                logger.warning(F"Failed to set audio-device to {audio_device}")
-            self._set_property('pause', True)
             self._set_property('pause', False)
+            self.wait_until_playing()
+            self.pause()
+        return True
+
+    def play(self):
+        if not self.reset_audio_device():
+            return
         logger.info("playing")
         self._set_property('pause', False)
         self.wait_until_playing()
@@ -735,13 +741,17 @@ class GDPlayer(MPV):
             return
         self.command('playlist-prev')
 
-    def time_remaining(self, max_counts=40):
-        time_remaining = None
-        count = 0
-        while (time_remaining is None) and count < max_counts:
+    def time_remaining(self):
+        icounter = 0
+        self.wait_for_property('time-remaining', lambda v: v is not None)
+        time_remaining = self.get_prop('time-remaining')
+        while time_remaining is None and icounter < 20:
+            logger.info(F'time-remaining is {time_remaining},icounter:{icounter},playlist:{self.playlist}')
+            time.sleep(1)
+            icounter = icounter + 1
             time_remaining = self.get_prop('time-remaining')
-            time.sleep(0.5)
-            count = count + 1
+            self.status()
+        logger.debug(F'time-remaining is {time_remaining}')
         return time_remaining
 
     def seek_in_tape_to(self, destination, ticking=True, threshold=1):
@@ -758,6 +768,7 @@ class GDPlayer(MPV):
         dest_orig = destination
         time_remaining = self.time_remaining()
         playlist_pos = self.get_prop('playlist-pos')
+        logger.debug(F'seek_in_tape_to dest:{destination},time-remainig:{time_remaining},playlist-pos:{playlist_pos}')
         while (destination > time_remaining) and self.get_prop('playlist-pos') + 1 < len(self.playlist):
             duration = self.get_prop('duration')
             logger.debug(F'seek_in_tape_to dest:{destination},time-remainig:{time_remaining},playlist-pos:{playlist_pos}, duration: {duration}, slippage {slippage}')
