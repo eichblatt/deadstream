@@ -23,27 +23,22 @@ parser = optparse.OptionParser()
 parser.add_option('--box', dest='box', type="string", default='v1', help="v0 box has screen at 270. [default %default]")
 parser.add_option('--dbpath',
                   dest='dbpath',
-                  type="string",
                   default=os.path.join(GD.ROOT_DIR, 'metadata'),
                   help="path to database [default %default]")
 parser.add_option('--state_path',
                   dest='state_path',
-                  type="string",
                   default=os.path.join(GD.ROOT_DIR, 'state.json'),
                   help="path to state [default %default]")
 parser.add_option('--options_path',
                   dest='options_path',
-                  type="string",
                   default=os.path.join(GD.ROOT_DIR, 'options.txt'),
                   help="path to options file [default %default]")
-parser.add_option('-d',
-                  '--debug',
+parser.add_option('-d', '--debug',
                   dest='debug',
                   type="int",
                   default=0,
                   help="If > 0, don't run the main script on loading [default %default]")
-parser.add_option('-v',
-                  '--verbose',
+parser.add_option('-v', '--verbose',
                   dest='verbose',
                   action="store_true",
                   default=False,
@@ -66,7 +61,7 @@ free_event = Event()
 stop_event = Event()
 screen_event = Event()
 
-random.seed(datetime.datetime.now()) # to ensure that random show will be new each time.
+random.seed(datetime.datetime.now())  # to ensure that random show will be new each time.
 
 
 @retry(stop=stop_after_delay(10))
@@ -185,7 +180,7 @@ def select_tape(tape, state, autoplay=False):
     EOT = False
     if current['PLAY_STATE'] == config.ENDED:
         EOT = True
-    current['PLAY_STATE'] = config.READY # eject current tape, insert new one in player
+    current['PLAY_STATE'] = config.READY  # eject current tape, insert new one in player
     current['TAPE_ID'] = tape.identifier
     logger.info(F"Set TAPE_ID to {current['TAPE_ID']}")
     current['TRACK_NUM'] = -1
@@ -280,7 +275,7 @@ def play_pause_button(button, state):
         current['PLAY_STATE'] = config.PAUSED
     elif current['PLAY_STATE'] in [config.PAUSED, config.STOPPED, config.READY]:
         current['PLAY_STATE'] = config.PLAYING
-        scr.show_playstate(staged_play=True, force=True) # show that we've registered the button-press before blocking call.
+        scr.show_playstate(staged_play=True, force=True)  # show that we've registered the button-press before blocking call.
         state.player.play()                              # this is a blocking call. I could move the "wait_until_playing" to the event handler.
     state.set(current)
     playstate_event.set()
@@ -302,7 +297,7 @@ def play_pause_button_longpress(button, state):
         state.player.stop()
     state.player.insert_tape(tape)
     current['PLAY_STATE'] = config.PLAYING
-    state.player.play() # this is a blocking call. I could move the "wait_until_playing" to the event handler.
+    state.player.play()  # this is a blocking call. I could move the "wait_until_playing" to the event handler.
 
     state.set(current)
     select_event.set()
@@ -426,7 +421,7 @@ def year_button(button, state):
     d = state.date_reader.date.day
     y = state.date_reader.date.year
 
-    if m == now_m and d == now_d: # move to the next year where there is a tape available
+    if m == now_m and d == now_d:  # move to the next year where there is a tape available
         tihstring = F"{m:0>2d}-{d:0>2d}"
         tih_tapedates = [to_date(d) for d in state.date_reader.archive.dates if d.endswith(tihstring)]
         if len(tih_tapedates) > 0:
@@ -488,7 +483,7 @@ def play_on_tour(tape, state, seek_to=0):
     current = state.get_current()
     if tape.identifier == current['TAPE_ID']:
         return                           # already playing.
-    current['PLAY_STATE'] = config.READY # eject current tape, insert new one in player
+    current['PLAY_STATE'] = config.READY  # eject current tape, insert new one in player
     current['TAPE_ID'] = tape.identifier
     logger.info(F"Set TAPE_ID to {current['TAPE_ID']}")
     current['TRACK_NUM'] = -1
@@ -581,7 +576,7 @@ def event_loop(state):
             if current['ON_TOUR'] and current['TOUR_STATE'] != config.PLAYING:
                 then_time = now.replace(year=current['TOUR_YEAR'])
                 tape = state.date_reader.archive.tape_at_time(
-                    then_time, default_start=default_start)                                                                                                  # At the "scheduled time", stop whatever is playing and wait.
+                    then_time, default_start=default_start)               # At the "scheduled time", stop whatever is playing and wait.
                 if not tape:
                     current['TOUR_STATE'] = config.INIT
                 else:
@@ -645,7 +640,7 @@ def event_loop(state):
                 playstate_event.set()
                 # stagedate_event.set()         # NOTE: this would set the q_counter, etc. But it SHOULD work.
                 # scr.show_staged_date(date_reader.date)
-                if current['PLAY_STATE'] == config.PAUSED: # deal with overnight pauses, which freeze the alsa player.
+                if current['PLAY_STATE'] == config.PAUSED:  # deal with overnight pauses, which freeze the alsa player.
                     if state.player.get_prop('audio-device') == 'null':
                         pass
                     elif (now - current['PAUSED_AT']).seconds > 1 * 3600:
