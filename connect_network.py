@@ -289,17 +289,16 @@ def update_wpa_conf(wpa_path, wifi, passkey, extra_dict):
 
 
 def get_mac_address():
+    eth_mac_address = 'fail'
+    #wlan_mac_address = 'fail'
     try:
-        cmd = "cat /sys/class/net/eth0/address"
-        eth_mac_address = subprocess.check_output(cmd, shell=True).decode().strip()
-    except:
-        eth_mac_address = 'eth0 fail'
-    try:
-        cmd = "cat /sys/class/net/wlan0/address"
-        wlan_mac_address = subprocess.check_output(cmd, shell=True).decode().strip()
-    except:
-        wlan_mac_address = 'fail'
-    return eth_mac_address, wlan_mac_address
+      #cmd = "cat /sys/class/net/eth0/address"
+      cmd = "ifconfig -a | awk '/ether/{print $2}'"
+      eth_mac_address = subprocess.check_output(cmd, shell=True).decode().strip()
+      #cmd = "cat /sys/class/net/wlan0/address"
+      #wlan_mac_address = subprocess.check_output(cmd, shell=True).decode().strip()
+    except: pass
+    return eth_mac_address
 
 
 def get_ip():
@@ -339,7 +338,8 @@ def get_wifi_params():
 
 sleep(parms.sleep_time)
 
-eth_mac_address, wlan_mac_address = get_mac_address()
+#eth_mac_address, wlan_mac_address = get_mac_address()
+eth_mac_address = get_mac_address()
 scr.show_text(F"Connect wifi")
 scr.show_text(F"MAC addresses\neth0, wlan0\n{eth_mac_address}\n{wlan_mac_address}", loc=(0, 30), color=(0, 255, 255), font=scr.smallfont, force=True)
 sleep(4)
