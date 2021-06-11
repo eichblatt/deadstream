@@ -289,10 +289,16 @@ def update_wpa_conf(wpa_path, wifi, passkey, extra_dict):
 
 
 def get_mac_address():
-    cmd = "cat /sys/class/net/eth0/address"
-    eth_mac_address = subprocess.check_output(cmd, shell=True).decode().strip()
-    cmd = "cat /sys/class/net/wlan0/address"
-    wlan_mac_address = subprocess.check_output(cmd, shell=True).decode().strip()
+    try:
+        cmd = "cat /sys/class/net/eth0/address"
+        eth_mac_address = subprocess.check_output(cmd, shell=True).decode().strip()
+    except:
+        eth_mac_address = 'eth0 fail'
+    try:
+        cmd = "cat /sys/class/net/wlan0/address"
+        wlan_mac_address = subprocess.check_output(cmd, shell=True).decode().strip()
+    except:
+        wlan_mac_address = 'fail'
     return eth_mac_address, wlan_mac_address
 
 
