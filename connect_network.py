@@ -289,11 +289,17 @@ def update_wpa_conf(wpa_path, wifi, passkey, extra_dict):
 
 
 def get_mac_address():
-    cmd = "cat /sys/class/net/eth0/address"
-    eth_mac_address = subprocess.check_output(cmd, shell=True).decode().strip()
-    cmd = "cat /sys/class/net/wlan0/address"
-    wlan_mac_address = subprocess.check_output(cmd, shell=True).decode().strip()
-    return eth_mac_address, wlan_mac_address
+    eth_mac_address = 'fail'
+    #wlan_mac_address = 'fail'
+    try:
+        #cmd = "cat /sys/class/net/eth0/address"
+        cmd = "ifconfig -a | awk '/ether/{print $2}'"
+        eth_mac_address = subprocess.check_output(cmd, shell=True).decode().strip()
+        #cmd = "cat /sys/class/net/wlan0/address"
+        #wlan_mac_address = subprocess.check_output(cmd, shell=True).decode().strip()
+    except:
+        pass
+    return eth_mac_address
 
 
 def get_ip():
@@ -331,29 +337,32 @@ def get_wifi_params():
     return wifi, passkey, extra_dict
 
 
-sleep(parms.sleep_time)
-
-eth_mac_address, wlan_mac_address = get_mac_address()
-scr.show_text(F"Connect wifi")
-scr.show_text(F"MAC addresses\neth0, wlan0\n{eth_mac_address}\n{wlan_mac_address}", loc=(0, 30), color=(0, 255, 255), font=scr.smallfont, force=True)
-sleep(4)
-icounter = 0
-while ((not wifi_connected()) and icounter < 3) or (parms.test and icounter < 1):
-    scr.clear()
-    scr.show_text(F"Wifi not connected\n{icounter}", font=scr.smallfont, force=True)
-    icounter = icounter + 1
-    wifi, passkey, extra_dict = get_wifi_params()
-    scr.clear()
-    scr.show_text(F"wifi:\n{wifi}\npasskey:\n{passkey}", loc=(0, 0), color=(255, 255, 255), font=scr.oldfont, force=True)
-    update_wpa_conf(parms.wpa_path, wifi, passkey, extra_dict)
-    cmd = "sudo killall -HUP wpa_supplicant"
-    # os.system(cmd)
-    #print(F"command {cmd}")
-    if not parms.test:
-        os.system(cmd)
-    else:
-        print(F"not issuing command {cmd}")
-    sleep(2*parms.sleep_time)
+try:
+    sleep(parms.sleep_time)
+    #eth_mac_address, wlan_mac_address = get_mac_address()
+    eth_mac_address = get_mac_address()
+    scr.show_text(F"Connect wifi")
+    scr.show_text(F"MAC addresses\neth0\n{eth_mac_address}", loc=(0, 30), color=(0, 255, 255), font=scr.smallfont, force=True)
+    sleep(4)
+    icounter = 0
+    while ((not wifi_connected()) and icounter < 3) or (parms.test and icounter < 1):
+        scr.clear()
+        scr.show_text(F"Wifi not connected\n{icounter}", font=scr.smallfont, force=True)
+        icounter = icounter + 1
+        wifi, passkey, extra_dict = get_wifi_params()
+        scr.clear()
+        scr.show_text(F"wifi:\n{wifi}\npasskey:\n{passkey}", loc=(0, 0), color=(255, 255, 255), font=scr.oldfont, force=True)
+        update_wpa_conf(parms.wpa_path, wifi, passkey, extra_dict)
+        cmd = "sudo killall -HUP wpa_supplicant"
+        # os.system(cmd)
+        #print(F"command {cmd}")
+        if not parms.test:
+            os.system(cmd)
+        else:
+            print(F"not issuing command {cmd}")
+        sleep(2*parms.sleep_time)
+except:
+    sys.exit(-1)
 
 if wifi_connected():
     ip = get_ip()
