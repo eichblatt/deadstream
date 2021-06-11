@@ -51,15 +51,44 @@ def retry_call(callable: Callable, *args, **kwargs):
     return callable(*args, **kwargs)
 
 
-def twist_knob(screen_event: Event, knob: RotaryEncoder, label):
+class decade_counter():
+    def __init__(self, tens: RotaryEncoder, ones: RotaryEncoder, bounds=(None, None)):
+        self.bounds = bounds
+        self.tens = tens
+        self.ones = ones
+        self.set_value(tens.steps, ones.steps)
+
+    def set_value(self, tens_val, ones_val):
+        self.value = tens_val*10 + ones_val
+        if self.bounds[0] is not None:
+            self.value = max(self.value, self.bounds[0])
+        if self.bounds[1] is not None:
+            self.value = min(self.value, self.bounds[1])
+        self.tens.steps, self.ones.steps = divmod(self.value, 10)
+        return self.value
+
+    def get_value(self):
+        return self.value
+
+
+def decade_knob(screen_event: Event, knob: RotaryEncoder, label, counter):
     if knob.is_active:
-        logger.debug(f"Knob {label} steps={knob.steps} value={knob.value}")
+        print(f"Knob {label} steps={knob.steps} value={knob.value}")
     else:
         if knob.steps < knob.threshold_steps[0]:
-            knob.steps = knob.threshold_steps[0]
+            if label == "year" and d.steps > d.threshold_steps[0]:
+                knob.steps = knob.threshold_steps[1]
+                d.steps = max(d.threshold_steps[0], d.steps - 1)
+            else:
+                knob.steps = knob.threshold_steps[0]
         if knob.steps > knob.threshold_steps[1]:
-            knob.steps = knob.threshold_steps[1]
-        logger.debug(f"Knob {label} is inactive")
+            if label == "year" and d.steps < d.threshold_steps[1]:
+                knob.steps = knob.threshold_steps[0]
+                d.steps = min(d.threshold_steps[1], d.steps + 1)
+            else:
+                knob.steps = knob.threshold_steps[1]
+        print(f"Knob {label} is inactive")
+    counter.set_value(d.steps, y.steps)
     screen_event.set()
 
 
@@ -78,9 +107,13 @@ def stop_button(button):
     done_event.set()
 
 
-y = retry_call(RotaryEncoder, config.year_pins[1], config.year_pins[0], max_steps=0, threshold_steps=(-1, 100))
-y.when_rotated = lambda x: twist_knob(screen_event, y, "year")
-y_button = retry_call(Button, config.year_pins[2])
+max_choices = len(string.printable)
+d = retry_call(RotaryEncoder, config.day_pins[1], config.day_pins[0], max_steps=0, threshold_steps=(0, 1+divmod(max_choices-1, 10)[0]))
+y = retry_call(RotaryEncoder, config.year_pins[1], config.year_pins[0], max_steps=0, threshold_steps=(0, 9))
+counter = decade_counter(d, y, bounds=(0, 100))
+
+d.when_rotated = lambda x: decade_knob(screen_event, d, "month", counter)
+y.when_rotated = lambda x: decade_knob(screen_event, y, "year", counter)
 
 rewind = retry_call(Button, config.rewind_pin)
 select = retry_call(Button, config.select_pin, hold_time=2, hold_repeat=True)
@@ -99,11 +132,10 @@ scr = controls.screen(upside_down=False)
 scr.clear()
 
 
-def select_option(scr, y, message, choices):
+def select_option(scr, message, choices):
     if type(choices) == type(lambda: None): choices = choices()
     scr.clear()
     selected = None
-    y.steps = 0
     screen_height = 5
     update_now = scr.update_now
     scr.update_now = False
@@ -124,7 +156,7 @@ def select_option(scr, y, message, choices):
         scr.clear_area(selection_bbox, force=False)
         x_loc = 0
         y_loc = y_origin
-        step = divmod(y.steps, len(choices))[1]
+        step = divmod(counter.value, len(choices))[1]
 
         text = '\n'.join(choices[max(0, step-int(screen_height/2)):step])
         (text_width, text_height) = scr.oldfont.getsize(text)
@@ -150,11 +182,10 @@ def select_option(scr, y, message, choices):
     return selected
 
 
-def select_chars(scr, y, message, message2="So Far", character_set=string.printable):
+def select_chars(scr, message, message2="So Far", character_set=string.printable):
     scr.clear()
-    #character_set = string.printable
     selected = ''
-    y.steps = 0
+    counter.set_value(0, 1)
     screen_width = 12
     update_now = scr.update_now
     scr.update_now = False
@@ -177,7 +208,7 @@ def select_chars(scr, y, message, message2="So Far", character_set=string.printa
 
             text = 'DEL'
             (text_width, text_height) = scr.oldfont.getsize(text)
-            if y.steps < 0:  # we are deleting
+            if counter.value == 0:  # we are deleting
                 scr.show_text(text, loc=(x_loc, y_loc), font=scr.oldfont, color=(0, 0, 255), force=False)
                 scr.show_text(character_set[:screen_width], loc=(x_loc + text_width, y_loc), font=scr.oldfont, force=True)
                 continue
@@ -185,7 +216,7 @@ def select_chars(scr, y, message, message2="So Far", character_set=string.printa
             x_loc = x_loc + text_width
 
             # print the white before the red, if applicable
-            text = character_set[max(0, y.steps-int(screen_width/2)):y.steps]
+            text = character_set[max(0, -1+counter.value-int(screen_width/2)):-1+counter.value]
             for x in character_set[94:]:
                 text = text.replace(x, u'\u25A1')
             (text_width, text_height) = scr.oldfont.getsize(text)
@@ -193,7 +224,7 @@ def select_chars(scr, y, message, message2="So Far", character_set=string.printa
             x_loc = x_loc + text_width
 
             # print the red character
-            text = character_set[y.steps]
+            text = character_set[-1+min(counter.value, len(character_set))]
             if text == ' ':
                 text = "SPC"
             elif text == '\t':
@@ -202,16 +233,16 @@ def select_chars(scr, y, message, message2="So Far", character_set=string.printa
                 text = "\\n"
             elif text == '\r':
                 text = "\\r"
-            elif text == '\v':
+            elif text == '\x0b':
                 text = "\\v"
-            elif text == '\f':
+            elif text == '\x0c':
                 text = "\\f"
             (text_width, text_height) = scr.oldfont.getsize(text)
             scr.show_text(text, loc=(x_loc, y_loc), font=scr.oldfont, color=(0, 0, 255), force=False)
             x_loc = x_loc + text_width
 
             # print the white after the red, if applicable
-            text = character_set[y.steps+1:min(y.steps+screen_width, len(character_set))]
+            text = character_set[counter.value:min(-1+counter.value+screen_width, len(character_set))]
             for x in character_set[94:]:
                 text = text.replace(x, u'\u25A1')
             (text_width, text_height) = scr.oldfont.getsize(text)
@@ -222,11 +253,11 @@ def select_chars(scr, y, message, message2="So Far", character_set=string.printa
         select_event.clear()
         if done_event.is_set():
             continue
-        if y.steps < 0:
+        if counter.value == 0:
             selected = selected[:-1]
             scr.clear_area(selected_bbox, force=False)
         else:
-            selected = selected + character_set[y.steps]
+            selected = selected + character_set[-1+counter.value]
         scr.show_text(F"{message2}:\n{selected}", loc=selected_bbox.origin(), color=(255, 255, 255), font=scr.oldfont, force=True)
 
     logger.info(F"word selected {selected}")
@@ -316,24 +347,24 @@ def exit_success(status=0, sleeptime=5):
 
 def get_wifi_params():
     extra_dict = {}
-    country_code = select_option(scr, y, "Country Code\nTurn Year, Select", ['US', 'CA', 'GB', 'AU', 'FR', 'other'])
+    country_code = select_option(scr, "Country Code\nTurn Year, Select", ['US', 'CA', 'GB', 'AU', 'FR', 'other'])
     if country_code == 'other':
-        country_code = select_chars(scr, y, "2 Letter\ncountry code\nSelect. Stop to end", character_set=string.printable[36:62])
+        country_code = select_chars(scr, "2 Letter\ncountry code\nSelect. Stop to end", character_set=string.printable[36:62])
     extra_dict['country'] = country_code
-    wifi = select_option(scr, y, "Select Wifi Name\nTurn Year, Select", get_wifi_choices)
+    wifi = select_option(scr, "Select Wifi Name\nTurn Year, Select", get_wifi_choices)
     if wifi == 'HIDDEN_WIFI':
-        wifi = select_chars(scr, y, "Input Wifi Name\nSelect. Stop to end")
-    passkey = select_chars(scr, y, "Passkey:Turn Year\nSelect. Stop to end", message2=wifi)
+        wifi = select_chars(scr, "Input Wifi Name\nSelect. Stop to end")
+    passkey = select_chars(scr, "Passkey:Turn Year\nSelect. Stop to end", message2=wifi)
     need_extra_fields = 'no'
-    need_extra_fields = select_option(scr, y, "Extra Fields\nRequired?", ['no', 'yes'])
+    need_extra_fields = select_option(scr, "Extra Fields\nRequired?", ['no', 'yes'])
     while need_extra_fields == 'yes':
         fields = ['priority', 'scan_ssid', 'key_mgmt', 'bssid', 'mode', 'proto', 'auth_alg', 'pairwise', 'group', 'eapol_flags', 'eap', 'other']
-        field_name = select_option(scr, y, "Field Name\nTurn Year, Select", fields)
+        field_name = select_option(scr, "Field Name\nTurn Year, Select", fields)
         if field_name == 'other':
-            field_name = select_chars(scr, y, "Field Name:Turn Year\nSelect. Stop to end")
-        field_value = select_chars(scr, y, "Field Value:Turn Year\nSelect. Stop to end", message2=field_name)
+            field_name = select_chars(scr, "Field Name:Turn Year\nSelect. Stop to end")
+        field_value = select_chars(scr, "Field Value:Turn Year\nSelect. Stop to end", message2=field_name)
         extra_dict[field_name] = field_value
-        need_extra_fields = select_option(scr, y, "More Fields\nRequired?", ['no', 'yes'])
+        need_extra_fields = select_option(scr, "More Fields\nRequired?", ['no', 'yes'])
     return wifi, passkey, extra_dict
 
 
