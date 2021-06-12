@@ -287,11 +287,14 @@ def play_pause_button_longpress(button, state):
     current = state.get_current()
     if current['EXPERIENCE']:
         current['EXPERIENCE'] = False
+    scr.show_playstate(staged_play=True, force=True)  # show that we've registered the button-press before blocking call.
     new_date = random.choice(state.date_reader.archive.dates)
     tape = state.date_reader.archive.best_tape(new_date)
     current['DATE'] = to_date(new_date)
     state.date_reader.set_date(current['DATE'])
     current['VENUE'] = state.date_reader.venue()
+    current_volume = state.player.get_prop('volume')
+    state.player._set_property('volume', max(current_volume, 100))
 
     if current['PLAY_STATE'] in [config.PLAYING, config.PAUSED]:
         state.player.stop()
@@ -335,7 +338,7 @@ def rewind_button(button, state):
     current = state.get_current()
     if current['EXPERIENCE'] or (current['ON_TOUR'] and current['TOUR_STATE'] in [config.READY, config.PLAYING]):
         current_volume = state.player.get_prop('volume')
-        state.player._set_property('volume', max(current_volume * 0.9, 50))
+        state.player._set_property('volume', max(current_volume * 0.9, 40))
         return
     sleep(button._hold_time)
     if button.is_pressed:
