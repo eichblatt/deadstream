@@ -222,6 +222,7 @@ def select_button(button, state):
     if current['ON_TOUR'] and current['TOUR_STATE'] in [config.READY, config.PLAYING]:
         return
     state = select_current_date(state, autoplay=config.optd['AUTO_PLAY'])
+    scr.wake_up()
     logger.debug(F"current state after select button {state}")
     return state
 
@@ -651,6 +652,7 @@ def event_loop(state):
                         state.player.wait_for_property('audio-device', lambda x: x == 'null')
                         current['PAUSED_AT'] = datetime.datetime.now()
                         state.set(current)
+                        scr.sleep()
                         playstate_event.set()
                 save_state(state)
                 if idle_seconds > config.optd['QUIESCENT_TIME']:
