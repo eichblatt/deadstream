@@ -7,6 +7,7 @@ import os
 import random
 import subprocess
 import threading
+import sys
 import time
 from threading import Event
 from time import sleep
@@ -33,6 +34,11 @@ parser.add_option('--options_path',
                   dest='options_path',
                   default=os.path.join(GD.ROOT_DIR, 'options.txt'),
                   help="path to options file [default %default]")
+parser.add_option('--test_update',
+                  dest='test_update',
+                  action="store_true",
+                  default=False,
+                  help="test that software update succeeded[default %default]")
 parser.add_option('-d', '--debug',
                   dest='debug',
                   type="int",
@@ -59,6 +65,7 @@ playstate_event = Event()
 # busy_event = Event()
 free_event = Event()
 stop_event = Event()
+updated_event = Event()
 screen_event = Event()
 
 random.seed(datetime.datetime.now())  # to ensure that random show will be new each time.
@@ -162,6 +169,7 @@ def twist_knob(knob: RotaryEncoder, label, date_reader: controls.date_knob_reade
             knob.steps = knob.threshold_steps[1]
         logger.debug(f"Knob {label} is inactive")
     date_reader.update()
+    updated_event.set()
     stagedate_event.set()
 
 
@@ -222,6 +230,7 @@ def select_button(button, state):
     if current['ON_TOUR'] and current['TOUR_STATE'] in [config.READY, config.PLAYING]:
         return
     state = select_current_date(state, autoplay=config.optd['AUTO_PLAY'])
+    scr.wake_up()
     logger.debug(F"current state after select button {state}")
     return state
 
@@ -317,6 +326,7 @@ def stop_button(button, state):
         return
     if current['PLAY_STATE'] in [config.READY, config.INIT, config.STOPPED]:
         return
+    updated_event.set()
     state.player.stop()
     current['PLAY_STATE'] = config.STOPPED
     state.set(current)
@@ -552,6 +562,41 @@ def refresh_venue(state, idle_second_hand, refresh_times, venue):
         scr.show_venue(display_string, color=id_color)
 
 
+def test_update(state):
+    """ This function is run when the script has been updated. If it passes, then the code
+        in the temporary folder may be moved to the working directory (and be used as the latest version).
+        If this function fails, then the code should NOT be placed in the working directory """
+
+    current = state.get_current()
+    current['EXPERIENCE'] = False
+    current['ON_TOUR'] = False
+    current['PLAY_STATE'] = config.PLAYING
+    itimes = 0
+    state.set(current)
+    date_reader = state.date_reader
+    last_sdevent = datetime.datetime.now()
+    clear_stagedate = False
+    scr.update_now = False
+    free_event.set()
+    stagedate_event.set()
+    updated_event.clear()
+    scr.clear()
+    try:
+        scr.show_text("Turn Any\nKnob", force=True)
+        while updated_event.wait(10):
+            updated_event.clear()
+            itimes = itimes + 1
+            if itimes > 1:
+                scr.clear()
+                scr.show_text("Passed! ", force=True)
+                sys.exit(0)
+            scr.clear()
+            scr.show_text("Press Stop\nButton", force=True)
+    except KeyboardInterrupt:
+        sys.exit(-1)
+    sys.exit(-1)
+
+
 def event_loop(state):
     date_reader = state.date_reader
     last_sdevent = datetime.datetime.now()
@@ -651,6 +696,7 @@ def event_loop(state):
                         state.player.wait_for_property('audio-device', lambda x: x == 'null')
                         current['PAUSED_AT'] = datetime.datetime.now()
                         state.set(current)
+                        scr.sleep()
                         playstate_event.set()
                 save_state(state)
                 if idle_seconds > config.optd['QUIESCENT_TIME']:
@@ -673,7 +719,6 @@ def get_ip():
     return ip
 
 
-# def main(parms):
 load_options(parms)
 if parms.box == 'v0':
     upside_down = True
@@ -746,18 +791,19 @@ d_button.when_held = lambda button: day_button_longpress(button, state)
 y_button.when_held = lambda button: year_button_longpress(button, state)
 
 scr.clear()
-# scr.show_text(F"Powered by\n archive.org\n\n{ip_address}",color=(0,255,255))
-scr.show_text(F"Powered by\n archive.org\n", color=(0, 255, 255))
+scr.show_text(F"Powered by\n archive.org\n\n{ip_address}", color=(0, 255, 255))
 
 if config.optd['RELOAD_STATE_ON_START']:
     load_saved_state(state)
+
 eloop = threading.Thread(target=event_loop, args=[state])
 
-# [x.cleanup() for x in [y,m,d]] ## redundant, only one cleanup is needed!
-
-# parser.print_help()
 for k in parms.__dict__.keys():
     print(F"{k:20s} : {parms.__dict__[k]}")
-if __name__ == "__main__" and parms.debug == 0:
-    # main(parms)
+
+if __name__ == "__main__" and parms.test_update:
+    test_update(state)
+    #eloop = threading.Thread(target=update_loop, args=[state])
+    # eloop.run()
+elif __name__ == "__main__" and parms.debug == 0:
     eloop.run()
