@@ -825,6 +825,7 @@ class GDPlayer(MPV):
                 time_pos = 0
             time_pos = max(0, time_pos)
             duration = self.get_prop('duration')
+            #self.wait_for_property('duration', lambda v: v is not None)
 
             destination = time_pos + jumpsize
 
