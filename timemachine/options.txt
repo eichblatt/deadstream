@@ -1,9 +1,9 @@
 {
  "QUIESCENT_TIME": "20",
+ "MAX_PAUSE_TIME": "3600",
  "SCROLL_VENUE": "true",
  "FAVORED_TAPER": "miller",
  "PWR_LED_ON": "false",
- "AUDIO_OUT": "Analog",
  "AUTO_PLAY": "true",
  "TIMEZONE": "America/New_York",
  "RELOAD_STATE_ON_START": "true",

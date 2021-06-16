@@ -142,6 +142,7 @@ def load_options(parms):
     f = open(parms.options_path, 'r')
     optd = json.loads(f.read())
     optd['QUIESCENT_TIME'] = int(optd['QUIESCENT_TIME'])
+    optd['MAX_PAUSE_TIME'] = int(optd['MAX_PAUSE_TIME'])
     optd['PWR_LED_ON'] = optd['PWR_LED_ON'].lower() == 'true'
     optd['SCROLL_VENUE'] = optd['SCROLL_VENUE'].lower() == 'true'
     optd['AUTO_PLAY'] = optd['AUTO_PLAY'].lower() == 'true'
@@ -691,12 +692,12 @@ def event_loop(state):
                 if current['PLAY_STATE'] == config.PAUSED:  # deal with overnight pauses, which freeze the alsa player.
                     if state.player.get_prop('audio-device') == 'null':
                         pass
-                    elif (now - current['PAUSED_AT']).seconds > 1 * 3600:
+                    elif (now - current['PAUSED_AT']).seconds > config.optd['MAX_PAUSE_TIME']:
+                        scr.sleep()
                         state.player._set_property('audio-device', 'null')
                         state.player.wait_for_property('audio-device', lambda x: x == 'null')
                         current['PAUSED_AT'] = datetime.datetime.now()
                         state.set(current)
-                        scr.sleep()
                         playstate_event.set()
                 save_state(state)
                 if idle_seconds > config.optd['QUIESCENT_TIME']:
