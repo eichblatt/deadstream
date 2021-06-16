@@ -142,7 +142,7 @@ def load_options(parms):
     f = open(parms.options_path, 'r')
     optd = json.loads(f.read())
     optd['QUIESCENT_TIME'] = int(optd['QUIESCENT_TIME'])
-    optd['MAX_PAUSE_TIME'] = int(optd['MAX_PAUSE_TIME'])
+    optd['SLEEP_AFTER_SECONDS'] = int(optd['SLEEP_AFTER_SECONDS'])
     optd['PWR_LED_ON'] = optd['PWR_LED_ON'].lower() == 'true'
     optd['SCROLL_VENUE'] = optd['SCROLL_VENUE'].lower() == 'true'
     optd['AUTO_PLAY'] = optd['AUTO_PLAY'].lower() == 'true'
@@ -689,17 +689,16 @@ def event_loop(state):
                 playstate_event.set()
                 # stagedate_event.set()         # NOTE: this would set the q_counter, etc. But it SHOULD work.
                 # scr.show_staged_date(date_reader.date)
-                if current['PLAY_STATE'] == config.PAUSED:  # deal with overnight pauses, which freeze the alsa player.
-                    if state.player.get_prop('audio-device') == 'null':
-                        pass
-                    elif (now - current['PAUSED_AT']).seconds > config.optd['MAX_PAUSE_TIME']:
+                if current['PLAY_STATE'] != config.PLAYING:  # deal with overnight pauses, which freeze the alsa player.
+                    if (now - current['PAUSED_AT']).seconds > config.optd['SLEEP_AFTER_SECONDS'] and state.player.get_prop('audio-device') != 'null':
                         scr.sleep()
                         state.player._set_property('audio-device', 'null')
                         state.player.wait_for_property('audio-device', lambda x: x == 'null')
-                        current['PAUSED_AT'] = datetime.datetime.now()
                         state.set(current)
                         playstate_event.set()
-                save_state(state)
+                        save_state(state)
+                    elif (now - current['WOKE_AT']).seconds > config.optd['SLEEP_AFTER_SECONDS']:
+                        scr.sleep()
                 if idle_seconds > config.optd['QUIESCENT_TIME']:
                     if config.DATE:
                         scr.show_staged_date(config.DATE)
