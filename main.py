@@ -583,7 +583,7 @@ def test_update(state):
     updated_event.clear()
     scr.clear()
     try:
-        scr.show_text("Turn Any\nKnob", force=True)
+        scr.show_text("Press Stop\nButton", force=True)
         while updated_event.wait(10):
             updated_event.clear()
             itimes = itimes + 1
@@ -592,7 +592,7 @@ def test_update(state):
                 scr.show_text("Passed! ", force=True)
                 sys.exit(0)
             scr.clear()
-            scr.show_text("Press Stop\nButton", force=True)
+            scr.show_text("Turn Any\nKnob", force=True)
     except KeyboardInterrupt:
         sys.exit(-1)
     sys.exit(-1)
