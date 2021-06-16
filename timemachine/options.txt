@@ -1,11 +1,11 @@
 {
  "QUIESCENT_TIME": "20",
- "MAX_PAUSE_TIME": "3600",
+ "SLEEP_AFTER_SECONDS": "3600",
  "SCROLL_VENUE": "true",
  "FAVORED_TAPER": "miller",
  "PWR_LED_ON": "false",
  "AUTO_PLAY": "true",
- "TIMEZONE": "America/New_York",
  "RELOAD_STATE_ON_START": "true",
- "DEFAULT_START_TIME": "17:00:00"
+ "DEFAULT_START_TIME": "17:00:00",
+ "TIMEZONE": "America/New_York"
 }
