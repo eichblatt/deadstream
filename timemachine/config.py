@@ -1,4 +1,3 @@
-import datetime
 import subprocess
 
 
@@ -25,8 +24,8 @@ SELECT_STAGED_DATE = False
 DATE = None
 VENUE = None
 STAGED_DATE = None
-PAUSED_AT = datetime.datetime.now()
-WOKE_AT = datetime.datetime.now()
+PAUSED_AT = None
+WOKE_AT = None
 
 ON_TOUR = False
 EXPERIENCE = False

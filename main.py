@@ -691,6 +691,7 @@ def event_loop(state):
                 # scr.show_staged_date(date_reader.date)
                 if current['PLAY_STATE'] != config.PLAYING:  # deal with overnight pauses, which freeze the alsa player.
                     if (now - current['PAUSED_AT']).seconds > config.optd['SLEEP_AFTER_SECONDS'] and state.player.get_prop('audio-device') != 'null':
+                        logger.debug(F"Paused at {current['PAUSED_AT']}, sleeping after {config.optd['SLEEP_AFTER_SECONDS']}, now {now}")
                         scr.sleep()
                         state.player._set_property('audio-device', 'null')
                         state.player.wait_for_property('audio-device', lambda x: x == 'null')
@@ -720,11 +721,14 @@ def get_ip():
 
 
 load_options(parms)
-if parms.box == 'v0':
-    upside_down = True
-else:
-    upside_down = False
-scr = controls.screen(upside_down=upside_down)
+config.PAUSED_AT = datetime.datetime.now()
+config.WOKE_AT = datetime.datetime.now()
+
+# if parms.box == 'v0':
+#    upside_down = True
+# else:
+#    upside_down = False
+scr = controls.screen(upside_down=False)
 scr.clear()
 ip_address = get_ip()
 scr.show_text(F"Time\n  Machine\n   Loading...\n{ip_address}", color=(0, 255, 255))
