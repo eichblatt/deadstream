@@ -360,7 +360,7 @@ class GDTape:
         score = 0
         if self.stream_only():
             score = score + 10
-        if len(config.optd['FAVORED_TAPER']) > 0:
+        if 'optd' in dir(config) and len(config.optd['FAVORED_TAPER']) > 0:
             if config.optd['FAVORED_TAPER'].lower() in self.identifier.lower():
                 score = score + 3
         score = score + math.log(1+self.downloads)
