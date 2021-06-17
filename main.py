@@ -34,6 +34,11 @@ parser.add_option('--options_path',
                   dest='options_path',
                   default=os.path.join(GD.ROOT_DIR, 'options.txt'),
                   help="path to options file [default %default]")
+parser.add_option('--knob_sense_path',
+                  dest='knob_sense_path',
+                  type="string",
+                  default=os.path.join(os.getenv('HOME'), ".knob_sense"),
+                  help="path to file describing knob directions [default %default]")
 parser.add_option('--test_update',
                   dest='test_update',
                   action="store_true",
@@ -758,20 +763,28 @@ def my_handler(event):
     logger.debug('file-loaded')
 
 
-y = retry_call(RotaryEncoder, config.year_pins[1], config.year_pins[0], max_steps=0, threshold_steps=(0, 30))
-m = retry_call(RotaryEncoder, config.month_pins[1], config.month_pins[0], max_steps=0, threshold_steps=(1, 12))
-d = retry_call(RotaryEncoder, config.day_pins[1], config.day_pins[0], max_steps=0, threshold_steps=(1, 31))
-y.steps = 1975 - 1965
+try:
+    kfile = open(parms.knob_sense_path, 'r')
+    knob_sense = int(kfile.read())
+    kfile.close()
+except:
+    knob_sense = 0
+
+m = retry_call(RotaryEncoder, config.month_pins[~knob_sense & 1], config.month_pins[knob_sense & 1], max_steps=0, threshold_steps=(1, 12))
+d = retry_call(RotaryEncoder, config.day_pins[~(knob_sense >> 1) & 1], config.day_pins[(knob_sense >> 1) & 1], max_steps=0, threshold_steps=(1, 31))
+y = retry_call(RotaryEncoder, config.year_pins[~(knob_sense >> 2) & 1], config.year_pins[(knob_sense >> 2) & 1], max_steps=0, threshold_steps=(0, 30))
 m.steps = 8
 d.steps = 13
+y.steps = 1975 - 1965
 date_reader = controls.date_knob_reader(y, m, d, archive)
 state = controls.state(date_reader, player)
-y.when_rotated = lambda x: twist_knob(y, "year", date_reader)
 m.when_rotated = lambda x: twist_knob(m, "month", date_reader)
 d.when_rotated = lambda x: twist_knob(d, "day", date_reader)
-y_button = retry_call(Button, config.year_pins[2])
+y.when_rotated = lambda x: twist_knob(y, "year", date_reader)
 m_button = retry_call(Button, config.month_pins[2])
 d_button = retry_call(Button, config.day_pins[2], hold_time=0.3, hold_repeat=False)
+y_button = retry_call(Button, config.year_pins[2])
+
 select = retry_call(Button, config.select_pin, hold_time=0.5, hold_repeat=False)
 play_pause = retry_call(Button, config.play_pause_pin, hold_time=7)
 ffwd = retry_call(Button, config.ffwd_pin, hold_time=0.5, hold_repeat=False)
