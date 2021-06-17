@@ -70,6 +70,13 @@ else:
 for k in parms.__dict__.keys():
     print(F"{k:20s} : {parms.__dict__[k]}")
 
+rewind_event = Event()
+select_event = Event()
+done_event = Event()
+m_knob_event = Event()
+d_knob_event = Event()
+y_knob_event = Event()
+
 
 @retry(stop=stop_after_delay(10))
 def retry_call(callable: Callable, *args, **kwargs):
@@ -115,7 +122,12 @@ def decade_knob(knob: RotaryEncoder, label, counter: decade_counter):
                 knob.steps = knob.threshold_steps[1]
         print(f"Knob {label} is inactive")
     counter.set_value(d.steps, y.steps)
-    knob_event.set()
+    if label == "month":
+        m_knob_event.set()
+    if label == "day":
+        d_knob_event.set()
+    if label == "year":
+        y_knob_event.set()
 
 
 def rewind_button(button):
@@ -134,9 +146,9 @@ def stop_button(button):
 
 
 max_choices = len(string.printable)
-m = retry_call(RotaryEncoder, config.month_pins[1], config.month_pins[0], max_steps=0, threshold_steps=(0, 9))
-d = retry_call(RotaryEncoder, config.day_pins[1], config.day_pins[0], max_steps=0, threshold_steps=(0, 1+divmod(max_choices-1, 10)[0]))
-y = retry_call(RotaryEncoder, config.year_pins[1], config.year_pins[0], max_steps=0, threshold_steps=(0, 9))
+m = retry_call(RotaryEncoder, config.month_pins[0], config.month_pins[1], max_steps=0, threshold_steps=(0, 9))
+d = retry_call(RotaryEncoder, config.day_pins[0], config.day_pins[1], max_steps=0, threshold_steps=(0, 1+divmod(max_choices-1, 10)[0]))
+y = retry_call(RotaryEncoder, config.year_pins[0], config.year_pins[1], max_steps=0, threshold_steps=(0, 9))
 counter = decade_counter(d, y, bounds=(0, 100))
 
 m.when_rotated = lambda x: decade_knob(m, "month", counter)
@@ -151,23 +163,24 @@ rewind.when_pressed = lambda x: rewind_button(x)
 select.when_pressed = lambda x: select_button(x)
 stop.when_pressed = lambda x: stop_button(x)
 
-rewind_event = Event()
-select_event = Event()
-done_event = Event()
-knob_event = Event()
-
 scr = controls.screen(upside_down=False)
 scr.clear()
 
 
 def get_knob_orientation(knob, label):
     scr.clear()
-    knob_event.clear()
+    m_knob_event.clear()
+    d_knob_event.clear()
+    y_knob_event.clear()
     before_value = knob.steps
     message = F"Rotate {label}\nclockwise"
     scr.show_text(message, loc=(0, 0), font=scr.smallfont, color=(0, 255, 255), force=True)
-    if not knob_event.wait(100):
-        return None
+    if label == "month":
+        m_knob_event.wait()
+    elif label == "day":
+        d_knob_event.wait()
+    elif label == "year":
+        y_knob_event.wait()
     after_value = knob.steps
     return not after_value > before_value
 
