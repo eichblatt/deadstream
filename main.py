@@ -57,6 +57,7 @@ logging.basicConfig(format='%(asctime)s.%(msecs)03d %(levelname)s: %(name)s %(me
 logger = logging.getLogger(__name__)
 GDLogger = logging.getLogger('timemachine.GD')
 controlsLogger = logging.getLogger('timemachine.controls')
+controlsLogger.setLevel(logging.WARN)
 
 stagedate_event = Event()
 select_event = Event()
@@ -110,10 +111,10 @@ def load_saved_state(state):
                 current[field] = to_date(loaded_state[field])
             else:
                 current[field] = loaded_state[field]
-        if current['STAGED_DATE']:
-            state.date_reader.m.steps = current['STAGED_DATE'].month
-            state.date_reader.d.steps = current['STAGED_DATE'].day
-            state.date_reader.y.steps = current['STAGED_DATE'].year - 1965
+        if current['DATE']:
+            state.date_reader.m.steps = current['DATE'].month
+            state.date_reader.d.steps = current['DATE'].day
+            state.date_reader.y.steps = current['DATE'].year - 1965
             state.date_reader.update()
         elif current['DATE_READER']:
             state.date_reader.m.steps = current['DATE_READER'].month
@@ -693,6 +694,7 @@ def event_loop(state):
                 last_idle_second_hand = idle_second_hand
                 track_event.set()
                 playstate_event.set()
+                save_state(state)
                 # stagedate_event.set()         # NOTE: this would set the q_counter, etc. But it SHOULD work.
                 # scr.show_staged_date(date_reader.date)
                 if current['PLAY_STATE'] != config.PLAYING:  # deal with overnight pauses, which freeze the alsa player.
@@ -703,7 +705,6 @@ def event_loop(state):
                         state.player.wait_for_property('audio-device', lambda x: x == 'null')
                         state.set(current)
                         playstate_event.set()
-                        save_state(state)
                     elif (now - current['WOKE_AT']).seconds > config.optd['SLEEP_AFTER_SECONDS']:
                         scr.sleep()
                 if idle_seconds > config.optd['QUIESCENT_TIME']:
