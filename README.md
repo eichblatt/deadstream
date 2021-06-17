@@ -9,7 +9,7 @@ A Simple example for the python script:
 ``` python
 import GD
 
-metadata_path = '/home/steve/projects/deadstream/metadata'
+metadata_path = os.path.join(os.getenv('$HOME'),'/projects/deadstream/metadata')
 a = GD.GDArchive(metadata_path)
 
 #dates = a.dates  # shows a list of all dates on which there are tapes.
