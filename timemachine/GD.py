@@ -731,13 +731,15 @@ class GDPlayer(MPV):
         self.pause()
 
     def next(self, blocking=False):
-        if self.get_prop('playlist-pos') + 1 == len(self.playlist):
+        pos = self.get_prop('playlist-pos')
+        if pos is None or pos + 1 == len(self.playlist):
             return
         self.command('playlist-next')
         self.wait_for_event('file-loaded')
 
     def prev(self):
-        if self.get_prop('playlist-pos') == 0:
+        pos = self.get_prop('playlist-pos')
+        if pos is None or pos == 0:
             return
         self.command('playlist-prev')
 
