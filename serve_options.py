@@ -47,8 +47,8 @@ class StringGenerator(object):
              <button type="submit">Submit</button>
              <button type="reset">Reset</button>
            </form>
-           <form method="get" action="shutdown">
-             <button type="submit">Shutdown</button>
+           <form method="get" action="restart_service">
+             <button type="submit">Restart Service</button>
            </form>
          </body>
        </html>"""
@@ -91,16 +91,16 @@ class StringGenerator(object):
         return page_string
 
     @cherrypy.expose
-    def shutdown(self, *args, **kwargs):
-        cmd = "sudo halt"
+    def restart_service(self, *args, **kwargs):
+        cmd = "sudo service timemachine restart"
         page_string = """<html>
          <head></head>
-         <body> Shutting Down <p> Command: """ + cmd + """
+         <body> Restarting Service <p> Command: """ + cmd + """
          </body>
        </html>"""
-        print(F'Shutting Down command {cmd}')
+        print(F'Restart_service command {cmd}')
         sleep(parms.sleep_time)
-        # os.system(cmd)
+        os.system(cmd)
         return page_string
 
 

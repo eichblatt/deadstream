@@ -34,6 +34,11 @@ parser.add_option('--options_path',
                   dest='options_path',
                   default=os.path.join(GD.ROOT_DIR, 'options.txt'),
                   help="path to options file [default %default]")
+parser.add_option('--knob_sense_path',
+                  dest='knob_sense_path',
+                  type="string",
+                  default=os.path.join(os.getenv('HOME'), ".knob_sense"),
+                  help="path to file describing knob directions [default %default]")
 parser.add_option('--test_update',
                   dest='test_update',
                   action="store_true",
@@ -57,6 +62,7 @@ logging.basicConfig(format='%(asctime)s.%(msecs)03d %(levelname)s: %(name)s %(me
 logger = logging.getLogger(__name__)
 GDLogger = logging.getLogger('timemachine.GD')
 controlsLogger = logging.getLogger('timemachine.controls')
+controlsLogger.setLevel(logging.WARN)
 
 stagedate_event = Event()
 select_event = Event()
@@ -65,7 +71,8 @@ playstate_event = Event()
 # busy_event = Event()
 free_event = Event()
 stop_event = Event()
-updated_event = Event()
+knob_event = Event()
+button_event = Event()
 screen_event = Event()
 
 random.seed(datetime.datetime.now())  # to ensure that random show will be new each time.
@@ -109,10 +116,10 @@ def load_saved_state(state):
                 current[field] = to_date(loaded_state[field])
             else:
                 current[field] = loaded_state[field]
-        if current['STAGED_DATE']:
-            state.date_reader.m.steps = current['STAGED_DATE'].month
-            state.date_reader.d.steps = current['STAGED_DATE'].day
-            state.date_reader.y.steps = current['STAGED_DATE'].year - 1965
+        if current['DATE']:
+            state.date_reader.m.steps = current['DATE'].month
+            state.date_reader.d.steps = current['DATE'].day
+            state.date_reader.y.steps = current['DATE'].year - 1965
             state.date_reader.update()
         elif current['DATE_READER']:
             state.date_reader.m.steps = current['DATE_READER'].month
@@ -142,7 +149,7 @@ def load_options(parms):
     f = open(parms.options_path, 'r')
     optd = json.loads(f.read())
     optd['QUIESCENT_TIME'] = int(optd['QUIESCENT_TIME'])
-    optd['MAX_PAUSE_TIME'] = int(optd['MAX_PAUSE_TIME'])
+    optd['SLEEP_AFTER_SECONDS'] = int(optd['SLEEP_AFTER_SECONDS'])
     optd['PWR_LED_ON'] = optd['PWR_LED_ON'].lower() == 'true'
     optd['SCROLL_VENUE'] = optd['SCROLL_VENUE'].lower() == 'true'
     optd['AUTO_PLAY'] = optd['AUTO_PLAY'].lower() == 'true'
@@ -170,7 +177,7 @@ def twist_knob(knob: RotaryEncoder, label, date_reader: controls.date_knob_reade
             knob.steps = knob.threshold_steps[1]
         logger.debug(f"Knob {label} is inactive")
     date_reader.update()
-    updated_event.set()
+    knob_event.set()
     stagedate_event.set()
 
 
@@ -327,7 +334,7 @@ def stop_button(button, state):
         return
     if current['PLAY_STATE'] in [config.READY, config.INIT, config.STOPPED]:
         return
-    updated_event.set()
+    button_event.set()
     state.player.stop()
     current['PLAY_STATE'] = config.STOPPED
     state.set(current)
@@ -580,19 +587,24 @@ def test_update(state):
     scr.update_now = False
     free_event.set()
     stagedate_event.set()
-    updated_event.clear()
+    knob_event.clear()
+    button_event.clear()
     scr.clear()
     try:
         scr.show_text("Turn Any\nKnob", force=True)
-        while updated_event.wait(10):
-            updated_event.clear()
-            itimes = itimes + 1
-            if itimes > 1:
-                scr.clear()
-                scr.show_text("Passed! ", force=True)
-                sys.exit(0)
+        if knob_event.wait(10):
+            knob_event.clear()
             scr.clear()
-            scr.show_text("Press Stop\nButton", force=True)
+        else:
+            sys.exit(-1)
+        scr.show_text("Press Stop\nButton", force=True)
+        if button_event.wait(10):
+            button_event.clear()
+            scr.clear()
+            scr.show_text("Passed! ", force=True)
+            sys.exit(0)
+        else:
+            sys.exit(-1)
     except KeyboardInterrupt:
         sys.exit(-1)
     sys.exit(-1)
@@ -687,19 +699,19 @@ def event_loop(state):
                 last_idle_second_hand = idle_second_hand
                 track_event.set()
                 playstate_event.set()
+                save_state(state)
                 # stagedate_event.set()         # NOTE: this would set the q_counter, etc. But it SHOULD work.
                 # scr.show_staged_date(date_reader.date)
-                if current['PLAY_STATE'] == config.PAUSED:  # deal with overnight pauses, which freeze the alsa player.
-                    if state.player.get_prop('audio-device') == 'null':
-                        pass
-                    elif (now - current['PAUSED_AT']).seconds > config.optd['MAX_PAUSE_TIME']:
+                if current['PLAY_STATE'] != config.PLAYING:  # deal with overnight pauses, which freeze the alsa player.
+                    if (now - current['PAUSED_AT']).seconds > config.optd['SLEEP_AFTER_SECONDS'] and state.player.get_prop('audio-device') != 'null':
+                        logger.debug(F"Paused at {current['PAUSED_AT']}, sleeping after {config.optd['SLEEP_AFTER_SECONDS']}, now {now}")
                         scr.sleep()
                         state.player._set_property('audio-device', 'null')
                         state.player.wait_for_property('audio-device', lambda x: x == 'null')
-                        current['PAUSED_AT'] = datetime.datetime.now()
                         state.set(current)
                         playstate_event.set()
-                save_state(state)
+                    elif (now - current['WOKE_AT']).seconds > config.optd['SLEEP_AFTER_SECONDS']:
+                        scr.sleep()
                 if idle_seconds > config.optd['QUIESCENT_TIME']:
                     if config.DATE:
                         scr.show_staged_date(config.DATE)
@@ -721,11 +733,14 @@ def get_ip():
 
 
 load_options(parms)
-if parms.box == 'v0':
-    upside_down = True
-else:
-    upside_down = False
-scr = controls.screen(upside_down=upside_down)
+config.PAUSED_AT = datetime.datetime.now()
+config.WOKE_AT = datetime.datetime.now()
+
+# if parms.box == 'v0':
+#    upside_down = True
+# else:
+#    upside_down = False
+scr = controls.screen(upside_down=False)
 scr.clear()
 ip_address = get_ip()
 scr.show_text(F"Time\n  Machine\n   Loading...\n{ip_address}", color=(0, 255, 255))
@@ -748,20 +763,28 @@ def my_handler(event):
     logger.debug('file-loaded')
 
 
-y = retry_call(RotaryEncoder, config.year_pins[1], config.year_pins[0], max_steps=0, threshold_steps=(0, 30))
-m = retry_call(RotaryEncoder, config.month_pins[1], config.month_pins[0], max_steps=0, threshold_steps=(1, 12))
-d = retry_call(RotaryEncoder, config.day_pins[1], config.day_pins[0], max_steps=0, threshold_steps=(1, 31))
-y.steps = 1975 - 1965
+try:
+    kfile = open(parms.knob_sense_path, 'r')
+    knob_sense = int(kfile.read())
+    kfile.close()
+except:
+    knob_sense = 0
+
+m = retry_call(RotaryEncoder, config.month_pins[~knob_sense & 1], config.month_pins[knob_sense & 1], max_steps=0, threshold_steps=(1, 12))
+d = retry_call(RotaryEncoder, config.day_pins[~(knob_sense >> 1) & 1], config.day_pins[(knob_sense >> 1) & 1], max_steps=0, threshold_steps=(1, 31))
+y = retry_call(RotaryEncoder, config.year_pins[~(knob_sense >> 2) & 1], config.year_pins[(knob_sense >> 2) & 1], max_steps=0, threshold_steps=(0, 30))
 m.steps = 8
 d.steps = 13
+y.steps = 1975 - 1965
 date_reader = controls.date_knob_reader(y, m, d, archive)
 state = controls.state(date_reader, player)
-y.when_rotated = lambda x: twist_knob(y, "year", date_reader)
 m.when_rotated = lambda x: twist_knob(m, "month", date_reader)
 d.when_rotated = lambda x: twist_knob(d, "day", date_reader)
-y_button = retry_call(Button, config.year_pins[2])
+y.when_rotated = lambda x: twist_knob(y, "year", date_reader)
 m_button = retry_call(Button, config.month_pins[2])
 d_button = retry_call(Button, config.day_pins[2], hold_time=0.3, hold_repeat=False)
+y_button = retry_call(Button, config.year_pins[2])
+
 select = retry_call(Button, config.select_pin, hold_time=0.5, hold_repeat=False)
 play_pause = retry_call(Button, config.play_pause_pin, hold_time=7)
 ffwd = retry_call(Button, config.ffwd_pin, hold_time=0.5, hold_repeat=False)

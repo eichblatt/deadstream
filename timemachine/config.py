@@ -25,6 +25,7 @@ DATE = None
 VENUE = None
 STAGED_DATE = None
 PAUSED_AT = None
+WOKE_AT = None
 
 ON_TOUR = False
 EXPERIENCE = False

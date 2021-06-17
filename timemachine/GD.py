@@ -360,7 +360,7 @@ class GDTape:
         score = 0
         if self.stream_only():
             score = score + 10
-        if len(config.optd['FAVORED_TAPER']) > 0:
+        if 'optd' in dir(config) and len(config.optd['FAVORED_TAPER']) > 0:
             if config.optd['FAVORED_TAPER'].lower() in self.identifier.lower():
                 score = score + 3
         score = score + math.log(1+self.downloads)
@@ -731,13 +731,15 @@ class GDPlayer(MPV):
         self.pause()
 
     def next(self, blocking=False):
-        if self.get_prop('playlist-pos') + 1 == len(self.playlist):
+        pos = self.get_prop('playlist-pos')
+        if pos is None or pos + 1 == len(self.playlist):
             return
         self.command('playlist-next')
         self.wait_for_event('file-loaded')
 
     def prev(self):
-        if self.get_prop('playlist-pos') == 0:
+        pos = self.get_prop('playlist-pos')
+        if pos is None or pos == 0:
             return
         self.command('playlist-prev')
 

@@ -24,11 +24,37 @@ from timemachine import config, controls
 
 
 parser = optparse.OptionParser()
-parser.add_option('--wpa_path', dest='wpa_path', type="string", default='/etc/wpa_supplicant/wpa_supplicant.conf', help="path to wpa_supplicant file [default %default]")
-parser.add_option('-d', '--debug', dest='debug', type="int", default=1, help="If > 0, don't run the main script on loading [default %default]")
-parser.add_option('--test', dest='test', action="store_true", default=False, help="Force reconnection (for testing) [default %default]")
-parser.add_option('--sleep_time', dest='sleep_time', type="int", default=10, help="how long to sleep before checking network status [default %default]")
-parser.add_option('-v', '--verbose', dest='verbose', action="store_true", default=False, help="Print more verbose information [default %default]")
+parser.add_option('--wpa_path',
+                  dest='wpa_path',
+                  type="string",
+                  default='/etc/wpa_supplicant/wpa_supplicant.conf',
+                  help="path to wpa_supplicant file [default %default]")
+parser.add_option('--knob_sense_path',
+                  dest='knob_sense_path',
+                  type="string",
+                  default=os.path.join(os.getenv('HOME'),
+                                       ".knob_sense"),
+                  help="path to file describing knob directions [default %default]")
+parser.add_option('-d', '--debug',
+                  dest='debug',
+                  type="int",
+                  default=1,
+                  help="If > 0, don't run the main script on loading [default %default]")
+parser.add_option('--test',
+                  dest='test',
+                  action="store_true",
+                  default=False,
+                  help="Force reconnection (for testing) [default %default]")
+parser.add_option('--sleep_time',
+                  dest='sleep_time',
+                  type="int",
+                  default=10,
+                  help="how long to sleep before checking network status [default %default]")
+parser.add_option('-v', '--verbose',
+                  dest='verbose',
+                  action="store_true",
+                  default=False,
+                  help="Print more verbose information [default %default]")
 parms, remainder = parser.parse_args()
 
 logging.basicConfig(format='%(asctime)s.%(msecs)03d %(levelname)s: %(name)s %(message)s', level=logging.INFO, datefmt='%Y-%m-%d %H:%M:%S')
@@ -71,7 +97,7 @@ class decade_counter():
         return self.value
 
 
-def decade_knob(screen_event: Event, knob: RotaryEncoder, label, counter):
+def decade_knob(knob: RotaryEncoder, label, counter: decade_counter):
     if knob.is_active:
         print(f"Knob {label} steps={knob.steps} value={knob.value}")
     else:
@@ -89,7 +115,7 @@ def decade_knob(screen_event: Event, knob: RotaryEncoder, label, counter):
                 knob.steps = knob.threshold_steps[1]
         print(f"Knob {label} is inactive")
     counter.set_value(d.steps, y.steps)
-    screen_event.set()
+    knob_event.set()
 
 
 def rewind_button(button):
@@ -108,12 +134,14 @@ def stop_button(button):
 
 
 max_choices = len(string.printable)
+m = retry_call(RotaryEncoder, config.month_pins[1], config.month_pins[0], max_steps=0, threshold_steps=(0, 9))
 d = retry_call(RotaryEncoder, config.day_pins[1], config.day_pins[0], max_steps=0, threshold_steps=(0, 1+divmod(max_choices-1, 10)[0]))
 y = retry_call(RotaryEncoder, config.year_pins[1], config.year_pins[0], max_steps=0, threshold_steps=(0, 9))
 counter = decade_counter(d, y, bounds=(0, 100))
 
-d.when_rotated = lambda x: decade_knob(screen_event, d, "month", counter)
-y.when_rotated = lambda x: decade_knob(screen_event, y, "year", counter)
+m.when_rotated = lambda x: decade_knob(m, "month", counter)
+d.when_rotated = lambda x: decade_knob(d, "day", counter)
+y.when_rotated = lambda x: decade_knob(y, "year", counter)
 
 rewind = retry_call(Button, config.rewind_pin)
 select = retry_call(Button, config.select_pin, hold_time=2, hold_repeat=True)
@@ -126,13 +154,35 @@ stop.when_pressed = lambda x: stop_button(x)
 rewind_event = Event()
 select_event = Event()
 done_event = Event()
-screen_event = Event()
+knob_event = Event()
 
 scr = controls.screen(upside_down=False)
 scr.clear()
 
 
-def select_option(scr, message, choices):
+def get_knob_orientation(knob, label):
+    scr.clear()
+    knob_event.clear()
+    before_value = knob.steps
+    message = F"Rotate {label}\nclockwise"
+    scr.show_text(message, loc=(0, 0), font=scr.smallfont, color=(0, 255, 255), force=True)
+    if not knob_event.wait(100):
+        return None
+    after_value = knob.steps
+    return not after_value > before_value
+
+
+def save_knob_sense(parms):
+    knob_senses = [get_knob_orientation(knob, label) for knob, label in [(m, "month"), (d, "day"), (y, "year")]]
+    knob_sense = 0
+    for i in range(len(knob_senses)):
+        knob_sense += 1 << i if knob_senses[i] else 0
+    f = open(parms.knob_sense_path, 'w')
+    f.write(str(knob_sense))
+    f.close()
+
+
+def select_option(message, choices):
     if type(choices) == type(lambda: None): choices = choices()
     scr.clear()
     selected = None
@@ -182,7 +232,7 @@ def select_option(scr, message, choices):
     return selected
 
 
-def select_chars(scr, message, message2="So Far", character_set=string.printable):
+def select_chars(message, message2="So Far", character_set=string.printable):
     scr.clear()
     selected = ''
     counter.set_value(0, 1)
@@ -347,31 +397,32 @@ def exit_success(status=0, sleeptime=5):
 
 def get_wifi_params():
     extra_dict = {}
-    country_code = select_option(scr, "Country Code\nTurn Year, Select", ['US', 'CA', 'GB', 'AU', 'FR', 'other'])
+    country_code = select_option("Country Code\nTurn Year, Select", ['US', 'CA', 'GB', 'AU', 'FR', 'other'])
     if country_code == 'other':
-        country_code = select_chars(scr, "2 Letter\ncountry code\nSelect. Stop to end", character_set=string.printable[36:62])
+        country_code = select_chars("2 Letter\ncountry code\nSelect. Stop to end", character_set=string.printable[36:62])
     extra_dict['country'] = country_code
-    wifi = select_option(scr, "Select Wifi Name\nTurn Year, Select", get_wifi_choices)
+    wifi = select_option("Select Wifi Name\nTurn Year, Select", get_wifi_choices)
     if wifi == 'HIDDEN_WIFI':
-        wifi = select_chars(scr, "Input Wifi Name\nSelect. Stop to end")
-    passkey = select_chars(scr, "Passkey:Turn Year\nSelect. Stop to end", message2=wifi)
+        wifi = select_chars("Input Wifi Name\nSelect. Stop to end")
+    passkey = select_chars("Passkey:Turn Year\nSelect. Stop to end", message2=wifi)
     need_extra_fields = 'no'
-    need_extra_fields = select_option(scr, "Extra Fields\nRequired?", ['no', 'yes'])
+    need_extra_fields = select_option("Extra Fields\nRequired?", ['no', 'yes'])
     while need_extra_fields == 'yes':
         fields = ['priority', 'scan_ssid', 'key_mgmt', 'bssid', 'mode', 'proto', 'auth_alg', 'pairwise', 'group', 'eapol_flags', 'eap', 'other']
-        field_name = select_option(scr, "Field Name\nTurn Year, Select", fields)
+        field_name = select_option("Field Name\nTurn Year, Select", fields)
         if field_name == 'other':
-            field_name = select_chars(scr, "Field Name:Turn Year\nSelect. Stop to end")
-        field_value = select_chars(scr, "Field Value:Turn Year\nSelect. Stop to end", message2=field_name)
+            field_name = select_chars("Field Name:Turn Year\nSelect. Stop to end")
+        field_value = select_chars("Field Value:Turn Year\nSelect. Stop to end", message2=field_name)
         extra_dict[field_name] = field_value
-        need_extra_fields = select_option(scr, "More Fields\nRequired?", ['no', 'yes'])
+        need_extra_fields = select_option("More Fields\nRequired?", ['no', 'yes'])
     return wifi, passkey, extra_dict
 
 
 try:
-    sleep(parms.sleep_time)
-    #eth_mac_address, wlan_mac_address = get_mac_address()
+    if parms.test or not wifi_connected():
+        save_knob_sense(parms)
     eth_mac_address = get_mac_address()
+    scr.clear()
     scr.show_text(F"Connect wifi")
     scr.show_text(F"MAC addresses\neth0\n{eth_mac_address}", loc=(0, 30), color=(0, 255, 255), font=scr.smallfont, force=True)
     sleep(4)
@@ -385,8 +436,6 @@ try:
         scr.show_text(F"wifi:\n{wifi}\npasskey:\n{passkey}", loc=(0, 0), color=(255, 255, 255), font=scr.oldfont, force=True)
         update_wpa_conf(parms.wpa_path, wifi, passkey, extra_dict)
         cmd = "sudo killall -HUP wpa_supplicant"
-        # os.system(cmd)
-        #print(F"command {cmd}")
         if not parms.test:
             os.system(cmd)
         else:

@@ -210,6 +210,7 @@ class screen:
         self.image.frombytes(pixels)
 
     def wake_up(self):
+        config.WOKE_AT = datetime.datetime.now()
         self.sleeping = False
         self.led.on()
         self.refresh(force=False)

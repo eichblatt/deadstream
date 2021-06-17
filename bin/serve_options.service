@@ -1,0 +1,9 @@
+[Unit]
+Description=Serve the Time Machine Options
+[Service]
+Type=simple
+ExecStart=/usr/bin/python3 /home/steve/deadstream/serve_options.py --debug 0
+RemainAfterExit=yes
+User=steve
+[Install]
+WantedBy=multi-user.target
