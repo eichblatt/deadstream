@@ -24,13 +24,37 @@ from timemachine import config, controls
 
 
 parser = optparse.OptionParser()
-parser.add_option('--wpa_path', dest='wpa_path', type="string", default='/etc/wpa_supplicant/wpa_supplicant.conf', help="path to wpa_supplicant file [default %default]")
-parser.add_option('--knob_sense_path', dest='knob_sense_path', type="string", default=os.path.join(os.getenv('HOME'),
-                  ".knob_sense"), help="path to file describing knob directions [default %default]")
-parser.add_option('-d', '--debug', dest='debug', type="int", default=1, help="If > 0, don't run the main script on loading [default %default]")
-parser.add_option('--test', dest='test', action="store_true", default=False, help="Force reconnection (for testing) [default %default]")
-parser.add_option('--sleep_time', dest='sleep_time', type="int", default=10, help="how long to sleep before checking network status [default %default]")
-parser.add_option('-v', '--verbose', dest='verbose', action="store_true", default=False, help="Print more verbose information [default %default]")
+parser.add_option('--wpa_path',
+                  dest='wpa_path',
+                  type="string",
+                  default='/etc/wpa_supplicant/wpa_supplicant.conf',
+                  help="path to wpa_supplicant file [default %default]")
+parser.add_option('--knob_sense_path',
+                  dest='knob_sense_path',
+                  type="string",
+                  default=os.path.join(os.getenv('HOME'),
+                                       ".knob_sense"),
+                  help="path to file describing knob directions [default %default]")
+parser.add_option('-d', '--debug',
+                  dest='debug',
+                  type="int",
+                  default=1,
+                  help="If > 0, don't run the main script on loading [default %default]")
+parser.add_option('--test',
+                  dest='test',
+                  action="store_true",
+                  default=False,
+                  help="Force reconnection (for testing) [default %default]")
+parser.add_option('--sleep_time',
+                  dest='sleep_time',
+                  type="int",
+                  default=10,
+                  help="how long to sleep before checking network status [default %default]")
+parser.add_option('-v', '--verbose',
+                  dest='verbose',
+                  action="store_true",
+                  default=False,
+                  help="Print more verbose information [default %default]")
 parms, remainder = parser.parse_args()
 
 logging.basicConfig(format='%(asctime)s.%(msecs)03d %(levelname)s: %(name)s %(message)s', level=logging.INFO, datefmt='%Y-%m-%d %H:%M:%S')
