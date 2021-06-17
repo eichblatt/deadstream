@@ -770,9 +770,9 @@ try:
 except:
     knob_sense = 0
 
-m = retry_call(RotaryEncoder, config.month_pins[~knob_sense & 1], config.month_pins[knob_sense & 1], max_steps=0, threshold_steps=(1, 12))
-d = retry_call(RotaryEncoder, config.day_pins[~(knob_sense >> 1) & 1], config.day_pins[(knob_sense >> 1) & 1], max_steps=0, threshold_steps=(1, 31))
-y = retry_call(RotaryEncoder, config.year_pins[~(knob_sense >> 2) & 1], config.year_pins[(knob_sense >> 2) & 1], max_steps=0, threshold_steps=(0, 30))
+m = retry_call(RotaryEncoder, config.month_pins[knob_sense & 1], config.month_pins[~knob_sense & 1], max_steps=0, threshold_steps=(1, 12))
+d = retry_call(RotaryEncoder, config.day_pins[(knob_sense >> 1) & 1], config.day_pins[~(knob_sense >> 1) & 1], max_steps=0, threshold_steps=(1, 31))
+y = retry_call(RotaryEncoder, config.year_pins[(knob_sense >> 2) & 1], config.year_pins[~(knob_sense >> 2) & 1], max_steps=0, threshold_steps=(0, 30))
 m.steps = 8
 d.steps = 13
 y.steps = 1975 - 1965
