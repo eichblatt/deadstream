@@ -65,7 +65,8 @@ playstate_event = Event()
 # busy_event = Event()
 free_event = Event()
 stop_event = Event()
-updated_event = Event()
+knob_event = Event()
+button_event = Event()
 screen_event = Event()
 
 random.seed(datetime.datetime.now())  # to ensure that random show will be new each time.
@@ -170,7 +171,7 @@ def twist_knob(knob: RotaryEncoder, label, date_reader: controls.date_knob_reade
             knob.steps = knob.threshold_steps[1]
         logger.debug(f"Knob {label} is inactive")
     date_reader.update()
-    updated_event.set()
+    knob_event.set()
     stagedate_event.set()
 
 
@@ -327,7 +328,7 @@ def stop_button(button, state):
         return
     if current['PLAY_STATE'] in [config.READY, config.INIT, config.STOPPED]:
         return
-    updated_event.set()
+    button_event.set()
     state.player.stop()
     current['PLAY_STATE'] = config.STOPPED
     state.set(current)
@@ -580,19 +581,24 @@ def test_update(state):
     scr.update_now = False
     free_event.set()
     stagedate_event.set()
-    updated_event.clear()
+    knob_event.clear()
+    button_event.clear()
     scr.clear()
     try:
-        scr.show_text("Press Stop\nButton", force=True)
-        while updated_event.wait(10):
-            updated_event.clear()
-            itimes = itimes + 1
-            if itimes > 1:
-                scr.clear()
-                scr.show_text("Passed! ", force=True)
-                sys.exit(0)
+        scr.show_text("Turn Any\nKnob", force=True)
+        if knob_event.wait(10):
+            knob_event.clear()
             scr.clear()
-            scr.show_text("Turn Any\nKnob", force=True)
+        else:
+            sys.exit(-1)
+        scr.show_text("Press Stop\nButton", force=True)
+        if button_event.wait(10):
+            button_event.clear()
+            scr.clear()
+            scr.show_text("Passed! ", force=True)
+            sys.exit(0)
+        else:
+            sys.exit(-1)
     except KeyboardInterrupt:
         sys.exit(-1)
     sys.exit(-1)
