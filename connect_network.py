@@ -432,18 +432,20 @@ def get_wifi_params():
 
 
 try:
-    if parms.test or not wifi_connected():
+    reconnect = False
+    if rewind_event.is_set():
+        rewind_event.clear()
+        reconnect = True
+    if parms.test or reconnect or not wifi_connected():
         save_knob_sense(parms)
     eth_mac_address = get_mac_address()
     scr.clear()
     scr.show_text(F"Connect wifi")
     scr.show_text(F"MAC addresses\neth0\n{eth_mac_address}", loc=(0, 30), color=(0, 255, 255), font=scr.smallfont, force=True)
-    sleep(4)
-    icounter = 0
-    while ((not wifi_connected()) and icounter < 3) or (parms.test and icounter < 1):
+    # sleep(4)
+    if parms.test or reconnect or not wifi_connected():
         scr.clear()
-        scr.show_text(F"Wifi not connected\n{icounter}", font=scr.smallfont, force=True)
-        icounter = icounter + 1
+        scr.show_text("Connecting Wifi", font=scr.smallfont, force=True)
         wifi, passkey, extra_dict = get_wifi_params()
         scr.clear()
         scr.show_text(F"wifi:\n{wifi}\npasskey:\n{passkey}", loc=(0, 0), color=(255, 255, 255), font=scr.oldfont, force=True)
