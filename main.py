@@ -348,7 +348,7 @@ def stop_button_longpress(button, state):
     scr.show_experience(text="Hold 5s to Update\nCode and Restart", force=True)
     sleep(5)
     if button.is_held:
-        os.system(F"sh {GD.ROOT_DIR}/update.sh")
+        os.system(F"sh {GD.BIN_DIR}/update.sh")
 
 
 @sequential
