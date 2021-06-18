@@ -13,3 +13,4 @@ adafruit-circuitpython-rgb-display
 Pillow
 gpiozero
 tenacity
+pre-commit
