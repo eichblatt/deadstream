@@ -7,9 +7,10 @@ It's also a simple, command-line-interface to the Greatful Dead collection on ar
 A Simple example for the python script:
 
 ``` python
+import os
 from timemachine import GD
 
-metadata_path = os.path.join(os.getenv('$HOME'),'/projects/deadstream/timemachine/metadata')
+metadata_path = os.path.join(os.getenv('HOME'),'projects/deadstream/timemachine/metadata')
 a = GD.GDArchive(metadata_path)
 
 #dates = a.dates  # shows a list of all dates on which there are tapes.
