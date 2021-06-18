@@ -26,8 +26,10 @@ cd $HOME
 git clone https://github.com/eichblatt/deadstream.git deadstream_tmp
 mkdir -p $test_dir
 cd $test_dir
-echo "git checkout dev"
-git checkout dev
+
+#echo "git checkout dev"
+#git checkout dev
+
 pip3 install .
 
 # If the archive has been refreshed in the last 40 days, copy it to the test dir
@@ -36,7 +38,7 @@ if [ $update_archive == 0 ]; then
    cp -R $project_dir/timemachine/metadata $test_dir/timemachine/.
 fi
 
-# Set up the services. NOTE: This actually points to the old ones... Should fix this
+# Set up the services. NOTE: Could break things?
 cd $test_dir/bin
 echo "pwd is $PWD"
 ./services.sh
@@ -45,6 +47,14 @@ if [ $stat != 0 ]; then
    echo "status of services command: $stat"
    echo "rm -rf $test_dir"
    rm -rf $test_dir
+
+   # put the old services back in place.
+   echo "cd $project_dir/bin"
+   cd $project_dir/bin
+   echo "./services.sh"
+   ./services.sh
+
+   # exit with failure.
    exit $stat
 fi
 
