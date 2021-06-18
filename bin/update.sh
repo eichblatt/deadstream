@@ -1,8 +1,11 @@
 #!/bin/bash
 
 # Setup directories.
+test_dir_name=deadstream_tmp
+git_user=eichblatt
+repo_name=deadstream.git
 project_dir=$HOME/deadstream
-test_dir=$HOME/deadstream_tmp
+test_dir=$HOME/$test_dir_name
 backup_dir=$HOME/deadstream_previous.`cat /dev/random | tr -cd 'a-f0-9' | head -c 12`
 log_file=$HOME/update.log
 
@@ -31,9 +34,10 @@ cd $HOME
 rm -rf $test_dir
 mkdir -p $test_dir
 cd $HOME
-git clone https://github.com/eichblatt/deadstream.git deadstream_tmp
+git clone https://github.com/$git_user/$repo_name $test_dir_name
 mkdir -p $test_dir
 cd $test_dir
+git remote set-url origin git@github.com:$git_user/$repo_name
 
 echo "git checkout $git_branch"
 git checkout $git_branch
