@@ -10,6 +10,7 @@ backup_dir=$HOME/deadstream_previous.`cat /dev/random | tr -cd 'a-f0-9' | head -
 log_file=$HOME/update.log
 
 git_branch=`git branch | awk '/\*/ {print $2}'`
+echo "git branch: $git_branch"
 new_code=`git checkout $git_branch | grep "behind" | wc -l`
 if [ $new_code == 0 ]; then
    echo "No new code. Not updating "
