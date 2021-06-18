@@ -16,7 +16,8 @@ setup(
         'gpiozero',
         'tenacity',
         'cherrypy',
-        'pickle5'
+        'pickle5',
+        'pre-commit'
     ],
     package_data={
         "timemachine": ["FreeMono.ttf", "ariallgt.ttf", "DejaVuSansMono-Bold.ttf", "set_breaks.csv"]
