@@ -22,7 +22,7 @@ p = GD.GDPlayer(tape)
 def on_track_event(_name, value):
     track_event.set()
     if value == None:
-
+        pass
     print(F'in track event callback {_name}, {value}')
 
 
