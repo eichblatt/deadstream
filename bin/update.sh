@@ -6,6 +6,14 @@ test_dir=$HOME/deadstream_tmp
 backup_dir=$HOME/deadstream_previous.`cat /dev/random | tr -cd 'a-f0-9' | head -c 12`
 log_file=$HOME/update.log
 
+git_branch=`git branch | awk '/\*/ {print $2}'`
+new_code=`git checkout $git_branch | grep "behind" | wc -l`
+if [ $new_code == 0 ]; then
+   echo "No new code. Not updating "
+   date
+   exit 0
+fi
+
 echo "Updating "
 date
 
@@ -27,8 +35,8 @@ git clone https://github.com/eichblatt/deadstream.git deadstream_tmp
 mkdir -p $test_dir
 cd $test_dir
 
-#echo "git checkout dev"
-#git checkout dev
+echo "git checkout $git_branch"
+git checkout $git_branch
 
 pip3 install .
 
