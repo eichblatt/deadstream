@@ -337,6 +337,7 @@ def stop_button(button, state):
     button_event.set()
     state.player.stop()
     current['PLAY_STATE'] = config.STOPPED
+    current['PAUSED_AT'] = datetime.datetime.now()
     state.set(current)
     playstate_event.set()
 
@@ -347,7 +348,7 @@ def stop_button_longpress(button, state):
     scr.show_experience(text="Hold 5s to Update\nCode and Restart", force=True)
     sleep(5)
     if button.is_held:
-        os.system(F"sh {GD.ROOT_DIR}/update.sh")
+        os.system(F"sh {GD.BIN_DIR}/update.sh")
 
 
 @sequential
@@ -703,8 +704,8 @@ def event_loop(state):
                 # stagedate_event.set()         # NOTE: this would set the q_counter, etc. But it SHOULD work.
                 # scr.show_staged_date(date_reader.date)
                 if current['PLAY_STATE'] != config.PLAYING:  # deal with overnight pauses, which freeze the alsa player.
-                    if (now - current['PAUSED_AT']).seconds > config.optd['SLEEP_AFTER_SECONDS'] and state.player.get_prop('audio-device') != 'null':
-                        logger.debug(F"Paused at {current['PAUSED_AT']}, sleeping after {config.optd['SLEEP_AFTER_SECONDS']}, now {now}")
+                    if (now - config.PAUSED_AT).seconds > config.optd['SLEEP_AFTER_SECONDS'] and state.player.get_prop('audio-device') != 'null':
+                        logger.debug(F"Paused at {config.PAUSED_AT}, sleeping after {config.optd['SLEEP_AFTER_SECONDS']}, now {now}")
                         scr.sleep()
                         state.player._set_property('audio-device', 'null')
                         state.player.wait_for_property('audio-device', lambda x: x == 'null')
@@ -754,6 +755,7 @@ def on_track_event(_name, value):
     logger.info(F'in track event callback {_name}, {value}')
     if value is None:
         config.PLAY_STATE = config.ENDED
+        config.PAUSED_AT = datetime.datetime.now()
         select_button(select, state)
     track_event.set()
 

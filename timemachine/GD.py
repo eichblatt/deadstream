@@ -31,6 +31,7 @@ import pkg_resources
 logging.basicConfig(format='%(asctime)s.%(msecs)03d %(levelname)s: %(name)s %(message)s', level=logging.INFO, datefmt='%Y-%m-%d %H:%M:%S')
 logger = logging.getLogger(__name__)
 ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
+BIN_DIR = os.path.join(os.path.dirname(ROOT_DIR), 'bin')
 
 
 @retry(stop=stop_after_delay(30))
