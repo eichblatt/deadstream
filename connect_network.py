@@ -131,7 +131,7 @@ def decade_knob(knob: RotaryEncoder, label, counter: decade_counter):
 
 
 def rewind_button(button):
-    logger.debug("pressing rewind")
+    logger.debug("pressing or holding rewind")
     rewind_event.set()
 
 
@@ -160,6 +160,7 @@ select = retry_call(Button, config.select_pin, hold_time=2, hold_repeat=True)
 stop = retry_call(Button, config.stop_pin)
 
 rewind.when_pressed = lambda x: rewind_button(x)
+rewind.when_held = lambda x: rewind_button(x)
 select.when_pressed = lambda x: select_button(x)
 stop.when_pressed = lambda x: stop_button(x)
 
@@ -432,17 +433,18 @@ def get_wifi_params():
 
 
 try:
-    reconnect = False
-    if rewind_event.is_set():
-        rewind_event.clear()
-        reconnect = True
+    scr.clear()
+    scr.show_text(F"To force\nreconnection\npress rewind now", font=scr.smallfont, force=True)
+    reconnect = rewind_event.wait(0.2*parms.sleep_time)
+    rewind_event.clear()
+
     if parms.test or reconnect or not wifi_connected():
         save_knob_sense(parms)
     eth_mac_address = get_mac_address()
     scr.clear()
     scr.show_text(F"Connect wifi")
     scr.show_text(F"MAC addresses\neth0\n{eth_mac_address}", loc=(0, 30), color=(0, 255, 255), font=scr.smallfont, force=True)
-    # sleep(4)
+    sleep(3)
     if parms.test or reconnect or not wifi_connected():
         scr.clear()
         scr.show_text("Connecting Wifi", font=scr.smallfont, force=True)
@@ -464,6 +466,6 @@ if wifi_connected():
     scr.clear()
     scr.show_text(F"Wifi connected\n{ip}", font=scr.smallfont, force=True)
     logger.info(F"Wifi connected\n{ip}")
-    exit_success(sleeptime=parms.sleep_time)
+    exit_success(sleeptime=0.5*parms.sleep_time)
 else:
     sys.exit(-1)
