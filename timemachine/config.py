@@ -2,12 +2,13 @@ import subprocess
 
 
 def get_board_version():
-    cmd = "$HOME/deadstream/bin/board_version.sh"
-    raw = subprocess.check_output(cmd, shell=True)
-    raw = raw.decode()
-    if raw == 'version 2\n':
-        return 2
-    else:
+    try:
+        cmd = "$HOME/deadstream/bin/board_version.sh"
+        raw = subprocess.check_output(cmd, shell=True)
+        raw = raw.decode()
+        if raw == 'version 2\n':
+            return 2
+    except:
         return 1
 
 
