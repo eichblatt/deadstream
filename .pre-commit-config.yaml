@@ -1,0 +1,21 @@
+# See https://pre-commit.com for more information
+# See https://pre-commit.com/hooks.html for more hooks
+repos:
+-   repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.0.1
+    hooks:
+    -   id: trailing-whitespace
+    -   id: end-of-file-fixer
+    -   id: check-yaml
+    -   id: check-added-large-files
+
+-   repo: https://github.com/pre-commit/mirrors-autopep8
+    rev: 'v1.5.7'  # Use the sha / tag you want to point at
+    hooks:
+    -   id: autopep8
+        args: [--in-place]
+#-   repo: https://github.com/pre-commit/mirrors-yapf
+#    rev: 'v0.31.0'
+#    hooks:
+#    -   id: yapf
+#        args: [--in-place]
