@@ -1,10 +1,22 @@
 #!/bin/bash
 
 # Setup directories.
+test_dir_name=deadstream_tmp
+git_user=eichblatt
+repo_name=deadstream.git
 project_dir=$HOME/deadstream
-test_dir=$HOME/deadstream_tmp
+test_dir=$HOME/$test_dir_name
 backup_dir=$HOME/deadstream_previous.`cat /dev/random | tr -cd 'a-f0-9' | head -c 12`
 log_file=$HOME/update.log
+
+git_branch=`git branch | awk '/\*/ {print $2}'`
+echo "git branch: $git_branch"
+new_code=`git checkout $git_branch | grep "behind" | wc -l`
+if [ $new_code == 0 ]; then
+   echo "No new code. Not updating "
+   date
+   exit 0
+fi
 
 echo "Updating "
 date
@@ -23,12 +35,13 @@ cd $HOME
 rm -rf $test_dir
 mkdir -p $test_dir
 cd $HOME
-git clone https://github.com/eichblatt/deadstream.git deadstream_tmp
+git clone https://github.com/$git_user/$repo_name $test_dir_name
 mkdir -p $test_dir
 cd $test_dir
+git remote set-url origin git@github.com:$git_user/$repo_name
 
-#echo "git checkout dev"
-#git checkout dev
+echo "git checkout $git_branch"
+git checkout $git_branch
 
 pip3 install .
 
@@ -38,24 +51,33 @@ if [ $update_archive == 0 ]; then
    cp -R $project_dir/timemachine/metadata $test_dir/timemachine/.
 fi
 
-# Set up the services. NOTE: Could break things?
-cd $test_dir/bin
-echo "pwd is $PWD"
-./services.sh
-stat=$?
-if [ $stat != 0 ]; then
-   echo "status of services command: $stat"
-   echo "rm -rf $test_dir"
-   rm -rf $test_dir
-
+restore_services () {
    # put the old services back in place.
    echo "cd $project_dir/bin"
    cd $project_dir/bin
    echo "./services.sh"
    ./services.sh
+}
 
-   # exit with failure.
-   exit $stat
+# Set up the services. NOTE: Only for versions > 1 (because username was steve, not deadhead)
+# NOTE: If there is something wrong with the service command, and it doesn't start we are screwed.
+# So we are going to need factory reset command
+
+cd $test_dir/bin
+version_1=`./board_version.sh | grep "^version 1$" | wc -l`
+if $[ $version_1 == 0 ]; then
+    echo "pwd is $PWD"
+    ./services.sh
+    stat=$?
+    if [ $stat != 0 ]; then
+       echo "status of services command: $stat"
+       echo "rm -rf $test_dir"
+       rm -rf $test_dir
+
+       restore_services
+       # exit with failure.
+       exit $stat
+    fi
 fi
 
 # Run the main program, make sure a button press and knob turn work.
@@ -69,6 +91,8 @@ if [ $stat == 0 ]; then
    mv $project_dir $backup_dir
    echo "mv $test_dir $project_dir"
    mv $test_dir $project_dir
+else
+   restore_services
 fi
 
 # Restart the services (Can i get the timemachine service to launch the serve_options?)

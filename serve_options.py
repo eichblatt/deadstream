@@ -38,9 +38,11 @@ class StringGenerator(object):
         tz_strings = [F'<option value="{x}" {self.current_choice(opt_dict,"TIMEZONE",x)}>{x}</option>' for x in tz_list]
         tz_string = '\n'.join(tz_strings)
         logger.info(f'tz string {tz_string}')
+        hostname = subprocess.check_output('hostname').decode().strip()
         page_string = """<html>
          <head></head>
          <body>
+           <h1> Time Machine Options """ + hostname + """</h1>
            <form method="get" action="save_values">""" + form_string + """
              <label for="timezone"> Choose a Time Zone:</label>
              <select id="timezone" name="TIMEZONE">""" + tz_string + """ </select><p>

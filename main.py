@@ -462,7 +462,7 @@ def year_button(button, state):
 
 @sequential
 def year_button_longpress(button, state):
-    logger.debug(" longpress of month button")
+    logger.debug(" longpress of year button")
     current = state.get_current()
     if current['ON_TOUR']:
         scr.show_experience(text=F"ON_TOUR:{current['TOUR_YEAR']}\nHold 3s to exit", force=True)
@@ -477,9 +477,9 @@ def year_button_longpress(button, state):
         current['TOUR_YEAR'] = state.date_reader.date.year
         logger.info(F" ---> ON_TOUR:{current['TOUR_YEAR']}")
         scr.show_experience(text=F"ON_TOUR:{current['TOUR_YEAR']}", force=True)
-    sleep(3)
     track_event.set()
     state.set(current)
+    sleep(3)
 
 
 def update_tracks(state):
@@ -515,7 +515,7 @@ def play_on_tour(tape, state, seek_to=0):
     state.player.play()
     state.player.seek_in_tape_to(seek_to, ticking=True)
     current['PLAY_STATE'] = config.PLAYING
-    current['TOUR_STATE'] = current['PLAY_STATE']
+    current['TOUR_STATE'] = config.PLAYING
     state.set(current)
     select_event.set()
     return
@@ -637,8 +637,8 @@ def event_loop(state):
 
             if current['ON_TOUR'] and current['TOUR_STATE'] != config.PLAYING:
                 then_time = now.replace(year=current['TOUR_YEAR'])
-                tape = state.date_reader.archive.tape_at_time(
-                    then_time, default_start=default_start)               # At the "scheduled time", stop whatever is playing and wait.
+                # At the "scheduled time", stop whatever is playing and wait.
+                tape = state.date_reader.archive.tape_at_time(then_time, default_start=default_start)
                 if not tape:
                     current['TOUR_STATE'] = config.INIT
                 else:
@@ -647,8 +647,9 @@ def event_loop(state):
                     current['TAPE_ID'] = None
                     start_time = state.date_reader.archive.tape_start_time(then_time, default_start=default_start)
                     scr.show_experience(text=F"ON_TOUR:{current['TOUR_YEAR']}\nWaiting for show", force=True)
-                    random.seed(then_time.date())
-                    wait_time = random.randrange(60, 60 * 10)
+                    then_date = then_time.date()
+                    random.seed(then_date.year + then_date.month + then_date.day)
+                    wait_time = random.randrange(60, 600)
                     logger.info(
                         F"On Tour Tape Found on {then_time}. Sleeping 10 seconds. Waiting for {(start_time + datetime.timedelta(seconds=wait_time)).time()}"
                     )
