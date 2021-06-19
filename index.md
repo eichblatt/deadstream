@@ -36,7 +36,7 @@ As a listener, if you are getting into the spirit of the show, you are not ready
 ### crowdsourced background noise?
 
 ## Every Tape is Findable
-The time machine automatically chooses what it estimates to be the "best" tape of a given show. But by pressing and holding the "select" button, you can select any tape from the stages date. 
+The time machine automatically chooses what it estimates to be the "best" tape of a given show. But by pressing and holding the "select" button, you can select any tape from the stages date. You can provide a "favored taper" option which will boost the score of any tape whose id includes that taper's name.
 So, every tape from the archive is available. If you are a taper, thank you!
 
 
@@ -50,12 +50,12 @@ By pressing the "month" knob, the time machine can take you there. Press "month"
 When in "On Tour" mode, the user chooses a year with the Year Knob, and then waits for the show to begin! Once it begins,you remain in "Experience Mode" until the show ends, or you leave the tour. 
 
 ### start time
-Since we don't know the exact starting time of the shows, for now anyway, the show will start at a random time after the nominal start time (if we know that) or 8:00 pm (in your local time zone). We could play [crowd noise](#crowdsourced-background-noise) during the pre-show interval.
+Since we don't know the exact starting time of the shows, for now anyway, the show will start at a random time (up to 10 minutes) after the nominal start time, if we know it, or 8:00 pm (configurable) in your local time zone. We could play [crowd noise](#crowdsourced-background-noise) during the pre-show interval.
 
-The random interval must depend only on the date, so that all On Tour listeners sharing the same year will have the show start at the same time. 
+The random interval depends only on the date, so that all On Tour listeners sharing the same year will have the show start at the same time. If you join the tour in the middle of a show, the Time Machine will skip ahead so that you will be in sync with the other listeners. 
 
 ### interrupting what you are listening to
-You can listen to other stuff while on tour, but when the show comes on, whatever you are listening to fades out 10 minutes before the start of the show.
+You can listen to other stuff while on tour, but when the show comes on, whatever you are listening to stops at the "scheduled" start of the show, and you get to listen to the silence until the show begins, as you would have in real life. This is a time machine, after all.
 
 <s>
 ## Fade Aways
@@ -77,7 +77,7 @@ This means a few things, though. Like, do you want to see your song history? Sor
 Similarly, since we don't track you, we aren't going to make recommendations of shows for you to listen to. This is your own journey. There are some great resources out there for this. Have you heard Cornell '77 (1977-05-08)? Good luck!
 
 ### Favorites, but not backed up to the cloud. 
-I'd like to have a favorites feature. But that would be completely local to your box. This will not be shared with us, and if your machine dies or you get a new one, your favorites will be lost.
+I'd like to have a favorites feature. But that would need to be completely local to your box. This will not be shared with us, and if your machine dies or you get a new one, your favorites would be lost.
 
 
 ## Open Source
