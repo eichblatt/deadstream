@@ -51,24 +51,33 @@ if [ $update_archive == 0 ]; then
    cp -R $project_dir/timemachine/metadata $test_dir/timemachine/.
 fi
 
-# Set up the services. NOTE: Could break things?
-cd $test_dir/bin
-echo "pwd is $PWD"
-./services.sh
-stat=$?
-if [ $stat != 0 ]; then
-   echo "status of services command: $stat"
-   echo "rm -rf $test_dir"
-   rm -rf $test_dir
-
+restore_services () {
    # put the old services back in place.
    echo "cd $project_dir/bin"
    cd $project_dir/bin
    echo "./services.sh"
    ./services.sh
+}
 
-   # exit with failure.
-   exit $stat
+# Set up the services. NOTE: Only for versions > 1 (because username was steve, not deadhead)
+# NOTE: If there is something wrong with the service command, and it doesn't start we are screwed.
+# So we are going to need factory reset command
+
+cd $test_dir/bin
+version_1=`./board_version.sh | grep "^version 1$" | wc -l`
+if $[ $version_1 == 0 ]; then
+    echo "pwd is $PWD"
+    ./services.sh
+    stat=$?
+    if [ $stat != 0 ]; then
+       echo "status of services command: $stat"
+       echo "rm -rf $test_dir"
+       rm -rf $test_dir
+
+       restore_services
+       # exit with failure.
+       exit $stat
+    fi
 fi
 
 # Run the main program, make sure a button press and knob turn work.
@@ -82,6 +91,8 @@ if [ $stat == 0 ]; then
    mv $project_dir $backup_dir
    echo "mv $test_dir $project_dir"
    mv $test_dir $project_dir
+else
+   restore_services
 fi
 
 # Restart the services (Can i get the timemachine service to launch the serve_options?)
