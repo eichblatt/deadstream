@@ -638,7 +638,7 @@ def event_loop(state):
             if current['ON_TOUR'] and current['TOUR_STATE'] != config.PLAYING:
                 then_time = now.replace(year=current['TOUR_YEAR'])
                 # At the "scheduled time", stop whatever is playing and wait.
-                tape = state.date_reader.archive.tape_at_time(then_time, default_start=default_start)               
+                tape = state.date_reader.archive.tape_at_time(then_time, default_start=default_start)
                 if not tape:
                     current['TOUR_STATE'] = config.INIT
                 else:
