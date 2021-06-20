@@ -9,14 +9,18 @@ test_dir=$HOME/$test_dir_name
 backup_dir=$HOME/deadstream_previous.`cat /dev/random | tr -cd 'a-f0-9' | head -c 12`
 log_file=$HOME/update.log
 
-git_branch=`git branch | awk '/\*/ {print $2}'`
-echo "git branch: $git_branch"
-new_code=`git checkout $git_branch | grep "behind" | wc -l`
-if [ $new_code == 0 ]; then
-   echo "No new code. Not updating "
-   date
-   exit 0
-fi
+restore_services () {
+   # put the old services back in place.
+   echo "cd $project_dir/bin"
+   cd $project_dir/bin
+   echo "./services.sh"
+   ./services.sh
+   # Restart the services (Can i get the timemachine service to launch the serve_options?)
+   echo "sudo service timemachine restart"
+   sudo service timemachine restart
+   echo "sudo service serve_options restart"
+   sudo service serve_options restart
+}
 
 echo "Updating "
 date
@@ -26,6 +30,19 @@ echo "sudo service timemachine stop"
 sudo service timemachine stop
 echo "sudo service serve_options stop"
 sudo service serve_options stop
+
+cd $project_dir
+git_branch=`git branch | awk '/\*/ {print $2}'`
+echo "git branch: $git_branch"
+git remote update
+new_code=`git status -uno | grep "fast-forward" | wc -l`
+#new_code=`git checkout $git_branch | grep "behind" | wc -l`
+if [ $new_code == 0 ]; then
+   echo "No new code. Not updating "
+   date
+   restore_services
+   exit 0
+fi
 
 # check if archive needs refreshing
 update_archive=`find $project_dir/timemachine/metadata/ids.json -mtime +40 | wc -l`
@@ -50,14 +67,6 @@ if [ $update_archive == 0 ]; then
    echo "cp -R $project_dir/timemachine/metadata $test_dir/timemachine/."
    cp -R $project_dir/timemachine/metadata $test_dir/timemachine/.
 fi
-
-restore_services () {
-   # put the old services back in place.
-   echo "cd $project_dir/bin"
-   cd $project_dir/bin
-   echo "./services.sh"
-   ./services.sh
-}
 
 # Set up the services. NOTE: Only for versions > 1 (because username was steve, not deadhead)
 # NOTE: If there is something wrong with the service command, and it doesn't start we are screwed.
@@ -91,14 +100,8 @@ if [ $stat == 0 ]; then
    mv $project_dir $backup_dir
    echo "mv $test_dir $project_dir"
    mv $test_dir $project_dir
-else
-   restore_services
 fi
 
-# Restart the services (Can i get the timemachine service to launch the serve_options?)
-echo "sudo service timemachine restart"
-sudo service timemachine restart
-echo "sudo service serve_options restart"
-sudo service serve_options restart
+restore_services
 
 exit $stat
