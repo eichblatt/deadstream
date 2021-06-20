@@ -9,6 +9,7 @@ test_dir=$HOME/$test_dir_name
 backup_dir=$HOME/deadstream_previous.`cat /dev/random | tr -cd 'a-f0-9' | head -c 12`
 log_file=$HOME/update.log
 
+cd $project_dir
 git_branch=`git branch | awk '/\*/ {print $2}'`
 echo "git branch: $git_branch"
 new_code=`git checkout $git_branch | grep "behind" | wc -l`
