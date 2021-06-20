@@ -34,7 +34,9 @@ sudo service serve_options stop
 cd $project_dir
 git_branch=`git branch | awk '/\*/ {print $2}'`
 echo "git branch: $git_branch"
-new_code=`git checkout $git_branch | grep "behind" | wc -l`
+git remote update
+new_code=`git status -uno | grep "fast-forward" | wc -l`
+#new_code=`git checkout $git_branch | grep "behind" | wc -l`
 if [ $new_code == 0 ]; then
    echo "No new code. Not updating "
    date
