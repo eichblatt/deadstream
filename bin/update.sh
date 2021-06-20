@@ -52,9 +52,11 @@ cd $HOME
 rm -rf $test_dir
 mkdir -p $test_dir
 cd $HOME
+echo "git clone https://github.com/$git_user/$repo_name $test_dir_name"
 git clone https://github.com/$git_user/$repo_name $test_dir_name
-mkdir -p $test_dir
+echo "cd $test_dir"
 cd $test_dir
+echo "git remote set-url origin git@github.com:$git_user/$repo_name"
 git remote set-url origin git@github.com:$git_user/$repo_name
 
 echo "git checkout $git_branch"
