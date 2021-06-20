@@ -13,5 +13,6 @@ sudo systemctl daemon-reload
 sudo systemctl enable timemachine.service
 sudo systemctl enable connect_network.service
 sudo systemctl enable serve_options.service
+sudo systemctl disable update_tm.service
 
 exit 0
