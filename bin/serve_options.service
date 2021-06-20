@@ -4,10 +4,9 @@ Requires=connect_network.service
 After=connect_network.service
 [Service]
 Type=simple
-User=steve
-ExecStart=/usr/bin/python3 /home/steve/deadstream/serve_options.py --debug 0
+User=deadhead
+ExecStart=/usr/bin/python3 /home/deadhead/deadstream/serve_options.py --debug 0
 RemainAfterExit=yes
-User=steve
 Restart=on-failure
 [Install]
 WantedBy=multi-user.target
