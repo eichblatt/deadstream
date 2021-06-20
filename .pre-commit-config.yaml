@@ -13,7 +13,7 @@ repos:
     rev: 'v1.5.7'  # Use the sha / tag you want to point at
     hooks:
     -   id: autopep8
-        args: [--in-place]
+        args: [--in-place, --max-line-length=180]
 #-   repo: https://github.com/pre-commit/mirrors-yapf
 #    rev: 'v0.31.0'
 #    hooks:
