@@ -4,6 +4,6 @@ Requires=connect_network.service
 [Service]
 Type=oneshot
 User=deadhead
-ExecStart=/usr/bin/python3 /home/deadhead/deadstream/bin/update.sh
+ExecStart=/home/deadhead/deadstream/bin/update.sh
 [Install]
 WantedBy=multi-user.target
