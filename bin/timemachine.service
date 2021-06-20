@@ -6,8 +6,8 @@ After=connect_network.service
 #BindsTo=check_network.service
 [Service]
 Type=simple
-User=steve
-ExecStart=/usr/bin/python3 /home/steve/deadstream/main.py --debug 0
+User=deadhead
+ExecStart=/usr/bin/python3 /home/deadhead/deadstream/main.py --debug 0
 #Restart=on-failure
 [Install]
 WantedBy=multi-user.target
