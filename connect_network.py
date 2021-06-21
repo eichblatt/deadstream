@@ -227,7 +227,7 @@ def select_option(message, choices):
         scr.show_text(text, loc=(x_loc, y_loc), font=scr.oldfont, force=False)
         y_loc = y_loc + text_height*(1+text.count('\n'))
 
-        text = choices[step]
+        text = '>' + choices[step]
         (text_width, text_height) = scr.oldfont.getsize(text)
         scr.show_text(text, loc=(x_loc, y_loc), font=scr.oldfont, color=(0, 0, 255), force=False)
         y_loc = y_loc + text_height
@@ -405,6 +405,7 @@ def get_ip():
 
 
 def exit_success(status=0, sleeptime=5):
+    scr.show_text(F"Wifi connected\n{ip}", font=scr.smallfont, force=True)
     sleep(sleeptime)
     sys.exit(status)
 
@@ -437,15 +438,17 @@ try:
     scr.show_text(F"To force\nreconnection\npress rewind now", font=scr.smallfont, force=True)
     reconnect = rewind_event.wait(0.2*parms.sleep_time)
     rewind_event.clear()
+    scr.clear()
 
-    if parms.test or reconnect or not wifi_connected():
+    connected = wifi_connected()
+    if parms.test or reconnect or not connected:
         save_knob_sense(parms)
     eth_mac_address = get_mac_address()
     scr.clear()
     scr.show_text(F"Connect wifi")
     scr.show_text(F"MAC addresses\neth0\n{eth_mac_address}", loc=(0, 30), color=(0, 255, 255), font=scr.smallfont, force=True)
     sleep(3)
-    if parms.test or reconnect or not wifi_connected():
+    if parms.test or reconnect or not connected:
         scr.clear()
         scr.show_text("Connecting Wifi", font=scr.smallfont, force=True)
         wifi, passkey, extra_dict = get_wifi_params()
@@ -457,15 +460,18 @@ try:
             os.system(cmd)
         else:
             print(F"not issuing command {cmd}")
-        sleep(2*parms.sleep_time)
+        scr.clear()
+        scr.show_text("wifi connecting\n...", loc=(0, 0), color=(255, 255, 255), font=scr.smallfont, force=True)
+        sleep(parms.sleep_time)
 except:
     sys.exit(-1)
+finally:
+    scr.clear()
 
 if wifi_connected():
     ip = get_ip()
-    scr.clear()
-    scr.show_text(F"Wifi connected\n{ip}", font=scr.smallfont, force=True)
     logger.info(F"Wifi connected\n{ip}")
     exit_success(sleeptime=0.5*parms.sleep_time)
 else:
+    scr.clear()
     sys.exit(-1)
