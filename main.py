@@ -750,7 +750,9 @@ config.WOKE_AT = datetime.datetime.now()
 scr = controls.screen(upside_down=False)
 scr.clear()
 ip_address = get_ip()
-scr.show_text(F"Time\n  Machine\n   Loading...\n{ip_address}", color=(0, 255, 255))
+message = "Time\n  Machine\n   Loading..."
+scr.show_text(message, color=(0, 255, 255),force=False)
+scr.show_text(F"{ip_address}", loc=(0,100), font=scr.smallfont,color=(255, 255, 255))
 
 archive = GD.GDArchive(parms.dbpath)
 player = GD.GDPlayer()
@@ -822,8 +824,9 @@ d_button.when_held = lambda button: day_button_longpress(button, state)
 # m_button.when_held = lambda button: month_button_longpress(button,state)
 y_button.when_held = lambda button: year_button_longpress(button, state)
 
-scr.clear()
-scr.show_text(F"Powered by\n archive.org\n\n{ip_address}", color=(0, 255, 255))
+scr.clear_area(controls.Bbox(0,0,160,100))
+scr.show_text("Powered by\n archive.org", color=(0, 255, 255), force=True)
+#scr.show_text(F"{ip_address}", loc=(0,100), font=scr.smallfont, color=(255, 255, 255))
 
 if config.optd['RELOAD_STATE_ON_START']:
     load_saved_state(state)
