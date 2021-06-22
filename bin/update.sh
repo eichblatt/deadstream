@@ -57,7 +57,9 @@ echo "git branch: $git_branch"
 #fi
 
 # check if archive needs refreshing
+echo "find $project_dir/timemachine/metadata/GratefulDead_ids.json -mtime +40 | wc -l"
 update_archive=`find $project_dir/timemachine/metadata/GratefulDead_ids.json -mtime +40 | wc -l`
+echo "update_archive = $update_archive"
 
 # clone the repo into the test_dir
 cd $HOME
@@ -80,8 +82,8 @@ pip3 install .
 
 # If the archive has been refreshed in the last 40 days, copy it to the test dir
 if [ $update_archive == 0 ]; then
-   echo "cp -R $project_dir/timemachine/metadata $test_dir/timemachine/."
-   cp -R $project_dir/timemachine/metadata $test_dir/timemachine/.
+   echo "sudo cp -R $project_dir/timemachine/metadata/*.json $test_dir/timemachine/metadata/."
+   sudo cp -R $project_dir/timemachine/metadata/*.json $test_dir/timemachine/metadata/.
 fi
 
 # Set up the services. NOTE: Only for versions > 1 (because username was steve, not deadhead)
