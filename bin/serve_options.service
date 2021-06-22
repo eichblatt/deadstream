@@ -6,7 +6,7 @@ After=connect_network.service
 Type=simple
 User=deadhead
 ExecStart=/usr/bin/python3 /home/deadhead/deadstream/serve_options.py --debug 0
-RemainAfterExit=yes
+RemainAfterExit=no
 Restart=on-failure
 [Install]
 WantedBy=multi-user.target
