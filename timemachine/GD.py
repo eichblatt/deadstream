@@ -10,7 +10,6 @@ import json
 import logging
 import math
 import os
-import pickle5 as pickle
 import requests
 import threading
 import time
@@ -46,8 +45,9 @@ class BaseTapeDownloader(abc.ABC):
     Use one of the subclasses: TapeDownloader or AsyncTapeDownloader.
     """
 
-    def __init__(self, url="https://archive.org"):
+    def __init__(self, url="https://archive.org", collection_name="GratefulDead"):
         self.url = url
+        self.collection_name = collection_name
         self.api = f"{self.url}/services/search/v1/scrape"
         fields = ["identifier", "date", "avg_rating", "num_reviews",
                   "num_favorites", "stars", "downloads", "files_count",
@@ -126,7 +126,7 @@ class TapeDownloader(BaseTapeDownloader):
         parms = self.parms.copy()
         if cursor is not None:
             parms['cursor'] = cursor
-        query = 'collection:GratefulDead AND year:'+str(year)
+        query = F'collection:{self.collection_name} AND year:{year}'
         parms['q'] = query
         r = requests.get(self.api, params=parms)
         logger.debug(f"url is {r.url}")
@@ -163,6 +163,7 @@ class AsyncTapeDownloader(BaseTapeDownloader):
         """
         # This is the asynchronous impl of get_tapes()
         logger.info("Loading tapes from the archive...")
+        timeout = aiohttp.ClientTimeout(total=600)
         async with aiohttp.ClientSession() as session:
             tasks = [self._get_tapes_year(session, year) for year in years]
             tapes = await asyncio.gather(*tasks)
@@ -180,7 +181,7 @@ class AsyncTapeDownloader(BaseTapeDownloader):
 
         Returns a list of dictionaries of tape information
         """
-        parms = {"q": f"collection:GratefulDead AND year:{year}"}
+        parms = {"q": F"collection:{self.collection_name} AND year:{year}"}
 
         if cursor is not None:
             parms['cursor'] = cursor
@@ -220,7 +221,7 @@ class AsyncTapeDownloader(BaseTapeDownloader):
 class GDArchive:
     """ The Grateful Dead Collection on Archive.org """
 
-    def __init__(self, dbpath=os.path.join(ROOT_DIR, 'metadata'), url='https://archive.org', reload_ids=False, sync=False):
+    def __init__(self, dbpath=os.path.join(ROOT_DIR, 'metadata'), url='https://archive.org', reload_ids=False, sync=False, collection_name='GratefulDead'):
         """Create a new GDArchive.
 
         Parameters:
@@ -232,10 +233,11 @@ class GDArchive:
         """
         self.url = url
         self.dbpath = dbpath
-        self.idpath = os.path.join(self.dbpath, 'ids.json')
-        self.idpath_pkl = os.path.join(self.dbpath, 'ids.pkl')
+        self.collection_name = collection_name
+        self.idpath = os.path.join(self.dbpath, f'{collection_name}_ids.json')
+        #self.idpath_pkl = os.path.join(self.dbpath, f'{collection_name}_ids.pkl')
         self.set_data = GDSet()
-        self.downloader = (TapeDownloader if sync else AsyncTapeDownloader)(url)
+        self.downloader = (TapeDownloader if sync else AsyncTapeDownloader)(url, collection_name)
         self.tapes = self.load_tapes(reload_ids)
         self.tape_dates = self.get_tape_dates()
         self.dates = sorted(self.tape_dates.keys())
@@ -244,8 +246,14 @@ class GDArchive:
         return self.__repr__()
 
     def __repr__(self):
-        retstr = F"Grateful Dead Archive with {len(self.tapes)} tapes on {len(self.dates)} dates from {self.dates[0]} to {self.dates[-1]} "
+        retstr = F"{self.collection_name} Archive with {len(self.tapes)} tapes on {len(self.dates)} dates from {self.dates[0]} to {self.dates[-1]} "
         return retstr
+
+    def year_list(self):
+        if self.collection_name == "GratefulDead":
+            return list(range(1965, 1996, 1))
+        if self.collection_name == "DeadAndCompany":
+            return list(range(2015, 2022, 1))
 
     def best_tape(self, date):
         if isinstance(date, datetime.date):
@@ -302,16 +310,13 @@ class GDArchive:
     def write_tapes(self, tapes):
         os.makedirs(os.path.dirname(self.idpath), exist_ok=True)
         json.dump(tapes, open(self.idpath, 'w'))
-        pickle.dump(tapes, open(self.idpath_pkl, 'wb'), pickle.HIGHEST_PROTOCOL)
 
     def load_tapes(self, reload_ids=False):
-        if (not reload_ids) and os.path.exists(self.idpath_pkl):
-            tapes = pickle.load(open(self.idpath_pkl, 'rb'))
-        elif (not reload_ids) and os.path.exists(self.idpath):
+        if (not reload_ids) and os.path.exists(self.idpath):
             tapes = json.load(open(self.idpath, 'r'))
         else:
             logger.info("Loading Tapes from the Archive...this will take a few minutes")
-            tapes = self.downloader.get_tapes(list(range(1965, 1996, 1)))
+            tapes = self.downloader.get_tapes(self.year_list())
             self.write_tapes(tapes)
         return [GDTape(self.dbpath, tape, self.set_data) for tape in tapes]
 

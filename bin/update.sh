@@ -58,6 +58,8 @@ echo "cd $test_dir"
 cd $test_dir
 echo "git remote set-url origin git@github.com:$git_user/$repo_name"
 git remote set-url origin git@github.com:$git_user/$repo_name
+echo "git config core.hooksPath .githooks/"
+git config core.hooksPath .githooks/
 
 echo "git checkout $git_branch"
 git checkout $git_branch

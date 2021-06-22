@@ -119,12 +119,12 @@ def load_saved_state(state):
         if current['DATE']:
             state.date_reader.m.steps = current['DATE'].month
             state.date_reader.d.steps = current['DATE'].day
-            state.date_reader.y.steps = current['DATE'].year - 1965
+            state.date_reader.y.steps = current['DATE'].year - min(state.date_reader.achive.year_list())
             state.date_reader.update()
         elif current['DATE_READER']:
             state.date_reader.m.steps = current['DATE_READER'].month
             state.date_reader.d.steps = current['DATE_READER'].day
-            state.date_reader.y.steps = current['DATE_READER'].year - 1965
+            state.date_reader.y.steps = current['DATE_READER'].year - min(state.date_reader.archive.year_list())
             state.date_reader.update()
 
         current['DATE_READER'] = state.date_reader
@@ -149,6 +149,7 @@ def load_options(parms):
     f = open(parms.options_path, 'r')
     optd = json.loads(f.read())
     optd['QUIESCENT_TIME'] = int(optd['QUIESCENT_TIME'])
+    optd['COLLECTION'] = optd['COLLECTION'] if 'COLLECTION' in optd.keys() else 'GratefulDead'
     optd['SLEEP_AFTER_SECONDS'] = int(optd['SLEEP_AFTER_SECONDS'])
     optd['PWR_LED_ON'] = optd['PWR_LED_ON'].lower() == 'true'
     optd['SCROLL_VENUE'] = optd['SCROLL_VENUE'].lower() == 'true'
@@ -606,8 +607,7 @@ def test_update(state):
         scr.show_text("Press Stop\nButton", force=True)
         if button_event.wait(10):
             button_event.clear()
-            scr.clear()
-            scr.show_text("Passed! ", force=True)
+            scr.show_text("Passed! ", force=True, clear=True)
             sys.exit(0)
         else:
             sys.exit(-1)
@@ -740,6 +740,7 @@ def get_ip():
 
 
 load_options(parms)
+parms.state_path = os.path.join(os.path.dirname(parms.state_path), F'{config.optd["COLLECTION"]}_{os.path.basename(parms.state_path)}')
 config.PAUSED_AT = datetime.datetime.now()
 config.WOKE_AT = datetime.datetime.now()
 
@@ -748,11 +749,12 @@ config.WOKE_AT = datetime.datetime.now()
 # else:
 #    upside_down = False
 scr = controls.screen(upside_down=False)
-scr.clear()
 ip_address = get_ip()
-scr.show_text(F"Time\n  Machine\n   Loading...\n{ip_address}", color=(0, 255, 255))
+message = "Time\n  Machine\n   Loading..."
+scr.show_text(message, color=(0, 255, 255), force=False, clear=True)
+scr.show_text(F"{ip_address}", loc=(0, 100), font=scr.smallfont, color=(255, 255, 255))
 
-archive = GD.GDArchive(parms.dbpath)
+archive = GD.GDArchive(parms.dbpath, collection_name=config.optd['COLLECTION'], sync=True)
 player = GD.GDPlayer()
 
 
@@ -778,12 +780,14 @@ try:
 except:
     knob_sense = 0
 
+year_list = archive.year_list()
+num_years = max(year_list) - min(year_list)
 m = retry_call(RotaryEncoder, config.month_pins[knob_sense & 1], config.month_pins[~knob_sense & 1], max_steps=0, threshold_steps=(1, 12))
 d = retry_call(RotaryEncoder, config.day_pins[(knob_sense >> 1) & 1], config.day_pins[~(knob_sense >> 1) & 1], max_steps=0, threshold_steps=(1, 31))
-y = retry_call(RotaryEncoder, config.year_pins[(knob_sense >> 2) & 1], config.year_pins[~(knob_sense >> 2) & 1], max_steps=0, threshold_steps=(0, 30))
+y = retry_call(RotaryEncoder, config.year_pins[(knob_sense >> 2) & 1], config.year_pins[~(knob_sense >> 2) & 1], max_steps=0, threshold_steps=(0, num_years))
 m.steps = 8
 d.steps = 13
-y.steps = 1975 - 1965
+y.steps = min(1975 - 1965, num_years)
 date_reader = controls.date_knob_reader(y, m, d, archive)
 state = controls.state(date_reader, player)
 m.when_rotated = lambda x: twist_knob(m, "month", date_reader)
@@ -822,8 +826,9 @@ d_button.when_held = lambda button: day_button_longpress(button, state)
 # m_button.when_held = lambda button: month_button_longpress(button,state)
 y_button.when_held = lambda button: year_button_longpress(button, state)
 
-scr.clear()
-scr.show_text(F"Powered by\n archive.org\n\n{ip_address}", color=(0, 255, 255))
+scr.clear_area(controls.Bbox(0, 0, 160, 100))
+scr.show_text("Powered by\n archive.org", color=(0, 255, 255), force=True)
+#scr.show_text(F"{ip_address}", loc=(0,100), font=scr.smallfont, color=(255, 255, 255))
 
 if config.optd['RELOAD_STATE_ON_START']:
     load_saved_state(state)

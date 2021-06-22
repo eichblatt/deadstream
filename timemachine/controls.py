@@ -73,7 +73,9 @@ class date_knob_reader:
         maxd = [31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]  # max days in a month.
         m_val = self.m.steps
         d_val = self.d.steps
-        y_val = self.y.steps + 1965
+        year_baseline = 1965 if self.archive is None else min(self.archive.year_list())
+        y_val = self.y.steps + year_baseline
+        logger.debug(F"updating date reader. m:{m_val},d:{d_val},y:{y_val}")
         if d_val > maxd[m_val-1]:
             self.d.steps = maxd[m_val-1]
             d_val = self.d.steps
@@ -83,12 +85,13 @@ class date_knob_reader:
             self.d.steps = self.d.steps - 1
             d_val = d_val-1
             self.date = datetime.date(y_val, m_val, d_val)
+        logger.debug(F"date reader date {self.date}")
 
     def set_date(self, date):
         new_month, new_day, new_year = (date.month, date.day, date.year)
         self.m.steps = new_month
         self.d.steps = new_day
-        self.y.steps = new_year - 1965
+        self.y.steps = new_year - min((self.archive).year_list())
         self.update()
 
     def fmtdate(self):
@@ -215,11 +218,13 @@ class screen:
         self.led.on()
         self.refresh(force=False)
 
-    def show_text(self, text, loc=(0, 0), font=None, color=(255, 255, 255), stroke_width=0, force=False):
+    def show_text(self, text, loc=(0, 0), font=None, color=(255, 255, 255), stroke_width=0, force=False, clear=False):
         if font is None:
             font = self.font
         (text_width, text_height) = font.getsize(text)
         logger.debug(F' show_text {text}. text_size {text_height},{text_width}')
+        if clear:
+            self.clear()
         self.draw.text(loc, text, font=font, stroke_width=stroke_width, fill=color)
         self.refresh(force)
 
