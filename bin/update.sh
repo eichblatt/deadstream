@@ -46,15 +46,14 @@ cd $project_dir
 git_branch=`git branch | awk '/\*/ {print $2}'`
 echo "git branch: $git_branch"
 
-## This doesn't work
-#git remote update
-#new_code=`git status -uno | grep "fast-forward" | wc -l`
-#if [ $new_code == 0 ]; then
-#   echo "No new code. Not updating "
-#   date
-#   restore_services
-#   exit 0
-#fi
+git remote update
+updated_code=`git status -uno | grep "up to date" | wc -l`
+if [ $updated_code == 1 ]; then
+   echo "No new code. Not updating "
+   date
+   restore_services
+   exit 0
+fi
 
 # check if archive needs refreshing
 echo "find $project_dir/timemachine/metadata/GratefulDead_ids.json -mtime +40 | wc -l"
