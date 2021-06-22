@@ -198,7 +198,8 @@ def save_knob_sense(parms):
 
 def select_option(message, chooser):
     if type(chooser) == type(lambda: None): choices = chooser()
-    else: choices = chooser
+    else:
+        choices = chooser
     scr.clear()
     selected = None
     screen_height = 5
@@ -217,7 +218,8 @@ def select_option(message, chooser):
     while not select_event.is_set():
         if rewind_event.is_set():
             if type(chooser) == type(lambda: None): choices = chooser()
-            else: choices = chooser
+            else:
+                choices = chooser
             rewind_event.clear()
         scr.clear_area(selection_bbox, force=False)
         x_loc = 0
@@ -373,7 +375,8 @@ def update_wpa_conf(wpa_path, wifi, passkey, extra_dict):
         if k == 'country':
             continue
         wpa = wpa + [F'        {k}={v}']
-    if len(passkey) == 0: wpa = wpa + ['        key_mgmt=NONE\n        priority=0\n']
+    if len(passkey) == 0:
+        wpa = wpa + ['        key_mgmt=NONE\n        priority=0\n']
     wpa = wpa + ['    }\n']
     new_wpa_path = os.path.join(os.getenv('HOME'), 'wpa_supplicant.conf')
     f = open(new_wpa_path, 'w')
