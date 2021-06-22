@@ -50,7 +50,7 @@ class StringGenerator(object):
              <button type="reset">Reset</button>
            </form>
            <form method="get" action="restart_service">
-             <button type="submit">Restart Service</button>
+             <button type="submit">Restart Timemachine Service</button>
            </form>
          </body>
        </html>"""
