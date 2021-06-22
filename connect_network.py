@@ -409,9 +409,7 @@ def get_ip():
     return ip
 
 
-def exit_success(ip,status=0, sleeptime=5):
-    scr.clear()
-    scr.show_text(F"Wifi connected\n{ip}", font=scr.smallfont, force=True)
+def exit_success(status=0, sleeptime=5):
     sleep(sleeptime)
     scr.clear()
     sys.exit(status)
@@ -478,7 +476,9 @@ finally:
 if wifi_connected():
     ip = get_ip()
     logger.info(F"Wifi connected\n{ip}")
-    exit_success(ip,sleeptime=0.5*parms.sleep_time)
+    scr.clear()
+    scr.show_text(F"Wifi connected\n{ip}", font=scr.smallfont, force=True)
+    exit_success(sleeptime=0.5*parms.sleep_time)
 else:
     scr.clear()
     sys.exit(-1)
