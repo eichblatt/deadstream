@@ -196,8 +196,9 @@ def save_knob_sense(parms):
     f.close()
 
 
-def select_option(message, choices):
-    if type(choices) == type(lambda: None): choices = choices()
+def select_option(message, chooser):
+    if type(chooser) == type(lambda: None): choices = chooser()
+    else: choices = chooser
     scr.clear()
     selected = None
     screen_height = 5
@@ -215,7 +216,8 @@ def select_option(message, choices):
 
     while not select_event.is_set():
         if rewind_event.is_set():
-            choices = choice_fn()
+            if type(chooser) == type(lambda: None): choices = chooser()
+            else: choices = chooser
             rewind_event.clear()
         scr.clear_area(selection_bbox, force=False)
         x_loc = 0
@@ -330,6 +332,8 @@ def select_chars(message, message2="So Far", character_set=string.printable):
 
 
 def wifi_connected(max_attempts=3):
+    scr.clear()
+    scr.show_text("Checking for\nWifi connection", font=scr.smallfont, force=True)
     logger.info("Checking if Wifi connected")
     cmd = "iwconfig"
     connected = False
@@ -369,7 +373,8 @@ def update_wpa_conf(wpa_path, wifi, passkey, extra_dict):
         if k == 'country':
             continue
         wpa = wpa + [F'        {k}={v}']
-    wpa = wpa + ['    }']
+    if len(passkey) == 0: wpa = wpa + ['        key_mgmt=NONE\n        priority=0\n']
+    wpa = wpa + ['    }\n']
     new_wpa_path = os.path.join(os.getenv('HOME'), 'wpa_supplicant.conf')
     f = open(new_wpa_path, 'w')
     f.write('\n'.join(wpa))
@@ -404,9 +409,11 @@ def get_ip():
     return ip
 
 
-def exit_success(status=0, sleeptime=5):
+def exit_success(ip,status=0, sleeptime=5):
+    scr.clear()
     scr.show_text(F"Wifi connected\n{ip}", font=scr.smallfont, force=True)
     sleep(sleeptime)
+    scr.clear()
     sys.exit(status)
 
 
@@ -435,12 +442,12 @@ def get_wifi_params():
 
 try:
     scr.clear()
-    scr.show_text(F"To force\nreconnection\npress rewind now", font=scr.smallfont, force=True)
+    scr.show_text("To force\nreconnection\npress rewind now", font=scr.smallfont, force=True)
     reconnect = rewind_event.wait(0.2*parms.sleep_time)
     rewind_event.clear()
-    scr.clear()
 
     connected = wifi_connected()
+
     if parms.test or reconnect or not connected:
         save_knob_sense(parms)
     eth_mac_address = get_mac_address()
@@ -471,7 +478,7 @@ finally:
 if wifi_connected():
     ip = get_ip()
     logger.info(F"Wifi connected\n{ip}")
-    exit_success(sleeptime=0.5*parms.sleep_time)
+    exit_success(ip,sleeptime=0.5*parms.sleep_time)
 else:
     scr.clear()
     sys.exit(-1)
