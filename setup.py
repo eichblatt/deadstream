@@ -16,7 +16,6 @@ setup(
         'gpiozero',
         'tenacity',
         'cherrypy',
-        'pickle5',
         'pre-commit'
     ],
     package_data={

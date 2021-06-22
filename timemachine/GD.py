@@ -10,7 +10,6 @@ import json
 import logging
 import math
 import os
-#import pickle5 as pickle
 import requests
 import threading
 import time
@@ -311,11 +310,8 @@ class GDArchive:
     def write_tapes(self, tapes):
         os.makedirs(os.path.dirname(self.idpath), exist_ok=True)
         json.dump(tapes, open(self.idpath, 'w'))
-        #pickle.dump(tapes, open(self.idpath_pkl, 'wb'), pickle.HIGHEST_PROTOCOL)
 
     def load_tapes(self, reload_ids=False):
-        # if (not reload_ids) and os.path.exists(self.idpath_pkl):
-        #    tapes = pickle.load(open(self.idpath_pkl, 'rb'))
         if (not reload_ids) and os.path.exists(self.idpath):
             tapes = json.load(open(self.idpath, 'r'))
         else:
