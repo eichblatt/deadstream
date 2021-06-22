@@ -1,5 +1,16 @@
 #!/bin/bash
+steve=`grep "^steve:" /etc/passwd | wc -l`
+if [ `hostname` == deadstream2 ]; then
+  echo "steve is set to 0"
+  steve=0
+fi
+if [ $steve == 1 ]; then
+  HOME=/home/steve
+else
+  HOME=/home/deadhead
+fi
 
+echo "home is $HOME"
 # Setup directories.
 test_dir_name=deadstream_tmp
 git_user=eichblatt
@@ -34,18 +45,19 @@ sudo service serve_options stop
 cd $project_dir
 git_branch=`git branch | awk '/\*/ {print $2}'`
 echo "git branch: $git_branch"
-git remote update
-new_code=`git status -uno | grep "fast-forward" | wc -l`
-#new_code=`git checkout $git_branch | grep "behind" | wc -l`
-if [ $new_code == 0 ]; then
-   echo "No new code. Not updating "
-   date
-   restore_services
-   exit 0
-fi
+
+## This doesn't work
+#git remote update
+#new_code=`git status -uno | grep "fast-forward" | wc -l`
+#if [ $new_code == 0 ]; then
+#   echo "No new code. Not updating "
+#   date
+#   restore_services
+#   exit 0
+#fi
 
 # check if archive needs refreshing
-update_archive=`find $project_dir/timemachine/metadata/ids.json -mtime +40 | wc -l`
+update_archive=`find $project_dir/timemachine/metadata/GratefulDead_ids.json -mtime +40 | wc -l`
 
 # clone the repo into the test_dir
 cd $HOME
@@ -78,8 +90,8 @@ fi
 
 cd $test_dir/bin
 #version_1=`./board_version.sh | grep "^version 1$" | wc -l`
-if [ $USER == deadhead ]; then
-    echo "pwd is $PWD"
+if [ $steve == 0 ]; then
+    echo "pwd is `pwd`"
     ./services.sh
     stat=$?
     if [ $stat != 0 ]; then
