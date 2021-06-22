@@ -1,11 +1,16 @@
 #!/bin/bash
 steve=`grep "^steve:" /etc/passwd | wc -l`
+if [ `hostname` == deadstream2 ]; then
+  echo "steve is set to 0"
+  steve=0
+fi
 if [ $steve == 1 ]; then
   HOME=/home/steve
 else
   HOME=/home/deadhead
 fi
 
+echo "home is $HOME"
 # Setup directories.
 test_dir_name=deadstream_tmp
 git_user=eichblatt
