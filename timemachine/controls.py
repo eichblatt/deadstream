@@ -215,11 +215,13 @@ class screen:
         self.led.on()
         self.refresh(force=False)
 
-    def show_text(self, text, loc=(0, 0), font=None, color=(255, 255, 255), stroke_width=0, force=False):
+    def show_text(self, text, loc=(0, 0), font=None, color=(255, 255, 255), stroke_width=0, force=False, clear=False):
         if font is None:
             font = self.font
         (text_width, text_height) = font.getsize(text)
         logger.debug(F' show_text {text}. text_size {text_height},{text_width}')
+        if clear:
+            self.clear()
         self.draw.text(loc, text, font=font, stroke_width=stroke_width, fill=color)
         self.refresh(force)
 

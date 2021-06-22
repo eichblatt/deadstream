@@ -169,13 +169,12 @@ scr.clear()
 
 
 def get_knob_orientation(knob, label):
-    scr.clear()
     m_knob_event.clear()
     d_knob_event.clear()
     y_knob_event.clear()
     before_value = knob.steps
     message = F"Rotate {label}\nclockwise"
-    scr.show_text(message, loc=(0, 0), font=scr.smallfont, color=(0, 255, 255), force=True)
+    scr.show_text(message, loc=(0, 0), font=scr.smallfont, color=(0, 255, 255), force=True, clear=True)
     if label == "month":
         m_knob_event.wait()
     elif label == "day":
@@ -334,8 +333,7 @@ def select_chars(message, message2="So Far", character_set=string.printable):
 
 
 def wifi_connected(max_attempts=3):
-    scr.clear()
-    scr.show_text("Checking for\nWifi connection", font=scr.smallfont, force=True)
+    scr.show_text("Checking for\nWifi connection", font=scr.smallfont, force=True, clear=True)
     logger.info("Checking if Wifi connected")
     cmd = "iwconfig"
     connected = False
@@ -442,8 +440,7 @@ def get_wifi_params():
 
 
 try:
-    scr.clear()
-    scr.show_text("To force\nreconnection\npress rewind now", font=scr.smallfont, force=True)
+    scr.show_text("To force\nreconnection\npress rewind now", font=scr.smallfont, force=True, clear=True)
     reconnect = rewind_event.wait(0.2*parms.sleep_time)
     rewind_event.clear()
 
@@ -452,24 +449,20 @@ try:
     if parms.test or reconnect or not connected:
         save_knob_sense(parms)
     eth_mac_address = get_mac_address()
-    scr.clear()
-    scr.show_text(F"Connect wifi")
+    scr.show_text(F"Connect wifi", clear=True)
     scr.show_text(F"MAC addresses\neth0\n{eth_mac_address}", loc=(0, 30), color=(0, 255, 255), font=scr.smallfont, force=True)
     sleep(3)
     if parms.test or reconnect or not connected:
-        scr.clear()
-        scr.show_text("Connecting Wifi", font=scr.smallfont, force=True)
+        scr.show_text("Connecting Wifi", font=scr.smallfont, force=True, clear=True)
         wifi, passkey, extra_dict = get_wifi_params()
-        scr.clear()
-        scr.show_text(F"wifi:\n{wifi}\npasskey:\n{passkey}", loc=(0, 0), color=(255, 255, 255), font=scr.oldfont, force=True)
+        scr.show_text(F"wifi:\n{wifi}\npasskey:\n{passkey}", loc=(0, 0), color=(255, 255, 255), font=scr.oldfont, force=True, clear=True)
         update_wpa_conf(parms.wpa_path, wifi, passkey, extra_dict)
         cmd = "sudo killall -HUP wpa_supplicant"
         if not parms.test:
             os.system(cmd)
         else:
             print(F"not issuing command {cmd}")
-        scr.clear()
-        scr.show_text("wifi connecting\n...", loc=(0, 0), color=(255, 255, 255), font=scr.smallfont, force=True)
+        scr.show_text("wifi connecting\n...", loc=(0, 0), color=(255, 255, 255), font=scr.smallfont, force=True, clear=True)
         sleep(parms.sleep_time)
 except:
     sys.exit(-1)
@@ -479,9 +472,8 @@ finally:
 if wifi_connected():
     ip = get_ip()
     logger.info(F"Wifi connected\n{ip}")
-    scr.clear()
-    scr.show_text(F"Wifi connected\n{ip}", font=scr.smallfont, force=True)
+    scr.show_text(F"Wifi connected\n{ip}", font=scr.smallfont, force=True, clear=True)
     exit_success(sleeptime=0.5*parms.sleep_time)
 else:
-    scr.clear()
+    scr.show_text("Wifi connection\nfailed\n\nTry rebooting", font=scr.smallfont, force=True, clear=True)
     sys.exit(-1)
