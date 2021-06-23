@@ -173,8 +173,8 @@ def get_knob_orientation(knob, label):
     d_knob_event.clear()
     y_knob_event.clear()
     before_value = knob.steps
-    message = F"Rotate {label}\nclockwise"
-    scr.show_text(message, loc=(0, 0), font=scr.smallfont, color=(0, 255, 255), force=True, clear=True)
+    scr.show_text("Calibrating knobs", font=scr.smallfont, force=False, clear=True)
+    scr.show_text(F"Rotate {label}\nclockwise", loc=(0, 40), font=scr.boldsmall, color=(0, 255, 255), force=True)
     if label == "month":
         m_knob_event.wait()
     elif label == "day":
@@ -193,6 +193,8 @@ def save_knob_sense(parms):
     f = open(parms.knob_sense_path, 'w')
     f.write(str(knob_sense))
     f.close()
+    scr.show_text("Knobs\nCalibrated", color=(0, 0, 255), force=False, clear=True)
+    scr.show_text(F"      {knob_sense}", loc=(0, 60), force=True)
 
 
 def select_option(message, chooser):
@@ -200,6 +202,7 @@ def select_option(message, chooser):
     else:
         choices = chooser
     scr.clear()
+    counter.set_value(0, 0)
     selected = None
     screen_height = 5
     update_now = scr.update_now
@@ -442,7 +445,7 @@ def get_wifi_params():
 
 
 try:
-    scr.show_text("To force\nreconnection\npress rewind now", font=scr.smallfont, force=True, clear=True)
+    scr.show_text("To force attempt\nto reconnect wifi\npress rewind now", font=scr.smallfont, force=True, clear=True)
     reconnect = rewind_event.wait(0.2*parms.sleep_time)
     rewind_event.clear()
 

@@ -27,6 +27,15 @@ restore_services () {
    sudo service serve_options restart
 }
 
+cleanup_old_tmp_dirs () {
+   echo "Cleaning up old tmp dirs ... "
+   echo "ls -1trd $HOME/deadstream_prev* | head -n -8"
+   ls -1trd $HOME/deadstream_prev* | head -n -8
+   echo "ls -1trd $HOME/deadstream_prev* | head -n -8 | xargs -d '\n' rm -f --"
+   ls -1trd $HOME/deadstream_prev* | head -n -8 | xargs -d '\n' rm -f --
+   echo "Done cleaning up old tmp dirs "
+}
+
 echo "Updating "
 date
 
@@ -96,6 +105,7 @@ if [ $user == deadhead ]; then
 
        restore_services
        # exit with failure.
+       cleanup_old_tmp_dirs
        exit $stat
     fi
 fi
@@ -115,5 +125,6 @@ if [ $stat == 0 ]; then
 fi
 
 restore_services
+cleanup_old_tmp_dirs
 
 exit $stat
