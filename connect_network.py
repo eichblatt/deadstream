@@ -372,7 +372,7 @@ def update_wpa_conf(wpa_path, wifi, passkey, extra_dict):
     if len(passkey) == 0:
         wpa = wpa + ['        key_mgmt=NONE\n        priority=0\n']
     else:
-        wpa = wap + [F'        psk="{passkey}"']
+        wpa = wpa + [F'        psk="{passkey}"']
     for (k, v) in extra_dict.items():
         if k == 'country':
             continue
