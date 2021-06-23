@@ -4,7 +4,6 @@ tox
 pytest
 aiohttp
 python-mpv
-pickle5
 cherrypy
 requests
 RPi.GPIO
