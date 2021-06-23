@@ -1,5 +1,6 @@
 #!/bin/bash
 
+echo "home is $HOME"
 # Setup directories.
 test_dir_name=deadstream_tmp
 git_user=eichblatt
@@ -39,19 +40,19 @@ cd $project_dir
 git_branch=`git branch | awk '/\*/ {print $2}'`
 echo "git branch: $git_branch"
 
-## This doesn't work
-#git remote update
-#new_code=`git status -uno | grep "fast-forward" | wc -l`
-#if [ $new_code == 0 ]; then
-#   echo "No new code. Not updating "
-#   date
-#   restore_services
-#   exit 0
-#fi
+git remote update
+updated_code=`git status -uno | grep "up to date" | wc -l`
+if [ $updated_code == 1 ]; then
+   echo "No new code. Not updating "
+   date
+   restore_services
+   exit 0
+fi
 
 # check if archive needs refreshing
+echo "find $project_dir/timemachine/metadata/GratefulDead_ids.json -mtime +40 | wc -l"
 update_archive=`find $project_dir/timemachine/metadata/GratefulDead_ids.json -mtime +40 | wc -l`
-echo "update_archive is $update_archive"
+echo "update_archive = $update_archive"
 
 # clone the repo into the test_dir
 cd $HOME
@@ -74,8 +75,8 @@ pip3 install .
 
 # If the archive has been refreshed in the last 40 days, copy it to the test dir
 if [ $update_archive == 0 ]; then
-   echo "cp -R $project_dir/timemachine/metadata $test_dir/timemachine/."
-   cp -R $project_dir/timemachine/metadata $test_dir/timemachine/.
+   echo "sudo cp -R $project_dir/timemachine/metadata/*.json $test_dir/timemachine/metadata/."
+   sudo cp -R $project_dir/timemachine/metadata/*.json $test_dir/timemachine/metadata/.
 fi
 
 # Set up the services. NOTE: Only for versions > 1 (because username was steve, not deadhead)
