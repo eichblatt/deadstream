@@ -2,7 +2,7 @@
 Description=Update the Grateful Dead Time Machine
 Requires=connect_network.service
 [Service]
-Type=oneshot
+Type=simple
 User=deadhead
 ExecStart=/home/deadhead/deadstream/bin/update.sh
 [Install]

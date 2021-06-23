@@ -1,14 +1,4 @@
 #!/bin/bash
-steve=`grep "^steve:" /etc/passwd | wc -l`
-if [ `hostname` == deadstream2 ]; then
-  echo "steve is set to 0"
-  steve=0
-fi
-if [ $steve == 1 ]; then
-  HOME=/home/steve
-else
-  HOME=/home/deadhead
-fi
 
 echo "home is $HOME"
 # Setup directories.
@@ -17,8 +7,12 @@ git_user=eichblatt
 repo_name=deadstream.git
 project_dir=$HOME/deadstream
 test_dir=$HOME/$test_dir_name
-backup_dir=$HOME/deadstream_previous.`cat /dev/random | tr -cd 'a-f0-9' | head -c 12`
-log_file=$HOME/update.log
+
+echo "project_dir=$project_dir"
+echo "test_dir=$test_dir"
+echo "home is $HOME"
+echo "user is $USER"
+
 
 restore_services () {
    # put the old services back in place.
@@ -91,7 +85,7 @@ fi
 
 cd $test_dir/bin
 #version_1=`./board_version.sh | grep "^version 1$" | wc -l`
-if [ $steve == 0 ]; then
+if [ $user == deadhead ]; then
     echo "pwd is `pwd`"
     ./services.sh
     stat=$?
@@ -111,6 +105,7 @@ python3 $test_dir/main.py --test_update
 stat=$?
 echo "status of test command: $stat"
 
+backup_dir=$HOME/deadstream_previous.`cat /dev/random | tr -cd 'a-f0-9' | head -c 12`
 # If this succeeds, put the new folder in place.
 if [ $stat == 0 ]; then
    echo "mv $project_dir $backup_dir"
