@@ -704,7 +704,7 @@ class GDPlayer(MPV):
         logger.info(F"Playlist {self.playlist}")
         return
 
-    def reset_audio_device(self):
+    def reset_audio_device(self, kwarg=None):
         if self.get_prop('audio-device') == 'null':
             logger.info(F"changing audio-device to {self.default_audio_device}")
             audio_device = self.default_audio_device
@@ -721,8 +721,11 @@ class GDPlayer(MPV):
         return True
 
     def play(self):
-        if not self.reset_audio_device():
+        if not retry_call(self.reset_audio_device, None):
+            logger.warn("Failed to reset audio device when playing")
             return
+        # if not self.reset_audio_device():
+        #    return
         logger.info("playing")
         self._set_property('pause', False)
         self.wait_until_playing()
