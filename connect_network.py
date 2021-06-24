@@ -172,6 +172,7 @@ def get_knob_orientation(knob, label):
     m_knob_event.clear()
     d_knob_event.clear()
     y_knob_event.clear()
+    knob.steps = 0
     before_value = knob.steps
     scr.show_text("Calibrating knobs", font=scr.smallfont, force=False, clear=True)
     scr.show_text(F"Rotate {label}\nclockwise", loc=(0, 40), font=scr.boldsmall, color=(0, 255, 255), force=True)
@@ -452,7 +453,10 @@ try:
     connected = wifi_connected()
 
     if parms.test or reconnect or not connected:
-        save_knob_sense(parms)
+        try:
+            save_knob_sense(parms)
+        except:
+            logger.info("Failed to save knob sense...continuing")
     eth_mac_address = get_mac_address()
     scr.show_text(F"Connect wifi", clear=True)
     scr.show_text(F"MAC addresses\neth0\n{eth_mac_address}", loc=(0, 30), color=(0, 255, 255), font=scr.smallfont, force=True)

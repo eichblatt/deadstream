@@ -468,6 +468,9 @@ def year_button(button, state):
 
 @sequential
 def year_button_longpress(button, state):
+    sleep(3*button._hold_time)
+    if not button.is_held:
+        return
     logger.debug(" longpress of year button")
     current = state.get_current()
     if current['ON_TOUR']:
@@ -483,9 +486,9 @@ def year_button_longpress(button, state):
         current['TOUR_YEAR'] = state.date_reader.date.year
         logger.info(F" ---> ON_TOUR:{current['TOUR_YEAR']}")
         scr.show_experience(text=F"ON_TOUR:{current['TOUR_YEAR']}", force=True)
+    sleep(3)
     track_event.set()
     state.set(current)
-    sleep(3)
 
 
 def update_tracks(state):
@@ -518,6 +521,7 @@ def play_on_tour(tape, state, seek_to=0):
     current['DATE'] = to_date(tape.date)
     current['VENUE'] = tape.venue()
     state.player.insert_tape(tape)
+    state.player.pause()
     state.player.play()
     state.player.seek_in_tape_to(seek_to, ticking=True)
     current['PLAY_STATE'] = config.PLAYING
@@ -795,7 +799,7 @@ d.when_rotated = lambda x: twist_knob(d, "day", date_reader)
 y.when_rotated = lambda x: twist_knob(y, "year", date_reader)
 m_button = retry_call(Button, config.month_pins[2])
 d_button = retry_call(Button, config.day_pins[2], hold_time=0.3, hold_repeat=False)
-y_button = retry_call(Button, config.year_pins[2])
+y_button = retry_call(Button, config.year_pins[2], hold_time=0.5)
 
 select = retry_call(Button, config.select_pin, hold_time=0.5, hold_repeat=False)
 play_pause = retry_call(Button, config.play_pause_pin, hold_time=7)
