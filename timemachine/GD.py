@@ -741,7 +741,8 @@ class GDPlayer(MPV):
         if pos is None or pos + 1 == len(self.playlist):
             return
         self.command('playlist-next')
-        self.wait_for_event('file-loaded')
+        if blocking:
+            self.wait_for_event('file-loaded')
 
     def prev(self):
         pos = self.get_prop('playlist-pos')
