@@ -337,7 +337,7 @@ def select_chars(message, message2="So Far", character_set=string.printable):
     return selected
 
 
-def wifi_connected(max_attempts=3):
+def wifi_connected(max_attempts=1):
     scr.show_text("Checking for\nWifi connection", font=scr.smallfont, force=True, clear=True)
     logger.info("Checking if Wifi connected")
     cmd = "iwconfig"
@@ -345,7 +345,10 @@ def wifi_connected(max_attempts=3):
     attempt = 0
     while not connected and attempt < max_attempts:
         if attempt > 0:
-            sleep(parms.sleep_time)
+            cmd = "sudo killall -HUP wpa_supplicant"
+            if not parms.test:
+                os.system(cmd)
+                sleep(2*parms.sleep_time)
         attempt = attempt + 1
         raw = subprocess.check_output(cmd, shell=True)
         raw = raw.decode()
@@ -370,8 +373,6 @@ def get_wifi_choices():
 
 def update_wpa_conf(wpa_path, wifi, passkey, extra_dict):
     logger.info(F"Updating the wpa_conf file {wpa_path}")
-    #if not os.path.exists(wpa_path): raise Exception('File Missing')
-    #with open(wpa_path,'r') as f: wpa_lines = [x.rstrip() for x in f.readlines()]
     wpa_lines = ['ctrl_interface=DIR=/var/run/wpa_supplicant GROUP=netdev', 'update_config=1', F'country={extra_dict["country"]}']
     wpa = wpa_lines + ['', 'network={', F'        ssid="{wifi}"']
     if len(passkey) == 0:
@@ -386,10 +387,8 @@ def update_wpa_conf(wpa_path, wifi, passkey, extra_dict):
     new_wpa_path = os.path.join(os.getenv('HOME'), 'wpa_supplicant.conf')
     f = open(new_wpa_path, 'w')
     f.write('\n'.join(wpa))
-    cmd1 = F"sudo cp {wpa_path} {wpa_path}.bak"
-    cmd2 = F"sudo mv {new_wpa_path} {wpa_path}"
-    raw = subprocess.check_output(cmd1, shell=True)
-    raw = subprocess.check_output(cmd2, shell=True)
+    cmd = F"sudo mv {new_wpa_path} {wpa_path}"
+    raw = subprocess.check_output(cmd, shell=True)
     cmd = F"sudo chown root {wpa_path}"
     _ = subprocess.check_output(cmd, shell=True)
     cmd = F"sudo chgrp root {wpa_path}"
