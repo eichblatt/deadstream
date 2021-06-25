@@ -40,3 +40,6 @@ system "sudo rm $image_file"
 critical_command "sudo dd if=/dev/sdb of=$image_file bs=4M status=progress"
 
 system "sudo pishrink.sh $image_file"
+
+# NOTE: to burn an image use the command (or similar):
+# sudo sh -c "pv v2_20210625.img > /dev/sdb"
