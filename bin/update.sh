@@ -80,12 +80,13 @@ git config core.hooksPath .githooks/
 echo "git checkout $git_branch"
 git checkout $git_branch
 
+## Derek suggests: create a venv, then pip3 install http://github...repo
 pip3 install .
 
 # If the archive has been refreshed in the last 40 days, copy it to the test dir
 if [ $update_archive == 0 ]; then
-   echo "sudo cp -R $project_dir/timemachine/metadata/*.json $test_dir/timemachine/metadata/."
-   sudo cp -R $project_dir/timemachine/metadata/*.json $test_dir/timemachine/metadata/.
+   echo "sudo cp -pR $project_dir/timemachine/metadata/*.json $test_dir/timemachine/metadata/."
+   sudo cp -pR $project_dir/timemachine/metadata/*.json $test_dir/timemachine/metadata/.
 fi
 
 # Set up the services. NOTE: Only for versions > 1 (because username was steve, not deadhead)
