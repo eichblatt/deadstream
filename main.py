@@ -145,24 +145,45 @@ def save_state(state):
         json.dump(current, statefile, indent=1, default=str)
 
 
+def default_options():
+    d = {}
+    d['COLLECTION'] = 'GratefulDead'
+    d['QUIESCENT_TIME'] = 20
+    d['SLEEP_AFTER_SECONDS'] = 3600
+    d['SCROLL_VENUE'] = True
+    d['FAVORED_TAPER'] = ''
+    d['PWR_LED_ON'] = False
+    d['AUTO_PLAY'] = True
+    d['RELOAD_STATE_ON_START'] = True
+    d['DEFAULT_START_TIME'] = datetime.time(15, 0)
+    d['TIMEZONE'] = 'America/New_York'
+    return d
+
+
 def load_options(parms):
-    f = open(parms.options_path, 'r')
-    optd = json.loads(f.read())
-    optd['QUIESCENT_TIME'] = int(optd['QUIESCENT_TIME'])
-    optd['COLLECTION'] = optd['COLLECTION'] if 'COLLECTION' in optd.keys() else 'GratefulDead'
-    optd['SLEEP_AFTER_SECONDS'] = int(optd['SLEEP_AFTER_SECONDS'])
-    optd['PWR_LED_ON'] = optd['PWR_LED_ON'].lower() == 'true'
-    optd['SCROLL_VENUE'] = optd['SCROLL_VENUE'].lower() == 'true'
-    optd['AUTO_PLAY'] = optd['AUTO_PLAY'].lower() == 'true'
-    optd['RELOAD_STATE_ON_START'] = optd['RELOAD_STATE_ON_START'].lower() == 'true'
-    optd['DEFAULT_START_TIME'] = datetime.datetime.strptime(optd['DEFAULT_START_TIME'], "%H:%M:%S").time()
+    config.optd = default_options()
+    optd = {}
+    try:
+        f = open(parms.options_path, 'r')
+        tmpd = json.loads(f.read())
+        tmpd['QUIESCENT_TIME'] = int(tmpd['QUIESCENT_TIME'])
+        tmpd['SLEEP_AFTER_SECONDS'] = int(tmpd['SLEEP_AFTER_SECONDS'])
+        tmpd['PWR_LED_ON'] = tmpd['PWR_LED_ON'].lower() == 'true'
+        tmpd['SCROLL_VENUE'] = tmpd['SCROLL_VENUE'].lower() == 'true'
+        tmpd['AUTO_PLAY'] = tmpd['AUTO_PLAY'].lower() == 'true'
+        tmpd['RELOAD_STATE_ON_START'] = tmpd['RELOAD_STATE_ON_START'].lower() == 'true'
+        tmpd['DEFAULT_START_TIME'] = datetime.datetime.strptime(tmpd['DEFAULT_START_TIME'], "%H:%M:%S").time()
+        optd = tmpd
+    except:
+        logger.warning(F"Failed to read options from {parms.options_path}. Using defaults")
+
+    config.optd.update(optd)  # update defaults with those read from the file.
     logger.info(F"in load_options, optd {optd}")
-    config.optd = optd
-    os.environ['TZ'] = optd['TIMEZONE']
+    os.environ['TZ'] = config.optd['TIMEZONE']
     time.tzset()
     led_cmd = 'sudo bash -c "echo default-on > /sys/class/leds/led1/trigger"'
     os.system(led_cmd)
-    if not optd["PWR_LED_ON"]:
+    if not config.optd["PWR_LED_ON"]:
         led_cmd = 'sudo bash -c "echo none > /sys/class/leds/led1/trigger"'
     logger.info(F"in load_options, running {led_cmd}")
     os.system(led_cmd)
@@ -743,7 +764,10 @@ def get_ip():
     return ip
 
 
-load_options(parms)
+try:
+    load_options(parms)
+except:
+    logger.warning("Failed in loading options")
 parms.state_path = os.path.join(os.path.dirname(parms.state_path), F'{config.optd["COLLECTION"]}_{os.path.basename(parms.state_path)}')
 config.PAUSED_AT = datetime.datetime.now()
 config.WOKE_AT = datetime.datetime.now()
