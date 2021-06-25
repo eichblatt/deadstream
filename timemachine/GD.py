@@ -723,7 +723,6 @@ class GDPlayer(MPV):
     def play(self):
         if not retry_call(self.reset_audio_device, None):
             logger.warn("Failed to reset audio device when playing")
-            return
         # if not self.reset_audio_device():
         #    return
         logger.info("playing")
@@ -795,6 +794,7 @@ class GDPlayer(MPV):
             playlist_pos = self.get_prop('playlist-pos')
         self.seek(destination)
         self.status()
+        self.play()
         return
 
     def seek_to(self, track_no, destination=0.0, threshold=1):
