@@ -172,7 +172,7 @@ def load_options(parms):
         tmpd['SCROLL_VENUE'] = tmpd['SCROLL_VENUE'].lower() == 'true'
         tmpd['AUTO_PLAY'] = tmpd['AUTO_PLAY'].lower() == 'true'
         tmpd['RELOAD_STATE_ON_START'] = tmpd['RELOAD_STATE_ON_START'].lower() == 'true'
-        tmpd['DEFAULT_START_TIME'] = datetime.datetime.strptime(optd['DEFAULT_START_TIME'], "%H:%M:%S").time()
+        tmpd['DEFAULT_START_TIME'] = datetime.datetime.strptime(tmpd['DEFAULT_START_TIME'], "%H:%M:%S").time()
         optd = tmpd
     except:
         logger.warning(F"Failed to read options from {parms.options_path}. Using defaults")
@@ -183,7 +183,7 @@ def load_options(parms):
     time.tzset()
     led_cmd = 'sudo bash -c "echo default-on > /sys/class/leds/led1/trigger"'
     os.system(led_cmd)
-    if not optd["PWR_LED_ON"]:
+    if not config.optd["PWR_LED_ON"]:
         led_cmd = 'sudo bash -c "echo none > /sys/class/leds/led1/trigger"'
     logger.info(F"in load_options, running {led_cmd}")
     os.system(led_cmd)
