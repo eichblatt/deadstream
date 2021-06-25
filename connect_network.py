@@ -329,7 +329,8 @@ def select_chars(message, message2="So Far", character_set=string.printable):
             scr.clear_area(selected_bbox, force=False)
         else:
             selected = selected + character_set[-1+counter.value]
-        scr.show_text(F"{message2}:\n{selected}", loc=selected_bbox.origin(), color=(255, 255, 255), font=scr.oldfont, force=True)
+        scr.clear_area(selected_bbox, force=False)
+        scr.show_text(F"{message2}:\n{selected[-screen_width:]}", loc=selected_bbox.origin(), color=(255, 255, 255), font=scr.oldfont, force=True)
 
     logger.info(F"word selected {selected}")
     scr.update_now = update_now
