@@ -119,7 +119,7 @@ def load_saved_state(state):
         if current['DATE']:
             state.date_reader.m.steps = current['DATE'].month
             state.date_reader.d.steps = current['DATE'].day
-            state.date_reader.y.steps = current['DATE'].year - min(state.date_reader.achive.year_list())
+            state.date_reader.y.steps = current['DATE'].year - min(state.date_reader.archive.year_list())
             state.date_reader.update()
         elif current['DATE_READER']:
             state.date_reader.m.steps = current['DATE_READER'].month
@@ -840,7 +840,7 @@ if config.optd['RELOAD_STATE_ON_START']:
 eloop = threading.Thread(target=event_loop, args=[state])
 
 for k in parms.__dict__.keys():
-    print(F"{k:20s} : {parms.__dict__[k]}")
+    logger.info(F"{k:20s} : {parms.__dict__[k]}")
 
 if __name__ == "__main__" and parms.test_update:
     test_update(state)
