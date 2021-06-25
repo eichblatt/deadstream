@@ -254,6 +254,16 @@ class GDArchive:
             return list(range(1965, 1996, 1))
         if self.collection_name == "DeadAndCompany":
             return list(range(2015, 2022, 1))
+        if self.collection_name == "Furthur":
+            return list(range(2009, 2014, 1))
+        if self.collection_name == "TheDead":
+            return list(range(2003, 2009, 1))
+        if self.collection_name == "RobertHunter"
+        return list(range(1976, 2014, 1))
+        if self.collection_name == "BobWeir":
+            return list(range(1975, 2022, 1))
+        if self.collection_name == "PhilLeshandFriends":
+            return list(range(1959, 2022, 1))
 
     def best_tape(self, date):
         if isinstance(date, datetime.date):
