@@ -2,7 +2,7 @@
 Description=Check Network Exists or Setup Network
 [Service]
 Type=oneshot
-ExecStart=/usr/bin/python3 /home/deadhead/deadstream/connect_network.py --debug 0
+ExecStart=/bin/sh -c 'while ! /usr/bin/python3 /home/deadhead/deadstream/connect_network.py --debug 0; do sleep 5; done'
 RemainAfterExit=yes
 User=deadhead
 [Install]
