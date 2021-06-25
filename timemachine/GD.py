@@ -258,8 +258,8 @@ class GDArchive:
             return list(range(2009, 2014, 1))
         if self.collection_name == "TheDead":
             return list(range(2003, 2009, 1))
-        if self.collection_name == "RobertHunter"
-        return list(range(1976, 2014, 1))
+        if self.collection_name == "RobertHunter":
+            return list(range(1976, 2014, 1))
         if self.collection_name == "BobWeir":
             return list(range(1975, 2022, 1))
         if self.collection_name == "PhilLeshandFriends":
