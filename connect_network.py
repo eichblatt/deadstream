@@ -485,4 +485,6 @@ if wifi_connected():
     exit_success(sleeptime=0.5*parms.sleep_time)
 else:
     scr.show_text("Wifi connection\nfailed\n\nTry rebooting", font=scr.smallfont, force=True, clear=True)
+    cmd = "sudo reboot"
+    os.system(cmd)
     sys.exit(-1)
