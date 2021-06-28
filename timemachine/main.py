@@ -866,9 +866,16 @@ eloop = threading.Thread(target=event_loop, args=[state])
 for k in parms.__dict__.keys():
     logger.info(F"{k:20s} : {parms.__dict__[k]}")
 
-if __name__ == "__main__" and parms.test_update:
-    test_update(state)
-    #eloop = threading.Thread(target=update_loop, args=[state])
-    # eloop.run()
-elif __name__ == "__main__" and parms.debug == 0:
+
+def main():
     eloop.run()
+
+
+def main_test_update():
+    test_update(state)
+
+
+if __name__ == "__main__" and parms.test_update:
+    main_test_update()
+elif __name__ == "__main__" and parms.debug == 0:
+    main()
