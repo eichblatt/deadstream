@@ -15,18 +15,19 @@ setup(
         "Operating System :: Linux ",
     ],
     install_requires=[
-        'aiohttp',
-        'aiofiles',
-        'requests',
-        'python-mpv',
-        'RPi.GPIO',
         'adafruit-blinka',
         'adafruit-circuitpython-rgb-display',
-        'Pillow',
-        'gpiozero',
-        'tenacity',
+        'aiohttp',
+        'aiofiles',
         'cherrypy',
-        'pre-commit'
+        'gpiozero',
+        'Pillow',
+        'pre-commit',
+        'python-mpv',
+        'requests',
+        'RPi.GPIO',
+        'tenacity',
+        'wheel'
     ],
     entry_points={'console_scripts':
                   ['timemachine=timemachine.main:main',

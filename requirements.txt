@@ -13,3 +13,4 @@ Pillow
 gpiozero
 tenacity
 pre-commit
+wheel
