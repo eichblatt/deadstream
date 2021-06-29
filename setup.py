@@ -7,11 +7,11 @@ setup(
     author_email="gdtimemachine@gmail.com",
     description="A Grateful Dead Time Machine",
     url="https://github.com/eichblatt/deadstream",
-    package_dir = {
+    package_dir={
         "timemachine": "timemachine",
         "timemachine.fonts": "timemachine/fonts",
         "timemachine.metadata": "timemachine/metadata"},
-    packages=["timemachine","timemachine.fonts","timemachine.metadata"],
+    packages=["timemachine", "timemachine.fonts", "timemachine.metadata"],
     python_requires=">=3.6",
     classifiers=[
         "Programming Language :: Python :: 3",
