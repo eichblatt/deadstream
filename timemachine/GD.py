@@ -24,7 +24,7 @@ from tenacity import retry
 from tenacity.stop import stop_after_delay
 from typing import Callable, List, Tuple
 
-from . import config
+import config
 import pkg_resources
 
 logging.basicConfig(format='%(asctime)s.%(msecs)03d %(levelname)s: %(name)s %(message)s', level=logging.INFO, datefmt='%Y-%m-%d %H:%M:%S')
