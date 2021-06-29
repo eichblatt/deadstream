@@ -2,6 +2,7 @@
 import datetime
 import functools
 import logging
+import os
 from time import sleep
 from threading import BoundedSemaphore
 
@@ -12,16 +13,16 @@ from adafruit_rgb_display import color565
 from gpiozero import Button, LED, RotaryEncoder
 from PIL import Image, ImageDraw, ImageFont
 
-from . import config
-import pkg_resources
+import config
 
 logging.basicConfig(format='%(asctime)s.%(msecs)03d %(levelname)s: %(name)s %(message)s', level=logging.DEBUG, datefmt='%Y-%m-%d %H:%M:%S')
 logger = logging.getLogger(__name__)
-print(F"Name of controls logger is {__name__}")
+
+ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
+FONTS_DIR = os.path.join(ROOT_DIR, 'fonts')
 
 screen_semaphore = BoundedSemaphore(1)
 state_semaphore = BoundedSemaphore(1)
-
 
 def with_state_semaphore(func):
     def inner(*args, **kwargs):
@@ -163,13 +164,13 @@ class screen:
             width, height = self.disp.width, self.disp.height
         self.width, self.height = width, height
         logger.debug(F" ---> disp {self.disp.width},{self.disp.height}")
-        self.boldfont = ImageFont.truetype(pkg_resources.resource_filename("timemachine", "DejaVuSansMono-Bold.ttf"), 33)
-        self.boldsmall = ImageFont.truetype(pkg_resources.resource_filename("timemachine", "DejaVuSansMono-Bold.ttf"), 22)
-        self.font = ImageFont.truetype(pkg_resources.resource_filename("timemachine", "ariallgt.ttf"), 30)
-        self.smallfont = ImageFont.truetype(pkg_resources.resource_filename("timemachine", "ariallgt.ttf"), 20)
-        self.oldfont = ImageFont.truetype(pkg_resources.resource_filename("timemachine", "FreeMono.ttf"), 20)
-        self.largefont = ImageFont.truetype(pkg_resources.resource_filename("timemachine", "FreeMono.ttf"), 30)
-        self.hugefont = ImageFont.truetype(pkg_resources.resource_filename("timemachine", "FreeMono.ttf"), 40)
+        self.boldfont = ImageFont.truetype(os.path.join(FONTS_DIR, "DejaVuSansMono-Bold.ttf"), 33)
+        self.boldsmall = ImageFont.truetype(os.path.join(FONTS_DIR, "DejaVuSansMono-Bold.ttf"), 22)
+        self.font = ImageFont.truetype(os.path.join(FONTS_DIR, "ariallgt.ttf"), 30)
+        self.smallfont = ImageFont.truetype(os.path.join(FONTS_DIR, "ariallgt.ttf"), 20)
+        self.oldfont = ImageFont.truetype(os.path.join(FONTS_DIR, "FreeMono.ttf"), 20)
+        self.largefont = ImageFont.truetype(os.path.join(FONTS_DIR, "FreeMono.ttf"), 30)
+        self.hugefont = ImageFont.truetype(os.path.join(FONTS_DIR,  "FreeMono.ttf"), 40)
 
         self.image = Image.new("RGB", (width, height))
         self.draw = ImageDraw.Draw(self.image)       # draw using this object. Display image when complete.
