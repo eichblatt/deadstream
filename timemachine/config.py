@@ -3,7 +3,7 @@ import subprocess
 
 def get_board_version():
     try:
-        cmd = "$HOME/deadstream/bin/board_version.sh"
+        cmd = "$HOME/deadstream/timemachine/bin/board_version.sh"
         raw = subprocess.check_output(cmd, shell=True)
         raw = raw.decode()
         if raw == 'version 2\n':

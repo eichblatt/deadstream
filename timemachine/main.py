@@ -28,7 +28,7 @@ parser.add_option('--dbpath',
                   help="path to database [default %default]")
 parser.add_option('--state_path',
                   dest='state_path',
-                  default=os.path.join(GD.ROOT_DIR, 'state.json'),
+                  default=os.path.join(GD.ROOT_DIR, 'metadata/state.json'),
                   help="path to state [default %default]")
 parser.add_option('--options_path',
                   dest='options_path',
