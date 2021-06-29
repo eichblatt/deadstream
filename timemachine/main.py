@@ -18,7 +18,7 @@ from tenacity.stop import stop_after_delay
 from typing import Callable
 
 import pkg_resources
-import config, controls, GD
+from timemachine import config, controls, GD
 
 parser = optparse.OptionParser()
 parser.add_option('--box', dest='box', type="string", default='v1', help="v0 box has screen at 270. [default %default]")
@@ -60,8 +60,8 @@ logging.basicConfig(format='%(asctime)s.%(msecs)03d %(levelname)s: %(name)s %(me
                     level=logging.INFO,
                     datefmt='%Y-%m-%d %H:%M:%S')
 logger = logging.getLogger(__name__)
-GDLogger = logging.getLogger('GD')
-controlsLogger = logging.getLogger('controls')
+GDLogger = logging.getLogger('timemachine.GD')
+controlsLogger = logging.getLogger('timemachine.controls')
 controlsLogger.setLevel(logging.WARN)
 
 stagedate_event = Event()

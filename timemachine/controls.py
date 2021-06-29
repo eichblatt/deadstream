@@ -13,7 +13,9 @@ from adafruit_rgb_display import color565
 from gpiozero import Button, LED, RotaryEncoder
 from PIL import Image, ImageDraw, ImageFont
 
-import config
+import pkg_resources
+from timemachine import config
+
 
 logging.basicConfig(format='%(asctime)s.%(msecs)03d %(levelname)s: %(name)s %(message)s', level=logging.DEBUG, datefmt='%Y-%m-%d %H:%M:%S')
 logger = logging.getLogger(__name__)
@@ -164,13 +166,20 @@ class screen:
             width, height = self.disp.width, self.disp.height
         self.width, self.height = width, height
         logger.debug(F" ---> disp {self.disp.width},{self.disp.height}")
-        self.boldfont = ImageFont.truetype(os.path.join(FONTS_DIR, "DejaVuSansMono-Bold.ttf"), 33)
-        self.boldsmall = ImageFont.truetype(os.path.join(FONTS_DIR, "DejaVuSansMono-Bold.ttf"), 22)
-        self.font = ImageFont.truetype(os.path.join(FONTS_DIR, "ariallgt.ttf"), 30)
-        self.smallfont = ImageFont.truetype(os.path.join(FONTS_DIR, "ariallgt.ttf"), 20)
-        self.oldfont = ImageFont.truetype(os.path.join(FONTS_DIR, "FreeMono.ttf"), 20)
-        self.largefont = ImageFont.truetype(os.path.join(FONTS_DIR, "FreeMono.ttf"), 30)
-        self.hugefont = ImageFont.truetype(os.path.join(FONTS_DIR,  "FreeMono.ttf"), 40)
+        self.boldfont = ImageFont.truetype(pkg_resources.resource_filename("timemachine.fonts", "DejaVuSansMono-Bold.ttf"), 33)
+        self.boldsmall = ImageFont.truetype(pkg_resources.resource_filename("timemachine.fonts", "DejaVuSansMono-Bold.ttf"), 22)
+        self.font = ImageFont.truetype(pkg_resources.resource_filename("timemachine.fonts", "ariallgt.ttf"), 30)
+        self.smallfont = ImageFont.truetype(pkg_resources.resource_filename("timemachine.fonts", "ariallgt.ttf"), 20)
+        self.oldfont = ImageFont.truetype(pkg_resources.resource_filename("timemachine.fonts", "FreeMono.ttf"), 20)
+        self.largefont = ImageFont.truetype(pkg_resources.resource_filename("timemachine.fonts", "FreeMono.ttf"), 30)
+        self.hugefont = ImageFont.truetype(pkg_resources.resource_filename("timemachine.fonts",  "FreeMono.ttf"), 40)
+        #self.boldfont = ImageFont.truetype(os.path.join(FONTS_DIR, "DejaVuSansMono-Bold.ttf"), 33)
+        #self.boldsmall = ImageFont.truetype(os.path.join(FONTS_DIR, "DejaVuSansMono-Bold.ttf"), 22)
+        #self.font = ImageFont.truetype(os.path.join(FONTS_DIR, "ariallgt.ttf"), 30)
+        #self.smallfont = ImageFont.truetype(os.path.join(FONTS_DIR, "ariallgt.ttf"), 20)
+        #self.oldfont = ImageFont.truetype(os.path.join(FONTS_DIR, "FreeMono.ttf"), 20)
+        #self.largefont = ImageFont.truetype(os.path.join(FONTS_DIR, "FreeMono.ttf"), 30)
+        #self.hugefont = ImageFont.truetype(os.path.join(FONTS_DIR,  "FreeMono.ttf"), 40)
 
         self.image = Image.new("RGB", (width, height))
         self.draw = ImageDraw.Draw(self.image)       # draw using this object. Display image when complete.

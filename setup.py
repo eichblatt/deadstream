@@ -7,7 +7,7 @@ setup(
     author_email="gdtimemachine@gmail.com",
     description="A Grateful Dead Time Machine",
     url="https://github.com/eichblatt/deadstream",
-    packages=["timemachine"],
+    packages=["timemachine","timemachine.fonts","timemachine.metadata"],
     python_requires=">=3.6",
     classifiers=[
         "Programming Language :: Python :: 3",
@@ -29,9 +29,9 @@ setup(
         'tenacity',
         'wheel'
     ],
-    #package_data={
-    #    "timemachine": ["ariallgt.ttf", "DejaVuSansMono-Bold.ttf", "FreeMono.ttf", "set_breaks.csv", "fonts/*ttf"],
-    #}
+    package_data={
+        "timemachine": ["fonts/ariallgt.ttf", "fonts/DejaVuSansMono-Bold.ttf", "fonts/FreeMono.ttf", "metadata/set_breaks.csv"]
+    },
     entry_points={'console_scripts':
                   ['timemachine=timemachine.main:main',
                    'timemachine_test_update=timemachine.main:main_test_update'
