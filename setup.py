@@ -1,22 +1,22 @@
 from setuptools import setup
 
 setup(
-    name="timemachine",
-    version="0.2.1",
-    author="Steve Eichblatt",
-    author_email="gdtimemachine@gmail.com",
-    description="A Grateful Dead Time Machine",
-    url="https://github.com/eichblatt/deadstream",
+    name='timemachine',
+    version='0.2.1',
+    author='Steve Eichblatt',
+    author_email='gdtimemachine@gmail.com',
+    description='A Grateful Dead Time Machine',
+    url='https://github.com/eichblatt/deadstream',
     package_dir={
-        "timemachine": "timemachine",
-        "timemachine.fonts": "timemachine/fonts",
-        "timemachine.metadata": "timemachine/metadata"},
-    packages=["timemachine", "timemachine.fonts", "timemachine.metadata"],
-    python_requires=">=3.6",
+        'timemachine': 'timemachine',
+        'timemachine.fonts': 'timemachine/fonts',
+        'timemachine.metadata': 'timemachine/metadata'},
+    packages=['timemachine', 'timemachine.fonts', 'timemachine.metadata'],
+    python_requires='>=3.6',
     classifiers=[
-        "Programming Language :: Python :: 3",
-        "License :: GPL v3.0 ",
-        "Operating System :: Linux "],
+        'Programming Language :: Python :: 3',
+        'License :: GPL v3.0 ',
+        'Operating System :: Linux '],
     install_requires=[
         'adafruit-blinka',
         'adafruit-circuitpython-rgb-display',
@@ -32,7 +32,8 @@ setup(
         'tenacity',
         'wheel'],
     package_data={
-        "timemachine": ["fonts/ariallgt.ttf", "fonts/DejaVuSansMono-Bold.ttf", "fonts/FreeMono.ttf", "metadata/set_breaks.csv"]},
+        'timemachine': ['fonts/ariallgt.ttf', 'fonts/DejaVuSansMono-Bold.ttf', 'fonts/FreeMono.ttf', 'metadata/set_breaks.csv',
+                        'metadata/silence600.ogg', 'metadata/silence300.ogg']},
     entry_points={'console_scripts':
                   ['timemachine=timemachine.main:main',
                    'timemachine_test_update=timemachine.main:main_test_update']}

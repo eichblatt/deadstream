@@ -506,7 +506,8 @@ class GDTape:
         if self._breaks_added:
             return
         breaks = self._compute_breaks()
-        breakd = {'track': -1, 'original': 'setbreak', 'title': 'Set Break', 'format': 'Ogg Vorbis', 'size': 1, 'source': 'original', 'path': self.dbpath}
+        longbreak_path = pkg_resources.resource_filename('timemachine.metadata', 'silence600.ogg')
+        breakd = {'track': -1, 'original': 'setbreak', 'title': 'Set Break', 'format': 'Ogg Vorbis', 'size': 1, 'source': 'original', 'path': os.path.dirname(longbreak_path)}
         lbreakd = dict(list(breakd.items()) + [('title', 'Set Break'), ('name', 'silence600.ogg')])
         sbreakd = dict(list(breakd.items()) + [('title', 'Encore Break'), ('name', 'silence300.ogg')])
         locbreakd = dict(list(breakd.items()) + [('title', 'Location Break'), ('name', 'silence600.ogg')])
@@ -574,7 +575,7 @@ class GDSet:
     def __init__(self):
         set_data = {}
         prevsong = None
-        set_breaks = pkg_resources.resource_stream('timemachine.metadata','set_breaks.csv')
+        set_breaks = pkg_resources.resource_stream('timemachine.metadata', 'set_breaks.csv')
         utf8_reader = codecs.getreader("utf-8")
         r = [r for r in csv.reader(utf8_reader(set_breaks))]
         headers = r[0]
