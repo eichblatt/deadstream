@@ -2,7 +2,7 @@ from setuptools import setup
 
 setup(
     name="timemachine",
-    version="0.2.0",
+    version="0.2.1",
     author="Steve Eichblatt",
     author_email="gdtimemachine@gmail.com",
     description="A Grateful Dead Time Machine",
@@ -34,6 +34,6 @@ setup(
                    'timemachine_test_update=timemachine.main:main_test_update'
                    ]},
     package_data={
-        "timemachine": ["FreeMono.ttf", "ariallgt.ttf", "DejaVuSansMono-Bold.ttf", "set_breaks.csv"]
+        "timemachine": ["ariallgt.ttf", "DejaVuSansMono-Bold.ttf", "FreeMono.ttf", "set_breaks.csv", "fonts/*ttf"]
     }
 )
