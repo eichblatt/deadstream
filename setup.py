@@ -29,11 +29,11 @@ setup(
         'tenacity',
         'wheel'
     ],
+    #package_data={
+    #    "timemachine": ["ariallgt.ttf", "DejaVuSansMono-Bold.ttf", "FreeMono.ttf", "set_breaks.csv", "fonts/*ttf"],
     entry_points={'console_scripts':
                   ['timemachine=timemachine.main:main',
                    'timemachine_test_update=timemachine.main:main_test_update'
-                   ]},
-    package_data={
-        "timemachine": ["ariallgt.ttf", "DejaVuSansMono-Bold.ttf", "FreeMono.ttf", "set_breaks.csv", "fonts/*ttf"]
+                   ]}
     }
 )
