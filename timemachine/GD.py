@@ -25,7 +25,6 @@ from tenacity.stop import stop_after_delay
 from typing import Callable, List, Tuple
 
 import config
-import pkg_resources
 
 logging.basicConfig(format='%(asctime)s.%(msecs)03d %(levelname)s: %(name)s %(message)s', level=logging.INFO, datefmt='%Y-%m-%d %H:%M:%S')
 logger = logging.getLogger(__name__)
@@ -574,7 +573,7 @@ class GDSet:
     def __init__(self):
         set_data = {}
         prevsong = None
-        set_breaks = pkg_resources.resource_stream(__name__, "set_breaks.csv")
+        set_breaks = open(os.path.join(ROOT_DIR,'metadata/set_breaks.csv'),'rb')
         utf8_reader = codecs.getreader("utf-8")
         r = [r for r in csv.reader(utf8_reader(set_breaks))]
         headers = r[0]
