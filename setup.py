@@ -7,13 +7,16 @@ setup(
     author_email="gdtimemachine@gmail.com",
     description="A Grateful Dead Time Machine",
     url="https://github.com/eichblatt/deadstream",
+    package_dir = {
+        "timemachine": "timemachine",
+        "timemachine.fonts": "timemachine/fonts",
+        "timemachine.metadata": "timemachine/metadata"},
     packages=["timemachine","timemachine.fonts","timemachine.metadata"],
     python_requires=">=3.6",
     classifiers=[
         "Programming Language :: Python :: 3",
         "License :: GPL v3.0 ",
-        "Operating System :: Linux ",
-    ],
+        "Operating System :: Linux "],
     install_requires=[
         'adafruit-blinka',
         'adafruit-circuitpython-rgb-display',
@@ -27,13 +30,10 @@ setup(
         'requests',
         'RPi.GPIO',
         'tenacity',
-        'wheel'
-    ],
+        'wheel'],
     package_data={
-        "timemachine": ["fonts/ariallgt.ttf", "fonts/DejaVuSansMono-Bold.ttf", "fonts/FreeMono.ttf", "metadata/set_breaks.csv"]
-    },
+        "timemachine": ["fonts/ariallgt.ttf", "fonts/DejaVuSansMono-Bold.ttf", "fonts/FreeMono.ttf", "metadata/set_breaks.csv"]},
     entry_points={'console_scripts':
                   ['timemachine=timemachine.main:main',
-                   'timemachine_test_update=timemachine.main:main_test_update'
-                   ]}
+                   'timemachine_test_update=timemachine.main:main_test_update']}
 )
