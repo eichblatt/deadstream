@@ -4,10 +4,9 @@ Wants=network.target
 After=systemd-user-sessions.service
 [Service]
 Type=oneshot
-#ExecStart=/bin/sh -c 'while ! /usr/bin/python3 /home/deadhead/deadstream/timemachine/connect_network.py --debug 0; do sleep 5; done'
-#ExecStart=/usr/bin/python3 /home/deadhead/deadstream/timemachine/connect_network.py --debug 0
-ExecStart=source /home/deadhead/timemachine/bin/activate && connect_network --debug 0
-RemainAfterExit=yes
 User=deadhead
+#ExecStart=/bin/sh -c 'while ! /usr/bin/python3 /home/deadhead/deadstream/timemachine/connect_network.py --debug 0; do sleep 5; done'
+ExecStart=/home/deadhead/timemachine/bin/connect_network --debug 0
+RemainAfterExit=yes
 [Install]
 WantedBy=multi-user.target
