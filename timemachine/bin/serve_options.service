@@ -6,7 +6,7 @@ After=connect_network.service
 Type=simple
 User=deadhead
 #ExecStart=/usr/bin/python3 /home/deadhead/deadstream/timemachine/serve_options.py --debug 0
-ExecStart=/home/deadhead/timemachine/bin/serve_options --debug 0
+ExecStart=/bin/bash -c "source /home/deadhead/timemachine/bin/activate && serve_options --debug 0"
 RemainAfterExit=no
 Restart=on-failure
 [Install]
