@@ -15,7 +15,7 @@ setup(
     python_requires='>=3.6',
     classifiers=[
         'Programming Language :: Python :: 3',
-        'License :: GPL v3.0 ',
+        'License :: OSI Approved :: GNU General Public License v3 (GPLv3)',
         'Operating System :: Linux '],
     install_requires=[
         'adafruit-blinka',
@@ -33,9 +33,11 @@ setup(
         'wheel'],
     package_data={
         'timemachine': ['fonts/ariallgt.ttf', 'fonts/DejaVuSansMono-Bold.ttf', 'fonts/FreeMono.ttf', 'metadata/set_breaks.csv',
-                        'metadata/silence600.ogg', 'metadata/silence300.ogg']},
+                        'metadata/silence600.ogg', 'metadata/silence300.ogg', 'options.txt']},
     entry_points={'console_scripts':
-                  ['timemachine=timemachine.main:main',
+                  ['connect_network=timemachine.connect_network:main',
+                   'serve_options=timemachine.serve_options:main',
+                   'timemachine=timemachine.main:main',
                    'timemachine_test_update=timemachine.main:main_test_update']},
     scripts=['timemachine/bin/services.sh', 'timemachine/bin/update.sh', 'timemachine/bin/board_version.sh']
 )

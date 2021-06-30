@@ -445,46 +445,51 @@ def get_wifi_params():
     return wifi, passkey, extra_dict
 
 
-try:
-    scr.show_text("To force attempt\nto reconnect wifi\npress rewind now", font=scr.smallfont, force=True, clear=True)
-    reconnect = rewind_event.wait(0.2*parms.sleep_time)
-    rewind_event.clear()
+def main():
+    try:
+        scr.show_text("To force attempt\nto reconnect wifi\npress rewind now", font=scr.smallfont, force=True, clear=True)
+        reconnect = rewind_event.wait(0.2*parms.sleep_time)
+        rewind_event.clear()
 
-    connected = wifi_connected()
+        connected = wifi_connected()
 
-    if parms.test or reconnect or not connected:
-        try:
-            save_knob_sense(parms)
-        except:
-            logger.info("Failed to save knob sense...continuing")
-    eth_mac_address = get_mac_address()
-    scr.show_text(F"Connect wifi", clear=True)
-    scr.show_text(F"MAC addresses\neth0\n{eth_mac_address}", loc=(0, 30), color=(0, 255, 255), font=scr.smallfont, force=True)
-    sleep(3)
-    if parms.test or reconnect or not connected:
-        scr.show_text("Connecting Wifi", font=scr.smallfont, force=True, clear=True)
-        wifi, passkey, extra_dict = get_wifi_params()
-        scr.show_text(F"wifi:\n{wifi}\npasskey:\n{passkey}", loc=(0, 0), color=(255, 255, 255), font=scr.oldfont, force=True, clear=True)
-        update_wpa_conf(parms.wpa_path, wifi, passkey, extra_dict)
-        cmd = "sudo killall -HUP wpa_supplicant"
-        if not parms.test:
-            os.system(cmd)
-        else:
-            print(F"not issuing command {cmd}")
-        scr.show_text("wifi connecting\n...", loc=(0, 0), color=(255, 255, 255), font=scr.smallfont, force=True, clear=True)
-        sleep(parms.sleep_time)
-except:
-    sys.exit(-1)
-finally:
-    scr.clear()
+        if parms.test or reconnect or not connected:
+            try:
+                save_knob_sense(parms)
+            except:
+                logger.info("Failed to save knob sense...continuing")
+        eth_mac_address = get_mac_address()
+        scr.show_text(F"Connect wifi", clear=True)
+        scr.show_text(F"MAC addresses\neth0\n{eth_mac_address}", loc=(0, 30), color=(0, 255, 255), font=scr.smallfont, force=True)
+        sleep(3)
+        if parms.test or reconnect or not connected:
+            scr.show_text("Connecting Wifi", font=scr.smallfont, force=True, clear=True)
+            wifi, passkey, extra_dict = get_wifi_params()
+            scr.show_text(F"wifi:\n{wifi}\npasskey:\n{passkey}", loc=(0, 0), color=(255, 255, 255), font=scr.oldfont, force=True, clear=True)
+            update_wpa_conf(parms.wpa_path, wifi, passkey, extra_dict)
+            cmd = "sudo killall -HUP wpa_supplicant"
+            if not parms.test:
+                os.system(cmd)
+            else:
+                print(F"not issuing command {cmd}")
+            scr.show_text("wifi connecting\n...", loc=(0, 0), color=(255, 255, 255), font=scr.smallfont, force=True, clear=True)
+            sleep(parms.sleep_time)
+    except:
+        sys.exit(-1)
+    finally:
+        scr.clear()
 
-if wifi_connected():
-    ip = get_ip()
-    logger.info(F"Wifi connected\n{ip}")
-    scr.show_text(F"Wifi connected\n{ip}", font=scr.smallfont, force=True, clear=True)
-    exit_success(sleeptime=0.5*parms.sleep_time)
-else:
-    scr.show_text("Wifi connection\nfailed\n\nTry rebooting", font=scr.smallfont, force=True, clear=True)
-    cmd = "sudo reboot"
-    os.system(cmd)
-    sys.exit(-1)
+    if wifi_connected():
+        ip = get_ip()
+        logger.info(F"Wifi connected\n{ip}")
+        scr.show_text(F"Wifi connected\n{ip}", font=scr.smallfont, force=True, clear=True)
+        exit_success(sleeptime=0.5*parms.sleep_time)
+    else:
+        scr.show_text("Wifi connection\nfailed\n\nTry rebooting", font=scr.smallfont, force=True, clear=True)
+        cmd = "sudo reboot"
+        os.system(cmd)
+        sys.exit(-1)
+
+
+elif __name__ == "__main__" and parms.debug == 0:
+    main()

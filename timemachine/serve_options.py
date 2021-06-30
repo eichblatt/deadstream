@@ -113,7 +113,7 @@ def get_ip():
     return ip
 
 
-def main(parms):
+def main():
     ip_address = get_ip()
     cherrypy.config.update({'server.socket_host': ip_address, 'server.socket_port': 9090})
     cherrypy.quickstart(StringGenerator())
@@ -122,5 +122,5 @@ def main(parms):
 for k in parms.__dict__.keys():
     print(F"{k:20s} : {parms.__dict__[k]}")
 if __name__ == "__main__" and parms.debug == 0:
-    main(parms)
+    main()
     exit(0)
