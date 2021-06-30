@@ -491,5 +491,5 @@ def main():
         sys.exit(-1)
 
 
-elif __name__ == "__main__" and parms.debug == 0:
+if __name__ == "__main__" and parms.debug == 0:
     main()
