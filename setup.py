@@ -39,5 +39,6 @@ setup(
                    'serve_options=timemachine.serve_options:main',
                    'timemachine=timemachine.main:main',
                    'timemachine_test_update=timemachine.main:main_test_update']},
-    scripts=['timemachine/bin/services.sh', 'timemachine/bin/update.sh', 'timemachine/bin/board_version.sh']
+    scripts=['timemachine/bin/services.sh', 'timemachine/bin/update.sh', 'timemachine/bin/board_version.sh'],
+    license_files=LICENSE.txt
 )
