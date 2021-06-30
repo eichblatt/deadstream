@@ -36,5 +36,6 @@ setup(
                         'metadata/silence600.ogg', 'metadata/silence300.ogg']},
     entry_points={'console_scripts':
                   ['timemachine=timemachine.main:main',
-                   'timemachine_test_update=timemachine.main:main_test_update']}
+                   'timemachine_test_update=timemachine.main:main_test_update']},
+    scripts=['timemachine/bin/services.sh', 'timemachine/bin/update.sh', 'timemachine/bin/board_version.sh']
 )
