@@ -119,6 +119,6 @@ Each knob can be turned, and also pressed as a button. Each button may be "press
 
 #### Stop Button
 - Pressing the Stop button stops the playback and moves the play head to the beginning of the show.
-- Holding the Stop button (*for 8 seconds*) downloads the latest version of the software and restarts the program. **USE WITH CAUTION**
+- Holding the Stop button (*for 8 seconds*) prepares to download the latest version of the software and restarts the program. After 8 seconds, the screen will display a message asking to continue hold the **stop button** for another 5 seconds if you _really_ want to update. **USE WITH CAUTION**
 
 **Enjoy!**
