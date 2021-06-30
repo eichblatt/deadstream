@@ -8,7 +8,7 @@ After=connect_network.service
 Type=simple
 User=deadhead
 #ExecStart=/usr/bin/python3 /home/deadhead/deadstream/timemachine/main.py
-ExecStart=/home/deadhead/latest/bin/timemachine
+ExecStart=source /home/deadhead/timemachine/bin/activate && timemachine
 #Restart=on-failure
 [Install]
 WantedBy=multi-user.target

@@ -6,6 +6,7 @@ setup(
     author='Steve Eichblatt',
     author_email='gdtimemachine@gmail.com',
     description='A Grateful Dead Time Machine',
+    long_description='A Grateful Dead Time Machine. \nGNU General Public License v3 (GPLv3)',
     url='https://github.com/eichblatt/deadstream',
     package_dir={
         'timemachine': 'timemachine',
@@ -40,5 +41,6 @@ setup(
                    'timemachine=timemachine.main:main',
                    'timemachine_test_update=timemachine.main:main_test_update']},
     scripts=['timemachine/bin/services.sh', 'timemachine/bin/update.sh', 'timemachine/bin/board_version.sh'],
-    license_files=LICENSE.txt
+    license_files=('LICENSE.txt',),
+    license='GNU General Public License v3 (GPLv3)'
 )
