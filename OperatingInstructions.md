@@ -98,7 +98,7 @@ Each knob can be turned, and also pressed as a button. Each button may be "press
 #### Day Knob
 - Turning the Day knob changes the day of the **staged date** from 1 to 31 (depending on the Month (and Year if a Leap Year))
 - Pressing the Day knob moves the **staged date** to the next date on which there is a tape in the archive.
-- Holding the Day knob (*for 5 seconds*) turns off the screen. Turning or pressing any of the 3 knobs will wake up the screen.
+- Holding the Day knob (*for 3 seconds*) turns off the screen. Turning or pressing any of the 3 knobs will wake up the screen.
 
 #### Year Knob
 - Turning the Year knob changes the year of the **staged date** from 1965 to 1995.
