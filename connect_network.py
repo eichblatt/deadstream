@@ -206,6 +206,7 @@ def select_option(message, chooser):
     counter.set_value(0, 0)
     selected = None
     screen_height = 5
+    screen_width = 12
     update_now = scr.update_now
     scr.update_now = False
     done_event.clear()
@@ -234,9 +235,12 @@ def select_option(message, chooser):
         scr.show_text(text, loc=(x_loc, y_loc), font=scr.oldfont, force=False)
         y_loc = y_loc + text_height*(1+text.count('\n'))
 
-        text = '>' + choices[step]
-        (text_width, text_height) = scr.oldfont.getsize(text)
-        scr.show_text(text, loc=(x_loc, y_loc), font=scr.oldfont, color=(0, 0, 255), force=False)
+        if len(choices[step]) > screen_width:
+            text = '>' + '..' + choices[step][-13:]
+        else:
+            text = '>' + choices[step]
+        (text_width, text_height) = scr.smallfont.getsize(text)
+        scr.show_text(text, loc=(x_loc, y_loc), font=scr.smallfont, color=(0, 0, 255), force=False)
         y_loc = y_loc + text_height
 
         text = '\n'.join(choices[step+1:min(step+screen_height, len(choices))])
