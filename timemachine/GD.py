@@ -79,28 +79,55 @@ class BaseTapeDownloader(abc.ABC):
 
     @abc.abstractmethod
     def get_tapes(self, years):
-        """Get a list of tapes."""
+        """Get a list of tapes for years."""
+        pass
+
+    def get_all_tapes(self):
+        """Get a list of all tapes."""
         pass
 
 
 class TapeDownloader(BaseTapeDownloader):
     """Synchronous Grateful Dead Tape Downloader"""
 
+    def get_all_tapes(self):
+        """Get a list of all tapes.
+        Returns a list dictionaries of tape information
+        """
+        current_rows = 0
+        tapes = []
+
+        min_date = '1900-01-01'
+        max_date = datetime.datetime.now().date().strftime('%Y-%m-%d')
+
+        r = self._get_piece(min_date, max_date)
+        j = r.json()
+        total = j['total']
+        logger.debug(f"total rows {total}")
+        current_rows += j['count']
+        tapes = j['items']
+
+        while current_rows < total:
+            min_date_field = tapes[-1]['date']
+            min_date = min_date_field[:10]
+            last_date_ids = [x['identifier'] for x in tapes if x['date'] == min_date_field]
+            r = self._get_piece(min_date, max_date)
+            j = r.json()
+            current_rows += j['count']
+            extra_tapes = j['items']
+            extra_tapes = [x for x in extra_tapes if x['identifier'] not in last_date_ids]
+            tapes.extend(extra_tapes)
+        return tapes
+
     def get_tapes(self, years):
         """Get a list of tapes.
-
-        Parameters:
-
             years: List of years to download tapes for
-
         Returns a list dictionaries of tape information
         """
         tapes = []
-
         for year in years:
             year_tapes = self._get_tapes_year(year)
             tapes.extend(year_tapes)
-
         return tapes
 
     def _get_tapes_year(self, year):
@@ -129,6 +156,21 @@ class TapeDownloader(BaseTapeDownloader):
             tapes.extend(j['items'])
         return tapes
 
+    def _get_piece(self, min_date, max_date):
+        """Get one chunk of a year's tape information.
+        Returns a list of dictionaries of tape information
+        """
+        parms = self.parms.copy()
+        query = F'collection:{self.collection_name} AND date:[{min_date} TO {max_date}]'
+        parms['q'] = query
+        r = requests.get(self.api, params=parms)
+        logger.debug(f"url is {r.url}")
+        if r.status_code != 200:
+            logger.error(f"Error {r.status_code} collecting data")
+            raise Exception(
+                'Download', 'Error {} collection'.format(r.status_code))
+        return r
+
     def _get_chunk(self, year, cursor=None):
         """Get one chunk of a year's tape information.
 
@@ -155,6 +197,10 @@ class TapeDownloader(BaseTapeDownloader):
 
 class AsyncTapeDownloader(BaseTapeDownloader):
     """Asynchronous Grateful Dead Tape Downloader"""
+
+    def get_all_tapes(self):
+        """Get a list of all tapes."""
+        pass
 
     def get_tapes(self, years):
         """Get a list of tapes.
@@ -237,7 +283,7 @@ class AsyncTapeDownloader(BaseTapeDownloader):
 class GDArchive:
     """ The Grateful Dead Collection on Archive.org """
 
-    def __init__(self, dbpath=os.path.join(ROOT_DIR, 'metadata'), url='https://archive.org', reload_ids=False, sync=False, collection_name='GratefulDead'):
+    def __init__(self, dbpath=os.path.join(ROOT_DIR, 'metadata'), url='https://archive.org', reload_ids=False, sync=True, collection_name='GratefulDead'):
         """Create a new GDArchive.
 
         Parameters:
@@ -266,20 +312,7 @@ class GDArchive:
         return retstr
 
     def year_list(self):
-        if self.collection_name == "GratefulDead":
-            return list(range(1965, 1996, 1))
-        if self.collection_name == "DeadAndCompany":
-            return list(range(2015, 2022, 1))
-        if self.collection_name == "Furthur":
-            return list(range(2009, 2014, 1))
-        if self.collection_name == "TheDead":
-            return list(range(2003, 2009, 1))
-        if self.collection_name == "RobertHunter":
-            return list(range(1976, 2014, 1))
-        if self.collection_name == "BobWeir":
-            return list(range(1975, 2022, 1))
-        if self.collection_name == "PhilLeshandFriends":
-            return list(range(1959, 2022, 1))
+        return sorted(set([datetime.datetime.strptime(x, '%Y-%m-%d').year for x in self.dates]))
 
     def best_tape(self, date):
         if isinstance(date, datetime.date):
@@ -342,7 +375,8 @@ class GDArchive:
             tapes = json.load(open(self.idpath, 'r'))
         else:
             logger.info("Loading Tapes from the Archive...this will take a few minutes")
-            tapes = self.downloader.get_tapes(self.year_list())
+            #tapes = self.downloader.get_tapes(self.year_list())
+            tapes = self.downloader.get_all_tapes()
             self.write_tapes(tapes)
         return [GDTape(self.dbpath, tape, self.set_data) for tape in tapes]
 

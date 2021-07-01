@@ -796,7 +796,7 @@ message = "Time\n  Machine\n   Loading..."
 scr.show_text(message, color=(0, 255, 255), force=False, clear=True)
 scr.show_text(F"{ip_address}", loc=(0, 100), font=scr.smallfont, color=(255, 255, 255))
 
-archive = GD.GDArchive(parms.dbpath, collection_name=config.optd['COLLECTION'], sync=True)
+archive = GD.GDArchive(parms.dbpath, collection_name=config.optd['COLLECTION'])
 player = GD.GDPlayer()
 
 
