@@ -32,8 +32,7 @@ parser.add_option('--wpa_path',
 parser.add_option('--knob_sense_path',
                   dest='knob_sense_path',
                   type="string",
-                  default=os.path.join(os.getenv('HOME'),
-                                       ".knob_sense"),
+                  default=os.path.join(os.getenv('HOME'), ".knob_sense"),
                   help="path to file describing knob directions [default %default]")
 parser.add_option('-d', '--debug',
                   dest='debug',
@@ -194,8 +193,8 @@ def save_knob_sense(parms):
     f = open(parms.knob_sense_path, 'w')
     f.write(str(knob_sense))
     f.close()
-    scr.show_text("Knobs\nCalibrated", color=(0, 0, 255), force=False, clear=True)
-    scr.show_text(F"      {knob_sense}", loc=(0, 60), force=True)
+    scr.show_text("Knobs\nCalibrated", font=scr.boldsmall, color=(0, 255, 255), force=False, clear=True)
+    scr.show_text(F"      {knob_sense}", font=scr.boldsmall, loc=(0, 60), force=True)
 
 
 def select_option(message, chooser):
@@ -206,7 +205,7 @@ def select_option(message, chooser):
     counter.set_value(0, 0)
     selected = None
     screen_height = 5
-    screen_width = 12
+    screen_width = 14
     update_now = scr.update_now
     scr.update_now = False
     done_event.clear()
@@ -216,6 +215,7 @@ def select_option(message, chooser):
     scr.show_text(message, loc=(0, 0), font=scr.smallfont, color=(0, 255, 255), force=True)
     (text_width, text_height) = scr.smallfont.getsize(message)
 
+    text_height = text_height + 1
     y_origin = text_height*(1+message.count('\n'))
     selection_bbox = controls.Bbox(0, y_origin, 160, 128)
 
@@ -231,8 +231,8 @@ def select_option(message, chooser):
         step = divmod(counter.value, len(choices))[1]
 
         text = '\n'.join(choices[max(0, step-int(screen_height/2)):step])
-        (text_width, text_height) = scr.oldfont.getsize(text)
-        scr.show_text(text, loc=(x_loc, y_loc), font=scr.oldfont, force=False)
+        (text_width, text_height) = scr.smallfont.getsize(text)
+        scr.show_text(text, loc=(x_loc, y_loc), font=scr.smallfont, force=False)
         y_loc = y_loc + text_height*(1+text.count('\n'))
 
         if len(choices[step]) > screen_width:
@@ -244,8 +244,8 @@ def select_option(message, chooser):
         y_loc = y_loc + text_height
 
         text = '\n'.join(choices[step+1:min(step+screen_height, len(choices))])
-        (text_width, text_height) = scr.oldfont.getsize(text)
-        scr.show_text(text, loc=(x_loc, y_loc), font=scr.oldfont, force=True)
+        (text_width, text_height) = scr.smallfont.getsize(text)
+        scr.show_text(text, loc=(x_loc, y_loc), font=scr.smallfont, force=True)
 
         sleep(0.01)
     select_event.clear()
@@ -370,6 +370,7 @@ def get_wifi_choices():
     #raw = subprocess.check_output(cmd,shell=True)
     choices = [x.lstrip().replace('ESSID:', '').replace('"', '') for x in raw.decode().split('\n')]
     choices = [x for x in choices if bool(re.search(r'[a-z,0-9]', x, re.IGNORECASE))]
+    choices = sorted(choices, key=str.casefold)
     choices = choices + ['HIDDEN_WIFI']
     logger.info(F"Wifi Choices {choices}")
     return choices
@@ -432,6 +433,9 @@ def get_wifi_params():
     if country_code == 'other':
         country_code = select_chars("2 Letter\ncountry code\nSelect. Stop to end", character_set=string.printable[36:62])
     extra_dict['country'] = country_code
+    scr.show_text("scanning networks\nPress rewind\nat any time\nto re-scan",
+                  font=scr.smallfont, color=(0, 255, 255), force=True, clear=True)
+    sleep(1)
     wifi = select_option("Select Wifi Name\nTurn Year, Select", get_wifi_choices)
     if wifi == 'HIDDEN_WIFI':
         wifi = select_chars("Input Wifi Name\nSelect. Stop to end")
@@ -451,10 +455,10 @@ def get_wifi_params():
 
 def main():
     try:
-        scr.show_text("To force attempt\nto reconnect wifi\npress rewind now", font=scr.smallfont, force=True, clear=True)
+        scr.show_text("\n Welcome", color=(0, 0, 255), force=True, clear=True)
         reconnect = rewind_event.wait(0.2*parms.sleep_time)
         rewind_event.clear()
-
+        scr.show_text(" . . . . ", font=scr.font, force=True, clear=True)
         connected = wifi_connected()
 
         if parms.test or reconnect or not connected:
@@ -463,11 +467,10 @@ def main():
             except:
                 logger.info("Failed to save knob sense...continuing")
         eth_mac_address = get_mac_address()
-        scr.show_text(F"Connect wifi", clear=True)
-        scr.show_text(F"MAC addresses\neth0\n{eth_mac_address}", loc=(0, 30), color=(0, 255, 255), font=scr.smallfont, force=True)
-        sleep(3)
+        scr.show_text(F"MAC addresses\neth0\n{eth_mac_address}", color=(0, 255, 255), font=scr.smallfont, force=True, clear=True)
+        sleep(1)
         if parms.test or reconnect or not connected:
-            scr.show_text("Connecting Wifi", font=scr.smallfont, force=True, clear=True)
+            #scr.show_text("Connecting Wifi", font=scr.smallfont, force=True, clear=True)
             wifi, passkey, extra_dict = get_wifi_params()
             scr.show_text(F"wifi:\n{wifi}\npasskey:\n{passkey}", loc=(0, 0), color=(255, 255, 255), font=scr.oldfont, force=True, clear=True)
             update_wpa_conf(parms.wpa_path, wifi, passkey, extra_dict)
@@ -489,7 +492,7 @@ def main():
         scr.show_text(F"Wifi connected\n{ip}", font=scr.smallfont, force=True, clear=True)
         exit_success(sleeptime=0.5*parms.sleep_time)
     else:
-        scr.show_text("Wifi connection\nfailed\n\nTry rebooting", font=scr.smallfont, force=True, clear=True)
+        scr.show_text("Wifi connection\nfailed\n\nRebooting", font=scr.smallfont, force=True, clear=True)
         cmd = "sudo reboot"
         os.system(cmd)
         sys.exit(-1)
