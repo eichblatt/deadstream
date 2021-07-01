@@ -373,7 +373,7 @@ def stop_button_longpress(button, state):
         scr.clear()
         logfile = os.path.join(os.getenv('HOME'), 'update.log')
         #cmd = F"nohup {GD.BIN_DIR}/update.sh > {logfile} &"
-        cmd = "sudo service update_tm start"
+        cmd = "sudo service update start"
         os.system(cmd)
         # subprocess.run(cmd)
 
