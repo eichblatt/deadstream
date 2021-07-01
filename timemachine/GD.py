@@ -298,7 +298,7 @@ class GDArchive:
         self.collection_name = collection_name
         self.idpath = os.path.join(self.dbpath, f'{collection_name}_ids.json')
         #self.idpath_pkl = os.path.join(self.dbpath, f'{collection_name}_ids.pkl')
-        self.set_data = GDSet()
+        self.set_data = GDSet(self.collection_name)
         self.downloader = (TapeDownloader if sync else AsyncTapeDownloader)(url, collection_name)
         self.tapes = self.load_tapes(reload_ids)
         self.tape_dates = self.get_tape_dates()
@@ -622,8 +622,12 @@ class GDTrack:
 class GDSet:
     """ Set Information from a Grateful Dead date """
 
-    def __init__(self):
+    def __init__(self, collection_name):
+        self.collection_name = collection_name
         set_data = {}
+        if self.collection_name != 'GratefulDead':
+            self.set_data = set_data
+            return
         prevsong = None
         set_breaks = pkg_resources.resource_stream('timemachine.metadata', 'set_breaks.csv')
         utf8_reader = codecs.getreader("utf-8")
