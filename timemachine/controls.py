@@ -1,7 +1,23 @@
 #!/usr/bin/python3
+"""
+    Grateful Dead Time Machine -- copyright 2021 Steve Eichblatt
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <https://www.gnu.org/licenses/>.
+"""
 import datetime
 import functools
 import logging
+import os
 from time import sleep
 from threading import BoundedSemaphore
 
@@ -12,12 +28,15 @@ from adafruit_rgb_display import color565
 from gpiozero import Button, LED, RotaryEncoder
 from PIL import Image, ImageDraw, ImageFont
 
-from . import config
 import pkg_resources
+from timemachine import config
+
 
 logging.basicConfig(format='%(asctime)s.%(msecs)03d %(levelname)s: %(name)s %(message)s', level=logging.DEBUG, datefmt='%Y-%m-%d %H:%M:%S')
 logger = logging.getLogger(__name__)
-print(F"Name of controls logger is {__name__}")
+
+ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
+FONTS_DIR = os.path.join(ROOT_DIR, 'fonts')
 
 screen_semaphore = BoundedSemaphore(1)
 state_semaphore = BoundedSemaphore(1)
@@ -163,13 +182,20 @@ class screen:
             width, height = self.disp.width, self.disp.height
         self.width, self.height = width, height
         logger.debug(F" ---> disp {self.disp.width},{self.disp.height}")
-        self.boldfont = ImageFont.truetype(pkg_resources.resource_filename("timemachine", "DejaVuSansMono-Bold.ttf"), 33)
-        self.boldsmall = ImageFont.truetype(pkg_resources.resource_filename("timemachine", "DejaVuSansMono-Bold.ttf"), 22)
-        self.font = ImageFont.truetype(pkg_resources.resource_filename("timemachine", "ariallgt.ttf"), 30)
-        self.smallfont = ImageFont.truetype(pkg_resources.resource_filename("timemachine", "ariallgt.ttf"), 20)
-        self.oldfont = ImageFont.truetype(pkg_resources.resource_filename("timemachine", "FreeMono.ttf"), 20)
-        self.largefont = ImageFont.truetype(pkg_resources.resource_filename("timemachine", "FreeMono.ttf"), 30)
-        self.hugefont = ImageFont.truetype(pkg_resources.resource_filename("timemachine", "FreeMono.ttf"), 40)
+        self.boldfont = ImageFont.truetype(pkg_resources.resource_filename("timemachine.fonts", "DejaVuSansMono-Bold.ttf"), 33)
+        self.boldsmall = ImageFont.truetype(pkg_resources.resource_filename("timemachine.fonts", "DejaVuSansMono-Bold.ttf"), 22)
+        self.font = ImageFont.truetype(pkg_resources.resource_filename("timemachine.fonts", "ariallgt.ttf"), 30)
+        self.smallfont = ImageFont.truetype(pkg_resources.resource_filename("timemachine.fonts", "ariallgt.ttf"), 20)
+        self.oldfont = ImageFont.truetype(pkg_resources.resource_filename("timemachine.fonts", "FreeMono.ttf"), 20)
+        self.largefont = ImageFont.truetype(pkg_resources.resource_filename("timemachine.fonts", "FreeMono.ttf"), 30)
+        self.hugefont = ImageFont.truetype(pkg_resources.resource_filename("timemachine.fonts",  "FreeMono.ttf"), 40)
+        #self.boldfont = ImageFont.truetype(os.path.join(FONTS_DIR, "DejaVuSansMono-Bold.ttf"), 33)
+        #self.boldsmall = ImageFont.truetype(os.path.join(FONTS_DIR, "DejaVuSansMono-Bold.ttf"), 22)
+        #self.font = ImageFont.truetype(os.path.join(FONTS_DIR, "ariallgt.ttf"), 30)
+        #self.smallfont = ImageFont.truetype(os.path.join(FONTS_DIR, "ariallgt.ttf"), 20)
+        #self.oldfont = ImageFont.truetype(os.path.join(FONTS_DIR, "FreeMono.ttf"), 20)
+        #self.largefont = ImageFont.truetype(os.path.join(FONTS_DIR, "FreeMono.ttf"), 30)
+        #self.hugefont = ImageFont.truetype(os.path.join(FONTS_DIR,  "FreeMono.ttf"), 40)
 
         self.image = Image.new("RGB", (width, height))
         self.draw = ImageDraw.Draw(self.image)       # draw using this object. Display image when complete.
@@ -272,7 +298,7 @@ class screen:
         self.clear_area(self.staged_date_bbox)
         month = str(date.month).rjust(2)
         day = str(date.day).rjust(2)
-        year = str(divmod(date.year, 100)[1]).rjust(2)
+        year = str(divmod(date.year, 100)[1]).rjust(2, '0')
         text = month + '-' + day + '-' + year
         logger.debug(F"staged date string {text}")
         self.show_text(text, self.staged_date_bbox.origin(), self.boldfont, color=color, force=force)

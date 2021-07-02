@@ -1,10 +1,26 @@
 #!/usr/bin/python3
+"""
+    Grateful Dead Time Machine -- copyright 2021 Steve Eichblatt
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <https://www.gnu.org/licenses/>.
+"""
 import datetime
 import json
 import logging
 import optparse
 import os
 import random
+import re
 import subprocess
 import threading
 import sys
@@ -28,7 +44,7 @@ parser.add_option('--dbpath',
                   help="path to database [default %default]")
 parser.add_option('--state_path',
                   dest='state_path',
-                  default=os.path.join(GD.ROOT_DIR, 'state.json'),
+                  default=os.path.join(GD.ROOT_DIR, 'metadata/state.json'),
                   help="path to state [default %default]")
 parser.add_option('--options_path',
                   dest='options_path',
@@ -106,6 +122,7 @@ def load_saved_state(state):
     state_orig = state
     try:
         current = state.get_current()
+        # if not os.path.exists(parms.state_path):
         f = open(parms.state_path, 'r')
         loaded_state = json.loads(f.read())
         fields_to_load = [
@@ -372,8 +389,7 @@ def stop_button_longpress(button, state):
     if button.is_held:
         scr.clear()
         logfile = os.path.join(os.getenv('HOME'), 'update.log')
-        #cmd = F"nohup {GD.BIN_DIR}/update.sh > {logfile} &"
-        cmd = "sudo service update_tm start"
+        cmd = "sudo service update start"
         os.system(cmd)
         # subprocess.run(cmd)
 
@@ -564,12 +580,19 @@ def refresh_venue(state, idle_second_hand, refresh_times, venue):
     else:
         tape_id = venue
 
+    show_collection_name = tape_id == venue  # This is an arbitrary condition...fix!
+    id_color = (0, 255, 255)
+
     if idle_second_hand < refresh_times[5]:
         display_string = venue
-        id_color = (0, 255, 255)
+    elif show_collection_name and idle_second_hand < refresh_times[7]:
+        display_string = state.date_reader.archive.collection_name
     else:
         display_string = tape_id
         id_color = tape_color
+
+    display_string = re.sub(r'\d{2,4}-\d\d-\d\d\.*', '~', display_string)
+    #logger.debug(F"display_string is {display_string}")
 
     if not config.optd['SCROLL_VENUE']:
         scr.show_venue(display_string, color=id_color)
@@ -577,19 +600,19 @@ def refresh_venue(state, idle_second_hand, refresh_times, venue):
 
     if idle_second_hand in refresh_times[:2]:
         scr.show_venue(display_string, color=id_color)
-    elif idle_second_hand in [refresh_times[2], refresh_times[6]]:
+    elif idle_second_hand in [refresh_times[2], refresh_times[8]]:
         if len(display_string) > 12:
             scr.show_venue(display_string[13:], color=id_color)
         else:
             scr.show_venue(display_string, color=id_color)
-    elif idle_second_hand in [refresh_times[3], refresh_times[7]]:
+    elif idle_second_hand in [refresh_times[3], refresh_times[9]]:
         if len(display_string) > 24:
             scr.show_venue(display_string[25:], color=id_color)
         elif len(display_string) > 12:
             scr.show_venue(display_string[11:], color=id_color)
         else:
             scr.show_venue(display_string, color=id_color)
-    elif idle_second_hand == refresh_times[4]:
+    elif idle_second_hand == refresh_times[6]:
         if len(display_string) > 36:
             scr.show_venue(display_string[37:], color=id_color)
         elif len(display_string) > 24:
@@ -598,7 +621,7 @@ def refresh_venue(state, idle_second_hand, refresh_times, venue):
             scr.show_venue(display_string[13:], color=id_color)
         else:
             scr.show_venue(display_string, color=id_color)
-    elif idle_second_hand == refresh_times[5]:
+    elif idle_second_hand == refresh_times[7]:
         scr.show_venue(display_string, color=id_color)
 
 
@@ -647,8 +670,8 @@ def event_loop(state):
     q_counter = False
     n_timer = 0
     last_idle_second_hand = None
-    refresh_times = [4, 9, 14, 19, 24, 29, 34, 39]
-    max_second_hand = 40
+    refresh_times = [4, 9, 14, 19, 24, 29, 34, 39, 44, 49]
+    max_second_hand = 50
     clear_stagedate = False
     scr.update_now = False
     free_event.set()
@@ -782,7 +805,7 @@ message = "Time\n  Machine\n   Loading..."
 scr.show_text(message, color=(0, 255, 255), force=False, clear=True)
 scr.show_text(F"{ip_address}", loc=(0, 100), font=scr.smallfont, color=(255, 255, 255))
 
-archive = GD.GDArchive(parms.dbpath, collection_name=config.optd['COLLECTION'], sync=True)
+archive = GD.GDArchive(parms.dbpath, collection_name=config.optd['COLLECTION'])
 player = GD.GDPlayer()
 
 
@@ -813,9 +836,13 @@ num_years = max(year_list) - min(year_list)
 m = retry_call(RotaryEncoder, config.month_pins[knob_sense & 1], config.month_pins[~knob_sense & 1], max_steps=0, threshold_steps=(1, 12))
 d = retry_call(RotaryEncoder, config.day_pins[(knob_sense >> 1) & 1], config.day_pins[~(knob_sense >> 1) & 1], max_steps=0, threshold_steps=(1, 31))
 y = retry_call(RotaryEncoder, config.year_pins[(knob_sense >> 2) & 1], config.year_pins[~(knob_sense >> 2) & 1], max_steps=0, threshold_steps=(0, num_years))
-m.steps = 8
-d.steps = 13
-y.steps = min(1975 - 1965, num_years)
+m.steps = 1
+d.steps = 1
+y.steps = 0
+if archive.collection_name == "GratefulDead":
+    m.steps = 8
+    d.steps = 13
+    y.steps = min(1975 - 1965, num_years)
 date_reader = controls.date_knob_reader(y, m, d, archive)
 state = controls.state(date_reader, player)
 m.when_rotated = lambda x: twist_knob(m, "month", date_reader)
@@ -856,19 +883,26 @@ y_button.when_held = lambda button: year_button_longpress(button, state)
 
 scr.clear_area(controls.Bbox(0, 0, 160, 100))
 scr.show_text("Powered by\n archive.org", color=(0, 255, 255), force=True)
-#scr.show_text(F"{ip_address}", loc=(0,100), font=scr.smallfont, color=(255, 255, 255))
+scr.show_text(F"{archive.collection_name}", font=scr.smallfont, loc=(0, 70), force=True)
 
 if config.optd['RELOAD_STATE_ON_START']:
     load_saved_state(state)
 
 eloop = threading.Thread(target=event_loop, args=[state])
 
+
+def main():
+    eloop.run()
+
+
+def main_test_update():
+    test_update(state)
+
+
 for k in parms.__dict__.keys():
     logger.info(F"{k:20s} : {parms.__dict__[k]}")
 
 if __name__ == "__main__" and parms.test_update:
-    test_update(state)
-    #eloop = threading.Thread(target=update_loop, args=[state])
-    # eloop.run()
+    main_test_update()
 elif __name__ == "__main__" and parms.debug == 0:
-    eloop.run()
+    main()

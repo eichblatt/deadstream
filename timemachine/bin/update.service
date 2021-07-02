@@ -4,6 +4,6 @@ Requires=connect_network.service
 [Service]
 Type=simple
 User=deadhead
-ExecStart=/home/deadhead/deadstream/bin/update.sh
+ExecStart=/bin/bash -c "source /home/deadhead/timemachine/bin/activate && update.sh"
 [Install]
 WantedBy=multi-user.target
