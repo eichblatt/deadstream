@@ -394,6 +394,7 @@ def stop_button_longpress(button, state):
         stop_event.set()
         scr.show_text("Updating\nCode\n\nStand By...", force=True)
         sleep(25)
+        exit()
         # subprocess.run(cmd)
 
 
