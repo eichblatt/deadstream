@@ -31,9 +31,9 @@ cleanup_old_envs () {
    echo "files=`find . -maxdepth 1 -mindepth 1 -name env_\* -a -not -name $current_env -printf '%f '`"
    files=`find . -maxdepth 1 -mindepth 1 -name env_\* -a -not -name $current_env -printf "%f "`
    echo "files are $files"
-   files2delete=`ls -1trd $files | head -n -6`
+   files2delete=`ls -1trd $files | head -n -8`
    echo "files2delete are $files2delete"
-   files2delete=`ls -1trd $files | head -n -6 | xargs -d '\n' rm -rf --`
+   files2delete=`ls -1trd $files | head -n -8 | xargs -d '\n' rm -rf --`
    echo "Done cleaning up old envs"
 }
 
