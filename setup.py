@@ -43,6 +43,6 @@ setup(
     scripts=['timemachine/bin/services.sh', 'timemachine/bin/update.sh', 'timemachine/bin/board_version.sh',
              'timemachine/bin/timemachine.service', 'timemachine/bin/update.service', 'timemachine/bin/connect_network.service',
              'timemachine/bin/serve_options.service'],
-    license_files=('LICENSE.txt',),
+    license_files=('LICENSE',),
     license='GNU General Public License v3 (GPLv3)'
 )
