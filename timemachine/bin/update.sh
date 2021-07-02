@@ -66,11 +66,3 @@ restore_services
 cleanup_old_envs
 
 exit $stat
-
-updated_code=`git status -uno | grep "up to date" | wc -l`
-if [ $updated_code == 1 ]; then
-   echo "No new code. Not updating "
-   date
-   restore_services
-   exit 0
-fi
