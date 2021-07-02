@@ -4,7 +4,7 @@ echo "home is $HOME"
 echo "Updating "
 date
 
-git_branch=dev    # Make this a command-line option!
+git_branch=main    # Make this a command-line option!
 
 system () {
    command=$1
