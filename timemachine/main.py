@@ -391,6 +391,7 @@ def stop_button_longpress(button, state):
         logfile = os.path.join(os.getenv('HOME'), 'update.log')
         cmd = "sudo service update start"
         os.system(cmd)
+        sleep(25)
         # subprocess.run(cmd)
 
 
