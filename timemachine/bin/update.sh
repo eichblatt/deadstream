@@ -57,7 +57,7 @@ echo "status of test command: $stat"
 
 system "cd $HOME" # NOTE: we should already be here.
 if [ $stat == 0 ]; then
-   system "rm timemachine && ln -s $env_name timemachine"
+   system "ln -sfn $env_name timemachine"
 else
    system "rm -rf $env_name"
 fi
