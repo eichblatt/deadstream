@@ -25,10 +25,15 @@ restore_services () {
 
 cleanup_old_envs () {
    echo "Cleaning up old envs ... "
-   echo "ls -1trd $HOME/env_* | head -n -8"
-   ls -1trd $HOME/env_* | head -n -8
-   echo "ls -1trd $HOME/env* | head -n -8 | xargs -d '\n' rm -f --"
-   ls -1trd $HOME/env_* | head -n -8 | xargs -d '\n' rm -f --
+   system "cd $HOME"
+   echo "current_env=$(basename `readlink -f timemachine`)"
+   current_env=$(basename `readlink -f timemachine`)
+   echo "files=`find . -maxdepth 1 -mindepth 1 -name env_\* -a -not -name $current_env -printf '%f '`"
+   files=`find . -maxdepth 1 -mindepth 1 -name env_\* -a -not -name $current_env -printf "%f "`
+   echo "files are $files"
+   files2delete=`ls -1trd $files | head -n -8`
+   echo "files2delete are $files2delete"
+   files2delete=`ls -1trd $files | head -n -8 | xargs -d '\n' rm -rf --`
    echo "Done cleaning up old envs"
 }
 
