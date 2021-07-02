@@ -20,6 +20,7 @@ import logging
 import optparse
 import os
 import random
+import re
 import subprocess
 import threading
 import sys
@@ -579,12 +580,19 @@ def refresh_venue(state, idle_second_hand, refresh_times, venue):
     else:
         tape_id = venue
 
+    show_collection_name = tape_id == venue  # This is an arbitrary condition...fix!
+    id_color = (0, 255, 255)
+
     if idle_second_hand < refresh_times[5]:
         display_string = venue
-        id_color = (0, 255, 255)
+    elif show_collection_name and idle_second_hand < refresh_times[7]:
+        display_string = state.date_reader.archive.collection_name
     else:
         display_string = tape_id
         id_color = tape_color
+
+    display_string = re.sub(r'\d{2,4}-\d\d-\d\d\.*', '~', display_string)
+    #logger.debug(F"display_string is {display_string}")
 
     if not config.optd['SCROLL_VENUE']:
         scr.show_venue(display_string, color=id_color)
@@ -592,19 +600,19 @@ def refresh_venue(state, idle_second_hand, refresh_times, venue):
 
     if idle_second_hand in refresh_times[:2]:
         scr.show_venue(display_string, color=id_color)
-    elif idle_second_hand in [refresh_times[2], refresh_times[6]]:
+    elif idle_second_hand in [refresh_times[2], refresh_times[8]]:
         if len(display_string) > 12:
             scr.show_venue(display_string[13:], color=id_color)
         else:
             scr.show_venue(display_string, color=id_color)
-    elif idle_second_hand in [refresh_times[3], refresh_times[7]]:
+    elif idle_second_hand in [refresh_times[3], refresh_times[9]]:
         if len(display_string) > 24:
             scr.show_venue(display_string[25:], color=id_color)
         elif len(display_string) > 12:
             scr.show_venue(display_string[11:], color=id_color)
         else:
             scr.show_venue(display_string, color=id_color)
-    elif idle_second_hand == refresh_times[4]:
+    elif idle_second_hand == refresh_times[6]:
         if len(display_string) > 36:
             scr.show_venue(display_string[37:], color=id_color)
         elif len(display_string) > 24:
@@ -613,7 +621,7 @@ def refresh_venue(state, idle_second_hand, refresh_times, venue):
             scr.show_venue(display_string[13:], color=id_color)
         else:
             scr.show_venue(display_string, color=id_color)
-    elif idle_second_hand == refresh_times[5]:
+    elif idle_second_hand == refresh_times[7]:
         scr.show_venue(display_string, color=id_color)
 
 
@@ -662,8 +670,8 @@ def event_loop(state):
     q_counter = False
     n_timer = 0
     last_idle_second_hand = None
-    refresh_times = [4, 9, 14, 19, 24, 29, 34, 39]
-    max_second_hand = 40
+    refresh_times = [4, 9, 14, 19, 24, 29, 34, 39, 44, 49]
+    max_second_hand = 50
     clear_stagedate = False
     scr.update_now = False
     free_event.set()
@@ -875,7 +883,7 @@ y_button.when_held = lambda button: year_button_longpress(button, state)
 
 scr.clear_area(controls.Bbox(0, 0, 160, 100))
 scr.show_text("Powered by\n archive.org", color=(0, 255, 255), force=True)
-#scr.show_text(F"{ip_address}", loc=(0,100), font=scr.smallfont, color=(255, 255, 255))
+scr.show_text(F"{archive.collection_name}", font=scr.smallfont, loc=(0, 70), force=True)
 
 if config.optd['RELOAD_STATE_ON_START']:
     load_saved_state(state)
