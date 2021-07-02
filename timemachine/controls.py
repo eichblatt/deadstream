@@ -298,7 +298,7 @@ class screen:
         self.clear_area(self.staged_date_bbox)
         month = str(date.month).rjust(2)
         day = str(date.day).rjust(2)
-        year = str(divmod(date.year, 100)[1]).rjust(2)
+        year = str(divmod(date.year, 100)[1]).rjust(2, '0')
         text = month + '-' + day + '-' + year
         logger.debug(F"staged date string {text}")
         self.show_text(text, self.staged_date_bbox.origin(), self.boldfont, color=color, force=force)
