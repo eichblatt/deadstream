@@ -391,6 +391,8 @@ def stop_button_longpress(button, state):
         logfile = os.path.join(os.getenv('HOME'), 'update.log')
         cmd = "sudo service update start"
         os.system(cmd)
+        stop_event.set()
+        scr.show_text("Updating\nCode\n\nStand By...", force=True)
         sleep(25)
         # subprocess.run(cmd)
 
@@ -894,6 +896,7 @@ eloop = threading.Thread(target=event_loop, args=[state])
 
 def main():
     eloop.run()
+    exit()
 
 
 def main_test_update():
