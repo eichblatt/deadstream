@@ -2,6 +2,7 @@
 
 tox
 pytest
+aiofiles
 aiohttp
 python-mpv
 cherrypy

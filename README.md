@@ -1,8 +1,9 @@
 # The Grateful Dead Time Machine
 
-A raspberry pi controller with year, month, date knobs to stream any Grateful Dead show on archive.org.
+A raspberry pi controller with year, month, date knobs to stream shows from audio collections on archive.org.
 
-It's also a simple, command-line-interface to the Greatful Dead collection on archive.org, which can be used to see what's available and play a given tape.
+It also contains a simple, command-line-interface to the collections on archive.org, which can be used to see what's available and play a given tape.
+
 
 A Simple example for the python script:
 
@@ -10,7 +11,7 @@ A Simple example for the python script:
 import os
 from timemachine import GD
 
-metadata_path = os.path.join(os.getenv('HOME'),'projects/deadstream/timemachine/metadata')
+metadata_path = os.path.join(GD.ROOT_DIR,'metadata')
 a = GD.GDArchive(metadata_path)
 
 #dates = a.dates  # shows a list of all dates on which there are tapes.
@@ -36,19 +37,19 @@ player.stop()
 # Install the module
 
 ```
-pip install .
+pip3 install .
 ```
 
 or
 
 ```
-python setup.py install
+python3 setup.py install
 ```
 
 # Uninstall the module
 
 ```
-pip uninstall deadstream
+pip3 uninstall timemachine
 ```
 
 # Build without installing
@@ -56,7 +57,7 @@ pip uninstall deadstream
 This will put the module in `build/lib`.
 
 ```
-python setup.py build
+python3 setup.py build
 ```
 
 # Run unit tests
@@ -64,13 +65,13 @@ python setup.py build
 To be able to run unit tests, install the requirements.
 
 ```
-pip install -r requirements
+pip3 install -r requirements
 ```
 
 ## Run tests with pytest
 
 ```
-python -m pytest
+python3 -m pytest
 ```
 
 ## Run tests with tox
@@ -83,3 +84,7 @@ tox
 
 ```
 ## Upgrading the software
+
+## About the code
+
+The code was developed by Steve Eichblatt, with key guidance from Derek Wisong.
