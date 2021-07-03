@@ -25,7 +25,11 @@ system () {
 
 
 echo "Removing previous git folders"
-system "sudo rm -rf $media_folder/rootfs/home/deadhead/deadstream_prev*"
+system "cd $media_folder/rootfs/home/deadhead"
+current_env=$(basename `readlink -f timemachine`)
+files=`find . -maxdepth 1 -mindepth 1 -name env_\* -a -not -name $current_env -printf "%f "`
+system "sudo rm -rf $files"
+
 
 echo "Removing wpa_supplicant"
 system "sudo rm $media_folder/rootfs/etc/wpa_supplicant/wpa_supplicant.conf*"
