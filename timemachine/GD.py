@@ -395,7 +395,9 @@ class GDTape:
                 setattr(self, k, v)
         self.url_metadata = 'https://archive.org/metadata/' + self.identifier
         self.url_details = 'https://archive.org/details/' + self.identifier
-        self.date = str((datetime.datetime.strptime(raw_json['date'], '%Y-%m-%dT%H:%M:%SZ')).date())
+        if type(self.date) == list:
+            self.date = self.date[0]
+        self.date = str((datetime.datetime.strptime(self.date, '%Y-%m-%dT%H:%M:%SZ')).date())
         self.set_data = set_data.get(self.date)
         if 'avg_rating' in raw_json.keys():
             self.avg_rating = float(self.avg_rating)
