@@ -61,7 +61,7 @@ class BaseTapeDownloader(abc.ABC):
     Use one of the subclasses: TapeDownloader or AsyncTapeDownloader.
     """
 
-    def __init__(self, url="https://archive.org", collection_name="GratefulDead"):
+    def __init__(self, url="https://archive.org", collection_name="etree"):
         self.url = url
         self.collection_name = collection_name
         self.api = f"{self.url}/services/search/v1/scrape"
@@ -282,8 +282,9 @@ class AsyncTapeDownloader(BaseTapeDownloader):
 
 class GDArchive:
     """ The Grateful Dead Collection on Archive.org """
+    #__slots__ = ['dates','collection_name','idpath','set_data','tapes','tape_dates','url','dbpath', 'downloader']
 
-    def __init__(self, dbpath=os.path.join(ROOT_DIR, 'metadata'), url='https://archive.org', reload_ids=False, sync=True, collection_name='GratefulDead'):
+    def __init__(self, dbpath=os.path.join(ROOT_DIR, 'metadata'), url='https://archive.org', reload_ids=False, sync=True, collection_name=['GratefulDead']):
         """Create a new GDArchive.
 
         Parameters:
@@ -292,14 +293,14 @@ class GDArchive:
           url: URL for the internet archive
           reload_ids: If True, force re-download of tape data
           sync: If True use the slower synchronous downloader
+          collection_name: A list of collections from archive.org
         """
         self.url = url
         self.dbpath = dbpath
-        self.collection_name = collection_name
-        self.idpath = os.path.join(self.dbpath, f'{collection_name}_ids.json')
-        #self.idpath_pkl = os.path.join(self.dbpath, f'{collection_name}_ids.pkl')
+        self.collection_name = collection_name if type(collection_name) == list else [collection_name]
+        self.idpath = os.path.join(self.dbpath, 'etree_ids.json')
         self.set_data = GDSet(self.collection_name)
-        self.downloader = (TapeDownloader if sync else AsyncTapeDownloader)(url, collection_name)
+        self.downloader = (TapeDownloader if sync else AsyncTapeDownloader)(url)
         self.tapes = self.load_tapes(reload_ids)
         self.tape_dates = self.get_tape_dates()
         self.dates = sorted(self.tape_dates.keys())
@@ -373,6 +374,7 @@ class GDArchive:
     def load_tapes(self, reload_ids=False):
         if (not reload_ids) and os.path.exists(self.idpath):
             tapes = json.load(open(self.idpath, 'r'))
+            tapes = [t for t in tapes if any(x in self.collection_name for x in t['collection'])]
         else:
             logger.info("Loading Tapes from the Archive...this will take a few minutes")
             #tapes = self.downloader.get_tapes(self.year_list())
@@ -383,6 +385,9 @@ class GDArchive:
 
 class GDTape:
     """ A Grateful Dead Identifier Item -- does not contain tracks """
+    # __slots__ = ['_breaks_added','_playable_formats','dbpath','date','_tracks',
+    #             'identifier', 'avg_rating', 'format', 'collection', 'num_reviews', 'downloads',
+    #             'meta_loaded','url_metadata', 'url_details', 'set_data']
 
     def __init__(self, dbpath, raw_json, set_data):
         self.dbpath = dbpath
@@ -583,6 +588,7 @@ class GDTape:
 
 class GDTrack:
     """ A track from a GDTape recording """
+    #__slots__ = ['files','parent_id','title','track','original','collection']
 
     def __init__(self, tdict, parent_id, break_track=False):
         self.parent_id = parent_id
@@ -627,7 +633,7 @@ class GDSet:
     def __init__(self, collection_name):
         self.collection_name = collection_name
         set_data = {}
-        if self.collection_name != 'GratefulDead':
+        if not 'GratefulDead' in self.collection_name:
             self.set_data = set_data
             return
         prevsong = None
