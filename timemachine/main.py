@@ -801,17 +801,12 @@ except:
 config.PAUSED_AT = datetime.datetime.now()
 config.WOKE_AT = datetime.datetime.now()
 
-# if parms.box == 'v0':
-#    upside_down = True
-# else:
-#    upside_down = False
 scr = controls.screen(upside_down=False)
 ip_address = get_ip()
 message = "Time\n  Machine\n   Loading..."
 scr.show_text(message, color=(0, 255, 255), force=False, clear=True)
 scr.show_text(F"{ip_address}", loc=(0, 100), font=scr.smallfont, color=(255, 255, 255))
 
-config.optd['COLLECTIONS'] = ['RobertHunter', 'DeadAndCompany']
 archive = GD.GDArchive(parms.dbpath, collection_name=config.optd['COLLECTIONS'])
 player = GD.GDPlayer()
 
