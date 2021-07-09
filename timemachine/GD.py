@@ -26,6 +26,7 @@ import json
 import logging
 import math
 import os
+import pickle5 as pickle
 import requests
 import threading
 import time
@@ -53,6 +54,20 @@ BIN_DIR = os.path.join(os.path.dirname(ROOT_DIR), 'bin')
 def retry_call(callable: Callable, *args, **kwargs):
     """Retry a call."""
     return callable(*args, **kwargs)
+
+
+def memoize(f):
+    memo = {}
+
+    def helper(x):
+        if x not in memo:
+            memo[x] = f(x)
+        return memo[x]
+    return helper
+
+
+@memoize
+def to_date(datestring): return datetime.datetime.strptime(datestring, '%Y-%m-%d')
 
 
 class BaseTapeDownloader(abc.ABC):
@@ -298,9 +313,15 @@ class GDArchive:
         self.url = url
         self.dbpath = dbpath
         self.collection_name = collection_name if type(collection_name) == list else [collection_name]
-        self.idpath = os.path.join(self.dbpath, 'etree_ids.json')
+        if len(self.collection_name) == 1:
+            self.idpath = os.path.join(self.dbpath, F'{collection_name[0]}_ids.json')
+            self.idpath_pkl = os.path.join(self.dbpath, F'{collection_name[0]}_ids.pkl')
+            self.downloader = (TapeDownloader if sync else AsyncTapeDownloader)(url, collection_name=collection_name[0])
+        else:
+            self.idpath = os.path.join(self.dbpath, 'etree_ids.json')
+            self.idpath_pkl = os.path.join(self.dbpath, 'etree_ids.pkl')
+            self.downloader = (TapeDownloader if sync else AsyncTapeDownloader)(url)
         self.set_data = GDSet(self.collection_name)
-        self.downloader = (TapeDownloader if sync else AsyncTapeDownloader)(url)
         self.tapes = self.load_tapes(reload_ids)
         self.tape_dates = self.get_tape_dates()
         self.dates = sorted(self.tape_dates.keys())
@@ -313,7 +334,7 @@ class GDArchive:
         return retstr
 
     def year_list(self):
-        return sorted(set([datetime.datetime.strptime(x, '%Y-%m-%d').year for x in self.dates]))
+        return sorted(set([to_date(x).year for x in self.dates]))
 
     def best_tape(self, date):
         if isinstance(date, datetime.date):
@@ -370,9 +391,13 @@ class GDArchive:
     def write_tapes(self, tapes):
         os.makedirs(os.path.dirname(self.idpath), exist_ok=True)
         json.dump(tapes, open(self.idpath, 'w'))
+        pickle.dump(tapes, open(self.idpath_pkl, 'wb'), pickle.HIGHEST_PROTOCOL)
 
     def load_tapes(self, reload_ids=False):
-        if (not reload_ids) and os.path.exists(self.idpath):
+        if (not reload_ids) and os.path.exists(self.idpath_pkl):
+            tapes = pickle.load(open(self.idpath_pkl, 'rb'))
+            tapes = [t for t in tapes if any(x in self.collection_name for x in t['collection'])]
+        elif (not reload_ids) and os.path.exists(self.idpath):
             tapes = json.load(open(self.idpath, 'r'))
             tapes = [t for t in tapes if any(x in self.collection_name for x in t['collection'])]
         else:
@@ -460,7 +485,7 @@ class GDTape:
         if self.meta_loaded:
             return
         self._tracks = []
-        date = datetime.datetime.strptime(self.date, '%Y-%m-%d').date()
+        date = to_date(self.date).date()
         meta_path = os.path.join(self.dbpath, str(date.year), str(date.month), self.identifier+'.json')
         try:     # I used to check if file exists, but it may also be corrupt, so this is safer.
             page_meta = json.load(open(meta_path, 'r'))

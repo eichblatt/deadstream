@@ -1,4 +1,7 @@
 19*
-ids.json
+20*
+*ids.json
 *.mp3
 *.ogg
+*.pkl
+*state.json
