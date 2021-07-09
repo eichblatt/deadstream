@@ -25,6 +25,7 @@ setup(
         'aiofiles',
         'cherrypy',
         'gpiozero',
+        'pickle5',
         'Pillow',
         'pre-commit',
         'python-mpv',
