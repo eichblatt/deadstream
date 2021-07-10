@@ -21,8 +21,6 @@ echo "mpv --volume=60 --really-quiet $HOME/helpontheway.ogg &"
 mpv --volume=60 --really-quiet $HOME/helpontheway.ogg &
 help_on_the_way_pid=$!
 
-exit -1
-
 restore_services () {
    # put the old services back in place.
    echo "services.sh"
