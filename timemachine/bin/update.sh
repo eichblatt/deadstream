@@ -15,6 +15,14 @@ system () {
    $command
 }
 
+echo "[ ! -f $HOME/helpontheway.ogg ] && wget -O $HOME/helpontheway.ogg https://archive.org/download/gd75-08-13.fm.vernon.23661.sbeok.shnf/gd75-08-13d1t02.ogg "
+[ ! -f $HOME/helpontheway.ogg ] && wget -O $HOME/helpontheway.ogg https://archive.org/download/gd75-08-13.fm.vernon.23661.sbeok.shnf/gd75-08-13d1t02.ogg
+echo "mpv --volume=60 --really-quiet $HOME/helpontheway.ogg &"
+mpv --volume=60 --really-quiet $HOME/helpontheway.ogg &
+help_on_the_way_pid=$!
+
+exit -1
+
 restore_services () {
    # put the old services back in place.
    echo "services.sh"
@@ -60,6 +68,7 @@ fi
 system "sudo service timemachine stop"
 system "sudo service serve_options stop"
 
+kill $help_on_the_way_pid
 system "timemachine_test_update"
 stat=$?
 echo "status of test command: $stat"
