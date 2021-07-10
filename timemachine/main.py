@@ -395,7 +395,12 @@ def stop_button_longpress(button, state):
         os.system(cmd)
         stop_event.set()
         scr.show_text("Updating\nCode\n\nStand By...", force=True)
-        sleep(25)
+        tape = state.date_reader.archive.best_tape('1975-08-13')
+        state.player.insert_tape(tape)
+        state.player.pause()
+        state.player.next()
+        state.player.play()
+        sleep(120)
         exit()
         # subprocess.run(cmd)
 
