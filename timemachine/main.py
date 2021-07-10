@@ -579,9 +579,10 @@ def refresh_venue(state, idle_second_hand, refresh_times, venue):
     venue = config.VENUE if config.VENUE else venue
     stream_only = False
     tape_color = (0, 255, 255)
-    if 'tape' in vars(state.player).keys():
-        tape_id = state.player.tape.identifier
-        stream_only = state.player.tape.stream_only()
+    tape = state.player.tape
+    if tape is not None:
+        tape_id = tape.identifier
+        stream_only = tape.stream_only()
         tape_color = (255, 255, 255) if stream_only else (0, 0, 255)
     else:
         tape_id = venue
@@ -591,8 +592,8 @@ def refresh_venue(state, idle_second_hand, refresh_times, venue):
 
     if idle_second_hand < refresh_times[5]:
         display_string = venue
-    elif show_collection_name and idle_second_hand < refresh_times[7]:
-        collection = frozenset(state.date_reader.archive.collection_name) & frozenset(state.player.tape.collection)
+    elif show_collection_name and idle_second_hand < refresh_times[7] and tape is not None:
+        collection = frozenset(state.date_reader.archive.collection_name) & frozenset(tape.collection)
         display_string = list(collection)[0]
     else:
         display_string = tape_id

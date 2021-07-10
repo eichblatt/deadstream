@@ -5,6 +5,9 @@ echo "Updating "
 date
 
 git_branch=main    # Make this a command-line option!
+if [ $HOSTNAME == deadstream2 ]; then
+   git_branch=dev    # Make this a command-line option!
+fi
 
 system () {
    command=$1

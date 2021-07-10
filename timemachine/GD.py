@@ -753,6 +753,7 @@ class GDPlayer(MPV):
         audio_device = self.default_audio_device
         self._set_property('audio-device', audio_device)
         self.download_when_possible = False
+        self.tape = None
         if tape is not None:
             self.insert_tape(tape)
 
