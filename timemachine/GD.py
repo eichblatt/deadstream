@@ -26,6 +26,7 @@ import json
 import logging
 import math
 import os
+import pickle5 as pickle
 import requests
 import threading
 import time
@@ -55,13 +56,27 @@ def retry_call(callable: Callable, *args, **kwargs):
     return callable(*args, **kwargs)
 
 
+def memoize(f):
+    memo = {}
+
+    def helper(x):
+        if x not in memo:
+            memo[x] = f(x)
+        return memo[x]
+    return helper
+
+
+@memoize
+def to_date(datestring): return datetime.datetime.strptime(datestring, '%Y-%m-%d')
+
+
 class BaseTapeDownloader(abc.ABC):
     """Abstract base class for a Grateful Dead tape downloader.
 
     Use one of the subclasses: TapeDownloader or AsyncTapeDownloader.
     """
 
-    def __init__(self, url="https://archive.org", collection_name="GratefulDead"):
+    def __init__(self, url="https://archive.org", collection_name="etree"):
         self.url = url
         self.collection_name = collection_name
         self.api = f"{self.url}/services/search/v1/scrape"
@@ -282,8 +297,9 @@ class AsyncTapeDownloader(BaseTapeDownloader):
 
 class GDArchive:
     """ The Grateful Dead Collection on Archive.org """
+    #__slots__ = ['dates','collection_name','idpath','set_data','tapes','tape_dates','url','dbpath', 'downloader']
 
-    def __init__(self, dbpath=os.path.join(ROOT_DIR, 'metadata'), url='https://archive.org', reload_ids=False, sync=True, collection_name='GratefulDead'):
+    def __init__(self, dbpath=os.path.join(ROOT_DIR, 'metadata'), url='https://archive.org', reload_ids=False, sync=True, collection_name=['GratefulDead']):
         """Create a new GDArchive.
 
         Parameters:
@@ -292,14 +308,20 @@ class GDArchive:
           url: URL for the internet archive
           reload_ids: If True, force re-download of tape data
           sync: If True use the slower synchronous downloader
+          collection_name: A list of collections from archive.org
         """
         self.url = url
         self.dbpath = dbpath
-        self.collection_name = collection_name
-        self.idpath = os.path.join(self.dbpath, f'{collection_name}_ids.json')
-        #self.idpath_pkl = os.path.join(self.dbpath, f'{collection_name}_ids.pkl')
+        self.collection_name = collection_name if type(collection_name) == list else [collection_name]
+        if len(self.collection_name) == 1:
+            self.idpath = os.path.join(self.dbpath, F'{collection_name[0]}_ids.json')
+            self.idpath_pkl = os.path.join(self.dbpath, F'{collection_name[0]}_ids.pkl')
+            self.downloader = (TapeDownloader if sync else AsyncTapeDownloader)(url, collection_name=collection_name[0])
+        else:
+            self.idpath = os.path.join(self.dbpath, 'etree_ids.json')
+            self.idpath_pkl = os.path.join(self.dbpath, 'etree_ids.pkl')
+            self.downloader = (TapeDownloader if sync else AsyncTapeDownloader)(url)
         self.set_data = GDSet(self.collection_name)
-        self.downloader = (TapeDownloader if sync else AsyncTapeDownloader)(url, collection_name)
         self.tapes = self.load_tapes(reload_ids)
         self.tape_dates = self.get_tape_dates()
         self.dates = sorted(self.tape_dates.keys())
@@ -312,7 +334,7 @@ class GDArchive:
         return retstr
 
     def year_list(self):
-        return sorted(set([datetime.datetime.strptime(x, '%Y-%m-%d').year for x in self.dates]))
+        return sorted(set([to_date(x).year for x in self.dates]))
 
     def best_tape(self, date):
         if isinstance(date, datetime.date):
@@ -369,10 +391,15 @@ class GDArchive:
     def write_tapes(self, tapes):
         os.makedirs(os.path.dirname(self.idpath), exist_ok=True)
         json.dump(tapes, open(self.idpath, 'w'))
+        pickle.dump(tapes, open(self.idpath_pkl, 'wb'), pickle.HIGHEST_PROTOCOL)
 
     def load_tapes(self, reload_ids=False):
-        if (not reload_ids) and os.path.exists(self.idpath):
+        if (not reload_ids) and os.path.exists(self.idpath_pkl):
+            tapes = pickle.load(open(self.idpath_pkl, 'rb'))
+            tapes = [t for t in tapes if any(x in self.collection_name for x in t['collection'])]
+        elif (not reload_ids) and os.path.exists(self.idpath):
             tapes = json.load(open(self.idpath, 'r'))
+            tapes = [t for t in tapes if any(x in self.collection_name for x in t['collection'])]
         else:
             logger.info("Loading Tapes from the Archive...this will take a few minutes")
             #tapes = self.downloader.get_tapes(self.year_list())
@@ -383,6 +410,9 @@ class GDArchive:
 
 class GDTape:
     """ A Grateful Dead Identifier Item -- does not contain tracks """
+    # __slots__ = ['_breaks_added','_playable_formats','dbpath','date','_tracks',
+    #             'identifier', 'avg_rating', 'format', 'collection', 'num_reviews', 'downloads',
+    #             'meta_loaded','url_metadata', 'url_details', 'set_data']
 
     def __init__(self, dbpath, raw_json, set_data):
         self.dbpath = dbpath
@@ -455,7 +485,7 @@ class GDTape:
         if self.meta_loaded:
             return
         self._tracks = []
-        date = datetime.datetime.strptime(self.date, '%Y-%m-%d').date()
+        date = to_date(self.date).date()
         meta_path = os.path.join(self.dbpath, str(date.year), str(date.month), self.identifier+'.json')
         try:     # I used to check if file exists, but it may also be corrupt, so this is safer.
             page_meta = json.load(open(meta_path, 'r'))
@@ -583,6 +613,7 @@ class GDTape:
 
 class GDTrack:
     """ A track from a GDTape recording """
+    #__slots__ = ['files','parent_id','title','track','original','collection']
 
     def __init__(self, tdict, parent_id, break_track=False):
         self.parent_id = parent_id
@@ -627,7 +658,7 @@ class GDSet:
     def __init__(self, collection_name):
         self.collection_name = collection_name
         set_data = {}
-        if self.collection_name != 'GratefulDead':
+        if not 'GratefulDead' in self.collection_name:
             self.set_data = set_data
             return
         prevsong = None
@@ -722,6 +753,7 @@ class GDPlayer(MPV):
         audio_device = self.default_audio_device
         self._set_property('audio-device', audio_device)
         self.download_when_possible = False
+        self.tape = None
         if tape is not None:
             self.insert_tape(tape)
 

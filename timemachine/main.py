@@ -14,6 +14,7 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
+import cProfile
 import datetime
 import json
 import logging
@@ -44,7 +45,7 @@ parser.add_option('--dbpath',
                   help="path to database [default %default]")
 parser.add_option('--state_path',
                   dest='state_path',
-                  default=os.path.join(GD.ROOT_DIR, 'metadata/state.json'),
+                  default=os.path.join(GD.ROOT_DIR, 'metadata/etree_state.json'),
                   help="path to state [default %default]")
 parser.add_option('--options_path',
                   dest='options_path',
@@ -164,7 +165,7 @@ def save_state(state):
 
 def default_options():
     d = {}
-    d['COLLECTION'] = 'GratefulDead'
+    d['COLLECTIONS'] = ['GratefulDead']
     d['QUIESCENT_TIME'] = 20
     d['SLEEP_AFTER_SECONDS'] = 3600
     d['SCROLL_VENUE'] = True
@@ -183,6 +184,7 @@ def load_options(parms):
     try:
         f = open(parms.options_path, 'r')
         tmpd = json.loads(f.read())
+        tmpd['COLLECTIONS'] = [x.strip() for x in tmpd['COLLECTIONS'].split(',')]
         tmpd['QUIESCENT_TIME'] = int(tmpd['QUIESCENT_TIME'])
         tmpd['SLEEP_AFTER_SECONDS'] = int(tmpd['SLEEP_AFTER_SECONDS'])
         tmpd['PWR_LED_ON'] = tmpd['PWR_LED_ON'].lower() == 'true'
@@ -393,9 +395,8 @@ def stop_button_longpress(button, state):
         os.system(cmd)
         stop_event.set()
         scr.show_text("Updating\nCode\n\nStand By...", force=True)
-        sleep(25)
+        sleep(30)
         exit()
-        # subprocess.run(cmd)
 
 
 @sequential
@@ -577,9 +578,10 @@ def refresh_venue(state, idle_second_hand, refresh_times, venue):
     venue = config.VENUE if config.VENUE else venue
     stream_only = False
     tape_color = (0, 255, 255)
-    if 'tape' in vars(state.player).keys():
-        tape_id = state.player.tape.identifier
-        stream_only = state.player.tape.stream_only()
+    tape = state.player.tape
+    if tape is not None:
+        tape_id = tape.identifier
+        stream_only = tape.stream_only()
         tape_color = (255, 255, 255) if stream_only else (0, 0, 255)
     else:
         tape_id = venue
@@ -589,8 +591,9 @@ def refresh_venue(state, idle_second_hand, refresh_times, venue):
 
     if idle_second_hand < refresh_times[5]:
         display_string = venue
-    elif show_collection_name and idle_second_hand < refresh_times[7]:
-        display_string = state.date_reader.archive.collection_name
+    elif show_collection_name and idle_second_hand < refresh_times[7] and tape is not None:
+        collection = frozenset(state.date_reader.archive.collection_name) & frozenset(tape.collection)
+        display_string = list(collection)[0]
     else:
         display_string = tape_id
         id_color = tape_color
@@ -795,21 +798,17 @@ try:
     load_options(parms)
 except:
     logger.warning("Failed in loading options")
-parms.state_path = os.path.join(os.path.dirname(parms.state_path), F'{config.optd["COLLECTION"]}_{os.path.basename(parms.state_path)}')
+#parms.state_path = os.path.join(os.path.dirname(parms.state_path), F'{config.optd["COLLECTIONS"]}_{os.path.basename(parms.state_path)}')
 config.PAUSED_AT = datetime.datetime.now()
 config.WOKE_AT = datetime.datetime.now()
 
-# if parms.box == 'v0':
-#    upside_down = True
-# else:
-#    upside_down = False
 scr = controls.screen(upside_down=False)
 ip_address = get_ip()
 message = "Time\n  Machine\n   Loading..."
 scr.show_text(message, color=(0, 255, 255), force=False, clear=True)
 scr.show_text(F"{ip_address}", loc=(0, 100), font=scr.smallfont, color=(255, 255, 255))
 
-archive = GD.GDArchive(parms.dbpath, collection_name=config.optd['COLLECTION'])
+archive = GD.GDArchive(parms.dbpath, collection_name=config.optd['COLLECTIONS'])
 player = GD.GDPlayer()
 
 
@@ -843,7 +842,7 @@ y = retry_call(RotaryEncoder, config.year_pins[(knob_sense >> 2) & 1], config.ye
 m.steps = 1
 d.steps = 1
 y.steps = 0
-if archive.collection_name == "GratefulDead":
+if 'GratefulDead' in archive.collection_name:
     m.steps = 8
     d.steps = 13
     y.steps = min(1975 - 1965, num_years)

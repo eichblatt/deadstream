@@ -5,12 +5,21 @@ echo "Updating "
 date
 
 git_branch=main    # Make this a command-line option!
+if [ $HOSTNAME == deadstream2 ]; then
+   git_branch=dev    # Make this a command-line option!
+fi
 
 system () {
    command=$1
    echo "$command"
    $command
 }
+
+echo "[ ! -f $HOME/helpontheway.ogg ] && wget -O $HOME/helpontheway.ogg https://archive.org/download/gd75-08-13.fm.vernon.23661.sbeok.shnf/gd75-08-13d1t02.ogg "
+[ ! -f $HOME/helpontheway.ogg ] && wget -O $HOME/helpontheway.ogg https://archive.org/download/gd75-08-13.fm.vernon.23661.sbeok.shnf/gd75-08-13d1t02.ogg
+echo "mpv --volume=60 --really-quiet $HOME/helpontheway.ogg &"
+mpv --volume=60 --really-quiet $HOME/helpontheway.ogg &
+help_on_the_way_pid=$!
 
 restore_services () {
    # put the old services back in place.
@@ -46,16 +55,18 @@ system "pip3 install git+https://github.com/eichblatt/deadstream.git@$git_branch
 
 current_metadata_path=$HOME/timemachine/lib/python3.7/site-packages/timemachine/metadata
 new_metadata_path=$HOME/$env_name/lib/python3.7/site-packages/timemachine/metadata
-update_archive=`find $current_metadata_path/GratefulDead_ids.json -mtime +40 | wc -l`
+update_archive=`find $current_metadata_path/GratefulDead_ids.pkl -mtime +40 | wc -l`
+#update_archive=`find $current_metadata_path/GratefulDead_ids.json -mtime +40 | wc -l`
 if [ $update_archive == 0 ]; then
-   echo "cp -pR $current_metadata_path/*.json $new_metadata_path/."
-   cp -pR $current_metadata_path/*.json $new_metadata_path/.
+   system "cp -pR $current_metadata_path/*.json $new_metadata_path/."
+   system "cp -pR $current_metadata_path/*.pkl $new_metadata_path/."
 fi
 
 # Stop the running services
 system "sudo service timemachine stop"
 system "sudo service serve_options stop"
 
+kill $help_on_the_way_pid
 system "timemachine_test_update"
 stat=$?
 echo "status of test command: $stat"

@@ -1,5 +1,5 @@
 {
- "COLLECTION": "GratefulDead",
+ "COLLECTIONS": "GratefulDead",
  "QUIESCENT_TIME": "20",
  "SLEEP_AFTER_SECONDS": "3600",
  "SCROLL_VENUE": "true",

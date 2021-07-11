@@ -79,6 +79,8 @@ class date_knob_reader:
         self.y = y
         self.m = m
         self.d = d
+        self.maxd = [31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]  # max days in a month.
+        self.year_baseline = 1965 if archive is None else min(archive.year_list())
         self.update()
 
     def __str__(self):
@@ -89,14 +91,12 @@ class date_knob_reader:
         return F'Date Knob Says: {self.date.strftime("%Y-%m-%d")}. {avail}'
 
     def update(self):
-        maxd = [31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]  # max days in a month.
         m_val = self.m.steps
         d_val = self.d.steps
-        year_baseline = 1965 if self.archive is None else min(self.archive.year_list())
-        y_val = self.y.steps + year_baseline
+        y_val = self.y.steps + self.year_baseline
         logger.debug(F"updating date reader. m:{m_val},d:{d_val},y:{y_val}")
-        if d_val > maxd[m_val-1]:
-            self.d.steps = maxd[m_val-1]
+        if d_val > self.maxd[m_val-1]:
+            self.d.steps = self.maxd[m_val-1]
             d_val = self.d.steps
         try:
             self.date = datetime.date(y_val, m_val, d_val)
@@ -225,7 +225,8 @@ class screen:
 
     def clear_area(self, bbox, force=False):
         self.draw.rectangle(bbox.corners, outline=0, fill=(0, 0, 0))
-        self.refresh(force)
+        if force or self.update_now:
+            self.refresh(True)
 
     def clear(self):
         self.draw.rectangle((0, 0, self.width, self.height), outline=0, fill=(0, 0, 0))
@@ -242,7 +243,8 @@ class screen:
         config.WOKE_AT = datetime.datetime.now()
         self.sleeping = False
         self.led.on()
-        self.refresh(force=False)
+        if self.update_now:
+            self.refresh(force=False)
 
     def show_text(self, text, loc=(0, 0), font=None, color=(255, 255, 255), stroke_width=0, force=False, clear=False):
         if font is None:
@@ -252,7 +254,8 @@ class screen:
         if clear:
             self.clear()
         self.draw.text(loc, text, font=font, stroke_width=stroke_width, fill=color)
-        self.refresh(force)
+        if force or self.update_now:
+            self.refresh(True)
 
     def scroll_venue(self, color=(0, 255, 255), stroke_width=0, inc=15):
         """ This function can be called in a thread from the main.
@@ -319,7 +322,8 @@ class screen:
         bbox = self.track1_bbox if trackpos == 0 else self.track2_bbox
         self.clear_area(bbox)
         self.draw.text(bbox.origin(), text, font=self.smallfont, fill=color, stroke_width=1)
-        self.refresh(force)
+        if force or self.update_now:
+            self.refresh(True)
 
     def show_playstate(self, staged_play=False, color=(0, 100, 255), sbd=None, force=False):
         logger.debug(F"showing playstate {config.PLAY_STATE}")
@@ -329,7 +333,8 @@ class screen:
         if staged_play:
             self.draw.regular_polygon((bbox.center(), 10), 3, rotation=30, fill=color)
             self.draw.regular_polygon((bbox.center(), 8), 3, rotation=30, fill=(0, 0, 0))
-            self.refresh(force)
+            if force or self.update_now:
+                self.refresh(True)
             return
         if config.PLAY_STATE == config.PLAYING:
             self.draw.regular_polygon((bbox.center(), 10), 3, rotation=30, fill=color)
@@ -342,7 +347,8 @@ class screen:
             pass
         if sbd:
             self.show_soundboard(sbd)
-        self.refresh(force)
+        if force or self.update_now:
+            self.refresh(True)
 
     def show_soundboard(self, sbd, color=(255, 255, 255)):
         if not sbd:
