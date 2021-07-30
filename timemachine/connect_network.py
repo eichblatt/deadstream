@@ -70,8 +70,13 @@ for k in parms.__dict__.keys():
     print(F"{k:20s} : {parms.__dict__[k]}")
 
 rewind_event = Event()
+done_event = Event()   # stop button
+ffwd_event = Event()
+play_pause_event = Event()
 select_event = Event()
-done_event = Event()
+m_event = Event()
+d_event = Event()
+y_event = Event()
 m_knob_event = Event()
 d_knob_event = Event()
 y_knob_event = Event()
@@ -144,22 +149,58 @@ def stop_button(button):
     done_event.set()
 
 
+def ffwd_button(button):
+    logger.debug("pressing ffwd")
+    ffwd_event.set()
+
+
+def play_pause_button(button):
+    logger.debug("pressing ffwd")
+    play_pause_event.set()
+
+
+def month_button(button):
+    logger.debug("pressing or holding rewind")
+    m_event.set()
+
+
+def day_button(button):
+    logger.debug("pressing or holding rewind")
+    d_event.set()
+
+
+def year_button(button):
+    logger.debug("pressing or holding rewind")
+    y_event.set()
+
+
 max_choices = len(string.printable)
 m = retry_call(RotaryEncoder, config.month_pins[0], config.month_pins[1], max_steps=0, threshold_steps=(0, 9))
 d = retry_call(RotaryEncoder, config.day_pins[0], config.day_pins[1], max_steps=0, threshold_steps=(0, 1+divmod(max_choices-1, 10)[0]))
 y = retry_call(RotaryEncoder, config.year_pins[0], config.year_pins[1], max_steps=0, threshold_steps=(0, 9))
 counter = decade_counter(d, y, bounds=(0, 100))
 
+m_button = retry_call(Button, config.month_pins[2])
+d_button = retry_call(Button, config.day_pins[2], hold_time=0.3, hold_repeat=False)
+y_button = retry_call(Button, config.year_pins[2], hold_time=0.5)
+
 m.when_rotated = lambda x: decade_knob(m, "month", counter)
 d.when_rotated = lambda x: decade_knob(d, "day", counter)
 y.when_rotated = lambda x: decade_knob(y, "year", counter)
 
 rewind = retry_call(Button, config.rewind_pin)
+ffwd = retry_call(Button, config.ffwd_pin)
+play_pause = retry_call(Button, config.play_pause_pin)
 select = retry_call(Button, config.select_pin, hold_time=2, hold_repeat=True)
 stop = retry_call(Button, config.stop_pin)
 
 rewind.when_pressed = lambda x: rewind_button(x)
 rewind.when_held = lambda x: rewind_button(x)
+ffwd.when_pressed = lambda x: ffwd_button(x)
+play_pause.when_pressed = lambda x: play_pause_button(x)
+y_button.when_pressed = lambda x: year_button(x)
+m_button.when_pressed = lambda x: month_button(x)
+d_button.when_pressed = lambda x: day_button(x)
 select.when_pressed = lambda x: select_button(x)
 stop.when_pressed = lambda x: stop_button(x)
 
@@ -195,6 +236,21 @@ def save_knob_sense(parms):
     f.close()
     scr.show_text("Knobs\nCalibrated", font=scr.boldsmall, color=(0, 255, 255), force=False, clear=True)
     scr.show_text(F"      {knob_sense}", font=scr.boldsmall, loc=(0, 60), force=True)
+
+
+def test_buttons(event, label):
+    event.clear()
+    scr.show_text("Testing Buttons", font=scr.smallfont, force=False, clear=True)
+    scr.show_text(F"Press {label}", loc=(0, 40), font=scr.boldsmall, color=(0, 255, 255), force=True)
+    event.wait()
+
+
+def test_all_buttons(parms):
+    if os.path.exists(parms.knob_sense_path):
+        return
+    _ = [test_buttons(e, l) for e, l in [(done_event, "stop"), (rewind_event, "rewind"), (ffwd_event, "ffwd"), (select_event,
+                                                                                                                "select"), (play_pause_event, "play/pause"), (m_event, "month"), (d_event, "day"), (y_event, "year")]]
+    scr.show_text("Testing Buttons\nSucceeded!", font=scr.smallfont, force=True, clear=True)
 
 
 def select_option(message, chooser):
@@ -463,6 +519,7 @@ def main():
 
         if parms.test or reconnect or not connected:
             try:
+                test_all_buttons(parms)
                 save_knob_sense(parms)
             except:
                 logger.info("Failed to save knob sense...continuing")
