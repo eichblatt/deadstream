@@ -248,8 +248,9 @@ def test_buttons(event, label):
 def test_all_buttons(parms):
     if os.path.exists(parms.knob_sense_path):
         return
-    _ = [test_buttons(e, l) for e, l in [(done_event, "stop"), (rewind_event, "rewind"), (ffwd_event, "ffwd"), (select_event,
-                                                                                                                "select"), (play_pause_event, "play/pause"), (m_event, "month"), (d_event, "day"), (y_event, "year")]]
+    _ = [test_buttons(e, l) for e, l in
+         [(done_event, "stop"), (rewind_event, "rewind"), (ffwd_event, "ffwd"), (select_event, "select"),
+          (play_pause_event, "play/pause"), (m_event, "month"), (d_event, "day"), (y_event, "year")]]
     scr.show_text("Testing Buttons\nSucceeded!", font=scr.smallfont, force=True, clear=True)
 
 
