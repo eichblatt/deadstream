@@ -61,6 +61,11 @@ parser.add_option('--test_update',
                   action="store_true",
                   default=False,
                   help="test that software update succeeded[default %default]")
+parser.add_option('--pid_to_kill',
+                  dest='pid_to_kill',
+                  type='int',
+                  default=None,
+                  help="process id to kill during test_update [default %default]")
 parser.add_option('-d', '--debug',
                   dest='debug',
                   type="int",
@@ -652,6 +657,11 @@ def test_update(state):
     knob_event.clear()
     button_event.clear()
     scr.clear()
+    try:
+        if parms.pid_to_kill is not None:
+            os.system(F"kill {parms.pid_to_kill}")
+    except:
+        pass
     try:
         scr.show_text("Turn Any\nKnob", force=True)
         if knob_event.wait(50):

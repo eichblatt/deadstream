@@ -8,6 +8,7 @@ git_branch=main    # Make this a command-line option!
 if [ $HOSTNAME == deadstream2 ]; then
    git_branch=dev    # Make this a command-line option!
 fi
+echo "git branch is $git_branch"
 
 system () {
    command=$1
@@ -66,10 +67,10 @@ fi
 system "sudo service timemachine stop"
 system "sudo service serve_options stop"
 
-kill $help_on_the_way_pid
-system "timemachine_test_update"
+system "timemachine_test_update --pid_to_kill $help_on_the_way_pid"
 stat=$?
 echo "status of test command: $stat"
+kill $help_on_the_way_pid
 
 system "cd $HOME" # NOTE: we should already be here.
 if [ $stat == 0 ]; then
