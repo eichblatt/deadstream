@@ -93,4 +93,28 @@ Each knob can be turned, and also pressed as a button. Each button may be "press
 - Pressing the Stop button stops the playback and moves the play head to the beginning of the show.
 - Holding the Stop button (*for 8 seconds*) prepares to download the latest version of the software and restarts the program. After 8 seconds, the screen will display a message asking to continue hold the **stop button** for another 5 seconds if you _really_ want to update. **USE WITH CAUTION**
 
+## Advanced Usage
+### The Options Server
+**NOTE: This feature is still _VERY EXPERIMENTAL_. Proceed with caution**
+
+Your Time Machine will briefly display your ip address at startup. The ip address is a set of 4 numbers separated by dots (.), for example 192.168.0.4. I will refer to this as <ip_address> below. 
+
+When your Time Machine runs, there is also an options service, which you can connect to on a browser **_which is on the same wifi_**. To connect to the options server, point a browser on a computer or phone _connected to the same wifi_ to the address <ip_address>:9090. In my case it is 192.168.0.4:9090. 
+
+The browser displays the options which you can set. **NOTE:** if you set an option to something that the Time Machine cannot understand, it will use the default value for every option. 
+The options currently supported are
+ - **COLLECTIONS** String. You can put a single or comma-separated list of valid archive.org collection names in this field. Eg. _GratefulDead, RobertHunter, PhilLeshandFriends, JonahCohen_. Default: GratefulDead
+ - **QUIESCENT_TIME** Integer Number of seconds to wait for "select" button to be pressed after changing the date. After this time, the staged date will revert to the selected date. Default: 20
+ - **SLEEP_AFTER_SECONDS** Integer Number of seconds to wait after pause or stop before turning off the screen. Default: 3600
+ - **SCROLL_VENUE** true or false. Whether to scroll the name of the venue if it doesn't fit on the screen. Default: true
+ - **FAVORED_TAPER** String. If this string appears in the tape identifier, the tape will get 2 extra "stars" in the tape-ranking algorithm. Default: miller
+ - **PWR_LED_ON** true or false. Turn on or off the Raspberry Pi's power LED. Default: fase
+ - **AUTO_PLAY** true or false. Play a tape as soon as it is selected. Default: true
+ - **RELOAD_STATE_ON_START** true or false. Reload the latest state of the Time Machine when restarting. Default: true
+ - **DEFAULT_START_TIME** HH:MM:SS. The time of day that a show should start when in "on tour" mode. Default: 17:00:00.
+ - **TIME_ZONE** select from a (very limited!) menu. This is used to determine the date for "today in history", and in "on tour" mode.
+
+As you can see, this needs work! 
+
+
 **Enjoy!**
