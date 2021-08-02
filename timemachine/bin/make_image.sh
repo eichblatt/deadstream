@@ -29,6 +29,7 @@ system "cd $media_folder/rootfs/home/deadhead"
 current_env=$(basename `readlink -f timemachine`)
 files=`find . -maxdepth 1 -mindepth 1 -name env_\* -a -not -name $current_env -printf "%f "`
 system "sudo rm -rf $files"
+system "sudo rm -rf .knob_sense"
 
 
 echo "Removing wpa_supplicant"
@@ -47,3 +48,4 @@ system "sudo pishrink.sh $image_file"
 
 # NOTE: to burn an image use the command (or similar):
 # sudo sh -c "pv v2_20210625.img > /dev/sdb"
+# ./balenaEtcher-1.5.120-x64.AppImage > /dev/null 2>&1 &
