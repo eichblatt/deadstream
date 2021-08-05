@@ -427,6 +427,8 @@ class GDArchive:
         """ Load the tapes, then add anything which has been added since the tapes were saved """
         logger.debug("Refreshing Tapes")
         loaded_tapes = self.load_tapes(reload_ids)
+        if not 'addeddate' in loaded_tapes[0].keys():
+            loaded_tapes = self.load_tapes(reload_ids=True)
 
         max_added_date = max([x['addeddate'] for x in loaded_tapes])
         logger.debug(F"max addeddate {max_added_date}")
