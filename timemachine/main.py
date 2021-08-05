@@ -687,6 +687,7 @@ def event_loop(state):
     q_counter = False
     n_timer = 0
     last_idle_second_hand = None
+    last_idle_hour = None
     refresh_times = [4, 9, 14, 19, 24, 29, 34, 39, 44, 49]
     max_second_hand = 50
     clear_stagedate = False
@@ -769,6 +770,9 @@ def event_loop(state):
                 screen_event.set()
             if idle_second_hand in refresh_times and idle_second_hand != last_idle_second_hand:
                 last_idle_second_hand = idle_second_hand
+                if now.hour != last_idle_hour:
+                    last_idle_hour = now.hour
+                    date_reader.archive.refresh_tapes()
                 track_event.set()
                 playstate_event.set()
                 save_state(state)

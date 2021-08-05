@@ -325,6 +325,7 @@ class GDArchive:
           sync: If True use the slower synchronous downloader
           collection_name: A list of collections from archive.org
         """
+        self.tapes = []
         self.url = url
         self.dbpath = dbpath
         self.collection_name = collection_name if type(collection_name) == list else [collection_name]
@@ -440,10 +441,12 @@ class GDArchive:
             logger.info(F"Adding {len(latest_tapes)} tapes")
             all_tapes = loaded_tapes + latest_tapes
         else:
-            logger.debug(F"Adding {len(latest_tapes)} tapes")
+            if len(self.tapes) > 0:  # The tapes have already been written, and nothing was added
+                return self.tapes
             all_tapes = loaded_tapes
         self.write_tapes(all_tapes)
-        return [GDTape(self.dbpath, tape, self.set_data) for tape in all_tapes]
+        self.tapes = [GDTape(self.dbpath, tape, self.set_data) for tape in all_tapes]
+        return self.tapes
 
 
 class GDTape:
