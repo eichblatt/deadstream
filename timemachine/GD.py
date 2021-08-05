@@ -69,6 +69,7 @@ def memoize(f):
 @memoize
 def to_date(datestring): return datetime.datetime.strptime(datestring, '%Y-%m-%d')
 
+
 class BaseTapeDownloader(abc.ABC):
     """Abstract base class for a Grateful Dead tape downloader.
 
@@ -96,9 +97,9 @@ class BaseTapeDownloader(abc.ABC):
         """Get a list of tapes for years."""
         pass
 
-    def get_latest_tapes(self,min_datetime):
+    def get_latest_tapes(self, min_datetime):
         """Get a list of tapes which were added since last data pull."""
-        pass 
+        pass
 
     def get_all_tapes(self):
         """Get a list of all tapes."""
@@ -108,11 +109,11 @@ class BaseTapeDownloader(abc.ABC):
 class TapeDownloader(BaseTapeDownloader):
     """Synchronous Grateful Dead Tape Downloader"""
 
-    def get_latest_tapes(self,min_addeddate):
+    def get_latest_tapes(self, min_addeddate):
         new_tapes = self.get_all_tapes(min_addeddate)
         return new_tapes
 
-    def get_all_tapes(self,min_addeddate=None):
+    def get_all_tapes(self, min_addeddate=None):
         """Get a list of all tapes.
         Returns a list dictionaries of tape information
         """
@@ -122,7 +123,7 @@ class TapeDownloader(BaseTapeDownloader):
         min_date = '1900-01-01'
         max_date = datetime.datetime.now().date().strftime('%Y-%m-%d')
 
-        r = self._get_piece(min_date, max_date,min_addeddate)
+        r = self._get_piece(min_date, max_date, min_addeddate)
         j = r.json()
         total = j['total']
         logger.debug(f"total rows {total}")
@@ -133,7 +134,7 @@ class TapeDownloader(BaseTapeDownloader):
             min_date_field = tapes[-1]['date']
             min_date = min_date_field[:10]
             last_date_ids = [x['identifier'] for x in tapes if x['date'] == min_date_field]
-            r = self._get_piece(min_date, max_date,min_addeddate)
+            r = self._get_piece(min_date, max_date, min_addeddate)
             j = r.json()
             current_rows += j['count']
             extra_tapes = j['items']
@@ -224,7 +225,7 @@ class TapeDownloader(BaseTapeDownloader):
 class AsyncTapeDownloader(BaseTapeDownloader):
     """Asynchronous Grateful Dead Tape Downloader"""
 
-    def get_latest_tapes(self,min_datetime):
+    def get_latest_tapes(self, min_datetime):
         pass
 
     def get_all_tapes(self):
@@ -418,11 +419,11 @@ class GDArchive:
             logger.info("Loading Tapes from the Archive...this will take a few minutes")
             #tapes = self.downloader.get_tapes(self.year_list())
             tapes = self.downloader.get_all_tapes()
-            #self.write_tapes(tapes)
+            # self.write_tapes(tapes)
         return tapes
-        #return [GDTape(self.dbpath, tape, self.set_data) for tape in tapes]
+        # return [GDTape(self.dbpath, tape, self.set_data) for tape in tapes]
 
-    def refresh_tapes(self,reload_ids=False):
+    def refresh_tapes(self, reload_ids=False):
         """ Load the tapes, then add anything which has been added since the tapes were saved """
         logger.debug("Refreshing Tapes")
         loaded_tapes = self.load_tapes(reload_ids)
