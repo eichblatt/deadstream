@@ -772,7 +772,7 @@ def event_loop(state):
                 last_idle_second_hand = idle_second_hand
                 if now.hour != last_idle_hour:
                     last_idle_hour = now.hour
-                    date_reader.archive.refresh_tapes()
+                    date_reader.archive.load_archive()
                 track_event.set()
                 playstate_event.set()
                 save_state(state)

@@ -338,9 +338,7 @@ class GDArchive:
             self.idpath_pkl = os.path.join(self.dbpath, 'etree_ids.pkl')
             self.downloader = (TapeDownloader if sync else AsyncTapeDownloader)(url)
         self.set_data = GDSet(self.collection_name)
-        self.tapes = self.refresh_tapes(reload_ids)
-        self.tape_dates = self.get_tape_dates()
-        self.dates = sorted(self.tape_dates.keys())
+        self.load_archive(reload_ids)
 
     def __str__(self):
         return self.__repr__()
@@ -351,6 +349,11 @@ class GDArchive:
 
     def year_list(self):
         return sorted(set([to_date(x).year for x in self.dates]))
+
+    def load_archive(self, reload_ids=False):
+        self.tapes = self.load_tapes(reload_ids)
+        self.tape_dates = self.get_tape_dates()
+        self.dates = sorted(self.tape_dates.keys())
 
     def best_tape(self, date):
         if isinstance(date, datetime.date):
@@ -409,7 +412,7 @@ class GDArchive:
         json.dump(tapes, open(self.idpath, 'w'))
         pickle.dump(tapes, open(self.idpath_pkl, 'wb'), pickle.HIGHEST_PROTOCOL)
 
-    def load_tapes(self, reload_ids=False):
+    def load_current_tapes(self, reload_ids=False):
         if (not reload_ids) and os.path.exists(self.idpath_pkl):
             tapes = pickle.load(open(self.idpath_pkl, 'rb'))
             tapes = [t for t in tapes if any(x in self.collection_name for x in t['collection'])]
@@ -424,12 +427,12 @@ class GDArchive:
         return tapes
         # return [GDTape(self.dbpath, tape, self.set_data) for tape in tapes]
 
-    def refresh_tapes(self, reload_ids=False):
+    def load_tapes(self, reload_ids=False):
         """ Load the tapes, then add anything which has been added since the tapes were saved """
         logger.debug("Refreshing Tapes")
-        loaded_tapes = self.load_tapes(reload_ids)
+        loaded_tapes = self.load_current_tapes(reload_ids)
         if not 'addeddate' in loaded_tapes[0].keys():
-            loaded_tapes = self.load_tapes(reload_ids=True)
+            loaded_tapes = self.load_current_tapes(reload_ids=True)
 
         max_added_date = max([x['addeddate'] for x in loaded_tapes])
         logger.debug(F"max addeddate {max_added_date}")
@@ -446,6 +449,8 @@ class GDArchive:
             all_tapes = loaded_tapes
         self.write_tapes(all_tapes)
         self.tapes = [GDTape(self.dbpath, tape, self.set_data) for tape in all_tapes]
+        self.tape_dates = self.get_tape_dates()
+        self.dates = sorted(self.tape_dates.keys())
         return self.tapes
 
 
