@@ -97,21 +97,13 @@ class BaseTapeDownloader(abc.ABC):
         """Get a list of tapes for years."""
         pass
 
-    def get_latest_tapes(self, min_datetime):
-        """Get a list of tapes which were added since last data pull."""
-        pass
-
-    def get_all_tapes(self):
+    def get_all_tapes(self, min_addeddate=None):
         """Get a list of all tapes."""
         pass
 
 
 class TapeDownloader(BaseTapeDownloader):
     """Synchronous Grateful Dead Tape Downloader"""
-
-    def get_latest_tapes(self, min_addeddate):
-        new_tapes = self.get_all_tapes(min_addeddate)
-        return new_tapes
 
     def get_all_tapes(self, min_addeddate=None):
         """Get a list of all tapes.
@@ -225,10 +217,7 @@ class TapeDownloader(BaseTapeDownloader):
 class AsyncTapeDownloader(BaseTapeDownloader):
     """Asynchronous Grateful Dead Tape Downloader"""
 
-    def get_latest_tapes(self, min_datetime):
-        pass
-
-    def get_all_tapes(self):
+    def get_all_tapes(self, min_addeddate=None):
         """Get a list of all tapes."""
         pass
 
@@ -438,7 +427,7 @@ class GDArchive:
         logger.debug(F"max addeddate {max_added_date}")
         current_tape_ids = [x['identifier'] for x in loaded_tapes]
 
-        latest_tapes = self.downloader.get_latest_tapes(max_added_date)
+        latest_tapes = self.downloader.get_all_tapes(max_added_date)
         latest_tapes = [x for x in latest_tapes if x['identifier'] not in current_tape_ids]
         if len(latest_tapes) > 0:
             logger.info(F"Adding {len(latest_tapes)} tapes")
