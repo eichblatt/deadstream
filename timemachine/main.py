@@ -784,10 +784,10 @@ def event_loop(state):
                     last_idle_day = now.day
                     last_idle_hour = now.hour
                     last_idle_minute = now.minute
-                    # try:
-                    #    date_reader.archive.load_archive(with_latest=True)
-                    # except:
-                    #    logger.warn("Unable to refresh archive")
+                    try:
+                        date_reader.archive.load_archive(with_latest=True)
+                    except:
+                        logger.warn("Unable to refresh archive")
                 track_event.set()
                 playstate_event.set()
                 save_state(state)
