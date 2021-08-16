@@ -339,8 +339,8 @@ class GDArchive:
     def year_list(self):
         return sorted(set([to_date(x).year for x in self.dates]))
 
-    def load_archive(self, reload_ids=False):
-        self.tapes = self.load_tapes(reload_ids)
+    def load_archive(self, reload_ids=False, with_latest=False):
+        self.tapes = self.load_tapes(reload_ids, with_latest)
         self.tape_dates = self.get_tape_dates()
         self.dates = sorted(self.tape_dates.keys())
 
@@ -416,19 +416,21 @@ class GDArchive:
         return tapes
         # return [GDTape(self.dbpath, tape, self.set_data) for tape in tapes]
 
-    def load_tapes(self, reload_ids=False):
+    def load_tapes(self, reload_ids=False, with_latest=False):
         """ Load the tapes, then add anything which has been added since the tapes were saved """
-        logger.debug("Refreshing Tapes")
         loaded_tapes = self.load_current_tapes(reload_ids)
         if not 'addeddate' in loaded_tapes[0].keys():
             loaded_tapes = self.load_current_tapes(reload_ids=True)
 
         max_added_date = max([x['addeddate'] for x in loaded_tapes])
-        logger.debug(F"max addeddate {max_added_date}")
         current_tape_ids = [x['identifier'] for x in loaded_tapes]
 
-        latest_tapes = self.downloader.get_all_tapes(max_added_date)
-        latest_tapes = [x for x in latest_tapes if x['identifier'] not in current_tape_ids]
+        latest_tapes = []
+        if with_latest:
+            logger.debug("Refreshing Tapes")
+            logger.debug(F"max addeddate {max_added_date}")
+            latest_tapes = self.downloader.get_all_tapes(max_added_date)
+            latest_tapes = [x for x in latest_tapes if x['identifier'] not in current_tape_ids]
         if len(latest_tapes) > 0:
             logger.info(F"Adding {len(latest_tapes)} tapes")
             all_tapes = loaded_tapes + latest_tapes
