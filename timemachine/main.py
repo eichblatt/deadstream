@@ -784,15 +784,13 @@ def event_loop(state):
                     last_idle_day = now.day
                     last_idle_hour = now.hour
                     last_idle_minute = now.minute
-                    try:
-                        date_reader.archive.load_archive(with_latest=True)
-                    except:
-                        logger.warn("Unable to refresh archive")
+                    # try:
+                    #    date_reader.archive.load_archive(with_latest=True)
+                    # except:
+                    #    logger.warn("Unable to refresh archive")
                 track_event.set()
                 playstate_event.set()
                 save_state(state)
-                # stagedate_event.set()         # NOTE: this would set the q_counter, etc. But it SHOULD work.
-                # scr.show_staged_date(date_reader.date)
                 if current['PLAY_STATE'] != config.PLAYING:  # deal with overnight pauses, which freeze the alsa player.
                     if (now - config.PAUSED_AT).seconds > config.optd['SLEEP_AFTER_SECONDS'] and state.player.get_prop('audio-device') != 'null':
                         logger.debug(F"Paused at {config.PAUSED_AT}, sleeping after {config.optd['SLEEP_AFTER_SECONDS']}, now {now}")
