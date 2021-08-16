@@ -18,7 +18,7 @@ system () {
 
 echo "[ ! -f $HOME/helpontheway.ogg ] && wget -O $HOME/helpontheway.ogg https://archive.org/download/gd75-08-13.fm.vernon.23661.sbeok.shnf/gd75-08-13d1t02.ogg "
 [ ! -f $HOME/helpontheway.ogg ] && wget -O $HOME/helpontheway.ogg https://archive.org/download/gd75-08-13.fm.vernon.23661.sbeok.shnf/gd75-08-13d1t02.ogg
-echo "mpv --volume=60 --really-quiet $HOME/helpontheway.ogg &"
+echo "mpv --volume=60 --really-quiet $HOME/helpontheway.ogg $HOME/helpontheway.ogg $HOME/helpontheway.ogg &"
 mpv --volume=60 --really-quiet $HOME/helpontheway.ogg &
 help_on_the_way_pid=$!
 

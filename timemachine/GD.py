@@ -82,7 +82,7 @@ class BaseTapeDownloader(abc.ABC):
         self.api = f"{self.url}/services/search/v1/scrape"
         fields = ["identifier", "date", "avg_rating", "num_reviews",
                   "num_favorites", "stars", "downloads", "files_count",
-                  "format", "collection", "source", "subject", "type"]
+                  "format", "collection", "source", "subject", "type", "addeddate"]
         sorts = ["date asc", "avg_rating desc",
                  "num_favorites desc", "downloads desc"]
         self.parms = {'debug': 'false',
@@ -97,7 +97,7 @@ class BaseTapeDownloader(abc.ABC):
         """Get a list of tapes for years."""
         pass
 
-    def get_all_tapes(self):
+    def get_all_tapes(self, min_addeddate=None):
         """Get a list of all tapes."""
         pass
 
@@ -105,7 +105,7 @@ class BaseTapeDownloader(abc.ABC):
 class TapeDownloader(BaseTapeDownloader):
     """Synchronous Grateful Dead Tape Downloader"""
 
-    def get_all_tapes(self):
+    def get_all_tapes(self, min_addeddate=None):
         """Get a list of all tapes.
         Returns a list dictionaries of tape information
         """
@@ -115,7 +115,7 @@ class TapeDownloader(BaseTapeDownloader):
         min_date = '1900-01-01'
         max_date = datetime.datetime.now().date().strftime('%Y-%m-%d')
 
-        r = self._get_piece(min_date, max_date)
+        r = self._get_piece(min_date, max_date, min_addeddate)
         j = r.json()
         total = j['total']
         logger.debug(f"total rows {total}")
@@ -126,7 +126,7 @@ class TapeDownloader(BaseTapeDownloader):
             min_date_field = tapes[-1]['date']
             min_date = min_date_field[:10]
             last_date_ids = [x['identifier'] for x in tapes if x['date'] == min_date_field]
-            r = self._get_piece(min_date, max_date)
+            r = self._get_piece(min_date, max_date, min_addeddate)
             j = r.json()
             current_rows += j['count']
             extra_tapes = j['items']
@@ -171,12 +171,16 @@ class TapeDownloader(BaseTapeDownloader):
             tapes.extend(j['items'])
         return tapes
 
-    def _get_piece(self, min_date, max_date):
+    def _get_piece(self, min_date, max_date, min_addeddate=None):
         """Get one chunk of a year's tape information.
         Returns a list of dictionaries of tape information
         """
         parms = self.parms.copy()
-        query = F'collection:{self.collection_name} AND date:[{min_date} TO {max_date}]'
+        if min_addeddate is None:
+            query = F'collection:{self.collection_name} AND date:[{min_date} TO {max_date}]'
+        else:
+            max_added_date = datetime.datetime.now().strftime('%Y-%m-%dT%H:%M:%SZ')
+            query = F'collection:{self.collection_name} AND date:[{min_date} TO {max_date}] AND addeddate:[{min_addeddate} TO {max_date}]'
         parms['q'] = query
         r = requests.get(self.api, params=parms)
         logger.debug(f"url is {r.url}")
@@ -213,7 +217,7 @@ class TapeDownloader(BaseTapeDownloader):
 class AsyncTapeDownloader(BaseTapeDownloader):
     """Asynchronous Grateful Dead Tape Downloader"""
 
-    def get_all_tapes(self):
+    def get_all_tapes(self, min_addeddate=None):
         """Get a list of all tapes."""
         pass
 
@@ -310,6 +314,7 @@ class GDArchive:
           sync: If True use the slower synchronous downloader
           collection_name: A list of collections from archive.org
         """
+        self.tapes = []
         self.url = url
         self.dbpath = dbpath
         self.collection_name = collection_name if type(collection_name) == list else [collection_name]
@@ -322,9 +327,7 @@ class GDArchive:
             self.idpath_pkl = os.path.join(self.dbpath, 'etree_ids.pkl')
             self.downloader = (TapeDownloader if sync else AsyncTapeDownloader)(url)
         self.set_data = GDSet(self.collection_name)
-        self.tapes = self.load_tapes(reload_ids)
-        self.tape_dates = self.get_tape_dates()
-        self.dates = sorted(self.tape_dates.keys())
+        self.load_archive(reload_ids)
 
     def __str__(self):
         return self.__repr__()
@@ -335,6 +338,11 @@ class GDArchive:
 
     def year_list(self):
         return sorted(set([to_date(x).year for x in self.dates]))
+
+    def load_archive(self, reload_ids=False, with_latest=False):
+        self.tapes = self.load_tapes(reload_ids, with_latest)
+        self.tape_dates = self.get_tape_dates()
+        self.dates = sorted(self.tape_dates.keys())
 
     def best_tape(self, date):
         if isinstance(date, datetime.date):
@@ -393,7 +401,7 @@ class GDArchive:
         json.dump(tapes, open(self.idpath, 'w'))
         pickle.dump(tapes, open(self.idpath_pkl, 'wb'), pickle.HIGHEST_PROTOCOL)
 
-    def load_tapes(self, reload_ids=False):
+    def load_current_tapes(self, reload_ids=False):
         if (not reload_ids) and os.path.exists(self.idpath_pkl):
             tapes = pickle.load(open(self.idpath_pkl, 'rb'))
             tapes = [t for t in tapes if any(x in self.collection_name for x in t['collection'])]
@@ -404,8 +412,37 @@ class GDArchive:
             logger.info("Loading Tapes from the Archive...this will take a few minutes")
             #tapes = self.downloader.get_tapes(self.year_list())
             tapes = self.downloader.get_all_tapes()
-            self.write_tapes(tapes)
-        return [GDTape(self.dbpath, tape, self.set_data) for tape in tapes]
+            # self.write_tapes(tapes)
+        return tapes
+        # return [GDTape(self.dbpath, tape, self.set_data) for tape in tapes]
+
+    def load_tapes(self, reload_ids=False, with_latest=False):
+        """ Load the tapes, then add anything which has been added since the tapes were saved """
+        loaded_tapes = self.load_current_tapes(reload_ids)
+        if not 'addeddate' in loaded_tapes[0].keys():
+            loaded_tapes = self.load_current_tapes(reload_ids=True)
+
+        max_added_date = max([x['addeddate'] for x in loaded_tapes])
+        current_tape_ids = [x['identifier'] for x in loaded_tapes]
+
+        latest_tapes = []
+        if with_latest:
+            logger.debug("Refreshing Tapes")
+            logger.debug(F"max addeddate {max_added_date}")
+            latest_tapes = self.downloader.get_all_tapes(max_added_date)
+            latest_tapes = [x for x in latest_tapes if x['identifier'] not in current_tape_ids]
+        if len(latest_tapes) > 0:
+            logger.info(F"Adding {len(latest_tapes)} tapes")
+            all_tapes = loaded_tapes + latest_tapes
+        else:
+            if len(self.tapes) > 0:  # The tapes have already been written, and nothing was added
+                return self.tapes
+            all_tapes = loaded_tapes
+        self.write_tapes(all_tapes)
+        self.tapes = [GDTape(self.dbpath, tape, self.set_data) for tape in all_tapes]
+        self.tape_dates = self.get_tape_dates()
+        self.dates = sorted(self.tape_dates.keys())
+        return self.tapes
 
 
 class GDTape:
@@ -419,12 +456,15 @@ class GDTape:
         self._playable_formats = ['Ogg Vorbis', 'VBR MP3', 'Shorten', 'MP3']  # had to remove Flac because mpv can't play them!!!
         self._breaks_added = False
         self.meta_loaded = False
-        attribs = ['date', 'identifier', 'avg_rating', 'format', 'collection', 'num_reviews', 'downloads']
+        attribs = ['date', 'identifier', 'avg_rating', 'format', 'collection', 'num_reviews', 'downloads', 'addeddate']
         for k, v in raw_json.items():
             if k in attribs:
                 setattr(self, k, v)
         self.url_metadata = 'https://archive.org/metadata/' + self.identifier
         self.url_details = 'https://archive.org/details/' + self.identifier
+        if self.addeddate.startswith('0000'):
+            self.addeddate = '1990-01-01T00:00:00Z'
+        self.addeddate = (datetime.datetime.strptime(self.addeddate, '%Y-%m-%dT%H:%M:%SZ'))
         if type(self.date) == list:
             self.date = self.date[0]
         self.date = str((datetime.datetime.strptime(self.date, '%Y-%m-%dT%H:%M:%SZ')).date())
