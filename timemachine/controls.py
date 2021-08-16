@@ -47,7 +47,7 @@ def with_state_semaphore(func):
         try:
             acquired = state_semaphore.acquire(timeout=5)
             if not acquired:
-                logger.warn("State semaphore not acquired after 5 seconds!")
+                logger.warning("State semaphore not acquired after 5 seconds!")
                 raise Exception('state semaphore not acquired')
             func(*args, **kwargs)
         except BaseException:
@@ -62,7 +62,7 @@ def with_semaphore(func):
         try:
             acquired = screen_semaphore.acquire(timeout=5)
             if not acquired:
-                logger.warn("Screen semaphore not acquired after 5 seconds!")
+                logger.warning("Screen semaphore not acquired after 5 seconds!")
                 raise Exception('screen semaphore not acquired')
             func(*args, **kwargs)
         except BaseException:
@@ -402,7 +402,9 @@ class state:
             self.dict = {key: value for key, value in module.__dict__.items() if (not key.startswith('_')) and key.isupper()}
         self.date_reader.update()
         self.dict['DATE_READER'] = self.date_reader.date
+        self.dict['VOLUME'] = 100.0
         try:
+            self.dict['VOLUME'] = self.player.get_prop('volume')
             self.dict['TRACK_NUM'] = self.player._get_property('playlist-pos')
             self.dict['TAPE_ID'] = self.player.tape.identifier
             self.dict['TRACK_TITLE'] = self.player.tape.tracks()[self.dict['TRACK_NUM']].title
@@ -416,6 +418,7 @@ class state:
             self.dict['TAPE_ID'] = ''
             self.dict['TRACK_TITLE'] = ''
             self.dict['NEXT_TRACK_TITLE'] = ''
+            #logger.debug('Exception getting current state. Using some defaults')
         self.dict['TRACK_ID'] = self.dict['TAPE_ID'] + "_track_" + str(self.dict['TRACK_NUM'])
         return self.dict
 

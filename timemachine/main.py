@@ -133,7 +133,7 @@ def load_saved_state(state):
         loaded_state = json.loads(f.read())
         fields_to_load = [
             'DATE', 'VENUE', 'STAGED_DATE', 'ON_TOUR', 'TOUR_YEAR', 'TOUR_STATE', 'EXPERIENCE', 'TRACK_NUM', 'TAPE_ID',
-            'TRACK_TITLE', 'NEXT_TRACK_TITLE', 'TRACK_ID', 'DATE_READER']
+            'TRACK_TITLE', 'NEXT_TRACK_TITLE', 'TRACK_ID', 'DATE_READER', 'VOLUME']
         for field in fields_to_load:
             if field in ['DATE', 'STAGED_DATE', 'DATE_READER']:
                 current[field] = to_date(loaded_state[field])
@@ -151,6 +151,8 @@ def load_saved_state(state):
             state.date_reader.update()
 
         current['DATE_READER'] = state.date_reader
+        state.player._set_property('volume', current['VOLUME'])
+        current['TOUR_STATE'] = config.READY
         state.set(current)
         stagedate_event.set()
     except BaseException:
@@ -249,6 +251,7 @@ def select_tape(tape, state, autoplay=False):
     current['DATE'] = state.date_reader.date
     current['VENUE'] = state.date_reader.venue()
     state.player.insert_tape(tape)
+    state.player._set_property('volume', current['VOLUME'])
     logger.debug(F"current state {current}")
     if autoplay and not EOT:
         logger.debug("Autoplaying tape")
@@ -358,6 +361,7 @@ def play_pause_button_longpress(button, state):
     current['VENUE'] = state.date_reader.venue()
     current_volume = state.player.get_prop('volume')
     state.player._set_property('volume', max(current_volume, 100))
+    current['VOLUME'] = state.player.get_prop('volume')
 
     if current['PLAY_STATE'] in [config.PLAYING, config.PAUSED]:
         state.player.stop()
@@ -527,10 +531,12 @@ def year_button_longpress(button, state):
             logger.info("   EXITING ON_TOUR mode")
             current['ON_TOUR'] = False
             current['TOUR_YEAR'] = None
+            current['TOUR_STATE'] = config.READY
             scr.show_experience(text="ON_TOUR: Finished", force=True)
     else:
         current['ON_TOUR'] = True
         current['TOUR_YEAR'] = state.date_reader.date.year
+        current['TOUR_STATE'] = config.READY
         logger.info(F" ---> ON_TOUR:{current['TOUR_YEAR']}")
         scr.show_experience(text=F"ON_TOUR:{current['TOUR_YEAR']}", force=True)
     sleep(3)
@@ -568,6 +574,7 @@ def play_on_tour(tape, state, seek_to=0):
     current['DATE'] = to_date(tape.date)
     current['VENUE'] = tape.venue()
     state.player.insert_tape(tape)
+    state.player._set_property('volume', current['VOLUME'])
     state.player.pause()
     state.player.play()
     state.player.seek_in_tape_to(seek_to, ticking=True)
