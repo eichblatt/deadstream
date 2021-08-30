@@ -27,6 +27,7 @@ import logging
 import math
 import os
 import pickle5 as pickle
+import re
 import requests
 import threading
 import time
@@ -344,13 +345,17 @@ class GDArchive:
         self.tape_dates = self.get_tape_dates()
         self.dates = sorted(self.tape_dates.keys())
 
-    def best_tape(self, date):
+    def best_tape(self, date, resort=True):
         if isinstance(date, datetime.date):
             date = date.strftime('%Y-%m-%d')
         if date not in self.dates:
             logger.info("No Tape for date {}".format(date))
             return None
-        return self.tape_dates[date][0]
+        tapes = self.tape_dates[date]
+        if resort:
+            _ = [t.tracks() for t in tapes[:3]]   # load first 3 tapes' tracks. Decrease score of those without titles.
+            tapes = sorted(tapes, key=methodcaller('compute_score'), reverse=True)
+        return tapes[0]
 
     def tape_at_date(self, dt, which_tape=0):
         then_date = dt.date()
@@ -495,18 +500,25 @@ class GDTape:
 
     def compute_score(self):
         """ compute a score for sorting the tape. High score means it should be played first """
-        score = 0
+        score = 3
         if self.stream_only():
             score = score + 10
         if 'optd' in dir(config) and len(config.optd['FAVORED_TAPER']) > 0:
             if config.optd['FAVORED_TAPER'].lower() in self.identifier.lower():
                 score = score + 3
+        if self.meta_loaded:
+            score = score + 3*(self.title_fraction()-1)  # reduce score for tapes without titles.
         score = score + math.log(1+self.downloads)
         score = score + self.avg_rating - 2.0/math.sqrt(self.num_reviews)
         return score
 
     def contains_sound(self):
         return len(list(set(self._playable_formats) & set(self.format))) > 0
+
+    def title_fraction(self):
+        n_tracks = len(self._tracks)
+        n_known = len([t for t in self._tracks if t.title != 'unknown'])
+        return n_known/n_tracks
 
     def tracks(self):
         self.get_metadata()
@@ -557,6 +569,8 @@ class GDTape:
         json.dump(page_meta, open(meta_path, 'w'))
         self.meta_loaded = True
         # return page_meta
+        for track in self._tracks:
+            track.title = re.sub(r'gd\d{2}(?:\d{2})?-\d{2}-\d{2}[ ]*([td]\d*)*', '', track.title).strip()
         self.insert_breaks()
         return
 
@@ -611,12 +625,13 @@ class GDTape:
             location_breaks = [difflib.get_close_matches(x, tlist)[0] for x in locb]
         except BaseException:
             pass
+        # NOTE: Use the _last_ element here to handle sandwiches.
         lb_locations = []
         sb_locations = []
         locb_locations = []
-        lb_locations = [j+1 for j, t in enumerate(tlist) if t in long_breaks]
-        sb_locations = [j+1 for j, t in enumerate(tlist) if t in short_breaks]
-        locb_locations = [j+1 for j, t in enumerate(tlist) if t in location_breaks]
+        lb_locations = [j for t, j in {t: j+1 for j, t in enumerate(tlist) if t in long_breaks}.items()]
+        sb_locations = [j for t, j in {t: j+1 for j, t in enumerate(tlist) if t in short_breaks}.items()]
+        locb_locations = [j for t, j in {t: j+1 for j, t in enumerate(tlist) if t in location_breaks}.items()]
         # At this point, i need to add "longbreak" and "shortbreak" tracks to the tape.
         # This will require creating special GDTracks, I guess.
         # for now, return the location indices.
@@ -631,7 +646,8 @@ class GDTape:
         longbreak_path = pkg_resources.resource_filename('timemachine.metadata', 'silence600.ogg')
         breakd = {'track': -1, 'original': 'setbreak', 'title': 'Set Break', 'format': 'Ogg Vorbis', 'size': 1, 'source': 'original', 'path': os.path.dirname(longbreak_path)}
         lbreakd = dict(list(breakd.items()) + [('title', 'Set Break'), ('name', 'silence600.ogg')])
-        sbreakd = dict(list(breakd.items()) + [('title', 'Encore Break'), ('name', 'silence300.ogg')])
+        #sbreakd = dict(list(breakd.items()) + [('title', 'Encore Break'), ('name', 'silence300.ogg')])
+        sbreakd = dict(list(breakd.items()) + [('title', 'Encore Break'), ('name', 'silence0.ogg')])
         locbreakd = dict(list(breakd.items()) + [('title', 'Location Break'), ('name', 'silence600.ogg')])
 
         # make the tracks
@@ -663,7 +679,9 @@ class GDTrack:
         for k, v in tdict.items():
             if k in attribs:
                 setattr(self, k, v)
-        # if these don't exist, i'll throw an error!
+        #print (f"title is {tdict['title']}")
+        #tdict['title'] = re.sub(r'gd\d{2}(?:\d{2})?-\d{2}-\d{2}','',tdict['title'])
+        #print (f"title is {tdict['title']}")
         if tdict['source'] == 'original':
             self.original = tdict['name']
         try:
@@ -711,6 +729,9 @@ class GDSet:
             date = d['date']
             time = d['time']
             song = d['song']
+            song_n = d['song_n']
+            # if song_n > 1:
+            #    song = song + f'_{song_n}'
             if date not in set_data.keys():
                 set_data[date] = {}
             set_data[date]['start_time'] = datetime.datetime.strptime(time, '%H:%M:%S.%f').time() if len(time) > 0 else None

@@ -26,6 +26,7 @@ import subprocess
 import threading
 import sys
 import time
+from operator import methodcaller
 from threading import Event
 from time import sleep
 
@@ -268,6 +269,9 @@ def select_current_date(state, autoplay=False):
         return
     date_reader = state.date_reader
     tapes = date_reader.archive.tape_dates[date_reader.fmtdate()]
+    scr.show_playstate(staged_play=True, force=True)
+    _ = [t.tracks() for t in tapes[:3]]   # load the tracks so we can increase the score of those with titles.
+    tapes = sorted(tapes, key=methodcaller('compute_score'), reverse=True)
     tape = tapes[0]
     state = select_tape(tape, state, autoplay=autoplay)
 
@@ -671,7 +675,7 @@ def test_update(state):
         pass
     try:
         scr.show_text("Turn Any\nKnob", force=True)
-        if knob_event.wait(50):
+        if knob_event.wait(290):
             knob_event.clear()
             scr.clear()
         else:
@@ -784,10 +788,10 @@ def event_loop(state):
                     last_idle_day = now.day
                     last_idle_hour = now.hour
                     last_idle_minute = now.minute
-                    # try:
-                    #    date_reader.archive.load_archive(with_latest=True)
-                    # except:
-                    #    logger.warn("Unable to refresh archive")
+                    try:
+                        date_reader.archive.load_archive(with_latest=True)
+                    except:
+                        logger.warn("Unable to refresh archive")
                 track_event.set()
                 playstate_event.set()
                 save_state(state)

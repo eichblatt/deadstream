@@ -7,6 +7,9 @@ date
 git_branch=main    # Make this a command-line option!
 if [ $HOSTNAME == deadstream2 ]; then
    git_branch=dev    # Make this a command-line option!
+else
+   echo "sudo systemctl disable ssh"
+   sudo systemctl disable ssh
 fi
 echo "git branch is $git_branch"
 
@@ -19,7 +22,7 @@ system () {
 echo "[ ! -f $HOME/helpontheway.ogg ] && wget -O $HOME/helpontheway.ogg https://archive.org/download/gd75-08-13.fm.vernon.23661.sbeok.shnf/gd75-08-13d1t02.ogg "
 [ ! -f $HOME/helpontheway.ogg ] && wget -O $HOME/helpontheway.ogg https://archive.org/download/gd75-08-13.fm.vernon.23661.sbeok.shnf/gd75-08-13d1t02.ogg
 echo "mpv --volume=60 --really-quiet $HOME/helpontheway.ogg $HOME/helpontheway.ogg $HOME/helpontheway.ogg &"
-mpv --volume=60 --really-quiet $HOME/helpontheway.ogg &
+mpv --volume=60 --really-quiet $HOME/helpontheway.ogg $HOME/helpontheway.ogg $HOME/helpontheway.ogg &
 help_on_the_way_pid=$!
 
 restore_services () {
