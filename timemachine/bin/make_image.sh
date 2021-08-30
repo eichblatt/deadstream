@@ -30,6 +30,7 @@ current_env=$(basename `readlink -f timemachine`)
 files=`find . -maxdepth 1 -mindepth 1 -name env_\* -a -not -name $current_env -printf "%f "`
 system "sudo rm -rf $files"
 system "sudo rm -rf .knob_sense"
+system "sudo rm -rf .ssh"
 
 
 echo "Removing wpa_supplicant"
