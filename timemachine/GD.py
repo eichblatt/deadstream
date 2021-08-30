@@ -632,7 +632,8 @@ class GDTape:
         longbreak_path = pkg_resources.resource_filename('timemachine.metadata', 'silence600.ogg')
         breakd = {'track': -1, 'original': 'setbreak', 'title': 'Set Break', 'format': 'Ogg Vorbis', 'size': 1, 'source': 'original', 'path': os.path.dirname(longbreak_path)}
         lbreakd = dict(list(breakd.items()) + [('title', 'Set Break'), ('name', 'silence600.ogg')])
-        sbreakd = dict(list(breakd.items()) + [('title', 'Encore Break'), ('name', 'silence300.ogg')])
+        #sbreakd = dict(list(breakd.items()) + [('title', 'Encore Break'), ('name', 'silence300.ogg')])
+        sbreakd = dict(list(breakd.items()) + [('title', 'Encore Break'), ('name', 'silence0.ogg')])
         locbreakd = dict(list(breakd.items()) + [('title', 'Location Break'), ('name', 'silence600.ogg')])
 
         # make the tracks
