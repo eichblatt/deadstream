@@ -353,7 +353,7 @@ class GDArchive:
             return None
         tapes = self.tape_dates[date]
         if resort:
-            _ = [t.tracks() for t in tapes]   # load the tracks so we can increase the score of those with titles.
+            _ = [t.tracks() for t in tapes[:3]]   # load first 3 tapes' tracks. Decrease score of those without titles.
             tapes = sorted(tapes, key=methodcaller('compute_score'), reverse=True)
         return tapes[0]
 
@@ -500,14 +500,14 @@ class GDTape:
 
     def compute_score(self):
         """ compute a score for sorting the tape. High score means it should be played first """
-        score = 0
+        score = 3
         if self.stream_only():
             score = score + 10
         if 'optd' in dir(config) and len(config.optd['FAVORED_TAPER']) > 0:
             if config.optd['FAVORED_TAPER'].lower() in self.identifier.lower():
                 score = score + 3
         if self.meta_loaded:
-            score = score + 3.5*self.title_fraction()  # boost score for titles available.
+            score = score + 3*(self.title_fraction()-1)  # reduce score for tapes without titles.
         score = score + math.log(1+self.downloads)
         score = score + self.avg_rating - 2.0/math.sqrt(self.num_reviews)
         return score

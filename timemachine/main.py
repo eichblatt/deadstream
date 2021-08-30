@@ -270,7 +270,7 @@ def select_current_date(state, autoplay=False):
     date_reader = state.date_reader
     tapes = date_reader.archive.tape_dates[date_reader.fmtdate()]
     scr.show_playstate(staged_play=True, force=True)
-    _ = [t.tracks() for t in tapes]   # load the tracks so we can increase the score of those with titles.
+    _ = [t.tracks() for t in tapes[:3]]   # load the tracks so we can increase the score of those with titles.
     tapes = sorted(tapes, key=methodcaller('compute_score'), reverse=True)
     tape = tapes[0]
     state = select_tape(tape, state, autoplay=autoplay)
