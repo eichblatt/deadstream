@@ -611,12 +611,14 @@ class GDTape:
             location_breaks = [difflib.get_close_matches(x, tlist)[0] for x in locb]
         except BaseException:
             pass
+        # NOTE: Use the _last_ element here to handle sandwiches.
         lb_locations = []
         sb_locations = []
         locb_locations = []
-        lb_locations = [j+1 for j, t in enumerate(tlist) if t in long_breaks]
-        sb_locations = [j+1 for j, t in enumerate(tlist) if t in short_breaks]
-        locb_locations = [j+1 for j, t in enumerate(tlist) if t in location_breaks]
+        lb_locations = [j for t, j in {t: j+1 for j, t in enumerate(tlist) if t in long_breaks}.items()]
+        # NOTE: eliminate encore breaks
+        #sb_locations = [j for t,j in {t:j+1 for j, t in enumerate(tlist) if t in short_breaks}.items()]
+        locb_locations = [j for t, j in {t: j+1 for j, t in enumerate(tlist) if t in location_breaks}.items()]
         # At this point, i need to add "longbreak" and "shortbreak" tracks to the tape.
         # This will require creating special GDTracks, I guess.
         # for now, return the location indices.
@@ -711,6 +713,9 @@ class GDSet:
             date = d['date']
             time = d['time']
             song = d['song']
+            song_n = d['song_n']
+            # if song_n > 1:
+            #    song = song + f'_{song_n}'
             if date not in set_data.keys():
                 set_data[date] = {}
             set_data[date]['start_time'] = datetime.datetime.strptime(time, '%H:%M:%S.%f').time() if len(time) > 0 else None
