@@ -675,7 +675,7 @@ def test_update(state):
         pass
     try:
         scr.show_text("Turn Any\nKnob", force=True)
-        if knob_event.wait(50):
+        if knob_event.wait(290):
             knob_event.clear()
             scr.clear()
         else:
