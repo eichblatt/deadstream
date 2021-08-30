@@ -120,7 +120,7 @@ class date_knob_reader:
 
     def venue(self):
         if self.tape_available():
-            t = self.archive.best_tape(self.fmtdate())
+            t = self.archive.best_tape(self.fmtdate(), resort=False)
             return t.venue()
         return ""
 

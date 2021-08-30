@@ -27,6 +27,7 @@ import logging
 import math
 import os
 import pickle5 as pickle
+import re
 import requests
 import threading
 import time
@@ -344,13 +345,17 @@ class GDArchive:
         self.tape_dates = self.get_tape_dates()
         self.dates = sorted(self.tape_dates.keys())
 
-    def best_tape(self, date):
+    def best_tape(self, date, resort=True):
         if isinstance(date, datetime.date):
             date = date.strftime('%Y-%m-%d')
         if date not in self.dates:
             logger.info("No Tape for date {}".format(date))
             return None
-        return self.tape_dates[date][0]
+        tapes = self.tape_dates[date]
+        if resort:
+            _ = [t.tracks() for t in tapes]   # load the tracks so we can increase the score of those with titles.
+            tapes = sorted(tapes, key=methodcaller('compute_score'), reverse=True)
+        return tapes[0]
 
     def tape_at_date(self, dt, which_tape=0):
         then_date = dt.date()
@@ -501,12 +506,19 @@ class GDTape:
         if 'optd' in dir(config) and len(config.optd['FAVORED_TAPER']) > 0:
             if config.optd['FAVORED_TAPER'].lower() in self.identifier.lower():
                 score = score + 3
+        if self.meta_loaded:
+            score = score + 3.5*self.title_fraction()  # boost score for titles available.
         score = score + math.log(1+self.downloads)
         score = score + self.avg_rating - 2.0/math.sqrt(self.num_reviews)
         return score
 
     def contains_sound(self):
         return len(list(set(self._playable_formats) & set(self.format))) > 0
+
+    def title_fraction(self):
+        n_tracks = len(self._tracks)
+        n_known = len([t for t in self._tracks if t.title != 'unknown'])
+        return n_known/n_tracks
 
     def tracks(self):
         self.get_metadata()
@@ -557,6 +569,8 @@ class GDTape:
         json.dump(page_meta, open(meta_path, 'w'))
         self.meta_loaded = True
         # return page_meta
+        for track in self._tracks:
+            track.title = re.sub(r'gd\d{2}(?:\d{2})?-\d{2}-\d{2}[ ]*([td]\d*)*', '', track.title).strip()
         self.insert_breaks()
         return
 
@@ -665,7 +679,9 @@ class GDTrack:
         for k, v in tdict.items():
             if k in attribs:
                 setattr(self, k, v)
-        # if these don't exist, i'll throw an error!
+        #print (f"title is {tdict['title']}")
+        #tdict['title'] = re.sub(r'gd\d{2}(?:\d{2})?-\d{2}-\d{2}','',tdict['title'])
+        #print (f"title is {tdict['title']}")
         if tdict['source'] == 'original':
             self.original = tdict['name']
         try:
