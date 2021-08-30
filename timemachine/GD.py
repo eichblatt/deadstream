@@ -616,8 +616,7 @@ class GDTape:
         sb_locations = []
         locb_locations = []
         lb_locations = [j for t, j in {t: j+1 for j, t in enumerate(tlist) if t in long_breaks}.items()]
-        # NOTE: eliminate encore breaks
-        #sb_locations = [j for t,j in {t:j+1 for j, t in enumerate(tlist) if t in short_breaks}.items()]
+        sb_locations = [j for t, j in {t: j+1 for j, t in enumerate(tlist) if t in short_breaks}.items()]
         locb_locations = [j for t, j in {t: j+1 for j, t in enumerate(tlist) if t in location_breaks}.items()]
         # At this point, i need to add "longbreak" and "shortbreak" tracks to the tape.
         # This will require creating special GDTracks, I guess.
