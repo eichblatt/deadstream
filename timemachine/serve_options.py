@@ -98,7 +98,10 @@ class StringGenerator(object):
         page_string = """<html>
          <head></head>
          <body> Restarting Service <p> Command: """ + cmd + """
-         </body>
+           <form method="get" action="index">
+             <button type="submit">Return</button>
+           </form>
+          </body>
        </html>"""
         print(F'Restart_service command {cmd}')
         sleep(parms.sleep_time)
