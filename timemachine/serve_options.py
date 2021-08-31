@@ -67,7 +67,7 @@ class StringGenerator(object):
         input_type = "text"
         if type(v) == int:
             input_type = "number"
-        outstring = F'<label> {k} <input type="{input_type}" name="{k}" value={v}'
+        outstring = F'<label> {k} <input type="{input_type}" name="{k}" value="{v}"'
         if type(v) == bool:
             outstring += ' pattern="true|false" title="true or false"> <p>'
         else:
