@@ -222,7 +222,7 @@ class TapeDownloader(BaseTapeDownloader):
         if min_addeddate is None:
             query = F'collection:{self.collection_name} AND date:[{min_date} TO {max_date}]'
         else:
-            max_added_date = datetime.datetime.now().strftime('%Y-%m-%dT%H:%M:%SZ')
+            #max_addeddate = datetime.datetime.now().strftime('%Y-%m-%dT%H:%M:%SZ')
             query = F'collection:{self.collection_name} AND date:[{min_date} TO {max_date}] AND addeddate:[{min_addeddate} TO {max_date}]'
         parms['q'] = query
         r = requests.get(self.api, params=parms)
@@ -256,91 +256,6 @@ class TapeDownloader(BaseTapeDownloader):
             raise Exception(
                 'Download', 'Error {} collection'.format(r.status_code))
         return r
-
-
-class AsyncTapeDownloader(BaseTapeDownloader):
-    """Asynchronous Grateful Dead Tape Downloader"""
-
-    def get_all_tapes(self, iddir, min_addeddate=None):
-        """Get a list of all tapes."""
-        pass
-
-    def get_tapes(self, years):
-        """Get a list of tapes.
-
-        Parameters:
-
-            years: List of years to download tapes for
-
-        Returns a list dictionaries of tape information
-        """
-        tapes = asyncio.run(self._get_tapes(years))
-        return tapes
-
-    async def _get_tapes(self, years):
-        """Get a list of tapes.
-
-        Parameters:
-
-            years: List of years to download tapes for
-
-        Returns a list dictionaries of tape information
-        """
-        # This is the asynchronous impl of get_tapes()
-        logger.info("Loading tapes from the archive...")
-        timeout = aiohttp.ClientTimeout(total=600)
-        async with aiohttp.ClientSession() as session:
-            tasks = [self._get_tapes_year(session, year) for year in years]
-            tapes = await asyncio.gather(*tasks)
-        tapes = [tape for sublist in tapes for tape in sublist]
-        return tapes
-
-    async def _get_chunk(self, session, year, cursor=None):
-        """Get one chunk of a year's tape information.
-
-        Parameters:
-
-            session: The aiohttp.ClientSession to make requests through
-            year: The year to download tape information for
-            cursor: Used to download a segment of a year of tapes
-
-        Returns a list of dictionaries of tape information
-        """
-        parms = {"q": F"collection:{self.collection_name} AND year:{year}"}
-
-        if cursor is not None:
-            parms['cursor'] = cursor
-
-        async with session.get(self.api, params={**self.parms, **parms}) as r:
-            logger.debug(f"Year {year} chunk {cursor} url: {r.url}")
-            json = await r.json()
-            return json
-
-    async def _get_tapes_year(self, session, year):
-        """Get tape information for a year.
-
-        Parameters:
-
-            session: The aiohttp.ClientSession to make requests through
-            year: The year to download tape information for
-
-        Returns a list of dictionaries of tape information
-        """
-        tapes = []
-        cursor = None
-        n = 0
-
-        while True:
-            chunk = await self._get_chunk(session, year, cursor=cursor)
-            n += chunk["count"]
-            tapes.extend(chunk['items'])
-
-            if n >= chunk["total"]:
-                break
-
-            cursor = chunk["cursor"]
-
-        return tapes
 
 
 class GDArchive:
@@ -451,13 +366,14 @@ class GDArchive:
 #        pickle.dump(tapes, open(self.idpath_pkl, 'wb'), pickle.HIGHEST_PROTOCOL)
 
     def load_current_tapes(self, reload_ids=False):
+        logger.debug(F"Loading current tapes")
         tapes = []
         addeddates = []
         if reload_ids or not os.path.exists(self.idpath):
             #    os.system(f'rm -rf {self.idpath}')
-            logger.info("Loading Tapes from the Archive...this will take a few minutes")
+            logger.info('Loading Tapes from the Archive...this will take a few minutes')
             n_tapes = self.downloader.get_all_tapes(self.idpath)  # this will write chunks to folder
-            logger.info(f"Loaded {n_tapes} tapes from archive")
+            logger.info(f'Loaded {n_tapes} tapes from archive')
         # loop over chunks -- get max addeddate before filtering collections.
         if os.path.isdir(self.idpath):
             for filename in os.listdir(self.idpath):
@@ -479,24 +395,24 @@ class GDArchive:
         n_tapes = 0
         loaded_tapes, max_addeddate = self.load_current_tapes(reload_ids)
         current_tape_ids = [x['identifier'] for x in loaded_tapes]
+        logger.debug(f'max addeddate {max_addeddate}')
 
-        min_download_addeddate = (datetime.datetime.strptime(max_addeddate, '%Y-%m-%dT%H:%M:%SZ')) - datetime.timedelta(days=7)
+        min_download_addeddate = (datetime.datetime.strptime(max_addeddate, '%Y-%m-%dT%H:%M:%SZ')) - datetime.timedelta(hours=1)
         min_download_addeddate = datetime.datetime.strftime(min_download_addeddate, '%Y-%m-%dT%H:%M:%SZ')
+        logger.debug(f'min_download_addeddate {min_download_addeddate}')
 
         latest_tapes = []
         if with_latest:
-            logger.debug(F"Refreshing Tapes\nmax addeddate {max_added_date}\nmin_download_addeddate {min_download_addeddate}")
+            logger.debug(f'Refreshing Tapes\nmax addeddate {max_addeddate}\nmin_download_addeddate {min_download_addeddate}')
             n_tapes = self.downloader.get_all_tapes(self.idpath, min_download_addeddate)
-            logger.info("Loaded {n_tapes} new tapes from archive")
+            logger.info(f'Loaded {n_tapes} new tapes from archiver')
         if n_tapes > 0:
-            logger.info(F"Adding {n_tapes} tapes")
+            logger.info(f'Adding {n_tapes} tapes')
             loaded_tapes, _ = self.load_current_tapes()
         else:
             if len(self.tapes) > 0:  # The tapes have already been written, and nothing was added
                 return self.tapes
         self.tapes = [GDTape(self.dbpath, tape, self.set_data) for tape in loaded_tapes]
-        self.tape_dates = self.get_tape_dates()
-        self.dates = sorted(self.tape_dates.keys())
         return self.tapes
 
 
@@ -595,15 +511,15 @@ class GDTape:
             r = requests.get(self.url_metadata)
             logger.info("url is {}".format(r.url))
             if r.status_code != 200:
-                logger.warn("error pulling data for {}".format(self.identifier))
+                logger.warning("error pulling data for {}".format(self.identifier))
                 raise Exception('Download', 'Error {} url {}'.format(r.status_code, self.url_metadata))
             try:
                 page_meta = r.json()
             except ValueError:
-                logger.warn("Json Error {}".format(r.url))
+                logger.warning("Json Error {}".format(r.url))
                 return None
             except BaseException:
-                logger.warn("Json Error, probably")
+                logger.warning("Json Error, probably")
                 return None
 
         # self.reviews = page_meta['reviews'] if 'reviews' in page_meta.keys() else []
@@ -932,7 +848,7 @@ class GDPlayer(MPV):
 
     def play(self):
         if not retry_call(self.reset_audio_device, None):
-            logger.warn("Failed to reset audio device when playing")
+            logger.warning("Failed to reset audio device when playing")
         # if not self.reset_audio_device():
         #    return
         logger.info("playing")
