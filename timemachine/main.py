@@ -840,6 +840,8 @@ message = "Time\n  Machine\n   Loading..."
 scr.show_text(message, color=(0, 255, 255), force=False, clear=True)
 scr.show_text(F"{ip_address}", loc=(0, 100), font=scr.smallfont, color=(255, 255, 255))
 
+if parms.test_update:
+    config.optd = default_options()  # no weirdness during update testing
 archive = GD.GDArchive(parms.dbpath, with_latest=False, collection_name=config.optd['COLLECTIONS'])
 player = GD.GDPlayer()
 
