@@ -784,14 +784,15 @@ def event_loop(state):
                 screen_event.set()
             if idle_second_hand in refresh_times and idle_second_hand != last_idle_second_hand:
                 last_idle_second_hand = idle_second_hand
-                if now.hour < last_idle_hour:
+                if now.hour != last_idle_hour:
+                    # if now.minute != last_idle_minute:
                     last_idle_day = now.day
                     last_idle_hour = now.hour
                     last_idle_minute = now.minute
                     try:
                         date_reader.archive.load_archive(with_latest=True)
                     except:
-                        logger.warn("Unable to refresh archive")
+                        logger.warning("Unable to refresh archive")
                 track_event.set()
                 playstate_event.set()
                 save_state(state)
@@ -839,7 +840,9 @@ message = "Time\n  Machine\n   Loading..."
 scr.show_text(message, color=(0, 255, 255), force=False, clear=True)
 scr.show_text(F"{ip_address}", loc=(0, 100), font=scr.smallfont, color=(255, 255, 255))
 
-archive = GD.GDArchive(parms.dbpath, collection_name=config.optd['COLLECTIONS'])
+if parms.test_update:
+    config.optd = default_options()  # no weirdness during update testing
+archive = GD.GDArchive(parms.dbpath, with_latest=False, collection_name=config.optd['COLLECTIONS'])
 player = GD.GDPlayer()
 
 
