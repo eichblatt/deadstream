@@ -59,11 +59,12 @@ system "pip3 install git+https://github.com/eichblatt/deadstream.git@$git_branch
 
 current_metadata_path=$HOME/timemachine/lib/python3.7/site-packages/timemachine/metadata
 new_metadata_path=$HOME/$env_name/lib/python3.7/site-packages/timemachine/metadata
-update_archive=`find $current_metadata_path/GratefulDead_ids.pkl -mtime +40 | wc -l`
 #update_archive=`find $current_metadata_path/GratefulDead_ids.json -mtime +40 | wc -l`
-if [ $update_archive == 0 ]; then
-   system "cp -pR $current_metadata_path/*.json $new_metadata_path/."
-   system "cp -pR $current_metadata_path/*.pkl $new_metadata_path/."
+#if [ $update_archive == 0 ]; then
+#   system "cp -pR $current_metadata_path/*.json $new_metadata_path/."
+#fi
+if [ -f $current_metadata_path/GratefulDead_ids ]; then
+   system "cp -pR $current_metadata_path/*_ids $new_metadata_path/."
 fi
 
 # Stop the running services
