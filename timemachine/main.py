@@ -788,10 +788,10 @@ def event_loop(state):
                     last_idle_day = now.day
                     last_idle_hour = now.hour
                     last_idle_minute = now.minute
-                    try:
-                        date_reader.archive.load_archive(with_latest=True)
-                    except:
-                        logger.warn("Unable to refresh archive")
+                    # try:
+                    #    date_reader.archive.load_archive(with_latest=True)
+                    # except:
+                    #    logger.warn("Unable to refresh archive")
                 track_event.set()
                 playstate_event.set()
                 save_state(state)
@@ -839,7 +839,7 @@ message = "Time\n  Machine\n   Loading..."
 scr.show_text(message, color=(0, 255, 255), force=False, clear=True)
 scr.show_text(F"{ip_address}", loc=(0, 100), font=scr.smallfont, color=(255, 255, 255))
 
-archive = GD.GDArchive(parms.dbpath, collection_name=config.optd['COLLECTIONS'])
+archive = GD.GDArchive(parms.dbpath, with_latest=False, collection_name=config.optd['COLLECTIONS'])
 player = GD.GDPlayer()
 
 
