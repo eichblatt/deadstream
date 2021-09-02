@@ -472,6 +472,10 @@ class GDTape:
         if 'optd' in dir(config) and len(config.optd['FAVORED_TAPER']) > 0:
             if config.optd['FAVORED_TAPER'].lower() in self.identifier.lower():
                 score = score + 3
+        if 'optd' in dir(config) and len(config.optd['COLLECTIONS']) > 1:
+            colls = config.optd['COLLECTIONS']
+            score0 = score
+            score = score + 5 * (len(colls) - min([colls.index(c) if c in colls else 100 for c in self.collection]))
         if self.meta_loaded:
             score = score + 3*(self.title_fraction()-1)  # reduce score for tapes without titles.
         score = score + math.log(1+self.downloads)
@@ -523,10 +527,17 @@ class GDTape:
                 return None
 
         # self.reviews = page_meta['reviews'] if 'reviews' in page_meta.keys() else []
+        orig_titles = {}
         for ifile in page_meta['files']:
             try:
-                if ifile['format'] in self._playable_formats:
-                    self.append_track(ifile)
+                if ifile['format'] in self._playable_formats + ['Flac']:
+                    if ifile['source'] == 'original':
+                        try:
+                            orig_titles[ifile['name']] = ifile['title']
+                        except:
+                            pass
+                    if ifile['format'] in self._playable_formats:
+                        self.append_track(ifile, orig_titles)
             except KeyError:
                 pass
             except Exception as e:   # TODO handle this!!!
@@ -540,12 +551,15 @@ class GDTape:
         self.insert_breaks()
         return
 
-    def append_track(self, tdict):
+    def append_track(self, tdict, orig_titles={}):
         source = tdict['source']
         if source == 'original':
             orig = tdict['name']
         else:
             orig = tdict['original']
+            if tdict['title'] == 'unknown':
+                if orig in orig_titles.keys():
+                    tdict['title'] = orig_titles[orig]
         trackindex = None
         for i, t in enumerate(self._tracks):
             if orig == t.original:  # add in alternate formats
