@@ -67,7 +67,7 @@ class StringGenerator(object):
         input_type = "text"
         if type(v) == int:
             input_type = "number"
-        outstring = F'<label> {k} <input type="{input_type}" name="{k}" value={v}'
+        outstring = F'<label> {k} <input type="{input_type}" name="{k}" value="{v}"'
         if type(v) == bool:
             outstring += ' pattern="true|false" title="true or false"> <p>'
         else:
@@ -98,7 +98,10 @@ class StringGenerator(object):
         page_string = """<html>
          <head></head>
          <body> Restarting Service <p> Command: """ + cmd + """
-         </body>
+           <form method="get" action="index">
+             <button type="submit">Return</button>
+           </form>
+          </body>
        </html>"""
         print(F'Restart_service command {cmd}')
         sleep(parms.sleep_time)

@@ -181,6 +181,7 @@ def default_options():
     d['PWR_LED_ON'] = False
     d['AUTO_PLAY'] = True
     d['RELOAD_STATE_ON_START'] = True
+    d['AUTO_UPDATE_ARCHIVE'] = False
     d['DEFAULT_START_TIME'] = datetime.time(15, 0)
     d['TIMEZONE'] = 'America/New_York'
     return d
@@ -198,6 +199,7 @@ def load_options(parms):
         tmpd['PWR_LED_ON'] = tmpd['PWR_LED_ON'].lower() == 'true'
         tmpd['SCROLL_VENUE'] = tmpd['SCROLL_VENUE'].lower() == 'true'
         tmpd['AUTO_PLAY'] = tmpd['AUTO_PLAY'].lower() == 'true'
+        tmpd['AUTO_UPDATE_ARCHIVE'] = tmpd['AUTO_UPDATE_ARCHIVE'].lower() == 'true'
         tmpd['RELOAD_STATE_ON_START'] = tmpd['RELOAD_STATE_ON_START'].lower() == 'true'
         tmpd['DEFAULT_START_TIME'] = datetime.datetime.strptime(tmpd['DEFAULT_START_TIME'], "%H:%M:%S").time()
         optd = tmpd
@@ -313,6 +315,7 @@ def select_button_longpress(button, state):
         logger.info(F"Selecting Tape: {tape_id}, the {itape}th of {len(tapes)} choices. SBD:{sbd}")
         if len(tape_id) < 16:
             scr.show_venue(tape_id, color=id_color, force=True)
+            sleep(5)
         else:
             for i in range(0, max(1, len(tape_id)), 2):
                 scr.show_venue(tape_id[i:], color=id_color, force=True)
@@ -784,14 +787,15 @@ def event_loop(state):
                 screen_event.set()
             if idle_second_hand in refresh_times and idle_second_hand != last_idle_second_hand:
                 last_idle_second_hand = idle_second_hand
-                if now.hour < last_idle_hour:
+                if now.hour != last_idle_hour:
+                    # if now.minute != last_idle_minute:
                     last_idle_day = now.day
                     last_idle_hour = now.hour
                     last_idle_minute = now.minute
                     try:
-                        date_reader.archive.load_archive(with_latest=True)
+                        date_reader.archive.load_archive(with_latest=config.optd['AUTO_UPDATE_ARCHIVE'])
                     except:
-                        logger.warn("Unable to refresh archive")
+                        logger.warning("Unable to refresh archive")
                 track_event.set()
                 playstate_event.set()
                 save_state(state)
@@ -839,7 +843,9 @@ message = "Time\n  Machine\n   Loading..."
 scr.show_text(message, color=(0, 255, 255), force=False, clear=True)
 scr.show_text(F"{ip_address}", loc=(0, 100), font=scr.smallfont, color=(255, 255, 255))
 
-archive = GD.GDArchive(parms.dbpath, collection_name=config.optd['COLLECTIONS'])
+if parms.test_update:
+    config.optd = default_options()  # no weirdness during update testing
+archive = GD.GDArchive(parms.dbpath, with_latest=False, collection_name=config.optd['COLLECTIONS'])
 player = GD.GDPlayer()
 
 
