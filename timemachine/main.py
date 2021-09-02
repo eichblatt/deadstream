@@ -315,6 +315,7 @@ def select_button_longpress(button, state):
         logger.info(F"Selecting Tape: {tape_id}, the {itape}th of {len(tapes)} choices. SBD:{sbd}")
         if len(tape_id) < 16:
             scr.show_venue(tape_id, color=id_color, force=True)
+            sleep(5)
         else:
             for i in range(0, max(1, len(tape_id)), 2):
                 scr.show_venue(tape_id[i:], color=id_color, force=True)
