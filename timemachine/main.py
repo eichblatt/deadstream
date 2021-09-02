@@ -181,6 +181,7 @@ def default_options():
     d['PWR_LED_ON'] = False
     d['AUTO_PLAY'] = True
     d['RELOAD_STATE_ON_START'] = True
+    d['AUTO_UPDATE_ARCHIVE'] = False
     d['DEFAULT_START_TIME'] = datetime.time(15, 0)
     d['TIMEZONE'] = 'America/New_York'
     return d
@@ -198,6 +199,7 @@ def load_options(parms):
         tmpd['PWR_LED_ON'] = tmpd['PWR_LED_ON'].lower() == 'true'
         tmpd['SCROLL_VENUE'] = tmpd['SCROLL_VENUE'].lower() == 'true'
         tmpd['AUTO_PLAY'] = tmpd['AUTO_PLAY'].lower() == 'true'
+        tmpd['AUTO_UPDATE_ARCHIVE'] = tmpd['AUTO_UPDATE_ARCHIVE'].lower() == 'true'
         tmpd['RELOAD_STATE_ON_START'] = tmpd['RELOAD_STATE_ON_START'].lower() == 'true'
         tmpd['DEFAULT_START_TIME'] = datetime.datetime.strptime(tmpd['DEFAULT_START_TIME'], "%H:%M:%S").time()
         optd = tmpd
@@ -790,7 +792,7 @@ def event_loop(state):
                     last_idle_hour = now.hour
                     last_idle_minute = now.minute
                     try:
-                        date_reader.archive.load_archive(with_latest=True)
+                        date_reader.archive.load_archive(with_latest=config.optd['AUTO_UPDATE_ARCHIVE'])
                     except:
                         logger.warning("Unable to refresh archive")
                 track_event.set()
