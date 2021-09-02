@@ -360,17 +360,12 @@ class GDArchive:
             self.tape_dates[k] = sorted(v, key=methodcaller('compute_score'), reverse=True)
         return self.tape_dates
 
-#    def write_tapes(self, tapes):
-#        os.makedirs(os.path.dirname(self.idpath), exist_ok=True)
-#        json.dump(tapes, open(self.idpath, 'w'))
-#        pickle.dump(tapes, open(self.idpath_pkl, 'wb'), pickle.HIGHEST_PROTOCOL)
-
     def load_current_tapes(self, reload_ids=False):
         logger.debug(F"Loading current tapes")
         tapes = []
         addeddates = []
         if reload_ids or not os.path.exists(self.idpath):
-            #    os.system(f'rm -rf {self.idpath}')
+            os.system(f'rm -rf {self.idpath}')
             logger.info('Loading Tapes from the Archive...this will take a few minutes')
             n_tapes = self.downloader.get_all_tapes(self.idpath)  # this will write chunks to folder
             logger.info(f'Loaded {n_tapes} tapes from archive')
@@ -388,7 +383,6 @@ class GDArchive:
             tapes = [t for t in tapes if any(x in self.collection_name for x in t['collection'])]
         max_addeddate = max(addeddates)
         return (tapes, max_addeddate)
-        # return [GDTape(self.dbpath, tape, self.set_data) for tape in tapes]
 
     def load_tapes(self, reload_ids=False, with_latest=False):
         """ Load the tapes, then add anything which has been added since the tapes were saved """
@@ -659,9 +653,6 @@ class GDTrack:
         for k, v in tdict.items():
             if k in attribs:
                 setattr(self, k, v)
-        #print (f"title is {tdict['title']}")
-        #tdict['title'] = re.sub(r'gd\d{2}(?:\d{2})?-\d{2}-\d{2}','',tdict['title'])
-        #print (f"title is {tdict['title']}")
         if tdict['source'] == 'original':
             self.original = tdict['name']
         try:
