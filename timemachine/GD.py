@@ -488,7 +488,7 @@ class GDTape:
     def title_fraction(self):
         n_tracks = len(self._tracks)
         n_known = len([t for t in self._tracks if t.title != 'unknown'])
-        return n_known/n_tracks
+        return (1 + n_known) / (1 + n_tracks)
 
     def tracks(self):
         self.get_metadata()
