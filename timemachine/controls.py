@@ -207,6 +207,7 @@ class screen:
         #self.selected_date_bbox = Bbox(0,100,130,128)
         self.selected_date_bbox = Bbox(0, 100, 160, 128)
         self.venue_bbox = Bbox(0, 31, 160, 56)
+        self.nevents_bbox = Bbox(148, 31, 160, 56)
         self.track1_bbox = Bbox(0, 55, 160, 77)
         self.track2_bbox = Bbox(0, 78, 160, 100)
         self.playstate_bbox = Bbox(130, 100, 160, 128)
@@ -291,9 +292,21 @@ class screen:
         self.clear_area(self.exp_bbox)
         self.show_text(text, self.exp_bbox.origin(), font=self.smallfont, color=color, stroke_width=1, force=force)
 
-    def show_venue(self, text, color=(0, 255, 255), force=False):
+    def show_nevents(self, num_events, color=(255, 100, 0), force=False):
+        self.clear_area(self.nevents_bbox)
+        self.show_text(str(num_events), self.nevents_bbox.origin(), font=self.boldsmall, color=color, force=force)
+
+    def show_venue(self, arg, color=(0, 255, 255), force=False):
         self.clear_area(self.venue_bbox)
-        self.show_text(text, self.venue_bbox.origin(), font=self.boldsmall, color=color, force=force)
+        if isinstance(arg, date_knob_reader):
+            tapes = arg.archive.tape_dates[arg.fmtdate()] if arg.fmtdate() in arg.archive.tape_dates.keys() else []
+            num_events = len(set([set(x.collection).intersection(set(config.optd['COLLECTIONS'])).pop() for x in tapes]))
+            venue_name = arg.venue()
+            self.show_text(venue_name, self.venue_bbox.origin(), font=self.boldsmall, color=color, force=force)
+            if num_events > 1:
+                self.show_nevents(str(num_events), force=force)
+        if isinstance(arg, str):
+            self.show_text(arg, self.venue_bbox.origin(), font=self.boldsmall, color=color, force=force)
 
     def show_staged_date(self, date, color=(0, 255, 255), force=False):
         if date == self.staged_date:
