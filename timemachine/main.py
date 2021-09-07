@@ -323,7 +323,7 @@ def select_button_longpress(button, state):
                     break
     scr.show_venue(tape_id, color=id_color)
     tape = tapes[itape]
-    state = select_tape(tape, state)
+    state = select_tape(tape, state, autoplay=config.optd['AUTO_PLAY'])
     select_event.set()
 
 
@@ -758,7 +758,7 @@ def event_loop(state):
                 last_sdevent = now
                 q_counter = True
                 scr.show_staged_date(date_reader.date)
-                scr.show_venue(date_reader.venue())
+                scr.show_venue(date_reader)
                 # if clear_stagedate: stagedate_event.clear()
                 # clear_stagedate = not clear_stagedate   # only clear stagedate event after updating twice
                 stagedate_event.clear()
@@ -815,7 +815,7 @@ def event_loop(state):
                     refresh_venue(state, idle_second_hand, refresh_times, date_reader.venue())
                 else:
                     scr.show_staged_date(date_reader.date)
-                    scr.show_venue(date_reader.venue())
+                    scr.show_venue(date_reader)
                 screen_event.set()
 
     except KeyboardInterrupt:
