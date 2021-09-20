@@ -193,19 +193,21 @@ def load_options(parms):
     try:
         f = open(parms.options_path, 'r')
         tmpd = json.loads(f.read())
-        tmpd['COLLECTIONS'] = [x.strip() for x in tmpd['COLLECTIONS'].split(',')]
-        tmpd['QUIESCENT_TIME'] = int(tmpd['QUIESCENT_TIME'])
-        tmpd['SLEEP_AFTER_SECONDS'] = int(tmpd['SLEEP_AFTER_SECONDS'])
-        tmpd['PWR_LED_ON'] = tmpd['PWR_LED_ON'].lower() == 'true'
-        tmpd['SCROLL_VENUE'] = tmpd['SCROLL_VENUE'].lower() == 'true'
-        tmpd['AUTO_PLAY'] = tmpd['AUTO_PLAY'].lower() == 'true'
-        tmpd['AUTO_UPDATE_ARCHIVE'] = tmpd['AUTO_UPDATE_ARCHIVE'].lower() == 'true'
-        tmpd['RELOAD_STATE_ON_START'] = tmpd['RELOAD_STATE_ON_START'].lower() == 'true'
-        tmpd['DEFAULT_START_TIME'] = datetime.datetime.strptime(tmpd['DEFAULT_START_TIME'], "%H:%M:%S").time()
+        for k in config.optd.keys():
+            try:
+                if k in ['QUIESCENT_TIME', 'SLEEP_AFTER_SECONDS']:
+                    tmpd[k] = int(tmpd[k])
+                if k in ['PWR_LED_ON', 'SCROLL_VENUE', 'AUTO_PLAY', 'AUTO_UPDATE_ARCHIVE', 'RELOAD_STATE_ON_START']:
+                    tmpd[k] = tmpd[k].lower() == 'true'
+                if k in ['COLLECTIONS']:
+                    tmpd[k] = [x.strip() for x in tmpd[k].split(',')]
+                if k in ['DEFAULT_START_TIME']:
+                    tmpd[k] = datetime.datetime.strptime(tmpd[k], "%H:%M:%S").time()
+            except:
+                logger.warning(F"Failed to set option {k}. Using {config.optd[k]}")
         optd = tmpd
     except:
         logger.warning(F"Failed to read options from {parms.options_path}. Using defaults")
-
     config.optd.update(optd)  # update defaults with those read from the file.
     logger.info(F"in load_options, optd {optd}")
     os.environ['TZ'] = config.optd['TIMEZONE']
@@ -839,13 +841,28 @@ config.WOKE_AT = datetime.datetime.now()
 
 scr = controls.screen(upside_down=False)
 ip_address = get_ip()
-message = "Time\n  Machine\n   Loading..."
-scr.show_text(message, color=(0, 255, 255), force=False, clear=True)
+scr.show_text("Time\n  Machine\n   Loading...", color=(0, 255, 255), force=False, clear=True)
 scr.show_text(F"{ip_address}", loc=(0, 100), font=scr.smallfont, color=(255, 255, 255))
 
 if parms.test_update:
     config.optd = default_options()  # no weirdness during update testing
-archive = GD.GDArchive(parms.dbpath, with_latest=False, collection_name=config.optd['COLLECTIONS'])
+
+# Define the buttons here
+select = retry_call(Button, config.select_pin, hold_time=0.5, hold_repeat=False)
+play_pause = retry_call(Button, config.play_pause_pin, hold_time=7)
+ffwd = retry_call(Button, config.ffwd_pin, hold_time=0.5, hold_repeat=False)
+rewind = retry_call(Button, config.rewind_pin, hold_time=0.5, hold_repeat=False)
+stop = retry_call(Button, config.stop_pin, hold_time=7)
+
+reload_ids = False
+if rewind.is_pressed:
+    scr.show_text("Reloading\nfrom\narchive.org...", color=(0, 255, 255), force=True, clear=True)
+    logger.info('Reloading from archive.org')
+    #reload_ids = True
+if stop.is_pressed:
+    logger.info(F'Resetting to factory archive -- nyi')
+
+archive = GD.GDArchive(parms.dbpath, reload_ids=reload_ids, with_latest=False, collection_name=config.optd['COLLECTIONS'])
 player = GD.GDPlayer()
 
 
@@ -891,12 +908,6 @@ y.when_rotated = lambda x: twist_knob(y, "year", date_reader)
 m_button = retry_call(Button, config.month_pins[2])
 d_button = retry_call(Button, config.day_pins[2], hold_time=0.3, hold_repeat=False)
 y_button = retry_call(Button, config.year_pins[2], hold_time=0.5)
-
-select = retry_call(Button, config.select_pin, hold_time=0.5, hold_repeat=False)
-play_pause = retry_call(Button, config.play_pause_pin, hold_time=7)
-ffwd = retry_call(Button, config.ffwd_pin, hold_time=0.5, hold_repeat=False)
-rewind = retry_call(Button, config.rewind_pin, hold_time=0.5, hold_repeat=False)
-stop = retry_call(Button, config.stop_pin, hold_time=7)
 
 play_pause.when_pressed = lambda button: play_pause_button(button, state)
 play_pause.when_held = lambda button: play_pause_button_longpress(button, state)
