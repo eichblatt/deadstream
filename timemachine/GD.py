@@ -524,15 +524,16 @@ class GDTape:
         orig_titles = {}
         for ifile in page_meta['files']:
             try:
-                if ifile['format'] in self._playable_formats + ['Flac']:
-                    if ifile['source'] == 'original':
-                        try:
-                            orig_titles[ifile['name']] = ifile['title']
-                        except:
-                            pass
-                    if ifile['format'] in self._playable_formats:
-                        self.append_track(ifile, orig_titles)
-            except KeyError:
+                if ifile['source'] == 'original':
+                    try:
+                        orig_titles[ifile['name']] = ifile['title'] if 'title' in ifile.keys() else ifile['name']
+                    except:
+                        pass
+                if ifile['format'] in self._playable_formats:
+                    self.append_track(ifile, orig_titles)
+            except KeyError as e:
+                logger.warning("Error in parsing metadata")
+                raise(e)
                 pass
             except Exception as e:   # TODO handle this!!!
                 raise (e)
@@ -551,6 +552,8 @@ class GDTape:
             orig = tdict['name']
         else:
             orig = tdict['original']
+            if not 'title' in tdict.keys():
+                tdict['title'] = 'unknown'
             if tdict['title'] == 'unknown':
                 if orig in orig_titles.keys():
                     tdict['title'] = orig_titles[orig]

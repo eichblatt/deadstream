@@ -14,7 +14,7 @@ import subprocess
 
 ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
 parser = optparse.OptionParser()
-parser.add_option('-d', '--debug', dest='debug', type="int", default=1, help="If > 0, don't run the main script on loading [default %default]")
+parser.add_option('-d', '--debug', dest='debug', type="int", default=0, help="If > 0, don't run the main script on loading [default %default]")
 parser.add_option('--options_path', dest='options_path', default=os.path.join(ROOT_DIR, 'options.txt'), help="path to options file [default %default]")
 parser.add_option('--sleep_time', dest='sleep_time', type="int", default=10, help="how long to sleep before checking network status [default %default]")
 parser.add_option('-v', '--verbose', dest='verbose', action="store_true", default=False, help="Print more verbose information [default %default]")
@@ -51,6 +51,9 @@ class StringGenerator(object):
            </form>
            <form method="get" action="restart_service">
              <button type="submit">Restart Timemachine Service</button>
+           </form>
+           <form method="get" action="update_timemachine">
+             <button type="submit">Update Timemachine Software</button>
            </form>
          </body>
        </html>"""
@@ -90,6 +93,25 @@ class StringGenerator(object):
            </form>
          </body>
        </html>"""
+        return page_string
+
+    @cherrypy.expose
+    def update_timemachine(self, *args, **kwargs):
+        cmd = "sudo service update start"
+        page_string = """<html>
+         <head></head>
+         <body> Updating Time Machine <p> Command: """ + cmd + """
+           <form method="get" action="index">
+#             <button type="submit">Return</button>
+             <input class="btn btn-primary" type="submit" name="submit"
+             onclick="return confirm('Are you sure?');">
+             />
+           </form>
+          </body>
+       </html>"""
+        print(F'Update timemachine command {cmd}')
+        sleep(parms.sleep_time)
+        os.system(cmd)
         return page_string
 
     @cherrypy.expose
