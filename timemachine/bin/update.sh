@@ -63,8 +63,10 @@ new_metadata_path=$HOME/$env_name/lib/python3.7/site-packages/timemachine/metada
 #if [ $update_archive == 0 ]; then
 #   system "cp -pR $current_metadata_path/*.json $new_metadata_path/."
 #fi
+echo "checking for metadata to copy"
 if [ -d $current_metadata_path/GratefulDead_ids ]; then
-   system "cp -pR $current_metadata_path/*_ids $new_metadata_path/."
+   echo "cp -pR $current_metadata_path/*_ids $new_metadata_path/."
+   cp -pR $current_metadata_path/*_ids $new_metadata_path/.
 fi
 
 # Stop the running services
