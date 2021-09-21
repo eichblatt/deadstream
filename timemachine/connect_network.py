@@ -517,7 +517,7 @@ def change_environment():
     home = os.getenv('HOME')
     current_env = os.path.basename(os.readlink(os.path.join(home, 'timemachine')))
     envs = [x for x in os.listdir(home) if os.path.isdir(os.path.join(home, x)) and (x.startswith('env_') or x == 'factory_env')]
-    envs.insert(0, envs.pop(envs.index(current_env)))   # put current_env first in the list.
+    envs.insert(0, envs.pop(envs.index(current_env)))    # put current_env first in the list.
     new_env = select_option("Select an environment to use", envs)
     if new_env == current_env:
         return
