@@ -69,6 +69,7 @@ else:
 for k in parms.__dict__.keys():
     print(F"{k:20s} : {parms.__dict__[k]}")
 
+button_event = Event()
 rewind_event = Event()
 done_event = Event()   # stop button
 ffwd_event = Event()
@@ -136,6 +137,7 @@ def decade_knob(knob: RotaryEncoder, label, counter: decade_counter):
 
 def rewind_button(button):
     logger.debug("pressing or holding rewind")
+    button_event.set()
     rewind_event.set()
 
 
@@ -146,6 +148,7 @@ def select_button(button):
 
 def stop_button(button):
     logger.debug("pressing stop")
+    button_event.set()
     done_event.set()
 
 
@@ -510,11 +513,46 @@ def get_wifi_params():
     return wifi, passkey, extra_dict
 
 
+def change_environment():
+    home = os.getenv('HOME')
+    current_env = os.path.basename(os.readlink(os.path.join(home, 'timemachine')))
+    envs = [x for x in os.listdir(home) if os.path.isdir(os.path.join(home, x)) and (x.startswith('env_') or x == 'factory_env')]
+    envs.insert(0, envs.pop(envs.index(current_env)))   # put current_env first in the list.
+    new_env = select_option("Select an environment to use", envs)
+    if new_env == current_env:
+        return
+    if new_env == 'factory_env':
+        factory_dir = os.path.join(home, new_env)
+        new_factory = f'env_{datetime.datetime.now().strftime("%Y%m%d.%H%M%S")}'
+        new_dir = os.path.join(home, new_factory)
+        scr.show_text("Resetting Factory\nenvironment", font=scr.smallfont, force=True, clear=True)
+        cmd = f'cp -r {factory_dir} {new_dir}'
+        fail = os.system(cmd)
+    else:
+        new_dir = os.path.join(home, new_env)
+    make_link_cmd = f"ln -sfn {new_dir} {os.path.join(home,'timemachine')}"
+    fail = os.system(make_link_cmd)
+    cmd = "sudo reboot"
+    os.system(cmd)
+    sys.exit(-1)
+
+
+def welcome_alternatives():
+    scr.show_text("\n Welcome", color=(0, 0, 255), force=True, clear=True)
+    button = button_event.wait(0.2*parms.sleep_time)
+    button_event.clear()
+    if rewind_event.is_set():
+        rewind_event.clear()
+        return True
+    if done_event.is_set():
+        change_environment()
+        done_event.clear()
+    return False
+
+
 def main():
     try:
-        scr.show_text("\n Welcome", color=(0, 0, 255), force=True, clear=True)
-        reconnect = rewind_event.wait(0.2*parms.sleep_time)
-        rewind_event.clear()
+        reconnect = welcome_alternatives()
         scr.show_text(" . . . . ", font=scr.font, force=True, clear=True)
         connected = wifi_connected()
 
