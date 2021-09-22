@@ -525,20 +525,31 @@ def change_environment():
     if new_env == '.factory_env':
         factory_dir = os.path.join(home, new_env)
         #new_factory = f'env_{datetime.datetime.now().strftime("%Y%m%d.%H%M%S")}'
+        new_factory_tmp = 'env_recent_copy_tmp'    # Create a tmp dir, in case reboot occurs during the copy.
         new_factory = 'env_recent_copy'    # by using a static name I avoid cleaning up old directories.
+        new_dir_tmp = os.path.join(home, new_factory_tmp)
         new_dir = os.path.join(home, new_factory)
         scr.show_text("Resetting Factory\nenvironment", font=scr.smallfont, force=True, clear=True)
+        cmd = f'cp -r {factory_dir} {new_dir_tmp}'
+        fail = os.system(cmd)
+        if fail != 0:
+            scr.show_text("Failed to\nReset Factory\nenvironment", font=scr.smallfont, force=True, clear=True)
+            return
         cmd = f'rm -rf {new_dir}'
         os.system(cmd)
-        cmd = f'cp -r {factory_dir} {new_dir}'
-        fail = os.system(cmd)
+        cmd = f'mv {new_dir_tmp} {new_dir}'
+        os.system(cmd)
     else:
         new_dir = os.path.join(home, new_env)
-    make_link_cmd = f"ln -sfn {new_dir} {os.path.join(home,'timemachine')}"
-    fail = os.system(make_link_cmd)
-    cmd = "sudo reboot"
-    os.system(cmd)
-    sys.exit(-1)
+    if os.path.isdir(new_dir):
+        make_link_cmd = f"ln -sfn {new_dir} {os.path.join(home,'timemachine')}"
+        fail = os.system(make_link_cmd)
+        if fail == 0:
+            cmd = "sudo reboot"
+            os.system(cmd)
+            sys.exit(-1)
+    scr.show_text("Failed to\nReset Factory\nenvironment", font=scr.smallfont, force=True, clear=True)
+    return
 
 
 def welcome_alternatives():
