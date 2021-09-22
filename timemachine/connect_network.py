@@ -516,16 +516,20 @@ def get_wifi_params():
 def change_environment():
     home = os.getenv('HOME')
     current_env = os.path.basename(os.readlink(os.path.join(home, 'timemachine')))
-    envs = [x for x in os.listdir(home) if os.path.isdir(os.path.join(home, x)) and (x.startswith('env_') or x == 'factory_env')]
+    envs = [x for x in os.listdir(home) if os.path.isdir(os.path.join(home, x)) and (x.startswith('env_') or x == '.factory_env')]
+    envs = sorted(envs, reverse=True)
     envs.insert(0, envs.pop(envs.index(current_env)))    # put current_env first in the list.
     new_env = select_option("Select an environment to use", envs)
     if new_env == current_env:
         return
-    if new_env == 'factory_env':
+    if new_env == '.factory_env':
         factory_dir = os.path.join(home, new_env)
-        new_factory = f'env_{datetime.datetime.now().strftime("%Y%m%d.%H%M%S")}'
+        #new_factory = f'env_{datetime.datetime.now().strftime("%Y%m%d.%H%M%S")}'
+        new_factory = 'env_recent_copy'    # by using a static name I avoid cleaning up old directories.
         new_dir = os.path.join(home, new_factory)
         scr.show_text("Resetting Factory\nenvironment", font=scr.smallfont, force=True, clear=True)
+        cmd = f'rm -rf {new_dir}'
+        os.system(cmd)
         cmd = f'cp -r {factory_dir} {new_dir}'
         fail = os.system(cmd)
     else:
