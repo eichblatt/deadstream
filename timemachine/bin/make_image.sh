@@ -31,7 +31,7 @@ files=`find . -maxdepth 1 -mindepth 1 -name env_\* -a -not -name $current_env -p
 system "sudo rm -rf $files"
 system "sudo rm -rf .knob_sense"
 system "sudo rm -rf .ssh"
-system "sudo cp -r $current_env factory_env"
+system "sudo cp -r $current_env .factory_env"
 
 
 echo "Removing wpa_supplicant"
