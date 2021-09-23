@@ -530,6 +530,7 @@ def change_environment():
         new_dir_tmp = os.path.join(home, new_factory_tmp)
         new_dir = os.path.join(home, new_factory)
         scr.show_text("Resetting Factory\nenvironment", font=scr.smallfont, force=True, clear=True)
+        os.system(f'rm -rf {new_dir_tmp}')
         cmd = f'cp -r {factory_dir} {new_dir_tmp}'
         fail = os.system(cmd)
         if fail != 0:
