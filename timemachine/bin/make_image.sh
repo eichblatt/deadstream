@@ -31,10 +31,11 @@ files=`find . -maxdepth 1 -mindepth 1 -name env_\* -a -not -name $current_env -p
 system "sudo rm -rf $files"
 system "sudo rm -rf .knob_sense"
 system "sudo rm -rf .ssh"
-system "sudo cp -r $current_env factory_env"
+system "sudo cp -r $current_env .factory_env"
 
 
 echo "Removing wpa_supplicant"
+system "sudo mv $media_folder/rootfs/etc/wpa_supplicant/wpa_supplicant.conf $media_folder/rootfs/etc/wpa_supplicant/tmp_wpa_supplicant.conf"
 system "sudo rm $media_folder/rootfs/etc/wpa_supplicant/wpa_supplicant.conf*"
 
 media_dirs="/dev/sdb1 /dev/sdb2"
@@ -47,6 +48,8 @@ system "sudo rm $image_file"
 critical_command "sudo dd if=/dev/sdb of=$image_file bs=4M status=progress"
 
 system "sudo pishrink.sh $image_file"
+echo "Replacing wpa_supplicant"
+system "sudo mv $media_folder/rootfs/etc/wpa_supplicant/tmp_wpa_supplicant.conf $media_folder/rootfs/etc/wpa_supplicant/wpa_supplicant.conf"
 
 # NOTE: to burn an image use the command (or similar):
 # sudo sh -c "pv v2_20210625.img > /dev/sdb"
