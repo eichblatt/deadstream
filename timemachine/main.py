@@ -350,6 +350,7 @@ def play_pause_button(button, state):
         current['PLAY_STATE'] = config.PAUSED
     elif current['PLAY_STATE'] in [config.PAUSED, config.STOPPED, config.READY]:
         current['PLAY_STATE'] = config.PLAYING
+        scr.wake_up()
         scr.show_playstate(staged_play=True, force=True)  # show that we've registered the button-press before blocking call.
         state.player.play()                              # this is a blocking call. I could move the "wait_until_playing" to the event handler.
     state.set(current)
