@@ -492,7 +492,7 @@ def day_button(button, state):
 
 
 def day_button_longpress(button, state):
-    logger.debug(F"long pressing day button")
+    logger.debug(F"long-pressing day button")
     scr.sleep()
 
 
