@@ -513,14 +513,34 @@ def get_wifi_params():
     return wifi, passkey, extra_dict
 
 
-def change_environment():
+def check_factory_build():
+    home = os.getenv('HOME')
+    envs = get_envs()
+    if not '.factory_env' in envs:   # create one
+        logger.info("creating factory build")
+        srcdir = os.path.join(home, envs[0])
+        destdir = os.path.join(home, '.factory_env')
+        cmd = f'cp -r {srcdir} {destdir}'
+        os.system(cmd)
+    else:
+        logger.info("factory build present")
+    return
+
+
+def get_envs():
     home = os.getenv('HOME')
     current_env = os.path.basename(os.readlink(os.path.join(home, 'timemachine')))
     envs = [x for x in os.listdir(home) if os.path.isdir(os.path.join(home, x)) and (x.startswith('env_') or x == '.factory_env')]
     envs = sorted(envs, reverse=True)
     envs.insert(0, envs.pop(envs.index(current_env)))    # put current_env first in the list.
+    return envs
+
+
+def change_environment():
+    home = os.getenv('HOME')
+    envs = get_envs()
     new_env = select_option("Select an environment to use", envs)
-    if new_env == current_env:
+    if new_env == envs[0]:
         return
     if new_env == '.factory_env':
         factory_dir = os.path.join(home, new_env)
@@ -555,6 +575,7 @@ def change_environment():
 
 def welcome_alternatives():
     scr.show_text("\n Welcome", color=(0, 0, 255), force=True, clear=True)
+    check_factory_build()
     button = button_event.wait(0.2*parms.sleep_time)
     button_event.clear()
     if rewind_event.is_set():
