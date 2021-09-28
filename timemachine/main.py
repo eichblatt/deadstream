@@ -791,9 +791,9 @@ def event_loop(state):
                 screen_event.set()
             if idle_second_hand in refresh_times and idle_second_hand != last_idle_second_hand:
                 last_idle_second_hand = idle_second_hand
-                if now.day != last_idle_day:
-                    # if now.hour != last_idle_hour:
-                    # if now.minute != last_idle_minute:
+                # if now.minute != last_idle_minute:
+                # if now.day != last_idle_day:
+                if (now.hour != last_idle_hour) and now.hour == 5:
                     last_idle_day = now.day
                     last_idle_hour = now.hour
                     last_idle_minute = now.minute
