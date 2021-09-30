@@ -29,12 +29,11 @@ import requests
 import time
 from threading import Event, Lock, Thread
 
-from contextlib import closing
-from operator import attrgetter, methodcaller
+from operator import methodcaller
 from mpv import MPV
 from tenacity import retry
 from tenacity.stop import stop_after_delay
-from typing import Callable, List, Optional, Tuple
+from typing import Callable, Optional
 
 import pkg_resources
 from timemachine import config
@@ -150,7 +149,7 @@ class TapeDownloader(BaseTapeDownloader):
         current_rows += j['count']
         tapes = j['items']
 
-        #n_tapes_added = self.store_by_period(iddir,tapes,period_func=to_decade)
+        # n_tapes_added = self.store_by_period(iddir,tapes,period_func=to_decade)
         if iddir.endswith('etree_ids'):
             n_tapes_added = self.store_by_period(iddir, tapes, period_func=to_year)
         else:
@@ -216,7 +215,7 @@ class TapeDownloader(BaseTapeDownloader):
         if min_addeddate is None:
             query = F'collection:{self.collection_name} AND date:[{min_date} TO {max_date}]'
         else:
-            #max_addeddate = datetime.datetime.now().strftime('%Y-%m-%dT%H:%M:%SZ')
+            # max_addeddate = datetime.datetime.now().strftime('%Y-%m-%dT%H:%M:%SZ')
             query = F'collection:{self.collection_name} AND date:[{min_date} TO {max_date}] AND addeddate:[{min_addeddate} TO {max_date}]'
         parms['q'] = query
         r = requests.get(self.api, params=parms)
@@ -254,7 +253,6 @@ class TapeDownloader(BaseTapeDownloader):
 
 class GDArchive:
     """ The Grateful Dead Collection on Archive.org """
-    #__slots__ = ['dates','collection_name','idpath','set_data','tapes','tape_dates','url','dbpath', 'downloader']
 
     def __init__(self, dbpath=os.path.join(ROOT_DIR, 'metadata'), url='https://archive.org', reload_ids=False, sync=True, with_latest=False, collection_name=['GratefulDead']):
         """Create a new GDArchive.
@@ -274,12 +272,12 @@ class GDArchive:
         self.collection_name = collection_name if type(collection_name) == list else [collection_name]
         if len(self.collection_name) == 1:
             self.idpath = os.path.join(self.dbpath, F'{collection_name[0]}_ids')
-            #self.idpath_pkl = os.path.join(self.dbpath, F'{collection_name[0]}_ids.pkl')
-            self.downloader = (TapeDownloader if sync else AsyncTapeDownloader)(url, collection_name=collection_name[0])
+            # self.idpath_pkl = os.path.join(self.dbpath, F'{collection_name[0]}_ids.pkl')
+            self.downloader = TapeDownloader(url, collection_name=collection_name[0])
         else:
             self.idpath = os.path.join(self.dbpath, 'etree_ids')
-            #self.idpath_pkl = os.path.join(self.dbpath, 'etree_ids.pkl')
-            self.downloader = (TapeDownloader if sync else AsyncTapeDownloader)(url)
+            # self.idpath_pkl = os.path.join(self.dbpath, 'etree_ids.pkl')
+            self.downloader = TapeDownloader(url)
         self.set_data = GDSet(self.collection_name)
         self.load_archive(reload_ids, with_latest)
 
@@ -355,7 +353,7 @@ class GDArchive:
         return self.tape_dates
 
     def load_current_tapes(self, reload_ids=False):
-        logger.debug(F"Loading current tapes")
+        logger.debug("Loading current tapes")
         tapes = []
         addeddates = []
         if reload_ids or not os.path.exists(self.idpath):
@@ -382,14 +380,12 @@ class GDArchive:
         """ Load the tapes, then add anything which has been added since the tapes were saved """
         n_tapes = 0
         loaded_tapes, max_addeddate = self.load_current_tapes(reload_ids)
-        current_tape_ids = [x['identifier'] for x in loaded_tapes]
         logger.debug(f'max addeddate {max_addeddate}')
 
         min_download_addeddate = (datetime.datetime.strptime(max_addeddate, '%Y-%m-%dT%H:%M:%SZ')) - datetime.timedelta(hours=1)
         min_download_addeddate = datetime.datetime.strftime(min_download_addeddate, '%Y-%m-%dT%H:%M:%SZ')
         logger.debug(f'min_download_addeddate {min_download_addeddate}')
 
-        latest_tapes = []
         if with_latest:
             logger.debug(f'Refreshing Tapes\nmax addeddate {max_addeddate}\nmin_download_addeddate {min_download_addeddate}')
             n_tapes = self.downloader.get_all_tapes(self.idpath, min_download_addeddate)
@@ -462,7 +458,6 @@ class GDTape:
                 score = score + 3
         if 'optd' in dir(config) and len(config.optd['COLLECTIONS']) > 1:
             colls = config.optd['COLLECTIONS']
-            score0 = score
             score = score + 5 * (len(colls) - min([colls.index(c) if c in colls else 100 for c in self.collection]))
         if self.meta_loaded:
             score = score + 3*(self.title_fraction()-1)  # reduce score for tapes without titles.
@@ -521,7 +516,7 @@ class GDTape:
                 if ifile['source'] == 'original':
                     try:
                         orig_titles[ifile['name']] = ifile['title'] if 'title' in ifile.keys() else ifile['name']
-                    except:
+                    except Exception:
                         pass
                 if ifile['format'] in self._playable_formats:
                     self.append_track(ifile, orig_titles)
@@ -546,15 +541,13 @@ class GDTape:
             orig = tdict['name']
         else:
             orig = tdict['original']
-            if not 'title' in tdict.keys():
+            if 'title' not in tdict.keys():
                 tdict['title'] = 'unknown'
             if tdict['title'] == 'unknown':
                 if orig in orig_titles.keys():
                     tdict['title'] = orig_titles[orig]
-        trackindex = None
         for i, t in enumerate(self._tracks):
             if orig == t.original:  # add in alternate formats
-                trackindex = i
                 # make sure that this isn't a duplicate!!!
                 t.add_file(tdict)
                 return t
@@ -568,13 +561,13 @@ class GDTape:
         if sd is None:
             return self.identifier
         venue_string = ""
-        l = sd['location']
+        loc = sd['location']
         if tracknum > 0:    # only pull the metadata if the query is about a late track.
             self.get_metadata()
             breaks = self._compute_breaks()
             if (len(breaks['location']) > 0) and (tracknum > breaks['location'][0]):
-                l = sd['location2']
-        venue_string = F"{l[0]}, {l[1]}, {l[2]}"
+                loc = sd['location2']
+        venue_string = F"{loc[0]}, {loc[1]}, {loc[2]}"
         return venue_string
 
     def _compute_breaks(self):
@@ -617,7 +610,7 @@ class GDTape:
         longbreak_path = pkg_resources.resource_filename('timemachine.metadata', 'silence600.ogg')
         breakd = {'track': -1, 'original': 'setbreak', 'title': 'Set Break', 'format': 'Ogg Vorbis', 'size': 1, 'source': 'original', 'path': os.path.dirname(longbreak_path)}
         lbreakd = dict(list(breakd.items()) + [('title', 'Set Break'), ('name', 'silence600.ogg')])
-        #sbreakd = dict(list(breakd.items()) + [('title', 'Encore Break'), ('name', 'silence300.ogg')])
+        # sbreakd = dict(list(breakd.items()) + [('title', 'Encore Break'), ('name', 'silence300.ogg')])
         sbreakd = dict(list(breakd.items()) + [('title', 'Encore Break'), ('name', 'silence0.ogg')])
         locbreakd = dict(list(breakd.items()) + [('title', 'Location Break'), ('name', 'silence600.ogg')])
 
@@ -640,7 +633,6 @@ class GDTape:
 
 class GDTrack:
     """ A track from a GDTape recording """
-    #__slots__ = ['files','parent_id','title','track','original','collection']
 
     def __init__(self, tdict, parent_id, break_track=False):
         self.parent_id = parent_id
@@ -684,7 +676,7 @@ class GDSet:
     def __init__(self, collection_name):
         self.collection_name = collection_name
         set_data = {}
-        if not 'GratefulDead' in self.collection_name:
+        if 'GratefulDead' not in self.collection_name:
             self.set_data = set_data
             return
         prevsong = None
@@ -697,9 +689,6 @@ class GDSet:
             date = d['date']
             time = d['time']
             song = d['song']
-            song_n = d['song_n']
-            # if song_n > 1:
-            #    song = song + f'_{song_n}'
             if date not in set_data.keys():
                 set_data[date] = {}
             set_data[date]['start_time'] = datetime.datetime.strptime(time, '%H:%M:%S.%f').time() if len(time) > 0 else None
@@ -763,7 +752,7 @@ class GDSet:
         return self.__repr__()
 
     def __repr__(self):
-        retstr = F"Grateful Dead set data"
+        retstr = "Grateful Dead set data"
         return retstr
 
 
@@ -823,7 +812,6 @@ class GDPlayer(MPV):
     def create_playlist(self):
         self.playlist_clear()
         urls = self.extract_urls(self.tape)
-        pathname = os.path.join(self.tape.dbpath, 'audience')
         self.command('loadfile', urls[0])
         if len(urls) > 0:
             _ = [self.command('loadfile', x, 'append') for x in urls[1:]]
@@ -839,7 +827,7 @@ class GDPlayer(MPV):
             self._set_property('audio-device', audio_device)
             self.wait_for_property('audio-device', lambda v: v == audio_device)
             if self.get_prop('current-ao') is None:
-                logger.warning(F"Current-ao is None")
+                logger.warning("Current-ao is None")
                 self.stop()
                 return False
             self.pause()
@@ -959,13 +947,12 @@ class GDPlayer(MPV):
             logger.debug(F'seeking {jumpsize}')
 
             current_track = self.get_prop('playlist-pos')
-            time_remaining = self.get_prop('time-remaining')
             time_pos = self.get_prop('time-pos')
             if time_pos is None:
                 time_pos = 0
             time_pos = max(0, time_pos)
             duration = self.get_prop('duration')
-            #self.wait_for_property('duration', lambda v: v is not None)
+            # self.wait_for_property('duration', lambda v: v is not None)
 
             destination = time_pos + jumpsize
 
@@ -989,13 +976,13 @@ class GDPlayer(MPV):
 
     def status(self):
         if self.playlist_pos is None:
-            logger.info(F"Playlist not started")
+            logger.info("Playlist not started")
             return None
         playlist_pos = self.get_prop('playlist-pos')
         paused = self.get_prop('pause')
         logger.info(F"Playlist at track {playlist_pos}, Paused {paused}")
         if self.raw.time_pos is None:
-            logger.info(F"Track not started")
+            logger.info("Track not started")
             return None
         duration = self.get_prop('duration')
         logger.info(F"duration: {duration}. time: {datetime.timedelta(seconds=int(self.raw.time_pos))}, time remaining: {datetime.timedelta(seconds=int(self.raw.time_remaining))}")
