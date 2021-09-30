@@ -15,9 +15,6 @@
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
 import abc
-import aiofiles
-import aiohttp
-import asyncio
 import codecs
 import csv
 import datetime
@@ -26,21 +23,18 @@ import json
 import logging
 import math
 import os
-import pickle5 as pickle
+import random
 import re
 import requests
-import threading
 import time
-from aiohttp import ClientResponse, ClientSession, ClientTimeout
-from importlib import reload
-from multiprocessing.pool import ThreadPool
+from threading import Event, Lock, Thread
 
 from contextlib import closing
 from operator import attrgetter, methodcaller
 from mpv import MPV
 from tenacity import retry
 from tenacity.stop import stop_after_delay
-from typing import Callable, List, Tuple
+from typing import Callable, List, Optional, Tuple
 
 import pkg_resources
 from timemachine import config
@@ -783,7 +777,7 @@ class GDPlayer(MPV):
         # self._set_property('cache-on-disk','yes')
         self._set_property('audio-buffer', 10.0)  # This allows to play directly from the html without a gap!
         self._set_property('cache', 'yes')
-        #self.default_audio_device = 'pulse'
+        # self.default_audio_device = 'pulse'
         self.default_audio_device = 'auto'
         audio_device = self.default_audio_device
         self._set_property('audio-device', audio_device)
@@ -1008,3 +1002,71 @@ class GDPlayer(MPV):
         return int(self.raw.time_remaining)
 
     def close(self): self.terminate()
+
+
+class GDArchive_Updater(Thread):
+    """Updater runs in the backround checking for updates.
+
+    The Updater runs in a thread periodically checking for and applying
+    updates.
+
+    It adds randomness to the update interval by adding +/- 10% randomness
+    to the time spent waiting for the next update check.
+    """
+
+    def __init__(self, archive: GDArchive, interval: float, state, event: Event, lock: Optional[Lock] = None, stop_on_exception: bool = False) -> None:
+        """Create an Updater.
+
+             Args:
+                 archive (GDArchive): The archive to be updated.
+                 interval (float): Seconds between checks, pre-jitter.
+                 state (controls.state): state of the player.
+                 event (Event): Event which can be used to stop the update loop.
+                 lock (Lock): Optional. Lock to acquire before an update. If a
+                     lock is provided, it is only acquired when performing
+                     the update and not when checking if the update is
+                     necessary.
+                 stop_on_exception (bool): Set to True to have the updater loop
+                     stop checking for updates if there is an exception in the
+                     update process.
+        """
+        super().__init__()
+        self.archive = archive
+        self.interval = interval
+        self.state = state
+        self.stopped = event
+        self.lock = lock
+        self.stop_on_exception = stop_on_exception
+
+    def check_for_updates(self) -> bool:
+        """Check for updates.
+        Returns:
+            (bool) True if AUTO_UPDATE and the player is currently not playing
+        """
+        logger.debug("Checking for updates.")
+        if not config.optd['AUTO_UPDATE_ARCHIVE']:
+            return False
+        current = self.state.get_current()
+        playing = current['PLAY_STATE'] == config.PLAYING
+        return not playing
+
+    def update(self) -> None:
+        """Get the updates."""
+        logger.info("Running update")
+        self.archive.load_archive(with_latest=True)
+
+    def run(self):
+        while not self.stopped.wait(timeout=self.interval*(1+0.1*random.random())):
+            if not self.check_for_updates():
+                continue
+            try:
+                if self.lock:
+                    self.lock.acquire()
+                self.update()
+            except Exception as e:
+                if self.stop_on_exception:
+                    raise e
+                logger.exception(e)
+            finally:
+                if self.lock:
+                    self.lock.release()

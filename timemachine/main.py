@@ -97,6 +97,7 @@ stop_event = Event()
 knob_event = Event()
 button_event = Event()
 screen_event = Event()
+stop_update_event = Event()
 
 random.seed(datetime.datetime.now())  # to ensure that random show will be new each time.
 
@@ -716,6 +717,9 @@ def event_loop(state):
     free_event.set()
     stagedate_event.set()
     scr.clear()
+    archive_updater = GD.GDArchive_Updater(date_reader.archive, 3600, state, stop_update_event)
+    archive_updater.start()
+
     try:
         while not stop_event.wait(timeout=0.001):
             if not free_event.wait(timeout=0.01):
@@ -797,10 +801,10 @@ def event_loop(state):
                     last_idle_day = now.day
                     last_idle_hour = now.hour
                     last_idle_minute = now.minute
-                    try:
-                        date_reader.archive.load_archive(with_latest=config.optd['AUTO_UPDATE_ARCHIVE'])
-                    except:
-                        logger.warning("Unable to refresh archive")
+                    # try:
+                    # date_reader.archive.load_archive(with_latest=config.optd['AUTO_UPDATE_ARCHIVE'])
+                    # except:
+                    # logger.warning("Unable to refresh archive")
                 track_event.set()
                 playstate_event.set()
                 save_state(state)
