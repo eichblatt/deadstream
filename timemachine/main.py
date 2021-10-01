@@ -14,7 +14,6 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
-import cProfile
 import datetime
 import json
 import logging
@@ -35,7 +34,6 @@ from tenacity import retry
 from tenacity.stop import stop_after_delay
 from typing import Callable
 
-import pkg_resources
 from timemachine import config, controls, GD
 
 parser = optparse.OptionParser()
@@ -204,10 +202,10 @@ def load_options(parms):
                     tmpd[k] = [x.strip() for x in tmpd[k].split(',')]
                 if k in ['DEFAULT_START_TIME']:
                     tmpd[k] = datetime.datetime.strptime(tmpd[k], "%H:%M:%S").time()
-            except:
+            except Exception:
                 logger.warning(F"Failed to set option {k}. Using {config.optd[k]}")
         optd = tmpd
-    except:
+    except Exception:
         logger.warning(F"Failed to read options from {parms.options_path}. Using defaults")
     config.optd.update(optd)  # update defaults with those read from the file.
     logger.info(F"in load_options, optd {optd}")
@@ -306,7 +304,6 @@ def select_button_longpress(button, state):
     logger.debug("long pressing select")
     if not state.date_reader.tape_available():
         return
-    current = state.get_current()
     date_reader = state.date_reader
     tapes = date_reader.archive.tape_dates[date_reader.fmtdate()]
     itape = -1
@@ -411,7 +408,6 @@ def stop_button_longpress(button, state):
     sleep(5)
     if button.is_held:
         scr.clear()
-        logfile = os.path.join(os.getenv('HOME'), 'update.log')
         cmd = "sudo service update start"
         os.system(cmd)
         stop_event.set()
@@ -485,23 +481,19 @@ def day_button(button, state):
     sleep(button._hold_time * 1.01)
     if button.is_pressed or button.is_held:
         return
-    logger.debug(F"pressing day button")
-    current = state.get_current()
-    # if current['EXPERIENCE']: return
+    logger.debug("pressing day button")
     new_date = state.date_reader.next_date()
     state.date_reader.set_date(new_date)
     stagedate_event.set()
 
 
 def day_button_longpress(button, state):
-    logger.debug(F"long-pressing day button")
+    logger.debug("long-pressing day button")
     scr.sleep()
 
 
 @sequential
 def year_button(button, state):
-    current = state.get_current()
-    # if current['EXPERIENCE']: return
     sleep(button._hold_time)
     if button.is_pressed:
         return     # the button is being "held"
@@ -623,7 +615,7 @@ def refresh_venue(state, idle_second_hand, refresh_times, venue):
         id_color = tape_color
 
     display_string = re.sub(r'\d{2,4}-\d\d-\d\d\.*', '~', display_string)
-    #logger.debug(F"display_string is {display_string}")
+    # logger.debug(F"display_string is {display_string}")
 
     if not config.optd['SCROLL_VENUE']:
         scr.show_venue(display_string, color=id_color)
@@ -665,7 +657,6 @@ def test_update(state):
     current['EXPERIENCE'] = False
     current['ON_TOUR'] = False
     current['PLAY_STATE'] = config.PLAYING
-    itimes = 0
     state.set(current)
     date_reader = state.date_reader
     last_sdevent = datetime.datetime.now()
@@ -679,7 +670,7 @@ def test_update(state):
     try:
         if parms.pid_to_kill is not None:
             os.system(F"kill {parms.pid_to_kill}")
-    except:
+    except Exception:
         pass
     try:
         scr.show_text("Turn Any\nKnob", force=True)
@@ -840,9 +831,9 @@ def get_ip():
 
 try:
     load_options(parms)
-except:
+except Exception:
     logger.warning("Failed in loading options")
-#parms.state_path = os.path.join(os.path.dirname(parms.state_path), F'{config.optd["COLLECTIONS"]}_{os.path.basename(parms.state_path)}')
+# parms.state_path = os.path.join(os.path.dirname(parms.state_path), F'{config.optd["COLLECTIONS"]}_{os.path.basename(parms.state_path)}')
 config.PAUSED_AT = datetime.datetime.now()
 config.WOKE_AT = datetime.datetime.now()
 
@@ -865,9 +856,9 @@ reload_ids = False
 if rewind.is_pressed:
     scr.show_text("Reloading\nfrom\narchive.org...", color=(0, 255, 255), force=True, clear=True)
     logger.info('Reloading from archive.org')
-    #reload_ids = True
+    # reload_ids = True
 if stop.is_pressed:
-    logger.info(F'Resetting to factory archive -- nyi')
+    logger.info('Resetting to factory archive -- nyi')
 
 archive = GD.GDArchive(parms.dbpath, reload_ids=reload_ids, with_latest=False, collection_name=config.optd['COLLECTIONS'])
 player = GD.GDPlayer()
@@ -892,7 +883,7 @@ try:
     kfile = open(parms.knob_sense_path, 'r')
     knob_sense = int(kfile.read())
     kfile.close()
-except:
+except Exception:
     knob_sense = 0
 
 year_list = archive.year_list()
