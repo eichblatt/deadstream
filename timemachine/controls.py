@@ -119,8 +119,11 @@ class date_knob_reader:
 
     def venue(self):
         if self.tape_available():
-            t = self.archive.best_tape(self.fmtdate(), resort=False)
-            return t.venue()
+            try:
+                t = self.archive.best_tape(self.fmtdate(), resort=False)
+                return t.venue()
+            except Exception:
+                return ""
         return ""
 
     def tape_available(self):
