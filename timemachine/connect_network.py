@@ -1,4 +1,3 @@
-import datetime
 import logging
 import optparse
 import os
@@ -9,17 +8,11 @@ import sys
 from threading import Event
 from time import sleep
 
-import board
-import digitalio
-from adafruit_rgb_display import color565
-from adafruit_rgb_display.st7735 import ST7735R
 from gpiozero import RotaryEncoder, Button
-from PIL import Image, ImageDraw, ImageFont
 from tenacity import retry
 from tenacity.stop import stop_after_delay
 from typing import Callable
 
-import pkg_resources
 from timemachine import config, controls
 
 
@@ -310,7 +303,7 @@ def select_option(message, chooser):
         sleep(0.01)
     select_event.clear()
     selected = choices[step]
-    #scr.show_text(F"So far: \n{selected}",loc=selected_bbox.origin(),color=(255,255,255),font=scr.smallfont,force=True)
+    # scr.show_text(F"So far: \n{selected}",loc=selected_bbox.origin(),color=(255,255,255),font=scr.smallfont,force=True)
 
     logger.info(F"word selected {selected}")
     scr.update_now = update_now
@@ -427,7 +420,6 @@ def get_wifi_choices():
     logger.info("Getting Wifi Choices")
     cmd = "sudo iwlist wlan0 scan | grep ESSID:"
     raw = retry_call(subprocess.check_output, cmd, shell=True)
-    #raw = subprocess.check_output(cmd,shell=True)
     choices = [x.lstrip().replace('ESSID:', '').replace('"', '') for x in raw.decode().split('\n')]
     choices = [x for x in choices if bool(re.search(r'[a-z,0-9]', x, re.IGNORECASE))]
     choices = sorted(choices, key=str.casefold)
@@ -462,14 +454,13 @@ def update_wpa_conf(wpa_path, wifi, passkey, extra_dict):
 
 def get_mac_address():
     eth_mac_address = 'fail'
-    #wlan_mac_address = 'fail'
     try:
-        #cmd = "cat /sys/class/net/eth0/address"
+        # cmd = "cat /sys/class/net/eth0/address"
         cmd = "ifconfig -a | awk '/ether/{print $2}'"
         eth_mac_address = subprocess.check_output(cmd, shell=True).decode().strip()
-        #cmd = "cat /sys/class/net/wlan0/address"
-        #wlan_mac_address = subprocess.check_output(cmd, shell=True).decode().strip()
-    except:
+        # cmd = "cat /sys/class/net/wlan0/address"
+        # wlan_mac_address = subprocess.check_output(cmd, shell=True).decode().strip()
+    except Exception:
         pass
     return eth_mac_address
 
@@ -516,7 +507,7 @@ def get_wifi_params():
 def check_factory_build():
     home = os.getenv('HOME')
     envs = get_envs()
-    if not '.factory_env' in envs:   # create one
+    if '.factory_env' not in envs:   # create one
         logger.info("creating factory build")
         srcdir = os.path.join(home, envs[0])
         destdir = os.path.join(home, '.factory_env')
@@ -544,7 +535,7 @@ def change_environment():
         return
     if new_env == '.factory_env':
         factory_dir = os.path.join(home, new_env)
-        #new_factory = f'env_{datetime.datetime.now().strftime("%Y%m%d.%H%M%S")}'
+        # new_factory = f'env_{datetime.datetime.now().strftime("%Y%m%d.%H%M%S")}'
         new_factory_tmp = 'env_recent_copy_tmp'    # Create a tmp dir, in case reboot occurs during the copy.
         new_factory = 'env_recent_copy'    # by using a static name I avoid cleaning up old directories.
         new_dir_tmp = os.path.join(home, new_factory_tmp)
@@ -597,13 +588,12 @@ def main():
             try:
                 test_all_buttons(parms)
                 save_knob_sense(parms)
-            except:
+            except Exception:
                 logger.info("Failed to save knob sense...continuing")
         eth_mac_address = get_mac_address()
         scr.show_text(F"MAC addresses\neth0\n{eth_mac_address}", color=(0, 255, 255), font=scr.smallfont, force=True, clear=True)
         sleep(1)
         if parms.test or reconnect or not connected:
-            #scr.show_text("Connecting Wifi", font=scr.smallfont, force=True, clear=True)
             wifi, passkey, extra_dict = get_wifi_params()
             scr.show_text(F"wifi:\n{wifi}\npasskey:\n{passkey}", loc=(0, 0), color=(255, 255, 255), font=scr.oldfont, force=True, clear=True)
             update_wpa_conf(parms.wpa_path, wifi, passkey, extra_dict)
@@ -614,7 +604,7 @@ def main():
                 print(F"not issuing command {cmd}")
             scr.show_text("wifi connecting\n...", loc=(0, 0), color=(255, 255, 255), font=scr.smallfont, force=True, clear=True)
             sleep(parms.sleep_time)
-    except:
+    except Exception:
         sys.exit(-1)
     finally:
         scr.clear()
