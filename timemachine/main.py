@@ -83,6 +83,8 @@ logging.basicConfig(format='%(asctime)s.%(msecs)03d %(levelname)s: %(name)s %(me
 logger = logging.getLogger(__name__)
 GDLogger = logging.getLogger('timemachine.GD')
 controlsLogger = logging.getLogger('timemachine.controls')
+logger.setLevel(logging.INFO)
+GDLogger.setLevel(logging.INFO)
 controlsLogger.setLevel(logging.WARN)
 
 stagedate_event = Event()
@@ -233,7 +235,7 @@ def twist_knob(knob: RotaryEncoder, label, date_reader: controls.date_knob_reade
     stagedate_event.set()
 
 
-if parms.verbose:
+if parms.verbose or parms.debug:
     logger.debug(F"Setting logger levels to {logging.DEBUG}")
     logger.setLevel(logging.DEBUG)
     GDLogger.setLevel(logging.DEBUG)
