@@ -1001,11 +1001,10 @@ class GDArchive_Updater(Thread):
     to the time spent waiting for the next update check.
     """
 
-    def __init__(self, archive: GDArchive, interval: float, state, event: Event, lock: Optional[Lock] = None, stop_on_exception: bool = False) -> None:
+    def __init__(self, state, interval: float, event: Event, lock: Optional[Lock] = None, stop_on_exception: bool = False) -> None:
         """Create an Updater.
 
              Args:
-                 archive (GDArchive): The archive to be updated.
                  interval (float): Seconds between checks, pre-jitter.
                  state (controls.state): state of the player.
                  event (Event): Event which can be used to stop the update loop.
@@ -1018,7 +1017,6 @@ class GDArchive_Updater(Thread):
                      update process.
         """
         super().__init__()
-        self.archive = archive
         self.interval = interval
         self.state = state
         self.stopped = event
@@ -1030,9 +1028,9 @@ class GDArchive_Updater(Thread):
         Returns:
             (bool) True if AUTO_UPDATE and the player is currently not playing
         """
-        logger.debug("Checking for updates.")
         if not config.optd['AUTO_UPDATE_ARCHIVE']:
             return False
+        logger.debug("Checking for updates.")
         current = self.state.get_current()
         playing = current['PLAY_STATE'] == config.PLAYING
         return not playing
@@ -1040,7 +1038,8 @@ class GDArchive_Updater(Thread):
     def update(self) -> None:
         """Get the updates."""
         logger.info("Running update")
-        self.archive.load_archive(with_latest=True)
+        archive = self.state.date_reader.archive
+        archive.load_archive(with_latest=True)
 
     def run(self):
         while not self.stopped.wait(timeout=self.interval*(1+0.1*random.random())):

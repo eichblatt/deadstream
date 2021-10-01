@@ -708,8 +708,6 @@ def event_loop(state):
     free_event.set()
     stagedate_event.set()
     scr.clear()
-    archive_updater = GD.GDArchive_Updater(date_reader.archive, 3600, state, stop_update_event)
-    archive_updater.start()
 
     try:
         while not stop_event.wait(timeout=0.001):
@@ -941,6 +939,8 @@ eloop = threading.Thread(target=event_loop, args=[state])
 
 
 def main():
+    archive_updater = GD.GDArchive_Updater(state, 3600, stop_update_event)
+    archive_updater.start()
     eloop.run()
     exit()
 
