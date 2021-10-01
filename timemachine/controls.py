@@ -15,7 +15,6 @@
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
 import datetime
-import functools
 import logging
 import os
 from time import sleep
@@ -165,7 +164,6 @@ class screen:
         cs_pin = digitalio.DigitalInOut(board.CE0)
         dc_pin = digitalio.DigitalInOut(board.D24)
         reset_pin = digitalio.DigitalInOut(board.D25)
-        #BAUDRATE= 2400000
         BAUDRATE = 40000000
         spi = board.SPI()
         self.name = name
@@ -188,14 +186,7 @@ class screen:
         self.smallfont = ImageFont.truetype(pkg_resources.resource_filename("timemachine.fonts", "ariallgt.ttf"), 20)
         self.oldfont = ImageFont.truetype(pkg_resources.resource_filename("timemachine.fonts", "FreeMono.ttf"), 20)
         self.largefont = ImageFont.truetype(pkg_resources.resource_filename("timemachine.fonts", "FreeMono.ttf"), 30)
-        self.hugefont = ImageFont.truetype(pkg_resources.resource_filename("timemachine.fonts",  "FreeMono.ttf"), 40)
-        #self.boldfont = ImageFont.truetype(os.path.join(FONTS_DIR, "DejaVuSansMono-Bold.ttf"), 33)
-        #self.boldsmall = ImageFont.truetype(os.path.join(FONTS_DIR, "DejaVuSansMono-Bold.ttf"), 22)
-        #self.font = ImageFont.truetype(os.path.join(FONTS_DIR, "ariallgt.ttf"), 30)
-        #self.smallfont = ImageFont.truetype(os.path.join(FONTS_DIR, "ariallgt.ttf"), 20)
-        #self.oldfont = ImageFont.truetype(os.path.join(FONTS_DIR, "FreeMono.ttf"), 20)
-        #self.largefont = ImageFont.truetype(os.path.join(FONTS_DIR, "FreeMono.ttf"), 30)
-        #self.hugefont = ImageFont.truetype(os.path.join(FONTS_DIR,  "FreeMono.ttf"), 40)
+        self.hugefont = ImageFont.truetype(pkg_resources.resource_filename("timemachine.fonts", "FreeMono.ttf"), 40)
 
         self.image = Image.new("RGB", (width, height))
         self.draw = ImageDraw.Draw(self.image)       # draw using this object. Display image when complete.
@@ -204,7 +195,7 @@ class screen:
         self.selected_date = None
 
         self.staged_date_bbox = Bbox(0, 0, 160, 31)
-        #self.selected_date_bbox = Bbox(0,100,130,128)
+        # self.selected_date_bbox = Bbox(0,100,130,128)
         self.selected_date_bbox = Bbox(0, 100, 160, 128)
         self.venue_bbox = Bbox(0, 31, 160, 56)
         self.nevents_bbox = Bbox(148, 31, 160, 56)
@@ -279,7 +270,7 @@ class screen:
                 self.show_text(text, bbox.origin(), font=font, color=color, stroke_width=stroke_width)
                 sleep(2)
                 for i in range(int(excess/inc)+2):
-                    #logger.debug(F"scrolling excess {excess}, inc: {inc}, i:{i}")
+                    # logger.debug(F"scrolling excess {excess}, inc: {inc}, i:{i}")
                     if self.venue_name != text:
                         break
                     # sleep(0.005)
@@ -342,7 +333,6 @@ class screen:
         logger.debug(F"showing playstate {config.PLAY_STATE}")
         bbox = self.playstate_bbox
         self.clear_area(bbox)
-        size = bbox.size()
         if staged_play:
             self.draw.regular_polygon((bbox.center(), 10), 3, rotation=30, fill=color)
             self.draw.regular_polygon((bbox.center(), 8), 3, rotation=30, fill=(0, 0, 0))
@@ -426,12 +416,12 @@ class state:
                 self.dict['NEXT_TRACK_TITLE'] = self.player.tape.tracks()[next_track].title
             else:
                 self.dict['NEXT_TRACK_TITLE'] = ''
-        except BaseException:
+        except Exception:
             self.dict['TRACK_NUM'] = -1
             self.dict['TAPE_ID'] = ''
             self.dict['TRACK_TITLE'] = ''
             self.dict['NEXT_TRACK_TITLE'] = ''
-            #logger.debug('Exception getting current state. Using some defaults')
+            # logger.debug('Exception getting current state. Using some defaults')
         self.dict['TRACK_ID'] = self.dict['TAPE_ID'] + "_track_" + str(self.dict['TRACK_NUM'])
         return self.dict
 
