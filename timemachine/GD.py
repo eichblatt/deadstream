@@ -403,13 +403,11 @@ class GDArchive:
 
 class GDTape:
     """ A Grateful Dead Identifier Item -- does not contain tracks """
-    # __slots__ = ['_breaks_added','_playable_formats','dbpath','date','_tracks',
-    #             'identifier', 'avg_rating', 'format', 'collection', 'num_reviews', 'downloads',
-    #             'meta_loaded','url_metadata', 'url_details', 'set_data']
 
     def __init__(self, dbpath, raw_json, set_data):
         self.dbpath = dbpath
-        self._playable_formats = ['Ogg Vorbis', 'VBR MP3', 'Shorten', 'MP3']  # had to remove Flac because mpv can't play them!!!
+        self._playable_formats = ['Flac', 'Ogg Vorbis', 'VBR MP3', 'Shorten', 'MP3']
+        self._lossy_formats = ['Ogg Vorbis', 'VBR MP3', 'MP3']  # removed Flac because I thought mpv cannot play them!!!
         self._breaks_added = False
         self.meta_loaded = False
         attribs = ['date', 'identifier', 'avg_rating', 'format', 'collection', 'num_reviews', 'downloads', 'addeddate']
@@ -495,7 +493,7 @@ class GDTape:
         meta_path = os.path.join(self.dbpath, str(date.year), str(date.month), self.identifier+'.json')
         try:     # I used to check if file exists, but it may also be corrupt, so this is safer.
             page_meta = json.load(open(meta_path, 'r'))
-        except BaseException:
+        except Exception:
             r = requests.get(self.url_metadata)
             logger.info("url is {}".format(r.url))
             if r.status_code != 200:
@@ -506,7 +504,7 @@ class GDTape:
             except ValueError:
                 logger.warning("Json Error {}".format(r.url))
                 return None
-            except BaseException:
+            except Exception:
                 logger.warning("Json Error, probably")
                 return None
 
@@ -519,7 +517,7 @@ class GDTape:
                         orig_titles[ifile['name']] = ifile['title'] if 'title' in ifile.keys() else ifile['name']
                     except Exception:
                         pass
-                if ifile['format'] in self._playable_formats:
+                if ifile['format'] in (self._lossy_formats if self.stream_only() else self._playable_formats):
                     self.append_track(ifile, orig_titles)
             except KeyError as e:
                 logger.warning("Error in parsing metadata")
@@ -588,7 +586,7 @@ class GDTape:
             long_breaks = [difflib.get_close_matches(x, tlist)[0] for x in lb]
             short_breaks = [difflib.get_close_matches(x, tlist)[0] for x in sb]
             location_breaks = [difflib.get_close_matches(x, tlist)[0] for x in locb]
-        except BaseException:
+        except Exception:
             pass
         # NOTE: Use the _last_ element here to handle sandwiches.
         lb_locations = []
