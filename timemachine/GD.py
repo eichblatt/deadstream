@@ -505,7 +505,7 @@ class GDTape:
                 logger.warning("Json Error {}".format(r.url))
                 return None
             except Exception:
-                logger.warning("Json Error, probably")
+                logger.warning("Error getting metadata (json?)")
                 return None
 
         # self.reviews = page_meta['reviews'] if 'reviews' in page_meta.keys() else []
