@@ -148,7 +148,7 @@ class TapeDownloader(BaseTapeDownloader):
         logger.debug(f"total rows {total}")
         current_rows += j['count']
         tapes = j['items']
-        tapes = [x for x in tapes if x['identifier'] not in ['gybe2003-04-13', 'gybe2003-04-14']]   # hack!!! There is something amiss with these 2 tapes.
+        # tapes = [x for x in tapes if x['identifier'] not in ['gybe2003-04-13', 'gybe2003-04-14']]   # hack!!! There is something amiss with these 2 tapes.
 
         # n_tapes_added = self.store_by_period(iddir,tapes,period_func=to_decade)
         if iddir.endswith('etree_ids'):
