@@ -941,7 +941,7 @@ eloop = threading.Thread(target=event_loop, args=[state])
 
 
 def main():
-    archive_updater = GD.GDArchive_Updater(state, 3600, stop_update_event)
+    archive_updater = GD.GDArchive_Updater(state, 6*3600, stop_update_event)
     archive_updater.start()
     eloop.run()
     exit()
