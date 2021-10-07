@@ -26,13 +26,13 @@ import threading
 import sys
 import time
 from operator import methodcaller
-from threading import Event
+from threading import Event, Lock
 from time import sleep
 
 from gpiozero import Button, RotaryEncoder
 from tenacity import retry
 from tenacity.stop import stop_after_delay
-from typing import Callable
+from typing import Callable, Optional
 
 from timemachine import config, controls, GD
 
@@ -98,6 +98,7 @@ knob_event = Event()
 button_event = Event()
 screen_event = Event()
 stop_update_event = Event()
+stop_loop_event = Event()
 
 random.seed(datetime.datetime.now())  # to ensure that random show will be new each time.
 
@@ -693,7 +694,7 @@ def test_update(state):
     sys.exit(-1)
 
 
-def event_loop(state):
+def event_loop(state, lock):
     date_reader = state.date_reader
     last_sdevent = datetime.datetime.now()
     q_counter = False
@@ -712,9 +713,10 @@ def event_loop(state):
     scr.clear()
 
     try:
-        while not stop_event.wait(timeout=0.001):
+        while not stop_loop_event.wait(timeout=0.001):
             if not free_event.wait(timeout=0.01):
                 continue
+            lock.acquire()
             now = datetime.datetime.now()
             n_timer = n_timer + 1
             idle_seconds = (now - last_sdevent).seconds
@@ -817,9 +819,12 @@ def event_loop(state):
                     scr.show_staged_date(date_reader.date)
                     scr.show_venue(date_reader)
                 screen_event.set()
+            lock.release()
 
     except KeyboardInterrupt:
         exit(0)
+    finally:
+        lock.release()
 
 
 def get_ip():
@@ -937,11 +942,12 @@ scr.show_text(F"{archive.collection_name}", font=scr.smallfont, loc=(0, 70), for
 if config.optd['RELOAD_STATE_ON_START']:
     load_saved_state(state)
 
-eloop = threading.Thread(target=event_loop, args=[state])
+lock = Lock()
+eloop = threading.Thread(target=event_loop, args=[state, lock])
 
 
 def main():
-    archive_updater = GD.GDArchive_Updater(state, 6*3600, stop_update_event)
+    archive_updater = GD.GDArchive_Updater(state, 6*3600, stop_update_event, scr=scr, lock=lock)
     archive_updater.start()
     eloop.run()
     exit()
