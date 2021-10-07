@@ -32,7 +32,7 @@ from time import sleep
 from gpiozero import Button, RotaryEncoder
 from tenacity import retry
 from tenacity.stop import stop_after_delay
-from typing import Callable, Optional
+from typing import Callable
 
 from timemachine import config, controls, GD
 
