@@ -13,6 +13,7 @@ def get_board_version():
 
 
 # State variables
+NOT_READY = -1
 INIT = 0
 READY = 1
 PAUSED = 2
