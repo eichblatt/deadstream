@@ -158,9 +158,7 @@ class TapeDownloader(BaseTapeDownloader):
         logger.debug(f"total rows {total}")
         current_rows += j['count']
         tapes = j['items']
-        # tapes = [x for x in tapes if x['identifier'] not in ['gybe2003-04-13', 'gybe2003-04-14']]   # hack!!! There is something amiss with these 2 tapes.
 
-        # n_tapes_added = self.store_by_period(iddir,tapes,period_func=to_decade)
         if iddir.endswith('etree_ids'):
             n_tapes_added = self.store_by_period(iddir, tapes, period_func=to_year)
         else:
@@ -169,7 +167,7 @@ class TapeDownloader(BaseTapeDownloader):
 
         while (current_rows < 1.25*total) and n_tapes_added > 0:
             min_date_field = tapes[-1]['date']
-            min_date = min_date_field[:10]  # subtract 10 days for overlap?
+            min_date = min_date_field[:10]  # Should we subtract some days for overlap?
             r = self._get_piece(min_date, max_date, min_addeddate)
             j = r.json()
             current_rows += j['count']
@@ -417,7 +415,7 @@ class GDTape:
     def __init__(self, dbpath, raw_json, set_data):
         self.dbpath = dbpath
         self._playable_formats = ['Flac', 'Ogg Vorbis', 'VBR MP3', 'Shorten', 'MP3']
-        self._lossy_formats = ['Ogg Vorbis', 'VBR MP3', 'MP3']  # removed Flac because I thought mpv cannot play them!!!
+        self._lossy_formats = ['Ogg Vorbis', 'VBR MP3', 'MP3']
         self._breaks_added = False
         self.meta_loaded = False
         attribs = ['date', 'identifier', 'avg_rating', 'format', 'collection', 'num_reviews', 'downloads', 'addeddate']
@@ -524,8 +522,10 @@ class GDTape:
             try:
                 if ifile['source'] == 'original':
                     try:
-                        orig_titles[ifile['name']] = ifile['title'] if 'title' in ifile.keys() else ifile['name']
-                    except Exception:
+                        orig_titles[ifile['name']] = ifile['title'] if ('title' in ifile.keys() and ifile['title'] != 'unknown') else ifile['name']
+                        # orig_titles[ifile['name']] = re.sub(r'(.flac)|(.mp3)|(.ogg)$','', orig_titles[ifile['name']])
+                    except Exception as e:
+                        logger.exception(e)
                         pass
                 if ifile['format'] in (self._lossy_formats if self.stream_only() else self._playable_formats):
                     self.append_track(ifile, orig_titles)
@@ -541,6 +541,7 @@ class GDTape:
         # return page_meta
         for track in self._tracks:
             track.title = re.sub(r'gd\d{2}(?:\d{2})?-\d{2}-\d{2}[ ]*([td]\d*)*', '', track.title).strip()
+            track.title = re.sub(r'(.flac)|(.mp3)|(.ogg)$', '', track.title).strip()
         self.insert_breaks()
         return
 
@@ -548,18 +549,19 @@ class GDTape:
         source = tdict['source']
         if source == 'original':
             orig = tdict['name']
+            # orig = re.sub(r'(.flac)|(.mp3)|(.ogg)$','', orig)
         else:
             orig = tdict['original']
             if 'title' not in tdict.keys():
                 tdict['title'] = 'unknown'
-            if tdict['title'] == 'unknown':
-                if orig in orig_titles.keys():
-                    tdict['title'] = orig_titles[orig]
-        for i, t in enumerate(self._tracks):
-            if orig == t.original:  # add in alternate formats
+        if tdict['title'] == 'unknown':
+            if orig in orig_titles.keys():
+                tdict['title'] = orig_titles[orig]
+        for i, t in enumerate(self._tracks):  # loop over the _tracks we already have
+            if orig == t.original:  # add in alternate formats.
                 # make sure that this isn't a duplicate!!!
                 t.add_file(tdict)
-                return t
+                return t  # don't append this, because we already have this _track
         self._tracks.append(GDTrack(tdict, self.identifier))
 
     def venue(self, tracknum=0):
@@ -647,7 +649,7 @@ class GDTrack:
         self.parent_id = parent_id
         attribs = ['track', 'original', 'title']
         if 'title' not in tdict.keys():
-            tdict['title'] = 'unknown'
+            tdict['title'] = tdict['name'] if 'name' in tdict.keys() else 'unknown'
         for k, v in tdict.items():
             if k in attribs:
                 setattr(self, k, v)
