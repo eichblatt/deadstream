@@ -14,7 +14,6 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
-import cProfile
 import datetime
 import json
 import logging
@@ -27,7 +26,7 @@ import threading
 import sys
 import time
 from operator import methodcaller
-from threading import Event
+from threading import Event, Lock
 from time import sleep
 
 from gpiozero import Button, RotaryEncoder
@@ -35,7 +34,6 @@ from tenacity import retry
 from tenacity.stop import stop_after_delay
 from typing import Callable
 
-import pkg_resources
 from timemachine import config, controls, GD
 
 parser = optparse.OptionParser()
@@ -85,6 +83,8 @@ logging.basicConfig(format='%(asctime)s.%(msecs)03d %(levelname)s: %(name)s %(me
 logger = logging.getLogger(__name__)
 GDLogger = logging.getLogger('timemachine.GD')
 controlsLogger = logging.getLogger('timemachine.controls')
+logger.setLevel(logging.INFO)
+GDLogger.setLevel(logging.INFO)
 controlsLogger.setLevel(logging.WARN)
 
 stagedate_event = Event()
@@ -97,6 +97,8 @@ stop_event = Event()
 knob_event = Event()
 button_event = Event()
 screen_event = Event()
+stop_update_event = Event()
+stop_loop_event = Event()
 
 random.seed(datetime.datetime.now())  # to ensure that random show will be new each time.
 
@@ -203,10 +205,10 @@ def load_options(parms):
                     tmpd[k] = [x.strip() for x in tmpd[k].split(',')]
                 if k in ['DEFAULT_START_TIME']:
                     tmpd[k] = datetime.datetime.strptime(tmpd[k], "%H:%M:%S").time()
-            except:
+            except Exception:
                 logger.warning(F"Failed to set option {k}. Using {config.optd[k]}")
         optd = tmpd
-    except:
+    except Exception:
         logger.warning(F"Failed to read options from {parms.options_path}. Using defaults")
     config.optd.update(optd)  # update defaults with those read from the file.
     logger.info(F"in load_options, optd {optd}")
@@ -234,7 +236,7 @@ def twist_knob(knob: RotaryEncoder, label, date_reader: controls.date_knob_reade
     stagedate_event.set()
 
 
-if parms.verbose:
+if parms.verbose or parms.debug:
     logger.debug(F"Setting logger levels to {logging.DEBUG}")
     logger.setLevel(logging.DEBUG)
     GDLogger.setLevel(logging.DEBUG)
@@ -305,7 +307,6 @@ def select_button_longpress(button, state):
     logger.debug("long pressing select")
     if not state.date_reader.tape_available():
         return
-    current = state.get_current()
     date_reader = state.date_reader
     tapes = date_reader.archive.tape_dates[date_reader.fmtdate()]
     itape = -1
@@ -410,7 +411,6 @@ def stop_button_longpress(button, state):
     sleep(5)
     if button.is_held:
         scr.clear()
-        logfile = os.path.join(os.getenv('HOME'), 'update.log')
         cmd = "sudo service update start"
         os.system(cmd)
         stop_event.set()
@@ -484,23 +484,19 @@ def day_button(button, state):
     sleep(button._hold_time * 1.01)
     if button.is_pressed or button.is_held:
         return
-    logger.debug(F"pressing day button")
-    current = state.get_current()
-    # if current['EXPERIENCE']: return
+    logger.debug("pressing day button")
     new_date = state.date_reader.next_date()
     state.date_reader.set_date(new_date)
     stagedate_event.set()
 
 
 def day_button_longpress(button, state):
-    logger.debug(F"long-pressing day button")
+    logger.debug("long-pressing day button")
     scr.sleep()
 
 
 @sequential
 def year_button(button, state):
-    current = state.get_current()
-    # if current['EXPERIENCE']: return
     sleep(button._hold_time)
     if button.is_pressed:
         return     # the button is being "held"
@@ -622,7 +618,7 @@ def refresh_venue(state, idle_second_hand, refresh_times, venue):
         id_color = tape_color
 
     display_string = re.sub(r'\d{2,4}-\d\d-\d\d\.*', '~', display_string)
-    #logger.debug(F"display_string is {display_string}")
+    # logger.debug(F"display_string is {display_string}")
 
     if not config.optd['SCROLL_VENUE']:
         scr.show_venue(display_string, color=id_color)
@@ -664,7 +660,6 @@ def test_update(state):
     current['EXPERIENCE'] = False
     current['ON_TOUR'] = False
     current['PLAY_STATE'] = config.PLAYING
-    itimes = 0
     state.set(current)
     date_reader = state.date_reader
     last_sdevent = datetime.datetime.now()
@@ -678,7 +673,7 @@ def test_update(state):
     try:
         if parms.pid_to_kill is not None:
             os.system(F"kill {parms.pid_to_kill}")
-    except:
+    except Exception:
         pass
     try:
         scr.show_text("Turn Any\nKnob", force=True)
@@ -699,7 +694,7 @@ def test_update(state):
     sys.exit(-1)
 
 
-def event_loop(state):
+def event_loop(state, lock):
     date_reader = state.date_reader
     last_sdevent = datetime.datetime.now()
     q_counter = False
@@ -716,10 +711,12 @@ def event_loop(state):
     free_event.set()
     stagedate_event.set()
     scr.clear()
+
     try:
-        while not stop_event.wait(timeout=0.001):
+        while not stop_loop_event.wait(timeout=0.001):
             if not free_event.wait(timeout=0.01):
                 continue
+            lock.acquire()
             now = datetime.datetime.now()
             n_timer = n_timer + 1
             idle_seconds = (now - last_sdevent).seconds
@@ -791,15 +788,16 @@ def event_loop(state):
                 screen_event.set()
             if idle_second_hand in refresh_times and idle_second_hand != last_idle_second_hand:
                 last_idle_second_hand = idle_second_hand
-                if now.hour != last_idle_hour:
-                    # if now.minute != last_idle_minute:
+                # if now.minute != last_idle_minute:
+                # if now.day != last_idle_day:
+                if (now.hour != last_idle_hour) and now.hour == 5:
                     last_idle_day = now.day
                     last_idle_hour = now.hour
                     last_idle_minute = now.minute
-                    try:
-                        date_reader.archive.load_archive(with_latest=config.optd['AUTO_UPDATE_ARCHIVE'])
-                    except:
-                        logger.warning("Unable to refresh archive")
+                    # try:
+                    # date_reader.archive.load_archive(with_latest=config.optd['AUTO_UPDATE_ARCHIVE'])
+                    # except:
+                    # logger.warning("Unable to refresh archive")
                 track_event.set()
                 playstate_event.set()
                 save_state(state)
@@ -821,9 +819,12 @@ def event_loop(state):
                     scr.show_staged_date(date_reader.date)
                     scr.show_venue(date_reader)
                 screen_event.set()
+            lock.release()
 
     except KeyboardInterrupt:
         exit(0)
+    finally:
+        lock.release()
 
 
 def get_ip():
@@ -835,9 +836,9 @@ def get_ip():
 
 try:
     load_options(parms)
-except:
+except Exception:
     logger.warning("Failed in loading options")
-#parms.state_path = os.path.join(os.path.dirname(parms.state_path), F'{config.optd["COLLECTIONS"]}_{os.path.basename(parms.state_path)}')
+# parms.state_path = os.path.join(os.path.dirname(parms.state_path), F'{config.optd["COLLECTIONS"]}_{os.path.basename(parms.state_path)}')
 config.PAUSED_AT = datetime.datetime.now()
 config.WOKE_AT = datetime.datetime.now()
 
@@ -860,9 +861,9 @@ reload_ids = False
 if rewind.is_pressed:
     scr.show_text("Reloading\nfrom\narchive.org...", color=(0, 255, 255), force=True, clear=True)
     logger.info('Reloading from archive.org')
-    #reload_ids = True
+    # reload_ids = True
 if stop.is_pressed:
-    logger.info(F'Resetting to factory archive -- nyi')
+    logger.info('Resetting to factory archive -- nyi')
 
 archive = GD.GDArchive(parms.dbpath, reload_ids=reload_ids, with_latest=False, collection_name=config.optd['COLLECTIONS'])
 player = GD.GDPlayer()
@@ -887,7 +888,7 @@ try:
     kfile = open(parms.knob_sense_path, 'r')
     knob_sense = int(kfile.read())
     kfile.close()
-except:
+except Exception:
     knob_sense = 0
 
 year_list = archive.year_list()
@@ -941,10 +942,14 @@ scr.show_text(F"{archive.collection_name}", font=scr.smallfont, loc=(0, 70), for
 if config.optd['RELOAD_STATE_ON_START']:
     load_saved_state(state)
 
-eloop = threading.Thread(target=event_loop, args=[state])
+lock = Lock()
+eloop = threading.Thread(target=event_loop, args=[state, lock])
 
 
 def main():
+    if config.optd['AUTO_UPDATE_ARCHIVE']:
+        archive_updater = GD.GDArchive_Updater(state, 3600, stop_update_event, scr=scr, lock=lock)
+        archive_updater.start()
     eloop.run()
     exit()
 

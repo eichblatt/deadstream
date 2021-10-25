@@ -1,13 +1,8 @@
-from timemachine import config
 from time import sleep
-from threading import Event
-import datetime
-import string
 import os
 import optparse
 import logging
 import json
-import pkg_resources
 import cherrypy
 import subprocess
 
@@ -31,7 +26,7 @@ class StringGenerator(object):
         opt_dict = json.loads(f.read())
         print(F"opt dict {opt_dict}")
         form_strings = [self.get_form_item(x) for x in opt_dict.items() if x[0] != 'TIMEZONE']
-        #form_strings = [F'<label>{x[0]} <input type="text" value="{x[1]}" name="{x[0]}" /></label> <p>' for x in opt_dict.items() if  x[0]!='TIMEZONE']
+        # form_strings = [F'<label>{x[0]} <input type="text" value="{x[1]}" name="{x[0]}" /></label> <p>' for x in opt_dict.items() if  x[0]!='TIMEZONE']
         form_string = '\n'.join(form_strings)
         print(F"form_string {form_string}")
         tz_list = ["America/New_York", "America/Chicago", "America/Phoenix", "America/Los_Angeles", "America/Mexico_City", "America/Anchorage", "Pacific/Honolulu"]

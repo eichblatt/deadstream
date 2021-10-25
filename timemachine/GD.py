@@ -15,9 +15,6 @@
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
 import abc
-import aiofiles
-import aiohttp
-import asyncio
 import codecs
 import csv
 import datetime
@@ -26,21 +23,18 @@ import json
 import logging
 import math
 import os
-import pickle5 as pickle
+import random
 import re
 import requests
-import threading
+import tempfile
 import time
-from aiohttp import ClientResponse, ClientSession, ClientTimeout
-from importlib import reload
-from multiprocessing.pool import ThreadPool
+from threading import Event, Lock, Thread
 
-from contextlib import closing
-from operator import attrgetter, methodcaller
+from operator import methodcaller
 from mpv import MPV
 from tenacity import retry
 from tenacity.stop import stop_after_delay
-from typing import Callable, List, Tuple
+from typing import Callable, Optional
 
 import pkg_resources
 from timemachine import config
@@ -131,9 +125,18 @@ class TapeDownloader(BaseTapeDownloader):
             tapes_from_period = [t for t in tapes if period_func(t['date']) == period]
             new_ids = [x['identifier'] for x in tapes_from_period]
             period_tapes = [x for x in orig_tapes if not x['identifier'] in new_ids] + tapes_from_period
-            logger.info(f"Writing {len(period_tapes)} tapes to {outpath}")
-            json.dump(period_tapes, open(outpath, 'w'))
-            n_tapes_added = n_tapes_added + len(period_tapes) - len(orig_tapes)
+            n_period_tapes_added = len(period_tapes) - len(orig_tapes)
+            n_tapes_added = n_tapes_added + n_period_tapes_added
+            if n_period_tapes_added > 0:      # NOTE This condition prevents updates for _everything_ unless there are new tapes.
+                logger.info(f"Writing {len(period_tapes)} tapes to {outpath}")
+                try:
+                    tmpfile = tempfile.mkstemp('.json')[1]
+                    json.dump(period_tapes, open(tmpfile, 'w'))
+                    os.rename(tmpfile, outpath)
+                    logger.debug(f"renamed {tmpfile} to {outpath}")
+                except Exception:
+                    logger.debug(f"removing {tmpfile}")
+                    os.remove(tmpfile)
         logger.info(f'added {n_tapes_added} tapes by period')
         return n_tapes_added
 
@@ -156,7 +159,6 @@ class TapeDownloader(BaseTapeDownloader):
         current_rows += j['count']
         tapes = j['items']
 
-        #n_tapes_added = self.store_by_period(iddir,tapes,period_func=to_decade)
         if iddir.endswith('etree_ids'):
             n_tapes_added = self.store_by_period(iddir, tapes, period_func=to_year)
         else:
@@ -165,7 +167,7 @@ class TapeDownloader(BaseTapeDownloader):
 
         while (current_rows < 1.25*total) and n_tapes_added > 0:
             min_date_field = tapes[-1]['date']
-            min_date = min_date_field[:10]  # subtract 10 days for overlap?
+            min_date = min_date_field[:10]  # Should we subtract some days for overlap?
             r = self._get_piece(min_date, max_date, min_addeddate)
             j = r.json()
             current_rows += j['count']
@@ -222,7 +224,7 @@ class TapeDownloader(BaseTapeDownloader):
         if min_addeddate is None:
             query = F'collection:{self.collection_name} AND date:[{min_date} TO {max_date}]'
         else:
-            #max_addeddate = datetime.datetime.now().strftime('%Y-%m-%dT%H:%M:%SZ')
+            # max_addeddate = datetime.datetime.now().strftime('%Y-%m-%dT%H:%M:%SZ')
             query = F'collection:{self.collection_name} AND date:[{min_date} TO {max_date}] AND addeddate:[{min_addeddate} TO {max_date}]'
         parms['q'] = query
         r = requests.get(self.api, params=parms)
@@ -260,7 +262,6 @@ class TapeDownloader(BaseTapeDownloader):
 
 class GDArchive:
     """ The Grateful Dead Collection on Archive.org """
-    #__slots__ = ['dates','collection_name','idpath','set_data','tapes','tape_dates','url','dbpath', 'downloader']
 
     def __init__(self, dbpath=os.path.join(ROOT_DIR, 'metadata'), url='https://archive.org', reload_ids=False, sync=True, with_latest=False, collection_name=['GratefulDead']):
         """Create a new GDArchive.
@@ -280,12 +281,12 @@ class GDArchive:
         self.collection_name = collection_name if type(collection_name) == list else [collection_name]
         if len(self.collection_name) == 1:
             self.idpath = os.path.join(self.dbpath, F'{collection_name[0]}_ids')
-            #self.idpath_pkl = os.path.join(self.dbpath, F'{collection_name[0]}_ids.pkl')
-            self.downloader = (TapeDownloader if sync else AsyncTapeDownloader)(url, collection_name=collection_name[0])
+            # self.idpath_pkl = os.path.join(self.dbpath, F'{collection_name[0]}_ids.pkl')
+            self.downloader = TapeDownloader(url, collection_name=collection_name[0])
         else:
             self.idpath = os.path.join(self.dbpath, 'etree_ids')
-            #self.idpath_pkl = os.path.join(self.dbpath, 'etree_ids.pkl')
-            self.downloader = (TapeDownloader if sync else AsyncTapeDownloader)(url)
+            # self.idpath_pkl = os.path.join(self.dbpath, 'etree_ids.pkl')
+            self.downloader = TapeDownloader(url)
         self.set_data = GDSet(self.collection_name)
         self.load_archive(reload_ids, with_latest)
 
@@ -361,7 +362,7 @@ class GDArchive:
         return self.tape_dates
 
     def load_current_tapes(self, reload_ids=False):
-        logger.debug(F"Loading current tapes")
+        logger.debug("Loading current tapes")
         tapes = []
         addeddates = []
         if reload_ids or not os.path.exists(self.idpath):
@@ -388,18 +389,16 @@ class GDArchive:
         """ Load the tapes, then add anything which has been added since the tapes were saved """
         n_tapes = 0
         loaded_tapes, max_addeddate = self.load_current_tapes(reload_ids)
-        current_tape_ids = [x['identifier'] for x in loaded_tapes]
         logger.debug(f'max addeddate {max_addeddate}')
 
         min_download_addeddate = (datetime.datetime.strptime(max_addeddate, '%Y-%m-%dT%H:%M:%SZ')) - datetime.timedelta(hours=1)
         min_download_addeddate = datetime.datetime.strftime(min_download_addeddate, '%Y-%m-%dT%H:%M:%SZ')
         logger.debug(f'min_download_addeddate {min_download_addeddate}')
 
-        latest_tapes = []
         if with_latest:
             logger.debug(f'Refreshing Tapes\nmax addeddate {max_addeddate}\nmin_download_addeddate {min_download_addeddate}')
             n_tapes = self.downloader.get_all_tapes(self.idpath, min_download_addeddate)
-            logger.info(f'Loaded {n_tapes} new tapes from archiver')
+            logger.info(f'Loaded {n_tapes} new tapes from archive')
         if n_tapes > 0:
             logger.info(f'Adding {n_tapes} tapes')
             loaded_tapes, _ = self.load_current_tapes()
@@ -412,13 +411,11 @@ class GDArchive:
 
 class GDTape:
     """ A Grateful Dead Identifier Item -- does not contain tracks """
-    # __slots__ = ['_breaks_added','_playable_formats','dbpath','date','_tracks',
-    #             'identifier', 'avg_rating', 'format', 'collection', 'num_reviews', 'downloads',
-    #             'meta_loaded','url_metadata', 'url_details', 'set_data']
 
     def __init__(self, dbpath, raw_json, set_data):
         self.dbpath = dbpath
-        self._playable_formats = ['Ogg Vorbis', 'VBR MP3', 'Shorten', 'MP3']  # had to remove Flac because mpv can't play them!!!
+        self._playable_formats = ['Flac', 'Ogg Vorbis', 'VBR MP3', 'Shorten', 'MP3']
+        self._lossy_formats = ['Ogg Vorbis', 'VBR MP3', 'MP3']
         self._breaks_added = False
         self.meta_loaded = False
         attribs = ['date', 'identifier', 'avg_rating', 'format', 'collection', 'num_reviews', 'downloads', 'addeddate']
@@ -468,7 +465,6 @@ class GDTape:
                 score = score + 3
         if 'optd' in dir(config) and len(config.optd['COLLECTIONS']) > 1:
             colls = config.optd['COLLECTIONS']
-            score0 = score
             score = score + 5 * (len(colls) - min([colls.index(c) if c in colls else 100 for c in self.collection]))
         if self.meta_loaded:
             score = score + 3*(self.title_fraction()-1)  # reduce score for tapes without titles.
@@ -505,7 +501,7 @@ class GDTape:
         meta_path = os.path.join(self.dbpath, str(date.year), str(date.month), self.identifier+'.json')
         try:     # I used to check if file exists, but it may also be corrupt, so this is safer.
             page_meta = json.load(open(meta_path, 'r'))
-        except BaseException:
+        except Exception:
             r = requests.get(self.url_metadata)
             logger.info("url is {}".format(r.url))
             if r.status_code != 200:
@@ -516,8 +512,8 @@ class GDTape:
             except ValueError:
                 logger.warning("Json Error {}".format(r.url))
                 return None
-            except BaseException:
-                logger.warning("Json Error, probably")
+            except Exception:
+                logger.warning("Error getting metadata (json?)")
                 return None
 
         # self.reviews = page_meta['reviews'] if 'reviews' in page_meta.keys() else []
@@ -526,10 +522,12 @@ class GDTape:
             try:
                 if ifile['source'] == 'original':
                     try:
-                        orig_titles[ifile['name']] = ifile['title'] if 'title' in ifile.keys() else ifile['name']
-                    except:
+                        orig_titles[ifile['name']] = ifile['title'] if ('title' in ifile.keys() and ifile['title'] != 'unknown') else ifile['name']
+                        # orig_titles[ifile['name']] = re.sub(r'(.flac)|(.mp3)|(.ogg)$','', orig_titles[ifile['name']])
+                    except Exception as e:
+                        logger.exception(e)
                         pass
-                if ifile['format'] in self._playable_formats:
+                if ifile['format'] in (self._lossy_formats if self.stream_only() else self._playable_formats):
                     self.append_track(ifile, orig_titles)
             except KeyError as e:
                 logger.warning("Error in parsing metadata")
@@ -543,6 +541,7 @@ class GDTape:
         # return page_meta
         for track in self._tracks:
             track.title = re.sub(r'gd\d{2}(?:\d{2})?-\d{2}-\d{2}[ ]*([td]\d*)*', '', track.title).strip()
+            track.title = re.sub(r'(.flac)|(.mp3)|(.ogg)$', '', track.title).strip()
         self.insert_breaks()
         return
 
@@ -550,20 +549,19 @@ class GDTape:
         source = tdict['source']
         if source == 'original':
             orig = tdict['name']
+            # orig = re.sub(r'(.flac)|(.mp3)|(.ogg)$','', orig)
         else:
             orig = tdict['original']
-            if not 'title' in tdict.keys():
+            if 'title' not in tdict.keys():
                 tdict['title'] = 'unknown'
-            if tdict['title'] == 'unknown':
-                if orig in orig_titles.keys():
-                    tdict['title'] = orig_titles[orig]
-        trackindex = None
-        for i, t in enumerate(self._tracks):
-            if orig == t.original:  # add in alternate formats
-                trackindex = i
+        if tdict['title'] == 'unknown':
+            if orig in orig_titles.keys():
+                tdict['title'] = orig_titles[orig]
+        for i, t in enumerate(self._tracks):  # loop over the _tracks we already have
+            if orig == t.original:  # add in alternate formats.
                 # make sure that this isn't a duplicate!!!
                 t.add_file(tdict)
-                return t
+                return t  # don't append this, because we already have this _track
         self._tracks.append(GDTrack(tdict, self.identifier))
 
     def venue(self, tracknum=0):
@@ -574,13 +572,13 @@ class GDTape:
         if sd is None:
             return self.identifier
         venue_string = ""
-        l = sd['location']
+        loc = sd['location']
         if tracknum > 0:    # only pull the metadata if the query is about a late track.
             self.get_metadata()
             breaks = self._compute_breaks()
             if (len(breaks['location']) > 0) and (tracknum > breaks['location'][0]):
-                l = sd['location2']
-        venue_string = F"{l[0]}, {l[1]}, {l[2]}"
+                loc = sd['location2']
+        venue_string = F"{loc[0]}, {loc[1]}, {loc[2]}"
         return venue_string
 
     def _compute_breaks(self):
@@ -600,7 +598,7 @@ class GDTape:
             long_breaks = [difflib.get_close_matches(x, tlist)[0] for x in lb]
             short_breaks = [difflib.get_close_matches(x, tlist)[0] for x in sb]
             location_breaks = [difflib.get_close_matches(x, tlist)[0] for x in locb]
-        except BaseException:
+        except Exception:
             pass
         # NOTE: Use the _last_ element here to handle sandwiches.
         lb_locations = []
@@ -623,7 +621,7 @@ class GDTape:
         longbreak_path = pkg_resources.resource_filename('timemachine.metadata', 'silence600.ogg')
         breakd = {'track': -1, 'original': 'setbreak', 'title': 'Set Break', 'format': 'Ogg Vorbis', 'size': 1, 'source': 'original', 'path': os.path.dirname(longbreak_path)}
         lbreakd = dict(list(breakd.items()) + [('title', 'Set Break'), ('name', 'silence600.ogg')])
-        #sbreakd = dict(list(breakd.items()) + [('title', 'Encore Break'), ('name', 'silence300.ogg')])
+        # sbreakd = dict(list(breakd.items()) + [('title', 'Encore Break'), ('name', 'silence300.ogg')])
         sbreakd = dict(list(breakd.items()) + [('title', 'Encore Break'), ('name', 'silence0.ogg')])
         locbreakd = dict(list(breakd.items()) + [('title', 'Location Break'), ('name', 'silence600.ogg')])
 
@@ -646,13 +644,12 @@ class GDTape:
 
 class GDTrack:
     """ A track from a GDTape recording """
-    #__slots__ = ['files','parent_id','title','track','original','collection']
 
     def __init__(self, tdict, parent_id, break_track=False):
         self.parent_id = parent_id
         attribs = ['track', 'original', 'title']
         if 'title' not in tdict.keys():
-            tdict['title'] = 'unknown'
+            tdict['title'] = tdict['name'] if 'name' in tdict.keys() else 'unknown'
         for k, v in tdict.items():
             if k in attribs:
                 setattr(self, k, v)
@@ -690,7 +687,7 @@ class GDSet:
     def __init__(self, collection_name):
         self.collection_name = collection_name
         set_data = {}
-        if not 'GratefulDead' in self.collection_name:
+        if 'GratefulDead' not in self.collection_name:
             self.set_data = set_data
             return
         prevsong = None
@@ -703,9 +700,6 @@ class GDSet:
             date = d['date']
             time = d['time']
             song = d['song']
-            song_n = d['song_n']
-            # if song_n > 1:
-            #    song = song + f'_{song_n}'
             if date not in set_data.keys():
                 set_data[date] = {}
             set_data[date]['start_time'] = datetime.datetime.strptime(time, '%H:%M:%S.%f').time() if len(time) > 0 else None
@@ -769,7 +763,7 @@ class GDSet:
         return self.__repr__()
 
     def __repr__(self):
-        retstr = F"Grateful Dead set data"
+        retstr = "Grateful Dead set data"
         return retstr
 
 
@@ -783,7 +777,7 @@ class GDPlayer(MPV):
         # self._set_property('cache-on-disk','yes')
         self._set_property('audio-buffer', 10.0)  # This allows to play directly from the html without a gap!
         self._set_property('cache', 'yes')
-        #self.default_audio_device = 'pulse'
+        # self.default_audio_device = 'pulse'
         self.default_audio_device = 'auto'
         audio_device = self.default_audio_device
         self._set_property('audio-device', audio_device)
@@ -829,7 +823,6 @@ class GDPlayer(MPV):
     def create_playlist(self):
         self.playlist_clear()
         urls = self.extract_urls(self.tape)
-        pathname = os.path.join(self.tape.dbpath, 'audience')
         self.command('loadfile', urls[0])
         if len(urls) > 0:
             _ = [self.command('loadfile', x, 'append') for x in urls[1:]]
@@ -845,7 +838,7 @@ class GDPlayer(MPV):
             self._set_property('audio-device', audio_device)
             self.wait_for_property('audio-device', lambda v: v == audio_device)
             if self.get_prop('current-ao') is None:
-                logger.warning(F"Current-ao is None")
+                logger.warning("Current-ao is None")
                 self.stop()
                 return False
             self.pause()
@@ -965,13 +958,12 @@ class GDPlayer(MPV):
             logger.debug(F'seeking {jumpsize}')
 
             current_track = self.get_prop('playlist-pos')
-            time_remaining = self.get_prop('time-remaining')
             time_pos = self.get_prop('time-pos')
             if time_pos is None:
                 time_pos = 0
             time_pos = max(0, time_pos)
             duration = self.get_prop('duration')
-            #self.wait_for_property('duration', lambda v: v is not None)
+            # self.wait_for_property('duration', lambda v: v is not None)
 
             destination = time_pos + jumpsize
 
@@ -995,16 +987,97 @@ class GDPlayer(MPV):
 
     def status(self):
         if self.playlist_pos is None:
-            logger.info(F"Playlist not started")
+            logger.info("Playlist not started")
             return None
         playlist_pos = self.get_prop('playlist-pos')
         paused = self.get_prop('pause')
         logger.info(F"Playlist at track {playlist_pos}, Paused {paused}")
         if self.raw.time_pos is None:
-            logger.info(F"Track not started")
+            logger.info("Track not started")
             return None
         duration = self.get_prop('duration')
         logger.info(F"duration: {duration}. time: {datetime.timedelta(seconds=int(self.raw.time_pos))}, time remaining: {datetime.timedelta(seconds=int(self.raw.time_remaining))}")
         return int(self.raw.time_remaining)
 
     def close(self): self.terminate()
+
+
+class GDArchive_Updater(Thread):
+    """Updater runs in the backround checking for updates.
+
+    The Updater runs in a thread periodically checking for and applying
+    updates.
+
+    It adds randomness to the update interval by adding +/- 10% randomness
+    to the time spent waiting for the next update check.
+    """
+
+    def __init__(self, state, interval: float, event: Event, scr=None, lock: Optional[Lock] = None, stop_on_exception: bool = False) -> None:
+        """Create an Updater.
+
+             Args:
+                 interval (float): Seconds between checks, pre-jitter.
+                 state (controls.state): state of the player.
+                 event (Event): Event which can be used to stop the update loop.
+                 lock (Lock): Optional. Lock to acquire before an update. If a
+                     lock is provided, it is only acquired when performing
+                     the update and not when checking if the update is
+                     necessary.
+                 scr (controls.screen): The screen object, used to indicate that device is updating.
+                 stop_on_exception (bool): Set to True to have the updater loop
+                     stop checking for updates if there is an exception in the
+                     update process.
+             NOTE The Updater will check every <interval> seconds, but only update
+                  every <min_time_between_updates> seconds. So we will check more often than we
+                  will actually do an update. That is because we don't want to update while playing.
+                  Is the "don't update while playing" worth the trouble?
+        """
+        super().__init__()
+        self.interval = interval
+        self.state = state
+        self.stopped = event
+        self.lock = lock
+        self.scr = scr
+        self.stop_on_exception = stop_on_exception
+        self.last_update_time = datetime.datetime.now()
+        self.min_time_between_updates = 6*3600
+
+    def check_for_updates(self, playstate) -> bool:
+        """Check for updates.
+        Returns:
+            (bool) True if AUTO_UPDATE and the player is currently not playing
+        """
+        if not config.optd['AUTO_UPDATE_ARCHIVE']:
+            return False
+        logger.debug("Checking for updates.")
+        time_since_last_update = (datetime.datetime.now() - self.last_update_time).seconds
+        playing = playstate == config.PLAYING
+        return (not playing) and (time_since_last_update >= self.min_time_between_updates)
+
+    def update(self) -> None:
+        """Get the updates."""
+        logger.info("Running update")
+        archive = self.state.date_reader.archive
+        if self.scr:
+            self.scr.show_venue("UPDATING ARCHIVE", color=(255, 0, 0), force=True)
+        archive.load_archive(with_latest=True)
+        self.last_update_time = datetime.datetime.now()
+
+    def run(self):
+        while not self.stopped.wait(timeout=self.interval*(1+0.1*random.random())):
+            current = self.state.get_current()
+            playstate = current['PLAY_STATE']
+            if not self.check_for_updates(playstate):
+                continue
+            try:
+                if self.lock:
+                    if self.lock.acquire(timeout=10.0):
+                        self.update()
+            except Exception as e:
+                if self.stop_on_exception:
+                    raise e
+                logger.exception(e)
+            finally:
+                if self.lock:
+                    logger.debug('releasing updater lock')
+                    self.lock.release()

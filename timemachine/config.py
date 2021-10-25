@@ -8,11 +8,12 @@ def get_board_version():
         raw = raw.decode()
         if raw == 'version 2\n':
             return 2
-    except:
+    except Exception:
         return 1
 
 
 # State variables
+NOT_READY = -1
 INIT = 0
 READY = 1
 PAUSED = 2
@@ -20,7 +21,7 @@ STOPPED = 3
 PLAYING = 4
 ENDED = 5
 PLAY_STATE = INIT
-#PLAY_STATES = ['Init','Ready','Paused','Stopped','Playing']
+# PLAY_STATES = ['Init','Ready','Paused','Stopped','Playing']
 SELECT_STAGED_DATE = False
 DATE = None
 VENUE = None
