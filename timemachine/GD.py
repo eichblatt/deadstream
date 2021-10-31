@@ -414,7 +414,7 @@ class GDTape:
 
     def __init__(self, dbpath, raw_json, set_data):
         self.dbpath = dbpath
-        self._playable_formats = ['Flac', 'Ogg Vorbis', 'VBR MP3', 'Shorten', 'MP3']
+        self._playable_formats = ['Ogg Vorbis', 'VBR MP3', 'MP3']  # , 'Shorten', 'Flac']
         self._lossy_formats = ['Ogg Vorbis', 'VBR MP3', 'MP3']
         self._breaks_added = False
         self.meta_loaded = False
