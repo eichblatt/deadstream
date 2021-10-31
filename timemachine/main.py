@@ -531,22 +531,22 @@ def year_button_longpress(button, state):
         return
     logger.debug(" longpress of year button")
     current = state.get_current()
+    ip_address = get_ip()
     if current['ON_TOUR']:
-        ip_address = get_ip()
-        scr.show_experience(text=F"ON_TOUR:{current['TOUR_YEAR']}\nHold 3s to exit\n{ip_address}", force=True)
+        scr.show_experience(text=F"ON_TOUR:{current['TOUR_YEAR']}\nHold 3s to exit", force=True)
         sleep(3)
         if button.is_held:
             logger.info("   EXITING ON_TOUR mode")
             current['ON_TOUR'] = False
             current['TOUR_YEAR'] = None
             current['TOUR_STATE'] = config.READY
-            scr.show_experience(text="ON_TOUR: Finished", force=True)
+            scr.show_experience(text=F"ON_TOUR: Finished\n{ip_address}", force=True)
     else:
         current['ON_TOUR'] = True
         current['TOUR_YEAR'] = state.date_reader.date.year
         current['TOUR_STATE'] = config.READY
         logger.info(F" ---> ON_TOUR:{current['TOUR_YEAR']}")
-        scr.show_experience(text=F"ON_TOUR:{current['TOUR_YEAR']}", force=True)
+        scr.show_experience(text=F"ON_TOUR:{current['TOUR_YEAR']}\n{ip_address}", force=True)
     sleep(3)
     track_event.set()
     state.set(current)
