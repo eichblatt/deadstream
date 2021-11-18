@@ -753,6 +753,11 @@ def event_loop(state, lock):
                     current['TOUR_STATE'] = config.INIT
                     state.set(current)
                     track_event.set()
+                # If the playlist_pos = 0, and over 1 hour has passed since the start, then the show is over and restarted for some reason.
+                if (player.playlist_pos is 0) and (then_time - (start_time + datetime.timedelta(seconds=wait_time))).seconds > 3600:
+                    current['TOUR_STATE'] = config.INIT
+                    state.set(current)
+                    track_event.set()
 
             if screen_event.is_set():
                 scr.refresh()
