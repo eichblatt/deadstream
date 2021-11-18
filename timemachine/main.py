@@ -155,7 +155,7 @@ def load_saved_state(state):
 
         current['DATE_READER'] = state.date_reader
         state.player._set_property('volume', current['VOLUME'])
-        current['TOUR_STATE'] = config.READY
+        current['TOUR_STATE'] = config.INIT
         state.set(current)
         stagedate_event.set()
     except BaseException:
@@ -539,12 +539,12 @@ def year_button_longpress(button, state):
             logger.info("   EXITING ON_TOUR mode")
             current['ON_TOUR'] = False
             current['TOUR_YEAR'] = None
-            current['TOUR_STATE'] = config.READY
+            current['TOUR_STATE'] = config.INIT
             scr.show_experience(text=F"ON_TOUR: Finished\n{ip_address}", force=True)
     else:
         current['ON_TOUR'] = True
         current['TOUR_YEAR'] = state.date_reader.date.year
-        current['TOUR_STATE'] = config.READY
+        current['TOUR_STATE'] = config.INIT
         logger.info(F" ---> ON_TOUR:{current['TOUR_YEAR']}")
         scr.show_experience(text=F"ON_TOUR:{current['TOUR_YEAR']}\n{ip_address}", force=True)
     sleep(3)
