@@ -588,6 +588,7 @@ def play_on_tour(tape, state, seek_to=0):
     state.player.seek_in_tape_to(seek_to, ticking=True)
     current['PLAY_STATE'] = config.PLAYING
     current['TOUR_STATE'] = config.PLAYING
+    state.player.play()
     state.set(current)
     select_event.set()
     return
