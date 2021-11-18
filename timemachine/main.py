@@ -761,9 +761,7 @@ def event_loop(state, lock):
                         current['TOUR_STATE'] = config.ENDED
                         state.set(current)
                         track_event.set()
-                        logger.info(F" ENDED!! TOUR_STATE is {current['TOUR_STATE']}, default_start: {default_start}")
-                    logger.info(F"TOUR_STATE is {current['TOUR_STATE']}")
-                    logger.info(F"PLAY_STATE is {current['PLAY_STATE']}, playlist_pos: {player.playlist_pos}. current state {current}")
+                        logger.debug(F" ENDED!! TOUR_STATE is {current['TOUR_STATE']}, default_start: {default_start}")
 
             if screen_event.is_set():
                 scr.refresh()
