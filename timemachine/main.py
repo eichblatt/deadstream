@@ -588,7 +588,11 @@ def play_on_tour(tape, state, seek_to=0):
     state.player.seek_in_tape_to(seek_to, ticking=True)
     current['PLAY_STATE'] = config.PLAYING
     current['TOUR_STATE'] = config.PLAYING
-    state.player.play()
+    playlist_pos = state.player.get_prop('playlist-pos')
+    if playlist_pos is None:
+        current['PLAY_STATE'] = config.ENDED
+    else:
+        state.player.play()
     state.set(current)
     select_event.set()
     return
@@ -726,38 +730,40 @@ def event_loop(state, lock):
             current = state.get_current()
             default_start = config.optd['DEFAULT_START_TIME']
 
-            if current['ON_TOUR'] and current['TOUR_STATE'] != config.PLAYING:
-                then_time = now.replace(year=current['TOUR_YEAR'])
-                # At the "scheduled time", stop whatever is playing and wait.
-                tape = state.date_reader.archive.tape_at_time(then_time, default_start=default_start)
-                if not tape:
+            if current['ON_TOUR']:
+                if current['TOUR_STATE'] == config.ENDED and now.hour < 1:  # reset ENDED to INIT after midnight.
                     current['TOUR_STATE'] = config.INIT
-                else:
-                    current['TOUR_STATE'] = config.READY
-                    state.player.stop()
-                    current['TAPE_ID'] = None
-                    start_time = state.date_reader.archive.tape_start_time(then_time, default_start=default_start)
-                    scr.show_experience(text=F"ON_TOUR:{current['TOUR_YEAR']}\nWaiting for show", force=True)
-                    then_date = then_time.date()
-                    random.seed(then_date.year + then_date.month + then_date.day)
-                    wait_time = random.randrange(60, 600)
-                    logger.info(
-                        F"On Tour Tape Found on {then_time}. Sleeping 10 seconds. Waiting for {(start_time + datetime.timedelta(seconds=wait_time)).time()}"
-                    )
-                    sleep(10)
-                    if now.time() >= (start_time + datetime.timedelta(seconds=wait_time)).time():
-                        point_in_show = (then_time - (start_time + datetime.timedelta(seconds=wait_time))).seconds
-                        play_on_tour(tape, state, seek_to=point_in_show)
-            if current['ON_TOUR'] and current['TOUR_STATE'] == config.PLAYING:
-                if player.playlist_pos is None:
-                    current['TOUR_STATE'] = config.INIT
-                    state.set(current)
-                    track_event.set()
-                # If the playlist_pos = 0, and over 1 hour has passed since the start, then the show is over and restarted for some reason.
-                if (player.playlist_pos is 0) and (then_time - (start_time + datetime.timedelta(seconds=wait_time))).seconds > 3600:
-                    current['TOUR_STATE'] = config.INIT
-                    state.set(current)
-                    track_event.set()
+                if current['TOUR_STATE'] not in [config.PLAYING, config.ENDED]:
+                    then_time = now.replace(year=current['TOUR_YEAR'])
+                    # At the "scheduled time", stop whatever is playing and wait.
+                    tape = state.date_reader.archive.tape_at_time(then_time, default_start=default_start)
+                    if not tape:
+                        current['TOUR_STATE'] = config.INIT
+                    else:
+                        current['TOUR_STATE'] = config.READY
+                        state.player.stop()
+                        current['TAPE_ID'] = None
+                        start_time = state.date_reader.archive.tape_start_time(then_time, default_start=default_start)
+                        scr.show_experience(text=F"ON_TOUR:{current['TOUR_YEAR']}\nWaiting for show", force=True)
+                        then_date = then_time.date()
+                        random.seed(then_date.year + then_date.month + then_date.day)
+                        wait_time = random.randrange(60, 600)
+                        logger.info(
+                            F"On Tour Tape Found on {then_time}. Sleeping 10 seconds. Waiting for {(start_time + datetime.timedelta(seconds=wait_time)).time()}"
+                        )
+                        sleep(10)
+                        if now.time() >= (start_time + datetime.timedelta(seconds=wait_time)).time():
+                            point_in_show = (then_time - (start_time + datetime.timedelta(seconds=wait_time))).seconds
+                            play_on_tour(tape, state, seek_to=point_in_show)
+                    logger.debug(F"tape {tape}, tour state {current['TOUR_STATE']}, then_time {then_time}")
+                if current['TOUR_STATE'] == config.PLAYING:
+                    if current['PLAY_STATE'] == config.ENDED:
+                        current['TOUR_STATE'] = config.ENDED
+                        state.set(current)
+                        track_event.set()
+                        logger.info(F" ENDED!! TOUR_STATE is {current['TOUR_STATE']}, default_start: {default_start}")
+                    logger.info(F"TOUR_STATE is {current['TOUR_STATE']}")
+                    logger.info(F"PLAY_STATE is {current['PLAY_STATE']}, playlist_pos: {player.playlist_pos}. current state {current}")
 
             if screen_event.is_set():
                 scr.refresh()
