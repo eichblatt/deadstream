@@ -193,6 +193,20 @@ class BaseArchive(abc.ABC):
         tape_start = datetime.datetime.combine(dt.date(), tape_start_time)  # date + time
         return tape_start
 
+    def get_tape_dates(self):
+        tape_dates = {}
+        for tape in self.tapes:
+            k = tape.date
+            if k not in tape_dates.keys():
+                tape_dates[k] = [tape]
+            else:
+                tape_dates[k].append(tape)
+        # Now that we have all tape for a date, put them in the right order
+        self.tape_dates = {}
+        for k, v in tape_dates.items():
+            self.tape_dates[k] = sorted(v, key=methodcaller('compute_score'), reverse=True)
+        return self.tape_dates
+
 
     @abc.abstractmethod
     def load_archive(self, reload_ids, with_latest):
@@ -514,13 +528,11 @@ class PhishinArchive(BaseArchive):
             logger.debug(f'Refreshing Tapes\nmax addeddate {max_addeddate}\nmin_download_addeddate {min_download_addeddate}')
             n_tapes = self.downloader.get_all_tapes(self.idpath, min_download_addeddate)
             logger.info(f'Loaded {n_tapes} new tapes from archive')
-        if n_tapes > 0:
-            logger.info(f'Adding {n_tapes} tapes')
-            loaded_tapes, _ = self.load_current_tapes()
         else:
             if len(self.tapes) > 0:  # The tapes have already been written, and nothing was added
                 return self.tapes
-        self.tapes = [GDTape(self.dbpath, tape, self.set_data) for tape in loaded_tapes]
+        loaded_tapes, _ = self.load_current_tapes()
+        self.tapes = [PhishinTape(self.dbpath, tape, self.set_data) for tape in loaded_tapes]
         return self.tapes
 
     def load_current_tapes(self, reload_ids=False):
@@ -537,14 +549,13 @@ class PhishinArchive(BaseArchive):
             for filename in os.listdir(self.idpath):
                 if filename.endswith('.json'):
                     chunk = json.load(open(os.path.join(self.idpath, filename), 'r'))
-                    # addeddates.append(max([x['addeddate'] for x in chunk]))
-                    chunk = [t for t in chunk if any(x in self.collection_name for x in t['collection'])]
+                    # chunk = [t for t in chunk if any(x in self.collection_name for x in t['collection'])]
                     tapes.extend(chunk)
         else:
             tapes = json.load(open(self.idpath, 'r'))
             # addeddates.append(max([x['addeddate'] for x in tapes]))
-            tapes = [t for t in tapes if any(x in self.collection_name for x in t['collection'])]
-        max_addeddate = max(addeddates)
+            # tapes = [t for t in tapes if any(x in self.collection_name for x in t['collection'])]
+        max_addeddate = None
         return (tapes, max_addeddate)
 
 
@@ -556,6 +567,110 @@ class PhishinArchive(BaseArchive):
             return None
         tapes = self.tape_dates[date]
         return tapes[0]
+
+class PhishinTape(BaseTape):
+    """ A Phishin tape  """
+    def __init__(self, dbpath, raw_json, set_data):
+        super().__init__(dbpath,raw_json,set_data)
+        attribs = ['date', 'id', 'duration', 'incomplete', 'sbd', 'venue_name', 'venue_location']
+        for k, v in raw_json.items():
+            if k in attribs:
+                setattr(self, k, v)
+        self.identifier = F"phishin_{self.id}"
+        delattr(self,'id')
+        self.url_metadata = 'https://phish.in/api/v1/shows/' + self.date
+        self.parms = {'sort_attr':'date',
+                'sort_dir':'asc','per_page':'300'}
+        self.headers = {'Accept':'application/json',
+                'Authorization':'Bearer 8003bcd8c378844cfb69aad8b0981309f289e232fb417df560f7192edd295f1d49226ef6883902e59b465991d0869c77'}
+
+
+    def stream_only(self):
+        return False
+
+    def compute_score(self):
+        return 5
+
+    def tracks(self):
+        self.get_metadata()
+        return self._tracks
+
+    def track(self, n):
+        return self._tracks[n-1]
+
+    def venue(self, tracknum=0):
+        """return the venue, city, state"""
+        return F"{self.venue_name},{self.venue_location}"
+
+    def get_metadata(self):
+        if self.meta_loaded:
+            return
+        self._tracks = []
+        date = to_date(self.date).date()
+        meta_path = os.path.join(self.dbpath, str(date.year), str(date.month), self.identifier+'.json')
+        import pdb; pdb.set_trace()
+        try:     # I used to check if file exists, but it may also be corrupt, so this is safer.
+            page_meta = json.load(open(meta_path, 'r'))
+        except Exception:
+            parms = self.parms.copy()
+            parms['page'] = 1
+            r = requests.get(self.url_metadata, headers=self.headers)
+            logger.info("url is {}".format(r.url))
+            if r.status_code != 200:
+                logger.warning("error pulling data for {}".format(self.identifier))
+                raise Exception('Download', 'Error {} url {}'.format(r.status_code, self.url_metadata))
+            try:
+                page_meta = r.json()
+            except ValueError:
+                logger.warning("Json Error {}".format(r.url))
+                return None
+            except Exception:
+                logger.warning("Error getting metadata (json?)")
+                return None
+
+        if page_meta['total_pages'] > 1:
+            logger.warning(F"More than 1 page in metadata for show on {page_meta['data']['date']}. There are {page_meta['total_pages']} pages")
+
+        
+        for itrack,track_data in enumerate(page_meta['tracks']):
+            set_name = track_data['set']
+            if itrack == 0: 
+                initial_set = set_name
+            if set_name != initial_set:
+                if set_name == 'E':
+                    pass
+                    # insert encore silence
+                else:
+                    pass
+                    # insert 10 minute silence
+            self._tracks.append(PhishinTrack(track_data, self.identifier))
+
+        os.makedirs(os.path.dirname(meta_path), exist_ok=True)
+        json.dump(page_meta, open(meta_path, 'w'))
+        self.meta_loaded = True
+        # return page_meta
+        for track in self._tracks:
+            track.title = re.sub(r'gd\d{2}(?:\d{2})?-\d{2}-\d{2}[ ]*([td]\d*)*', '', track.title).strip()
+            track.title = re.sub(r'(.flac)|(.mp3)|(.ogg)$', '', track.title).strip()
+        self.insert_breaks()
+        return
+
+class PhishinTrack(BaseTrack):
+    """ A track from a Phishin recording """
+
+    def __init__(self, tdict, parent_id, break_track=False):
+        super().__init__(tdict,parent_id,break_track)
+
+    def add_file(self, tdict, break_track=False):
+        attribs = ['name', 'format', 'size', 'source', 'path']
+        d = {k: v for (k, v) in tdict.items() if k in attribs}
+        d['size'] = int(d['size'])
+        if not break_track:
+            d['url'] = 'https://archive.org/download/'+self.parent_id+'/'+d['name']
+        else:
+            d['url'] = 'file://'+os.path.join(d['path'], d['name'])
+        self.files.append(d)
+
 
 
 class GDArchive(BaseArchive):
@@ -592,20 +707,6 @@ class GDArchive(BaseArchive):
             _ = [t.tracks() for t in tapes[:3]]   # load first 3 tapes' tracks. Decrease score of those without titles.
             tapes = sorted(tapes, key=methodcaller('compute_score'), reverse=True)
         return tapes[0]
-
-    def get_tape_dates(self):
-        tape_dates = {}
-        for tape in self.tapes:
-            k = tape.date
-            if k not in tape_dates.keys():
-                tape_dates[k] = [tape]
-            else:
-                tape_dates[k].append(tape)
-        # Now that we have all tape for a date, put them in the right order
-        self.tape_dates = {}
-        for k, v in tape_dates.items():
-            self.tape_dates[k] = sorted(v, key=methodcaller('compute_score'), reverse=True)
-        return self.tape_dates
 
     def load_current_tapes(self, reload_ids=False):
         logger.debug("Loading current tapes")
@@ -654,23 +755,6 @@ class GDArchive(BaseArchive):
         self.tapes = [GDTape(self.dbpath, tape, self.set_data) for tape in loaded_tapes]
         return self.tapes
 
-
-class PhishinTape(BaseTape):
-    """ A Phishin tape  """
-    def __init__(self, dbpath, raw_json, set_data):
-        super().__init__(dbpath,raw_json,set_data)
-
-    def stream_only(self):
-        return False
-
-    def compute_score(self):
-        return 5
-
-    def tracks(self):
-        return self._tracks
-
-    def track(self, n):
-        return self._tracks[n-1]
 
 
 class GDTape(BaseTape):
