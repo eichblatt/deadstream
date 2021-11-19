@@ -265,20 +265,6 @@ class BaseTrack:
 
     def __init__(self, tdict, parent_id, break_track=False):
         self.parent_id = parent_id
-        attribs = ['track', 'original', 'title']
-        if 'title' not in tdict.keys():
-            tdict['title'] = tdict['name'] if 'name' in tdict.keys() else 'unknown'
-        for k, v in tdict.items():
-            if k in attribs:
-                setattr(self, k, v)
-        if tdict['source'] == 'original':
-            self.original = tdict['name']
-        try:
-            self.track = int(self.track) if 'track' in dir(self) else None
-        except ValueError:
-            self.track = None
-        self.files = []
-        self.add_file(tdict, break_track)
 
     def __str__(self):
         return self.__repr__()
@@ -608,7 +594,6 @@ class PhishinTape(BaseTape):
         self._tracks = []
         date = to_date(self.date).date()
         meta_path = os.path.join(self.dbpath, str(date.year), str(date.month), self.identifier+'.json')
-        import pdb; pdb.set_trace()
         try:     # I used to check if file exists, but it may also be corrupt, so this is safer.
             page_meta = json.load(open(meta_path, 'r'))
         except Exception:
@@ -631,19 +616,16 @@ class PhishinTape(BaseTape):
         if page_meta['total_pages'] > 1:
             logger.warning(F"More than 1 page in metadata for show on {page_meta['data']['date']}. There are {page_meta['total_pages']} pages")
 
-        
-        for itrack,track_data in enumerate(page_meta['tracks']):
+        data = page_meta['data']
+        for itrack,track_data in enumerate(data['tracks']):
             set_name = track_data['set']
             if itrack == 0: 
-                initial_set = set_name
-            if set_name != initial_set:
-                if set_name == 'E':
-                    pass
-                    # insert encore silence
-                else:
-                    pass
-                    # insert 10 minute silence
-            self._tracks.append(PhishinTrack(track_data, self.identifier))
+                current_set = set_name
+            if set_name != current_set:
+                self._tracks.append(PhishinTrack(track_data, self.identifier,break_track=True))
+                current_set = set_name
+            else:
+                self._tracks.append(PhishinTrack(track_data, self.identifier))
 
         os.makedirs(os.path.dirname(meta_path), exist_ok=True)
         json.dump(page_meta, open(meta_path, 'w'))
@@ -652,7 +634,7 @@ class PhishinTape(BaseTape):
         for track in self._tracks:
             track.title = re.sub(r'gd\d{2}(?:\d{2})?-\d{2}-\d{2}[ ]*([td]\d*)*', '', track.title).strip()
             track.title = re.sub(r'(.flac)|(.mp3)|(.ogg)$', '', track.title).strip()
-        self.insert_breaks()
+        # self.insert_breaks()
         return
 
 class PhishinTrack(BaseTrack):
@@ -660,17 +642,36 @@ class PhishinTrack(BaseTrack):
 
     def __init__(self, tdict, parent_id, break_track=False):
         super().__init__(tdict,parent_id,break_track)
+        attribs = ['set', 'venue_name', 'venue_location', 'title', 'position', 'duration', 'mp3', 'updated_at']
+        for k, v in tdict.items():
+            if k in attribs:
+                setattr(self, k, v)
+        self.format = 'MP3'
+        self.track = self.position
+        self.files = []
+        self.add_file(tdict, break_track)
 
     def add_file(self, tdict, break_track=False):
+
         attribs = ['name', 'format', 'size', 'source', 'path']
-        d = {k: v for (k, v) in tdict.items() if k in attribs}
-        d['size'] = int(d['size'])
+        d = {}
+        d['source'] = 'phishin'
         if not break_track:
-            d['url'] = 'https://archive.org/download/'+self.parent_id+'/'+d['name']
+            d['name'] = self.title
+            d['format'] = 'MP3'
+            d['size'] = self.duration
+            d['path'] = ''
+            d['url'] = self.mp3
         else:
+            if self.set == 'E':
+                d['path'] = pkg_resources.resource_filename('timemachine.metadata', 'silence0.ogg')
+                d['name'] = 'Encore Break'
+            else:
+                d['path'] = pkg_resources.resource_filename('timemachine.metadata', 'silence600.ogg')
+                d['name'] = 'Set Break'
+            d['format'] = 'Ogg Vorbis'
             d['url'] = 'file://'+os.path.join(d['path'], d['name'])
         self.files.append(d)
-
 
 
 class GDArchive(BaseArchive):
@@ -978,6 +979,20 @@ class GDTrack(BaseTrack):
 
     def __init__(self, tdict, parent_id, break_track=False):
         super().__init__(tdict,parent_id,break_track)
+        attribs = ['track', 'original', 'title']
+        if 'title' not in tdict.keys():
+            tdict['title'] = tdict['name'] if 'name' in tdict.keys() else 'unknown'
+        for k, v in tdict.items():
+            if k in attribs:
+                setattr(self, k, v)
+        if tdict['source'] == 'original':
+            self.original = tdict['name']
+        try:
+            self.track = int(self.track) if 'track' in dir(self) else None
+        except ValueError:
+            self.track = None
+        self.files = []
+        self.add_file(tdict, break_track)
 
     def add_file(self, tdict, break_track=False):
         attribs = ['name', 'format', 'size', 'source', 'path']

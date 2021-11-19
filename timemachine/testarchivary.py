@@ -3,22 +3,23 @@ import time
 from threading import Event
 
 from timemachine import Archivary
+from timemachine import GD
 
 track_event = Event()
 
 pp = Archivary.PhishinArchive()
 pp.tape_dates['1992-05-05'][0].tracks()
 
+ph_tape = pp.best_tape('1992-05-05')
+p = GD.GDPlayer(ph_tape)
+
+p.play()
+
 gd = Archivary.GDArchive()
-
 tapedate = '1982-11-25'
-tapedate = '1980-10-29'
-tapes = archive.tape_dates[tapedate]
+tapes = gd.tape_dates[tapedate]
+gd_tape = tapes[3]
 
-tape = tapes[9]
-tape = tapes[8]
-
-p = GD.GDPlayer(tape)
 
 
 @p.property_observer('playlist-pos')
