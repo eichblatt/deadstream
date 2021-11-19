@@ -80,7 +80,7 @@ def to_decade(datestring):
 class BaseTapeDownloader(abc.ABC):
     """Abstract base class for a tape downloader.
 
-    Use one of the subclasses: IATapeDownloader or PhishTapeDownloader.
+    Use one of the subclasses: IATapeDownloader or PhishinTapeDownloader.
     """
 
     def store_metadata(self, iddir, tapes, period_func=to_decade):
@@ -126,7 +126,7 @@ class Archivary():
 class BaseArchive(abc.ABC):
     """Abstract base class for an Archive.
 
-    Use one of the subclasses: GDArchive or PhishArchive
+    Use one of the subclasses: GDArchive or PhishinArchive
     Parameters:
 
         dbpath: Path to filesystem location where data are stored
@@ -145,7 +145,7 @@ class BaseArchive(abc.ABC):
         if len(self.collection_name) == 1:
             self.idpath = os.path.join(self.dbpath, F'{collection_name[0]}_ids')
             if self.collection_name[0] == 'Phish':
-                self.downloader = PhishTapeDownloader(url, collection_name=collection_name[0])
+                self.downloader = PhishinTapeDownloader(url, collection_name=collection_name[0])
             else:
                 self.downloader = IATapeDownloader(url, collection_name=collection_name[0])
         else:
@@ -277,8 +277,8 @@ class BaseTrack:
     def add_file(self, tdict, break_track=False):
         pass
 
-class PhishTapeDownloader(BaseTapeDownloader):
-    """Synchronous Phish Tape Downloader"""
+class PhishinTapeDownloader(BaseTapeDownloader):
+    """Synchronous Phishin Tape Downloader"""
     def __init__(self, url="https://phish.in",collection_name="Phish"):
         self.url = url
         self.api = f"{self.url}/api/v1/shows"
@@ -480,9 +480,9 @@ class IATapeDownloader(BaseTapeDownloader):
 
 
 
-class PhishArchive(BaseArchive):
+class PhishinArchive(BaseArchive):
     def __init__(self, dbpath=os.path.join(ROOT_DIR, 'metadata'), url='https://phish.in', reload_ids=False, with_latest=False, collection_name=['Phish']):
-        """Create a new PhishArchive.
+        """Create a new PhishinArchive.
 
         Parameters:
 
@@ -655,8 +655,8 @@ class GDArchive(BaseArchive):
         return self.tapes
 
 
-class PhishTape(BaseTape):
-    """ A Phish tape  """
+class PhishinTape(BaseTape):
+    """ A Phishin tape  """
     def __init__(self, dbpath, raw_json, set_data):
         super().__init__(dbpath,raw_json,set_data)
 
