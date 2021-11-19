@@ -47,11 +47,12 @@ class StringGenerator(object):
            <form method="get" action="restart_service">
              <button type="submit">Restart Timemachine Service</button>
            </form>
-           <form method="get" action="update_timemachine">
-             <button type="submit">Update Timemachine Software</button>
-           </form>
          </body>
-       </html>"""
+        </html>"""
+        #  <form method="get" action="update_timemachine">
+        #    <button type="submit">Update Timemachine Software</button>
+        #  </form>
+
         return page_string
 
     def current_choice(self, d, k, v):
