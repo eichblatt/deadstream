@@ -468,6 +468,7 @@ class GDTape:
             score = score + 5 * (len(colls) - min([colls.index(c) if c in colls else 100 for c in self.collection]))
         if self.meta_loaded:
             score = score + 3*(self.title_fraction()-1)  # reduce score for tapes without titles.
+            score = score + len(self._tracks)/4
         score = score + math.log(1+self.downloads)
         score = score + 0.5 * (self.avg_rating - 2.0/math.sqrt(self.num_reviews))  # down-weigh avg_rating: it's usually about the show, not the tape.
         return score
