@@ -414,6 +414,7 @@ def stop_button_longpress(button, state):
         cmd = "sudo service update start"
         os.system(cmd)
         stop_event.set()
+        scr.wake_up()
         scr.show_text("Updating\nCode\n\nStand By...", force=True)
         sleep(30)
         exit()
