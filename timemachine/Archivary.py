@@ -680,8 +680,7 @@ class PhishinTape(BaseTape):
             if set_name != current_set:
                 self._tracks.append(PhishinTrack(track_data, self.identifier, break_track=True))
                 current_set = set_name
-            else:
-                self._tracks.append(PhishinTrack(track_data, self.identifier))
+            self._tracks.append(PhishinTrack(track_data, self.identifier))
 
         os.makedirs(os.path.dirname(meta_path), exist_ok=True)
         json.dump(page_meta, open(meta_path, 'w'))
@@ -690,7 +689,6 @@ class PhishinTape(BaseTape):
         for track in self._tracks:
             track.title = re.sub(r'gd\d{2}(?:\d{2})?-\d{2}-\d{2}[ ]*([td]\d*)*', '', track.title).strip()
             track.title = re.sub(r'(.flac)|(.mp3)|(.ogg)$', '', track.title).strip()
-        # self.insert_breaks()
         return
 
 
@@ -720,17 +718,17 @@ class PhishinTrack(BaseTrack):
             d['url'] = self.mp3
         else:
             logger.info("adding break track in Phishin")
+            d['name'] = ''
             if self.set == 'E':
                 d['path'] = pkg_resources.resource_filename('timemachine.metadata', 'silence0.ogg')
-                d['name'] = 'Encore Break'
-                self.title = d['name']
+                self.title = 'Encore Break'
             else:
                 d['path'] = pkg_resources.resource_filename('timemachine.metadata', 'silence600.ogg')
                 logger.info(f"path is {d['path']}")
-                d['name'] = 'Set Break'
-                self.title = d['name']
+                self.title = 'Set Break'
             d['format'] = 'Ogg Vorbis'
-            d['url'] = 'file://'+os.path.join(d['path'], d['name'])
+            #d['url'] = 'file://'+os.path.join(d['path'], d['name'])
+            d['url'] = f'file://{d["path"]}'
         self.files.append(d)
 
 
