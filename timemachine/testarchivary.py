@@ -7,19 +7,24 @@ from timemachine import GD
 
 track_event = Event()
 
-pp = Archivary.PhishinArchive()
-pp.tape_dates['1992-05-05'][0].tracks()
+aa = Archivary.Archivary(collection_name=['GratefulDead','Phish','PhilLeshandFriends'])
+aa.tape_dates
+tape = aa.best_tape('1992-05-05')
 
-ph_tape = pp.best_tape('1992-05-05')
-p = GD.GDPlayer(ph_tape)
+p = GD.GDPlayer(tape)
+
+#pp = Archivary.PhishinArchive(reload_ids=False)
+#pp.tape_dates['1992-05-05'][0].tracks()
+
+#ph_tape = pp.best_tape('1992-05-05')
+#p = GD.GDPlayer(ph_tape)
+
+#gd = Archivary.GDArchive(collection_name=['GratefulDead','PhilLeshandFriends'])
+#tapedate = '1982-11-25'
+#tapes = gd.tape_dates[tapedate]
+#gd_tape = tapes[3]
 
 p.play()
-
-gd = Archivary.GDArchive()
-tapedate = '1982-11-25'
-tapes = gd.tape_dates[tapedate]
-gd_tape = tapes[3]
-
 
 
 @p.property_observer('playlist-pos')

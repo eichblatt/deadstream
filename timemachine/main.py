@@ -34,7 +34,7 @@ from tenacity import retry
 from tenacity.stop import stop_after_delay
 from typing import Callable
 
-from timemachine import config, controls, GD
+from timemachine import Archivary, config, controls, GD
 
 parser = optparse.OptionParser()
 parser.add_option('--box', dest='box', type="string", default='v1', help="v0 box has screen at 270. [default %default]")
@@ -877,7 +877,7 @@ if rewind.is_pressed:
 if stop.is_pressed:
     logger.info('Resetting to factory archive -- nyi')
 
-archive = GD.GDArchive(parms.dbpath, reload_ids=reload_ids, with_latest=False, collection_name=config.optd['COLLECTIONS'])
+archive = Archive.GDArchive(parms.dbpath, reload_ids=reload_ids, with_latest=False, collection_name=config.optd['COLLECTIONS'])
 player = GD.GDPlayer()
 
 
