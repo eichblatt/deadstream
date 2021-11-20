@@ -34,7 +34,7 @@ from tenacity import retry
 from tenacity.stop import stop_after_delay
 from typing import Callable
 
-from timemachine import config, controls, GD
+from timemachine import Archivary, config, controls, GD
 
 parser = optparse.OptionParser()
 parser.add_option('--box', dest='box', type="string", default='v1', help="v0 box has screen at 270. [default %default]")
@@ -756,7 +756,6 @@ def event_loop(state, lock):
                         if now.time() >= (start_time + datetime.timedelta(seconds=wait_time)).time():
                             point_in_show = (then_time - (start_time + datetime.timedelta(seconds=wait_time))).seconds
                             play_on_tour(tape, state, seek_to=point_in_show)
-                    logger.debug(F"tape {tape}, tour state {current['TOUR_STATE']}, then_time {then_time}")
                 if current['TOUR_STATE'] == config.PLAYING:
                     if current['PLAY_STATE'] == config.ENDED:
                         current['TOUR_STATE'] = config.ENDED
@@ -877,7 +876,7 @@ if rewind.is_pressed:
 if stop.is_pressed:
     logger.info('Resetting to factory archive -- nyi')
 
-archive = GD.GDArchive(parms.dbpath, reload_ids=reload_ids, with_latest=False, collection_name=config.optd['COLLECTIONS'])
+archive = Archivary.Archivary(parms.dbpath, reload_ids=reload_ids, with_latest=False, collection_name=config.optd['COLLECTIONS'])
 player = GD.GDPlayer()
 
 
