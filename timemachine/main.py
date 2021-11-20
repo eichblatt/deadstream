@@ -756,7 +756,6 @@ def event_loop(state, lock):
                         if now.time() >= (start_time + datetime.timedelta(seconds=wait_time)).time():
                             point_in_show = (then_time - (start_time + datetime.timedelta(seconds=wait_time))).seconds
                             play_on_tour(tape, state, seek_to=point_in_show)
-                    logger.debug(F"tape {tape}, tour state {current['TOUR_STATE']}, then_time {then_time}")
                 if current['TOUR_STATE'] == config.PLAYING:
                     if current['PLAY_STATE'] == config.ENDED:
                         current['TOUR_STATE'] = config.ENDED

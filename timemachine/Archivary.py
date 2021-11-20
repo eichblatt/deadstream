@@ -131,9 +131,9 @@ class Archivary():
         phishin_archive = None
         ia_archive = None
         if 'Phish' in self.collection_name:
-            phishin_archive = PhishinArchive(dbpath, reload_ids=reload_ids, with_latest=with_latest)
+            phishin_archive = PhishinArchive(dbpath=dbpath, reload_ids=reload_ids, with_latest=with_latest)
         if not all(elem == 'Phish' for elem in self.collection_name):
-            ia_archive = GDArchive(dbpath, reload_ids=reload_ids, with_latest=with_latest)
+            ia_archive = GDArchive(dbpath=dbpath, reload_ids=reload_ids, with_latest=with_latest)
         self.archives = remove_none([ia_archive, phishin_archive])
         self.tape_dates = self.get_tape_dates()
         self.dates = sorted(self.tape_dates.keys())
@@ -621,6 +621,7 @@ class PhishinTape(BaseTape):
                 setattr(self, k, v)
         self.identifier = F"phishin_{self.id}"
         self.set_data = None
+        self.collection = ['Phish']
         delattr(self, 'id')
         self.url_metadata = 'https://phish.in/api/v1/shows/' + self.date
         self.parms = {'sort_attr': 'date',
