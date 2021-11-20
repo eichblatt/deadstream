@@ -7,14 +7,15 @@ from timemachine import GD
 
 track_event = Event()
 
-aa = Archivary.Archivary(collection_name=['GratefulDead','Phish','PhilLeshandFriends'])
+aa = Archivary.Archivary(collection_name=['GratefulDead', 'Phish', 'PhilLeshandFriends'])
 aa.tape_dates
 tape = aa.best_tape('1992-05-05')
+tape = aa.best_tape('1996-11-18')
 
 p = GD.GDPlayer(tape)
 
 #pp = Archivary.PhishinArchive(reload_ids=False)
-#pp.tape_dates['1992-05-05'][0].tracks()
+# pp.tape_dates['1992-05-05'][0].tracks()
 
 #ph_tape = pp.best_tape('1992-05-05')
 #p = GD.GDPlayer(ph_tape)

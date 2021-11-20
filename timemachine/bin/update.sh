@@ -7,6 +7,8 @@ date
 git_branch=main    # Make this a command-line option!
 if [ $HOSTNAME == deadstream2 ]; then
    git_branch=dev    # Make this a command-line option!
+elif [ $HOSTNAME == archivetest ]; then
+   git_branch=archivary
 else
    echo "sudo systemctl disable ssh"
    sudo systemctl disable ssh

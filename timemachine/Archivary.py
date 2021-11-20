@@ -296,16 +296,21 @@ class BaseTape(abc.ABC):
         for i, t in enumerate(self._tracks):
             logger.info(i)
 
+    def tracks(self):
+        self.get_metadata()
+        return self._tracks
+
+    def track(self, n):
+        if not self.meta_loaded:
+            self.get_metadata()
+        return self._tracks[n-1]
+
     @abc.abstractmethod
     def stream_only(self):
         pass
 
     @abc.abstractmethod
     def compute_score(self):
-        pass
-
-    @abc.abstractmethod
-    def tracks(self):
         pass
 
     @abc.abstractmethod
@@ -635,13 +640,6 @@ class PhishinTape(BaseTape):
     def compute_score(self):
         return 5
 
-    def tracks(self):
-        self.get_metadata()
-        return self._tracks
-
-    def track(self, n):
-        return self._tracks[n-1]
-
     def venue(self, tracknum=0):
         """return the venue, city, state"""
         return F"{self.venue_name},{self.venue_location}"
@@ -711,7 +709,6 @@ class PhishinTrack(BaseTrack):
         self.add_file(tdict, break_track)
 
     def add_file(self, tdict, break_track=False):
-
         attribs = ['name', 'format', 'size', 'source', 'path']
         d = {}
         d['source'] = 'phishin'
@@ -722,12 +719,16 @@ class PhishinTrack(BaseTrack):
             d['path'] = ''
             d['url'] = self.mp3
         else:
+            logger.info("adding break track in Phishin")
             if self.set == 'E':
                 d['path'] = pkg_resources.resource_filename('timemachine.metadata', 'silence0.ogg')
                 d['name'] = 'Encore Break'
+                self.title = d['name']
             else:
                 d['path'] = pkg_resources.resource_filename('timemachine.metadata', 'silence600.ogg')
+                logger.info(f"path is {d['path']}")
                 d['name'] = 'Set Break'
+                self.title = d['name']
             d['format'] = 'Ogg Vorbis'
             d['url'] = 'file://'+os.path.join(d['path'], d['name'])
         self.files.append(d)
@@ -873,15 +874,6 @@ class GDTape(BaseTape):
         n_tracks = len(self._tracks)
         n_known = len([t for t in self._tracks if t.title != 'unknown'])
         return (1 + n_known) / (1 + n_tracks)
-
-    def tracks(self):
-        self.get_metadata()
-        return self._tracks
-
-    def track(self, n):
-        if not self.meta_loaded:
-            self.get_metadata()
-        return self._tracks[n-1]
 
     def get_metadata(self):
         if self.meta_loaded:
