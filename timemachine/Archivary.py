@@ -89,7 +89,6 @@ class BaseTapeDownloader(abc.ABC):
         os.makedirs(iddir, exist_ok=True)
         periods = sorted(list(set([period_func(t['date']) for t in tapes])))
 
-
         for period in periods:
             orig_tapes = []
             outpath = os.path.join(iddir, f'ids_{period}.json')
@@ -112,30 +111,32 @@ class BaseTapeDownloader(abc.ABC):
                     os.remove(tmpfile)
         logger.info(f'added {n_tapes_added} tapes by period')
         return n_tapes_added
- 
+
     @abc.abstractmethod
     def get_all_tapes(self, iddir, min_addeddate=None):
         """Get a list of all tapes."""
         pass
-    
+
+
 def remove_none(l):
     return [a for a in l if a is not None]
 
+
 class Archivary():
     """ A collection of Archive objects """
+
     def __init__(self, dbpath=os.path.join(ROOT_DIR, 'metadata'), reload_ids=False, with_latest=False, collection_name=['GratefulDead']):
         self.collection_name = collection_name
         self.archives = []
-        phishin_archive = []
-        ia_archive = []
+        phishin_archive = None
+        ia_archive = None
         if 'Phish' in self.collection_name:
-            phishin_archive = PhishinArchive(dbpath,reload_ids,with_latest)
-        if not all(elem=='Phish' for elem in self.collection_name):    
-            ia_archive = GDArchive(dbpath,reload_ids,with_latest)
-        self.archives = remove_none([ia_archive,phishin_archive])
+            phishin_archive = PhishinArchive(dbpath, reload_ids=reload_ids, with_latest=with_latest)
+        if not all(elem == 'Phish' for elem in self.collection_name):
+            ia_archive = GDArchive(dbpath, reload_ids=reload_ids, with_latest=with_latest)
+        self.archives = remove_none([ia_archive, phishin_archive])
         self.tape_dates = self.get_tape_dates()
         self.dates = sorted(self.tape_dates.keys())
-        
 
     def year_list(self):
         t = [a.year_list() for a in self.archives]
@@ -143,34 +144,37 @@ class Archivary():
         return yl
 
     def best_tape(self, date, resort=True):
-        bt = remove_none([a.best_tape(date,resort) for a in self.archives])
+        bt = remove_none([a.best_tape(date, resort) for a in self.archives])
         if date not in self.dates:
             logger.info("No Tape for date {}".format(date))
             return None
         return bt[0]
 
-    def tape_at_time(self,then_time, default_start):
-        tat = remove_none([a.tape_at_time(then_time,default_start) for a in self.archives])
-        if len(tat) == 0: return None
+    def tape_at_time(self, then_time, default_start):
+        tat = remove_none([a.tape_at_time(then_time, default_start) for a in self.archives])
+        if len(tat) == 0:
+            return None
         return tat[0]
 
     def tape_at_date(self, dt, which_tape=0):
         pass
-   
+
     def tape_start_time(self, dt, default_start=datetime.time(19, 0)):
-        tst = remove_none([a.tape_start_time(then_time,default_start) for a in self.archives])
-        if len(tst) == 0: return None
+        tst = remove_none([a.tape_start_time(then_time, default_start) for a in self.archives])
+        if len(tst) == 0:
+            return None
         return tst[0]
 
     def get_tape_dates(self):
         td = self.archives[0].tape_dates
         for a in self.archives[1:]:
-            for date,tapes in a.tape_dates.items():
+            for date, tapes in a.tape_dates.items():
                 if date in td.keys():
                     td[date].append(tapes)
                 else:
                     td[date] = tapes
         return td
+
 
 class BaseArchive(abc.ABC):
     """Abstract base class for an Archive.
@@ -257,7 +261,6 @@ class BaseArchive(abc.ABC):
             self.tape_dates[k] = sorted(v, key=methodcaller('compute_score'), reverse=True)
         return self.tape_dates
 
-
     @abc.abstractmethod
     def load_archive(self, reload_ids, with_latest):
         pass
@@ -300,7 +303,7 @@ class BaseTape(abc.ABC):
     @abc.abstractmethod
     def compute_score(self):
         pass
- 
+
     @abc.abstractmethod
     def tracks(self):
         pass
@@ -327,21 +330,23 @@ class BaseTrack:
     def add_file(self, tdict, break_track=False):
         pass
 
+
 class PhishinTapeDownloader(BaseTapeDownloader):
     """Synchronous Phishin Tape Downloader"""
-    def __init__(self, url="https://phish.in",collection_name="Phish"):
+
+    def __init__(self, url="https://phish.in", collection_name="Phish"):
         self.url = url
         self.api = f"{self.url}/api/v1/shows"
-        self.parms = {'sort_attr':'date',
-                'sort_dir':'asc','per_page':'300'}
-        self.headers = {'Accept':'application/json',
-                'Authorization':'Bearer 8003bcd8c378844cfb69aad8b0981309f289e232fb417df560f7192edd295f1d49226ef6883902e59b465991d0869c77'}
+        self.parms = {'sort_attr': 'date',
+                      'sort_dir': 'asc', 'per_page': '300'}
+        self.headers = {'Accept': 'application/json',
+                        'Authorization': 'Bearer 8003bcd8c378844cfb69aad8b0981309f289e232fb417df560f7192edd295f1d49226ef6883902e59b465991d0869c77'}
 
     def extract_show_data(self, json_resp):
         shows = []
-        fields = ['id','date','duration','incomplete','sbd','venue_name'] 
+        fields = ['id', 'date', 'duration', 'incomplete', 'sbd', 'venue_name']
         for show in json_resp['data']:
-            tmp_dict = {k:show[k] for k in fields}
+            tmp_dict = {k: show[k] for k in fields}
             tmp_dict['identifier'] = tmp_dict['id']
             tmp_dict['venue_location'] = show['venue']['location']
             shows.append(tmp_dict)
@@ -368,12 +373,12 @@ class PhishinTapeDownloader(BaseTapeDownloader):
         current_page = json_resp['page']
 
         shows = self.extract_show_data(json_resp)
-        self.store_metadata(iddir,shows)
+        self.store_metadata(iddir, shows)
         while current_page < total_pages:
             r = self.get_page(current_page+1)
             json_resp = r.json()
             shows = self.extract_show_data(json_resp)
-            self.store_metadata(iddir,shows)
+            self.store_metadata(iddir, shows)
             current_page = json_resp['page']
         return total  # for now
 
@@ -383,7 +388,7 @@ class PhishinTapeDownloader(BaseTapeDownloader):
         """
         parms = self.parms.copy()
         parms['page'] = page_no
-        r = requests.get(self.api, headers=self.headers,params=parms)
+        r = requests.get(self.api, headers=self.headers, params=parms)
         logger.debug(f"url is {r.url}")
         if r.status_code != 200:
             logger.error(f"Error {r.status_code} collecting data")
@@ -394,6 +399,7 @@ class PhishinTapeDownloader(BaseTapeDownloader):
 
 class IATapeDownloader(BaseTapeDownloader):
     """Synchronous Grateful Dead Tape Downloader"""
+
     def __init__(self, url="https://archive.org", collection_name="etree"):
         self.url = url
         self.collection_name = collection_name
@@ -530,9 +536,8 @@ class IATapeDownloader(BaseTapeDownloader):
         return r
 
 
-
 class PhishinArchive(BaseArchive):
-    def __init__(self, dbpath=os.path.join(ROOT_DIR, 'metadata'), url='https://phish.in', reload_ids=False, with_latest=False, collection_name=['Phish']):
+    def __init__(self, url='https://phish.in', dbpath=os.path.join(ROOT_DIR, 'metadata'), reload_ids=False, with_latest=False, collection_name=['Phish']):
         """Create a new PhishinArchive.
 
         Parameters:
@@ -543,7 +548,7 @@ class PhishinArchive(BaseArchive):
           with_latest: If True, query archive for recently added tapes, and append them.
           collection_name: Phish
         """
-        super().__init__(url,dbpath,reload_ids,with_latest,collection_name)
+        super().__init__(url, dbpath, reload_ids, with_latest, collection_name)
         self.load_archive(reload_ids, with_latest)
         self.archive_type = 'Phishin Archive'
 
@@ -561,7 +566,7 @@ class PhishinArchive(BaseArchive):
             logger.info('Loading Tapes from Phish.in. This will take a few minutes')
             n_tapes = self.downloader.get_all_tapes(self.idpath)  # this will write chunks to folder
             logger.info(f'Loaded {n_tapes} tapes from archive')
- 
+
         if with_latest:
             logger.debug(f'Refreshing Tapes\nmax addeddate {max_addeddate}\nmin_download_addeddate {min_download_addeddate}')
             n_tapes = self.downloader.get_all_tapes(self.idpath, min_download_addeddate)
@@ -596,7 +601,6 @@ class PhishinArchive(BaseArchive):
         max_addeddate = None
         return (tapes, max_addeddate)
 
-
     def best_tape(self, date, resort=True):
         if isinstance(date, datetime.date):
             date = date.strftime('%Y-%m-%d')
@@ -605,23 +609,24 @@ class PhishinArchive(BaseArchive):
         tapes = self.tape_dates[date]
         return tapes[0]
 
+
 class PhishinTape(BaseTape):
     """ A Phishin tape  """
+
     def __init__(self, dbpath, raw_json, set_data):
-        super().__init__(dbpath,raw_json,set_data)
+        super().__init__(dbpath, raw_json, set_data)
         attribs = ['date', 'id', 'duration', 'incomplete', 'sbd', 'venue_name', 'venue_location']
         for k, v in raw_json.items():
             if k in attribs:
                 setattr(self, k, v)
         self.identifier = F"phishin_{self.id}"
         self.set_data = None
-        delattr(self,'id')
+        delattr(self, 'id')
         self.url_metadata = 'https://phish.in/api/v1/shows/' + self.date
-        self.parms = {'sort_attr':'date',
-                'sort_dir':'asc','per_page':'300'}
-        self.headers = {'Accept':'application/json',
-                'Authorization':'Bearer 8003bcd8c378844cfb69aad8b0981309f289e232fb417df560f7192edd295f1d49226ef6883902e59b465991d0869c77'}
-
+        self.parms = {'sort_attr': 'date',
+                      'sort_dir': 'asc', 'per_page': '300'}
+        self.headers = {'Accept': 'application/json',
+                        'Authorization': 'Bearer 8003bcd8c378844cfb69aad8b0981309f289e232fb417df560f7192edd295f1d49226ef6883902e59b465991d0869c77'}
 
     def stream_only(self):
         return False
@@ -669,12 +674,12 @@ class PhishinTape(BaseTape):
             logger.warning(F"More than 1 page in metadata for show on {page_meta['data']['date']}. There are {page_meta['total_pages']} pages")
 
         data = page_meta['data']
-        for itrack,track_data in enumerate(data['tracks']):
+        for itrack, track_data in enumerate(data['tracks']):
             set_name = track_data['set']
-            if itrack == 0: 
+            if itrack == 0:
                 current_set = set_name
             if set_name != current_set:
-                self._tracks.append(PhishinTrack(track_data, self.identifier,break_track=True))
+                self._tracks.append(PhishinTrack(track_data, self.identifier, break_track=True))
                 current_set = set_name
             else:
                 self._tracks.append(PhishinTrack(track_data, self.identifier))
@@ -689,11 +694,12 @@ class PhishinTape(BaseTape):
         # self.insert_breaks()
         return
 
+
 class PhishinTrack(BaseTrack):
     """ A track from a Phishin recording """
 
     def __init__(self, tdict, parent_id, break_track=False):
-        super().__init__(tdict,parent_id,break_track)
+        super().__init__(tdict, parent_id, break_track)
         attribs = ['set', 'venue_name', 'venue_location', 'title', 'position', 'duration', 'mp3', 'updated_at']
         for k, v in tdict.items():
             if k in attribs:
@@ -729,7 +735,7 @@ class PhishinTrack(BaseTrack):
 class GDArchive(BaseArchive):
     """ The Grateful Dead Collection on Archive.org """
 
-    def __init__(self, dbpath=os.path.join(ROOT_DIR, 'metadata'), url='https://archive.org', reload_ids=False, with_latest=False, collection_name=['GratefulDead']):
+    def __init__(self, url='https://archive.org', dbpath=os.path.join(ROOT_DIR, 'metadata'), reload_ids=False, with_latest=False, collection_name=['GratefulDead']):
         """Create a new GDArchive.
 
         Parameters:
@@ -740,7 +746,7 @@ class GDArchive(BaseArchive):
           with_latest: If True, query archive for recently added tapes, and append them.
           collection_name: A list of collections from archive.org
         """
-        super().__init__(url,dbpath,reload_ids,with_latest,collection_name)
+        super().__init__(url, dbpath, reload_ids, with_latest, collection_name)
         self.archive_type = 'Internet Archive'
         self.set_data = GDSet(self.collection_name)
         self.load_archive(reload_ids, with_latest)
@@ -809,12 +815,11 @@ class GDArchive(BaseArchive):
         return self.tapes
 
 
-
 class GDTape(BaseTape):
     """ A Grateful Dead Identifier Item -- does not contain tracks """
 
     def __init__(self, dbpath, raw_json, set_data):
-        super().__init__(dbpath,raw_json,set_data)
+        super().__init__(dbpath, raw_json, set_data)
         self.meta_loaded = False
         attribs = ['date', 'identifier', 'avg_rating', 'format', 'collection', 'num_reviews', 'downloads', 'addeddate']
         for k, v in raw_json.items():
@@ -1030,7 +1035,7 @@ class GDTrack(BaseTrack):
     """ A track from a GDTape recording """
 
     def __init__(self, tdict, parent_id, break_track=False):
-        super().__init__(tdict,parent_id,break_track)
+        super().__init__(tdict, parent_id, break_track)
         attribs = ['track', 'original', 'title']
         if 'title' not in tdict.keys():
             tdict['title'] = tdict['name'] if 'name' in tdict.keys() else 'unknown'
