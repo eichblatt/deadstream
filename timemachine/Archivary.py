@@ -633,10 +633,14 @@ class PhishinTape(BaseTape):
         self.collection = ['Phish']
         delattr(self, 'id')
         self.url_metadata = 'https://phish.in/api/v1/shows/' + self.date
+        try:
+            self.apikey = open(os.path.join(os.getenv('HOME'), '.phishinkey'), 'r').read().rstrip()
+        except:
+            self.apikey = None
         self.parms = {'sort_attr': 'date',
                       'sort_dir': 'asc', 'per_page': '300'}
         self.headers = {'Accept': 'application/json',
-                        'Authorization': 'Bearer 8003bcd8c378844cfb69aad8b0981309f289e232fb417df560f7192edd295f1d49226ef6883902e59b465991d0869c77'}
+                        'Authorization': f'Bearer {self.apikey}'}
 
     def stream_only(self):
         return False
