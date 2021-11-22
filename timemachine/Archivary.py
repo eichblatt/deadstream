@@ -342,10 +342,11 @@ class PhishinTapeDownloader(BaseTapeDownloader):
     def __init__(self, url="https://phish.in", collection_name="Phish"):
         self.url = url
         self.api = f"{self.url}/api/v1/shows"
+        self.apikey = open(os.path.join(os.getenv('HOME'), '.phishinkey'), 'r').read().rstrip()
         self.parms = {'sort_attr': 'date',
                       'sort_dir': 'asc', 'per_page': '300'}
         self.headers = {'Accept': 'application/json',
-                        'Authorization': 'Bearer 8003bcd8c378844cfb69aad8b0981309f289e232fb417df560f7192edd295f1d49226ef6883902e59b465991d0869c77'}
+                        'Authorization': f'Bearer {self.apikey}'}
 
     def extract_show_data(self, json_resp):
         shows = []
