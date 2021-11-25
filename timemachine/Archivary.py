@@ -131,7 +131,10 @@ class Archivary():
         phishin_archive = None
         ia_archive = None
         if 'Phish' in self.collection_name:
-            phishin_archive = PhishinArchive(dbpath=dbpath, reload_ids=reload_ids, with_latest=with_latest)
+            try:
+                phishin_archive = PhishinArchive(dbpath=dbpath, reload_ids=reload_ids, with_latest=with_latest)
+            except:
+                pass
         if not all(elem == 'Phish' for elem in self.collection_name):
             ia_archive = GDArchive(dbpath=dbpath, reload_ids=reload_ids, with_latest=with_latest)
         self.archives = remove_none([ia_archive, phishin_archive])
