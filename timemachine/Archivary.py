@@ -173,7 +173,8 @@ class Archivary():
         for a in self.archives[1:]:
             for date, tapes in a.tape_dates.items():
                 if date in td.keys():
-                    td[date].append(tapes)
+                    for t in tapes:
+                        td[date].append(t)
                 else:
                     td[date] = tapes
         return td
