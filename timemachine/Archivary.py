@@ -179,6 +179,10 @@ class Archivary():
                     td[date] = tapes
         return td
 
+    def load_archive(self, reload_ids, with_latest):
+        for a in self.archives:
+            a.load_archive(reload_ids=reload_ids, with_latest=with_latest)
+
 
 class BaseArchive(abc.ABC):
     """Abstract base class for an Archive.
@@ -366,7 +370,7 @@ class PhishinTapeDownloader(BaseTapeDownloader):
         return shows
 
     def get_all_tapes(self, iddir, min_addeddate=None):
-        """Get a list of all shows
+        """Get a list of all Phish.in shows
         Write all tapes to a folder by time period
         """
         current_rows = 0
@@ -375,7 +379,6 @@ class PhishinTapeDownloader(BaseTapeDownloader):
         tapes = []
 
         min_date = '1900-01-01'
-        max_date = datetime.datetime.now().date().strftime('%Y-%m-%d')
 
         page_no = 1
         r = self.get_page(page_no)
@@ -393,7 +396,7 @@ class PhishinTapeDownloader(BaseTapeDownloader):
             shows = self.extract_show_data(json_resp)
             self.store_metadata(iddir, shows)
             current_page = json_resp['page']
-        return total  # for now
+        return total
 
     def get_page(self, page_no):
         """Get one page of shows information.
