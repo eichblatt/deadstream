@@ -959,7 +959,7 @@ eloop = threading.Thread(target=event_loop, args=[state, lock])
 
 def main():
     if config.optd['AUTO_UPDATE_ARCHIVE']:
-        archive_updater = GD.GDArchive_Updater(state, 3600, stop_update_event, scr=scr, lock=lock)
+        archive_updater = Archivary.Archivary_Updater(state, 3600, stop_update_event, scr=scr, lock=lock)
         archive_updater.start()
     eloop.run()
     exit()

@@ -1389,7 +1389,7 @@ class GDPlayer(MPV):
     def close(self): self.terminate()
 
 
-class GDArchive_Updater(Thread):
+class Archivary_Updater(Thread):
     """Updater runs in the backround checking for updates.
 
     The Updater runs in a thread periodically checking for and applying
