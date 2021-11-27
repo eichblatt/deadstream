@@ -130,13 +130,14 @@ class Archivary():
         self.archives = []
         phishin_archive = None
         ia_archive = None
+        ia_collections = [x for x in self.collection_name if x != 'Phish']
         if 'Phish' in self.collection_name:
             try:
                 phishin_archive = PhishinArchive(dbpath=dbpath, reload_ids=reload_ids, with_latest=with_latest)
             except:
                 pass
-        if not all(elem == 'Phish' for elem in self.collection_name):
-            ia_archive = GDArchive(dbpath=dbpath, reload_ids=reload_ids, with_latest=with_latest)
+        if len(ia_collections)>0:
+            ia_archive = GDArchive(dbpath=dbpath, reload_ids=reload_ids, with_latest=with_latest,collection_name=ia_collections)
         self.archives = remove_none([ia_archive, phishin_archive])
         self.tape_dates = self.get_tape_dates()
         self.dates = sorted(self.tape_dates.keys())
@@ -168,7 +169,24 @@ class Archivary():
             return None
         return tst[0]
 
-    def get_tape_dates(self):
+    def sort_across_collection(self,tapes):
+        cdict = {}
+        for c in self.collection_name:
+            cdict[c] = []
+        for t in tapes:
+            for c in self.collection_name:
+                if c in t.collection:
+                    cdict[c].append(t)
+
+        result = []
+        max_n_collection = max([len(cdict[k]) for k in cdict])
+        for i in range(max_n_collection):
+            for k in cdict.keys():
+                if len(cdict[k]) > i:
+                    result.append(cdict[k][i])
+        return result
+
+    def get_tape_dates(self):   # Archivary
         td = self.archives[0].tape_dates
         for a in self.archives[1:]:
             for date, tapes in a.tape_dates.items():
@@ -177,6 +195,7 @@ class Archivary():
                         td[date].append(t)
                 else:
                     td[date] = tapes
+        td = {date:self.sort_across_collection(tapes) for date, tapes in td.items()}
         return td
 
     def load_archive(self, reload_ids, with_latest):
@@ -255,7 +274,7 @@ class BaseArchive(abc.ABC):
         tape_start = datetime.datetime.combine(dt.date(), tape_start_time)  # date + time
         return tape_start
 
-    def get_tape_dates(self):
+    def get_tape_dates(self):   # BaseArchive
         tape_dates = {}
         for tape in self.tapes:
             k = tape.date
@@ -652,7 +671,7 @@ class PhishinTape(BaseTape):
     def stream_only(self):
         return False
 
-    def compute_score(self):
+    def compute_score(self):  
         return 5
 
     def venue(self, tracknum=0):

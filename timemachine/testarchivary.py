@@ -8,7 +8,9 @@ from timemachine import GD
 track_event = Event()
 
 aa = Archivary.Archivary(collection_name=['GratefulDead', 'Phish', 'PhilLeshandFriends'])
-aa.tape_dates
+
+print (F"tape dates on 1995-07-02 are {aa.tape_dates['1995-07-02']}")
+
 tape = aa.best_tape('1992-05-05')
 tape = aa.best_tape('1996-11-18')
 
