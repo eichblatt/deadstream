@@ -580,6 +580,8 @@ def welcome_alternatives():
 
 def main():
     try:
+        cmd = "sudo rfkill unblock wifi"
+        os.system(cmd)
         cmd = "sudo ifconfig wlan0 up"
         os.system(cmd)
         reconnect = welcome_alternatives()
