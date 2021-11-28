@@ -580,6 +580,8 @@ def welcome_alternatives():
 
 def main():
     try:
+        cmd = "sudo ifconfig wlan0 up"
+        os.system(cmd)
         reconnect = welcome_alternatives()
         scr.show_text(" . . . . ", font=scr.font, force=True, clear=True)
         connected = wifi_connected()
