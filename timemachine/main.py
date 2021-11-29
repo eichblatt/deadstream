@@ -719,8 +719,8 @@ def event_loop(state, lock):
     stagedate_event.set()
     scr.clear()
 
-    try:
-        while not stop_loop_event.wait(timeout=0.001):
+    while not stop_loop_event.wait(timeout=0.001):
+        try:
             if not free_event.wait(timeout=0.01):
                 continue
             lock.acquire()
@@ -832,10 +832,18 @@ def event_loop(state, lock):
                 screen_event.set()
             lock.release()
 
-    except KeyboardInterrupt:
-        exit(0)
-    finally:
-        lock.release()
+        except KeyError as e:
+            logger.warning(e)
+            key_error_count = key_error_count + 1
+            logger.warning(f'{key_error_count} key errors')
+            if key_error_count > 100:
+                return
+        except KeyboardInterrupt as e:
+            logger.warning(e)
+            exit(0)
+        finally:
+            pass
+            # lock.release()
 
 
 def get_ip():
