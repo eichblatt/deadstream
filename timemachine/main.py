@@ -614,7 +614,7 @@ def play_on_tour(tape, state, seek_to=0):
 @sequential
 def refresh_venue(state):
     global venue_counter
-    vcs = config.VENUE.split(',')
+    vcs = [x.strip() for x in config.VENUE.split(',')]
     artist = config.ARTIST
     venue = 'unknown'
     city_name = 'unknown'
@@ -623,7 +623,6 @@ def refresh_venue(state):
     n_fields = 4
     n_subfields = 4
 
-    vcs = [x.strip() for x in vcs]
     if len(vcs) == 3:
         venue, city_name, state_name = vcs
     elif len(vcs) > 3:
@@ -640,7 +639,7 @@ def refresh_venue(state):
     else:
         venue = city_name = state_name = vcs
 
-    logger.debug(f'venue {venue}, city_name {city_name}, state_name {state_name}')
+    # logger.debug(f'venue {venue}, city_name {city_name}, state_name {state_name}')
     stream_only = False
     tape_color = (0, 255, 255)
     tape = state.player.tape
@@ -657,7 +656,7 @@ def refresh_venue(state):
     if venue_counter[0] == 0:
         display_string = venue
     elif venue_counter[0] == 1:
-        display_string = f'{city_name}, {state_name}'
+        display_string = f'{city_name},{state_name}'
     elif venue_counter[0] == 2:
         display_string = artist
     elif venue_counter[0] == 3:
@@ -665,7 +664,7 @@ def refresh_venue(state):
         display_string = tape_id
 
     display_string = re.sub(r'\d{2,4}-\d\d-\d\d\.*', '~', display_string)
-    logger.debug(F"display_string is {display_string}")
+    # logger.debug(F"display_string is {display_string}")
 
     if not config.optd['SCROLL_VENUE']:
         scr.show_venue(display_string, color=id_color)
@@ -677,7 +676,6 @@ def refresh_venue(state):
             scr.show_venue(display_string[display_offset:], color=id_color)
         else:
             scr.show_venue(display_string[-1*(screen_width-1):], color=id_color)
-        logger.debug(F"venue_counter is {venue_counter}. offset is {display_offset}")
 
     div, mod = divmod(venue_counter[1]+1, n_subfields)
     venue_counter = (divmod(venue_counter[0] + div, n_fields)[1], mod)
