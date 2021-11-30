@@ -294,9 +294,15 @@ class screen:
         self.clear_area(self.venue_bbox)
         if isinstance(arg, date_knob_reader):
             tapes = arg.archive.tape_dates[arg.fmtdate()] if arg.fmtdate() in arg.archive.tape_dates.keys() else []
-            num_events = len(set([set(x.collection).intersection(set(config.optd['COLLECTIONS'])).pop() for x in tapes]))
-            venue_name = arg.venue()
+            num_events = len(set([t.artist for t in tapes]))
+            venue_name = ''
+            artist_name = ''
+            if num_events > 0:
+                venue_name = tapes[0].venue()
+                artist_name = tapes[0].artist
             self.show_text(venue_name, self.venue_bbox.origin(), font=self.boldsmall, color=color, force=force)
+            self.clear_area(self.track1_bbox)
+            self.show_text(artist_name, self.track1_bbox.origin(), font=self.boldsmall, color=color, force=True)
             if num_events > 1:
                 self.show_nevents(str(num_events), force=force)
         if isinstance(arg, str):

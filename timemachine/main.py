@@ -612,13 +612,13 @@ def refresh_venue(state, idle_second_hand, refresh_times, venue):
     else:
         tape_id = venue
 
-    show_collection_name = tape_id == venue  # This is an arbitrary condition...fix!
+    show_collection_list = tape_id == venue  # This is an arbitrary condition...fix!
     id_color = (0, 255, 255)
 
     if idle_second_hand < refresh_times[5]:
         display_string = venue
-    elif show_collection_name and idle_second_hand < refresh_times[7] and tape is not None:
-        collection = frozenset(state.date_reader.archive.collection_name) & frozenset(tape.collection)
+    elif show_collection_list and idle_second_hand < refresh_times[7] and tape is not None:
+        collection = frozenset(state.date_reader.archive.collection_list) & frozenset(tape.collection)
         display_string = list(collection)[0]
     else:
         display_string = tape_id
@@ -701,6 +701,12 @@ def test_update(state):
     sys.exit(-1)
 
 
+def get_current(state):
+    current = state.get_current()
+    on_tour = current['ON_TOUR']
+    return current
+
+
 def event_loop(state, lock):
     date_reader = state.date_reader
     last_sdevent = datetime.datetime.now()
@@ -719,8 +725,8 @@ def event_loop(state, lock):
     stagedate_event.set()
     scr.clear()
 
-    while not stop_loop_event.wait(timeout=0.001):
-        try:
+    try:
+        while not stop_loop_event.wait(timeout=0.001):
             if not free_event.wait(timeout=0.01):
                 continue
             lock.acquire()
@@ -728,7 +734,7 @@ def event_loop(state, lock):
             n_timer = n_timer + 1
             idle_seconds = (now - last_sdevent).seconds
             idle_second_hand = divmod(idle_seconds, max_second_hand)[1]
-            current = state.get_current()
+            current = retry_call(get_current, state)   # if this fails, try again
             default_start = config.optd['DEFAULT_START_TIME']
 
             if current['ON_TOUR']:
@@ -832,18 +838,18 @@ def event_loop(state, lock):
                 screen_event.set()
             lock.release()
 
-        except KeyError as e:
-            logger.warning(e)
-            key_error_count = key_error_count + 1
-            logger.warning(f'{key_error_count} key errors')
-            if key_error_count > 100:
-                return
-        except KeyboardInterrupt as e:
-            logger.warning(e)
-            exit(0)
-        finally:
-            pass
-            # lock.release()
+    except KeyError as e:
+        logger.warning(e)
+        key_error_count = key_error_count + 1
+        logger.warning(f'{key_error_count} key errors')
+        if key_error_count > 100:
+            return
+    except KeyboardInterrupt as e:
+        logger.warning(e)
+        exit(0)
+    finally:
+        pass
+        # lock.release()
 
 
 def get_ip():
@@ -884,7 +890,7 @@ if rewind.is_pressed:
 if stop.is_pressed:
     logger.info('Resetting to factory archive -- nyi')
 
-archive = Archivary.Archivary(parms.dbpath, reload_ids=reload_ids, with_latest=False, collection_name=config.optd['COLLECTIONS'])
+archive = Archivary.Archivary(parms.dbpath, reload_ids=reload_ids, with_latest=False, collection_list=config.optd['COLLECTIONS'])
 player = GD.GDPlayer()
 
 
@@ -918,7 +924,7 @@ y = retry_call(RotaryEncoder, config.year_pins[(knob_sense >> 2) & 1], config.ye
 m.steps = 1
 d.steps = 1
 y.steps = 0
-if 'GratefulDead' in archive.collection_name:
+if 'GratefulDead' in archive.collection_list:
     m.steps = 8
     d.steps = 13
     y.steps = min(1975 - 1965, num_years)
@@ -956,7 +962,7 @@ y_button.when_held = lambda button: year_button_longpress(button, state)
 
 scr.clear_area(controls.Bbox(0, 0, 160, 100))
 scr.show_text("Powered by\n archive.org", color=(0, 255, 255), force=True)
-scr.show_text(F"{archive.collection_name}", font=scr.smallfont, loc=(0, 70), force=True)
+scr.show_text(F"{archive.collection_list}", font=scr.smallfont, loc=(0, 70), force=True)
 
 if config.optd['RELOAD_STATE_ON_START']:
     load_saved_state(state)
