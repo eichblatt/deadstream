@@ -256,7 +256,8 @@ def select_tape(tape, state, autoplay=False):
     logger.info(F"Set TAPE_ID to {current['TAPE_ID']}")
     current['TRACK_NUM'] = -1
     current['DATE'] = state.date_reader.date
-    current['VENUE'] = state.date_reader.venue()
+    current['VENUE'] = tape.venue()
+    current['ARTIST'] = tape.artist
     state.player.insert_tape(tape)
     state.player._set_property('volume', current['VOLUME'])
     logger.debug(F"current state {current}")
@@ -370,7 +371,7 @@ def play_pause_button_longpress(button, state):
     tape = state.date_reader.archive.best_tape(new_date)
     current['DATE'] = to_date(new_date)
     state.date_reader.set_date(current['DATE'])
-    current['VENUE'] = state.date_reader.venue()
+    current['VENUE'] = tape.venue()
     current_volume = state.player.get_prop('volume')
     state.player._set_property('volume', max(current_volume, 100))
     current['VOLUME'] = state.player.get_prop('volume')
@@ -582,6 +583,7 @@ def play_on_tour(tape, state, seek_to=0):
     current['TRACK_NUM'] = -1
     current['DATE'] = to_date(tape.date)
     current['VENUE'] = tape.venue()
+    current['ARTIST'] = tape.artist
     state.player.insert_tape(tape)
     state.player._set_property('volume', current['VOLUME'])
     state.player.pause()
@@ -707,6 +709,30 @@ def get_current(state):
     return current
 
 
+def show_venue_text(arg, color=(0, 255, 255), force=False):
+    if isinstance(arg, controls.date_knob_reader):
+        date_reader = arg
+        archive = date_reader.archive
+        tapes = archive.tape_dates[date_reader.fmtdate()] if date_reader.fmtdate() in archive.tape_dates.keys() else []
+        num_events = len(set([t.artist for t in tapes]))
+        venue_name = ''
+        artist_name = ''
+        if num_events > 0:
+            venue_name = tapes[0].venue()
+            artist_name = tapes[0].artist
+    elif isinstance(arg, Archivary.BaseTape):
+        tape = arg
+        venue_name = tape.venue()
+        artist_name = tape.artist
+        num_events = 1
+    scr.clear_area(scr.venue_bbox)
+    scr.show_text(venue_name, scr.venue_bbox.origin(), font=scr.boldsmall, color=color, force=force)
+    scr.clear_area(scr.track1_bbox)
+    scr.show_text(artist_name, scr.track1_bbox.origin(), font=scr.boldsmall, color=color, force=True)
+    if num_events > 1:
+        scr.show_nevents(str(num_events), force=force)
+
+
 def event_loop(state, lock):
     date_reader = state.date_reader
     last_sdevent = datetime.datetime.now()
@@ -776,7 +802,7 @@ def event_loop(state, lock):
                 last_sdevent = now
                 q_counter = True
                 scr.show_staged_date(date_reader.date)
-                scr.show_venue(date_reader)
+                show_venue_text(date_reader)
                 # if clear_stagedate: stagedate_event.clear()
                 # clear_stagedate = not clear_stagedate   # only clear stagedate event after updating twice
                 stagedate_event.clear()
@@ -834,7 +860,11 @@ def event_loop(state, lock):
                     refresh_venue(state, idle_second_hand, refresh_times, date_reader.venue())
                 else:
                     scr.show_staged_date(date_reader.date)
-                    scr.show_venue(date_reader)
+                    show_venue_text(date_reader)
+                    # if state.player.tape is None:
+                    #    show_venue_text(date_reader)
+                    # else:
+                    #    show_venue_text(state.player.tape)
                 screen_event.set()
             lock.release()
 
