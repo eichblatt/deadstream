@@ -617,29 +617,27 @@ def refresh_venue(state):
     vcs = [x.strip() for x in config.VENUE.split(',')]
     artist = config.ARTIST
     venue = 'unknown'
-    city_name = 'unknown'
-    state_name = 'unknown'
+    city_state = 'unknown'
     screen_width = 13
     n_fields = 4
     n_subfields = 4
 
     if len(vcs) == 3:
-        venue, city_name, state_name = vcs
+        venue = vcs[0]
+        city_state = f'{vcs[1]},{vcs[2]}'
     elif len(vcs) > 3:
         venue = ','.join(vcs[:-2])
-        city_name = vcs[-2]
-        state_name = vcs[-1]
+        city_state = f'{vcs[-2]},{vcs[-1]}'
     elif len(vcs) == 1:
         venue = vcs[0]
-        city_name = state_name = ''
+        city_state = venue
     elif len(vcs) == 2:
         venue = vcs[0]
-        city_name = vcs[1]
-        state_name = ''
+        city_state = vcs[1]
     else:
-        venue = city_name = state_name = vcs
+        venue = city_state = vcs
 
-    # logger.debug(f'venue {venue}, city_name {city_name}, state_name {state_name}')
+    # logger.debug(f'venue {venue}, city_state {city_state}')
     stream_only = False
     tape_color = (0, 255, 255)
     tape = state.player.tape
@@ -656,7 +654,7 @@ def refresh_venue(state):
     if venue_counter[0] == 0:
         display_string = venue
     elif venue_counter[0] == 1:
-        display_string = f'{city_name},{state_name}'
+        display_string = city_state
     elif venue_counter[0] == 2:
         display_string = artist
     elif venue_counter[0] == 3:
