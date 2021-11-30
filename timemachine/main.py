@@ -318,11 +318,12 @@ def select_button_longpress(button, state):
         id_color = (0, 255, 255) if sbd else (0, 0, 255)
         logger.info(F"Selecting Tape: {tape_id}, the {itape}th of {len(tapes)} choices. SBD:{sbd}")
         if len(tape_id) < 16:
-            scr.show_venue(tape_id, color=id_color, force=True)
-            sleep(5)
+            show_venue_text(tapes[itape], color=id_color, show_id=True, force=True)
+            sleep(4)
         else:
             for i in range(0, max(1, len(tape_id)), 2):
-                scr.show_venue(tape_id[i:], color=id_color, force=True)
+                show_venue_text(tapes[itape], color=id_color, show_id=True, offset=i, force=True)
+                #scr.show_venue(tape_id[i:], color=id_color, force=True)
                 if not button.is_held:
                     break
     scr.show_venue(tape_id, color=id_color)
@@ -709,7 +710,7 @@ def get_current(state):
     return current
 
 
-def show_venue_text(arg, color=(0, 255, 255), force=False):
+def show_venue_text(arg, color=(0, 255, 255), show_id=False, offset=0, force=False):
     if isinstance(arg, controls.date_knob_reader):
         date_reader = arg
         archive = date_reader.archive
@@ -722,7 +723,8 @@ def show_venue_text(arg, color=(0, 255, 255), force=False):
             artist_name = tapes[0].artist
     elif isinstance(arg, Archivary.BaseTape):
         tape = arg
-        venue_name = tape.venue()
+        venue_name = tape.identifier if show_id else tape.venue()
+        venue_name = venue_name[offset:]
         artist_name = tape.artist
         num_events = 1
     scr.clear_area(scr.venue_bbox)
