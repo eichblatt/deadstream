@@ -729,8 +729,9 @@ def show_venue_text(arg, color=(0, 255, 255), show_id=False, offset=0, force=Fal
         num_events = 1
     scr.clear_area(scr.venue_bbox)
     scr.show_text(venue_name, scr.venue_bbox.origin(), font=scr.boldsmall, color=color, force=force)
-    scr.clear_area(scr.track1_bbox)
-    scr.show_text(artist_name, scr.track1_bbox.origin(), font=scr.boldsmall, color=color, force=True)
+    if len(config.optd['COLLECTIONS']) > 1:
+        scr.clear_area(scr.track1_bbox)
+        scr.show_text(artist_name, scr.track1_bbox.origin(), font=scr.boldsmall, color=color, force=True)
     if num_events > 1:
         scr.show_nevents(str(num_events), force=force)
 
