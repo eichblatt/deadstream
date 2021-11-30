@@ -99,6 +99,7 @@ button_event = Event()
 screen_event = Event()
 stop_update_event = Event()
 stop_loop_event = Event()
+venue_counter = (0, 0)
 
 random.seed(datetime.datetime.now())  # to ensure that random show will be new each time.
 
@@ -244,6 +245,7 @@ if parms.verbose or parms.debug:
 
 
 def select_tape(tape, state, autoplay=False):
+    global venue_counter
     current = state.get_current()
     if tape.identifier == current['TAPE_ID']:
         return                           # already selected.
@@ -258,6 +260,8 @@ def select_tape(tape, state, autoplay=False):
     current['DATE'] = state.date_reader.date
     current['VENUE'] = tape.venue()
     current['ARTIST'] = tape.artist
+    venue_counter = (0, 0)
+
     state.player.insert_tape(tape)
     state.player._set_property('volume', current['VOLUME'])
     logger.debug(F"current state {current}")
@@ -363,6 +367,7 @@ def play_pause_button(button, state):
 
 @sequential
 def play_pause_button_longpress(button, state):
+    global venue_counter
     logger.debug(" longpress of play_pause -- choose random date and play it")
     current = state.get_current()
     if current['EXPERIENCE']:
@@ -373,6 +378,8 @@ def play_pause_button_longpress(button, state):
     current['DATE'] = to_date(new_date)
     state.date_reader.set_date(current['DATE'])
     current['VENUE'] = tape.venue()
+    current['ARTIST'] = tape.artist
+    venue_counter = (0, 0)
     current_volume = state.player.get_prop('volume')
     state.player._set_property('volume', max(current_volume, 100))
     current['VOLUME'] = state.player.get_prop('volume')
@@ -574,6 +581,7 @@ def to_date(d):
 
 @sequential
 def play_on_tour(tape, state, seek_to=0):
+    global venue_counter
     logger.debug("play_on_tour")
     current = state.get_current()
     if tape.identifier == current['TAPE_ID']:
@@ -585,6 +593,7 @@ def play_on_tour(tape, state, seek_to=0):
     current['DATE'] = to_date(tape.date)
     current['VENUE'] = tape.venue()
     current['ARTIST'] = tape.artist
+    venue_counter = (0, 0)
     state.player.insert_tape(tape)
     state.player._set_property('volume', current['VOLUME'])
     state.player.pause()
@@ -603,8 +612,34 @@ def play_on_tour(tape, state, seek_to=0):
 
 
 @sequential
-def refresh_venue(state, idle_second_hand, refresh_times, venue):
-    venue = config.VENUE if config.VENUE else venue
+def refresh_venue(state):
+    global venue_counter
+    vcs = [x.strip() for x in config.VENUE.split(',')]
+    artist = config.ARTIST
+    venue = 'unknown'
+    city_name = 'unknown'
+    state_name = 'unknown'
+    screen_width = 13
+    n_fields = 4
+    n_subfields = 4
+
+    if len(vcs) == 3:
+        venue, city_name, state_name = vcs
+    elif len(vcs) > 3:
+        venue = ','.join(vcs[:-2])
+        city_name = vcs[-2]
+        state_name = vcs[-1]
+    elif len(vcs) == 1:
+        venue = vcs[0]
+        city_name = state_name = ''
+    elif len(vcs) == 2:
+        venue = vcs[0]
+        city_name = vcs[1]
+        state_name = ''
+    else:
+        venue = city_name = state_name = vcs
+
+    # logger.debug(f'venue {venue}, city_name {city_name}, state_name {state_name}')
     stream_only = False
     tape_color = (0, 255, 255)
     tape = state.player.tape
@@ -618,14 +653,15 @@ def refresh_venue(state, idle_second_hand, refresh_times, venue):
     show_collection_list = tape_id == venue  # This is an arbitrary condition...fix!
     id_color = (0, 255, 255)
 
-    if idle_second_hand < refresh_times[5]:
+    if venue_counter[0] == 0:
         display_string = venue
-    elif show_collection_list and idle_second_hand < refresh_times[7] and tape is not None:
-        collection = frozenset(state.date_reader.archive.collection_list) & frozenset(tape.collection)
-        display_string = list(collection)[0]
-    else:
-        display_string = tape_id
+    elif venue_counter[0] == 1:
+        display_string = f'{city_name},{state_name}'
+    elif venue_counter[0] == 2:
+        display_string = artist
+    elif venue_counter[0] == 3:
         id_color = tape_color
+        display_string = tape_id
 
     display_string = re.sub(r'\d{2,4}-\d\d-\d\d\.*', '~', display_string)
     # logger.debug(F"display_string is {display_string}")
@@ -633,32 +669,16 @@ def refresh_venue(state, idle_second_hand, refresh_times, venue):
     if not config.optd['SCROLL_VENUE']:
         scr.show_venue(display_string, color=id_color)
         return
+    else:
+        display_offset = min(max(0, len(display_string)-(screen_width-1)), screen_width*venue_counter[1])
+        if venue_counter[1] < n_subfields-1:
+            display_offset = 0 if (display_offset < screen_width) else display_offset
+            scr.show_venue(display_string[display_offset:], color=id_color)
+        else:
+            scr.show_venue(display_string[-1*(screen_width-1):], color=id_color)
 
-    if idle_second_hand in refresh_times[:2]:
-        scr.show_venue(display_string, color=id_color)
-    elif idle_second_hand in [refresh_times[2], refresh_times[8]]:
-        if len(display_string) > 12:
-            scr.show_venue(display_string[13:], color=id_color)
-        else:
-            scr.show_venue(display_string, color=id_color)
-    elif idle_second_hand in [refresh_times[3], refresh_times[9]]:
-        if len(display_string) > 24:
-            scr.show_venue(display_string[25:], color=id_color)
-        elif len(display_string) > 12:
-            scr.show_venue(display_string[11:], color=id_color)
-        else:
-            scr.show_venue(display_string, color=id_color)
-    elif idle_second_hand == refresh_times[6]:
-        if len(display_string) > 36:
-            scr.show_venue(display_string[37:], color=id_color)
-        elif len(display_string) > 24:
-            scr.show_venue(display_string[25:], color=id_color)
-        elif len(display_string) > 12:
-            scr.show_venue(display_string[13:], color=id_color)
-        else:
-            scr.show_venue(display_string, color=id_color)
-    elif idle_second_hand == refresh_times[7]:
-        scr.show_venue(display_string, color=id_color)
+    div, mod = divmod(venue_counter[1]+1, n_subfields)
+    venue_counter = (divmod(venue_counter[0] + div, n_fields)[1], mod)
 
 
 def test_update(state):
@@ -737,6 +757,7 @@ def show_venue_text(arg, color=(0, 255, 255), show_id=False, offset=0, force=Fal
 
 
 def event_loop(state, lock):
+    global venue_counter
     date_reader = state.date_reader
     last_sdevent = datetime.datetime.now()
     q_counter = False
@@ -860,14 +881,11 @@ def event_loop(state, lock):
                 if idle_seconds > config.optd['QUIESCENT_TIME']:
                     if config.DATE:
                         scr.show_staged_date(config.DATE)
-                    refresh_venue(state, idle_second_hand, refresh_times, date_reader.venue())
+                    #refresh_venue(state, idle_second_hand, refresh_times)
+                    refresh_venue(state)
                 else:
                     scr.show_staged_date(date_reader.date)
                     show_venue_text(date_reader)
-                    # if state.player.tape is None:
-                    #    show_venue_text(date_reader)
-                    # else:
-                    #    show_venue_text(state.player.tape)
                 screen_event.set()
             lock.release()
 
