@@ -256,7 +256,8 @@ def select_tape(tape, state, autoplay=False):
     logger.info(F"Set TAPE_ID to {current['TAPE_ID']}")
     current['TRACK_NUM'] = -1
     current['DATE'] = state.date_reader.date
-    current['VENUE'] = state.date_reader.venue()
+    current['VENUE'] = tape.venue()
+    current['ARTIST'] = tape.artist
     state.player.insert_tape(tape)
     state.player._set_property('volume', current['VOLUME'])
     logger.debug(F"current state {current}")
@@ -317,11 +318,12 @@ def select_button_longpress(button, state):
         id_color = (0, 255, 255) if sbd else (0, 0, 255)
         logger.info(F"Selecting Tape: {tape_id}, the {itape}th of {len(tapes)} choices. SBD:{sbd}")
         if len(tape_id) < 16:
-            scr.show_venue(tape_id, color=id_color, force=True)
-            sleep(5)
+            show_venue_text(tapes[itape], color=id_color, show_id=True, force=True)
+            sleep(4)
         else:
             for i in range(0, max(1, len(tape_id)), 2):
-                scr.show_venue(tape_id[i:], color=id_color, force=True)
+                show_venue_text(tapes[itape], color=id_color, show_id=True, offset=i, force=True)
+                #scr.show_venue(tape_id[i:], color=id_color, force=True)
                 if not button.is_held:
                     break
     scr.show_venue(tape_id, color=id_color)
@@ -370,7 +372,7 @@ def play_pause_button_longpress(button, state):
     tape = state.date_reader.archive.best_tape(new_date)
     current['DATE'] = to_date(new_date)
     state.date_reader.set_date(current['DATE'])
-    current['VENUE'] = state.date_reader.venue()
+    current['VENUE'] = tape.venue()
     current_volume = state.player.get_prop('volume')
     state.player._set_property('volume', max(current_volume, 100))
     current['VOLUME'] = state.player.get_prop('volume')
@@ -582,6 +584,7 @@ def play_on_tour(tape, state, seek_to=0):
     current['TRACK_NUM'] = -1
     current['DATE'] = to_date(tape.date)
     current['VENUE'] = tape.venue()
+    current['ARTIST'] = tape.artist
     state.player.insert_tape(tape)
     state.player._set_property('volume', current['VOLUME'])
     state.player.pause()
@@ -612,13 +615,13 @@ def refresh_venue(state, idle_second_hand, refresh_times, venue):
     else:
         tape_id = venue
 
-    show_collection_name = tape_id == venue  # This is an arbitrary condition...fix!
+    show_collection_list = tape_id == venue  # This is an arbitrary condition...fix!
     id_color = (0, 255, 255)
 
     if idle_second_hand < refresh_times[5]:
         display_string = venue
-    elif show_collection_name and idle_second_hand < refresh_times[7] and tape is not None:
-        collection = frozenset(state.date_reader.archive.collection_name) & frozenset(tape.collection)
+    elif show_collection_list and idle_second_hand < refresh_times[7] and tape is not None:
+        collection = frozenset(state.date_reader.archive.collection_list) & frozenset(tape.collection)
         display_string = list(collection)[0]
     else:
         display_string = tape_id
@@ -701,6 +704,38 @@ def test_update(state):
     sys.exit(-1)
 
 
+def get_current(state):
+    current = state.get_current()
+    on_tour = current['ON_TOUR']
+    return current
+
+
+def show_venue_text(arg, color=(0, 255, 255), show_id=False, offset=0, force=False):
+    if isinstance(arg, controls.date_knob_reader):
+        date_reader = arg
+        archive = date_reader.archive
+        tapes = archive.tape_dates[date_reader.fmtdate()] if date_reader.fmtdate() in archive.tape_dates.keys() else []
+        num_events = len(set([t.artist for t in tapes]))
+        venue_name = ''
+        artist_name = ''
+        if num_events > 0:
+            venue_name = tapes[0].venue()
+            artist_name = tapes[0].artist
+    elif isinstance(arg, Archivary.BaseTape):
+        tape = arg
+        venue_name = tape.identifier if show_id else tape.venue()
+        venue_name = venue_name[offset:]
+        artist_name = tape.artist
+        num_events = 1
+    scr.clear_area(scr.venue_bbox)
+    scr.show_text(venue_name, scr.venue_bbox.origin(), font=scr.boldsmall, color=color, force=force)
+    if len(config.optd['COLLECTIONS']) > 1:
+        scr.clear_area(scr.track1_bbox)
+        scr.show_text(artist_name, scr.track1_bbox.origin(), font=scr.boldsmall, color=color, force=True)
+    if num_events > 1:
+        scr.show_nevents(str(num_events), force=force)
+
+
 def event_loop(state, lock):
     date_reader = state.date_reader
     last_sdevent = datetime.datetime.now()
@@ -728,7 +763,7 @@ def event_loop(state, lock):
             n_timer = n_timer + 1
             idle_seconds = (now - last_sdevent).seconds
             idle_second_hand = divmod(idle_seconds, max_second_hand)[1]
-            current = state.get_current()
+            current = retry_call(get_current, state)   # if this fails, try again
             default_start = config.optd['DEFAULT_START_TIME']
 
             if current['ON_TOUR']:
@@ -770,7 +805,7 @@ def event_loop(state, lock):
                 last_sdevent = now
                 q_counter = True
                 scr.show_staged_date(date_reader.date)
-                scr.show_venue(date_reader)
+                show_venue_text(date_reader)
                 # if clear_stagedate: stagedate_event.clear()
                 # clear_stagedate = not clear_stagedate   # only clear stagedate event after updating twice
                 stagedate_event.clear()
@@ -828,14 +863,26 @@ def event_loop(state, lock):
                     refresh_venue(state, idle_second_hand, refresh_times, date_reader.venue())
                 else:
                     scr.show_staged_date(date_reader.date)
-                    scr.show_venue(date_reader)
+                    show_venue_text(date_reader)
+                    # if state.player.tape is None:
+                    #    show_venue_text(date_reader)
+                    # else:
+                    #    show_venue_text(state.player.tape)
                 screen_event.set()
             lock.release()
 
-    except KeyboardInterrupt:
+    except KeyError as e:
+        logger.warning(e)
+        key_error_count = key_error_count + 1
+        logger.warning(f'{key_error_count} key errors')
+        if key_error_count > 100:
+            return
+    except KeyboardInterrupt as e:
+        logger.warning(e)
         exit(0)
     finally:
-        lock.release()
+        pass
+        # lock.release()
 
 
 def get_ip():
@@ -876,7 +923,7 @@ if rewind.is_pressed:
 if stop.is_pressed:
     logger.info('Resetting to factory archive -- nyi')
 
-archive = Archivary.Archivary(parms.dbpath, reload_ids=reload_ids, with_latest=False, collection_name=config.optd['COLLECTIONS'])
+archive = Archivary.Archivary(parms.dbpath, reload_ids=reload_ids, with_latest=False, collection_list=config.optd['COLLECTIONS'])
 player = GD.GDPlayer()
 
 
@@ -910,7 +957,7 @@ y = retry_call(RotaryEncoder, config.year_pins[(knob_sense >> 2) & 1], config.ye
 m.steps = 1
 d.steps = 1
 y.steps = 0
-if 'GratefulDead' in archive.collection_name:
+if 'GratefulDead' in archive.collection_list:
     m.steps = 8
     d.steps = 13
     y.steps = min(1975 - 1965, num_years)
@@ -948,7 +995,7 @@ y_button.when_held = lambda button: year_button_longpress(button, state)
 
 scr.clear_area(controls.Bbox(0, 0, 160, 100))
 scr.show_text("Powered by\n archive.org", color=(0, 255, 255), force=True)
-scr.show_text(F"{archive.collection_name}", font=scr.smallfont, loc=(0, 70), force=True)
+scr.show_text(F"{archive.collection_list}", font=scr.smallfont, loc=(0, 70), force=True)
 
 if config.optd['RELOAD_STATE_ON_START']:
     load_saved_state(state)

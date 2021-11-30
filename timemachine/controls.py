@@ -292,15 +292,7 @@ class screen:
 
     def show_venue(self, arg, color=(0, 255, 255), force=False):
         self.clear_area(self.venue_bbox)
-        if isinstance(arg, date_knob_reader):
-            tapes = arg.archive.tape_dates[arg.fmtdate()] if arg.fmtdate() in arg.archive.tape_dates.keys() else []
-            num_events = len(set([set(x.collection).intersection(set(config.optd['COLLECTIONS'])).pop() for x in tapes]))
-            venue_name = arg.venue()
-            self.show_text(venue_name, self.venue_bbox.origin(), font=self.boldsmall, color=color, force=force)
-            if num_events > 1:
-                self.show_nevents(str(num_events), force=force)
-        if isinstance(arg, str):
-            self.show_text(arg, self.venue_bbox.origin(), font=self.boldsmall, color=color, force=force)
+        self.show_text(arg, self.venue_bbox.origin(), font=self.boldsmall, color=color, force=force)
 
     def show_staged_date(self, date, color=(0, 255, 255), force=False):
         if date == self.staged_date:
