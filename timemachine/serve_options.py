@@ -10,7 +10,7 @@ import subprocess
 ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
 parser = optparse.OptionParser()
 parser.add_option('-d', '--debug', dest='debug', type="int", default=0, help="If > 0, don't run the main script on loading [default %default]")
-parser.add_option('--options_path', dest='options_path', default=os.path.join(ROOT_DIR, 'options.txt'), help="path to options file [default %default]")
+parser.add_option('--options_path', dest='options_path', default=os.path.join(os.getenv('HOME'), '.timemachine_options.txt'), help="path to options file [default %default]")
 parser.add_option('--sleep_time', dest='sleep_time', type="int", default=10, help="how long to sleep before checking network status [default %default]")
 parser.add_option('-v', '--verbose', dest='verbose', action="store_true", default=False, help="Print more verbose information [default %default]")
 parms, remainder = parser.parse_args()
