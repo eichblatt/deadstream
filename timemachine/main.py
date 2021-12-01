@@ -274,14 +274,12 @@ def select_tape(tape, state, autoplay=False):
 
 
 def select_current_date(state, autoplay=False):
-    if not state.date_reader.tape_available():
-        return
     date_reader = state.date_reader
-    tapes = date_reader.archive.tape_dates[date_reader.fmtdate()]
+    if not date_reader.tape_available():
+        return
     scr.show_playstate(staged_play=True, force=True)
-    _ = [t.tracks() for t in tapes[:3]]   # load the tracks so we can increase the score of those with titles.
-    tapes = sorted(tapes, key=methodcaller('compute_score'), reverse=True)
-    tape = tapes[0]
+    tapes = date_reader.archive.tape_dates[date_reader.fmtdate()]
+    tape = tapes[date_reader.shownum]
     state = select_tape(tape, state, autoplay=autoplay)
 
     logger.debug(F"current state after selecting tape {state}")
