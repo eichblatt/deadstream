@@ -488,6 +488,8 @@ def month_button(button, state):
 def month_button_longpress(button, state):
     logger.debug(F"long pressing {button.name} -- nyi")
 
+# def next_show(state):
+
 
 @sequential
 def day_button(button, state):
@@ -495,8 +497,9 @@ def day_button(button, state):
     if button.is_pressed or button.is_held:
         return
     logger.debug("pressing day button")
-    new_date = state.date_reader.next_date()
-    state.date_reader.set_date(new_date)
+    #new_date = state.date_reader.next_date()
+    # state.date_reader.set_date(new_date)
+    state.date_reader.set_date(*state.date_reader.next_show())
     stagedate_event.set()
 
 
@@ -733,12 +736,12 @@ def show_venue_text(arg, color=(0, 255, 255), show_id=False, offset=0, force=Fal
         date_reader = arg
         archive = date_reader.archive
         tapes = archive.tape_dates[date_reader.fmtdate()] if date_reader.fmtdate() in archive.tape_dates.keys() else []
-        num_events = len(set([t.artist for t in tapes]))
+        num_events = len(date_reader.shows_available())
         venue_name = ''
         artist_name = ''
         if num_events > 0:
-            venue_name = tapes[0].venue()
-            artist_name = tapes[0].artist
+            venue_name = tapes[date_reader.shownum].venue()
+            artist_name = tapes[date_reader.shownum].artist
     elif isinstance(arg, Archivary.BaseTape):
         tape = arg
         venue_name = tape.identifier if show_id else tape.venue()
