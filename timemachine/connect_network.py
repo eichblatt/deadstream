@@ -241,8 +241,20 @@ def test_buttons(event, label):
     event.wait()
 
 
+def configure_collections(parms):
+    """ is this a GratefulDead or a Phish Time Machine? """
+    if (not parms.test) and os.path.exists(parms.knob_sense_path):
+        return
+    collection = select_option("Collection\nTurn Year, Select", ['GratefulDead', 'Phish', 'GratefulDead,Phish', 'other'])
+    if collection == 'other':
+        collection = select_chars("Collection?\nSelect. Stop to end", character_set=string.printable[36:62])
+    scr.show_text(f"Collection:\n{collection}", font=scr.smallfont, force=True, clear=True)
+    sleep(2)
+
+
 def test_all_buttons(parms):
-    if os.path.exists(parms.knob_sense_path):
+    """ test that every button on the board works """
+    if (not parms.test) and os.path.exists(parms.knob_sense_path):
         return
     _ = [test_buttons(e, l) for e, l in
          [(done_event, "stop"), (rewind_event, "rewind"), (ffwd_event, "ffwd"), (select_event, "select"),
@@ -591,6 +603,7 @@ def main():
         if parms.test or reconnect or not connected:
             try:
                 test_all_buttons(parms)
+                configure_collections(parms)
                 save_knob_sense(parms)
             except Exception:
                 logger.info("Failed to save knob sense...continuing")
