@@ -39,6 +39,7 @@ FONTS_DIR = os.path.join(ROOT_DIR, 'fonts')
 
 screen_semaphore = BoundedSemaphore(1)
 state_semaphore = BoundedSemaphore(1)
+QUIESCENT_TIME = 20
 
 
 def with_state_semaphore(func):
@@ -74,22 +75,30 @@ def with_semaphore(func):
 class date_knob_reader:
     def __init__(self, y: RotaryEncoder, m: RotaryEncoder, d: RotaryEncoder, archive=None):
         self.date = None
+        self.shownum = 0
         self.archive = archive
         self.y = y
         self.m = m
         self.d = d
         self.maxd = [31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]  # max days in a month.
         self.year_baseline = 1965 if archive is None else min(archive.year_list())
-        self.update()
+        self._update()
 
     def __str__(self):
         return self.__repr__()
 
     def __repr__(self):
-        avail = "Tape Available" if self.tape_available() else ""
+        avail = ''
+        shows = self.shows_available()
+        if len(shows) > 0:
+            avail = f'{shows} shows Available. Now at {shows[self.shownum]}'
         return F'Date Knob Says: {self.date.strftime("%Y-%m-%d")}. {avail}'
 
     def update(self):
+        self.shownum = 0
+        self._update()
+
+    def _update(self):
         m_val = self.m.steps
         d_val = self.d.steps
         y_val = self.y.steps + self.year_baseline
@@ -105,12 +114,13 @@ class date_knob_reader:
             self.date = datetime.date(y_val, m_val, d_val)
         logger.debug(F"date reader date {self.date}")
 
-    def set_date(self, date):
+    def set_date(self, date, shownum=0):
         new_month, new_day, new_year = (date.month, date.day, date.year)
         self.m.steps = new_month
         self.d.steps = new_day
         self.y.steps = new_year - min((self.archive).year_list())
-        self.update()
+        self.shownum = divmod(shownum, max(1, len(self.shows_available())))[1]
+        self._update()
 
     def fmtdate(self):
         if self.date is None:
@@ -126,16 +136,32 @@ class date_knob_reader:
                 return ""
         return ""
 
-    def tape_available(self):
+    def shows_available(self):
         if self.archive is None:
-            return False
-        self.update()
-        return self.fmtdate() in self.archive.dates
+            return []
+        self._update()
+        if self.fmtdate() in self.archive.tape_dates.keys():
+            shows = [t.artist for t in self.archive.tape_dates[self.fmtdate()]]
+            return list(dict.fromkeys(shows))
+        else:
+            return []
+
+    def tape_available(self):
+        return len(self.shows_available()) > 0
+
+    def next_show(self):
+        if self.archive is None:
+            return None
+        self._update()
+        if self.shownum < len(self.shows_available())-1:
+            return (self.date, self.shownum+1)
+        else:
+            return (self.next_date(), 0)
 
     def next_date(self):
         if self.archive is None:
             return None
-        self.update()
+        self._update()
         for d in self.archive.dates:
             if d > self.fmtdate():
                 return datetime.datetime.strptime(d, '%Y-%m-%d').date()
@@ -398,7 +424,7 @@ class state:
         self.dict = {}
         if module:
             self.dict = {key: value for key, value in module.__dict__.items() if (not key.startswith('_')) and key.isupper()}
-        self.date_reader.update()
+        self.date_reader._update()
         self.dict['DATE_READER'] = self.date_reader.date
         self.dict['VOLUME'] = 100.0
         try:
@@ -433,7 +459,7 @@ def controlLoop(item_list, callback, state=None, scr=None):
                 last_active = now
                 refreshed = False
         time_since_active = (now - last_active).seconds
-        if (time_since_active > config.optd['QUIESCENT_TIME']) and not refreshed:
+        if (time_since_active > QUIESCENT_TIME) and not refreshed:
             callback(scr, state, scr)
             refreshed = True
         if (now - last_timer).seconds > 5:

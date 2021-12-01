@@ -126,6 +126,9 @@ class Archivary():
     """ A collection of Archive objects """
 
     def __init__(self, dbpath=os.path.join(ROOT_DIR, 'metadata'), reload_ids=False, with_latest=False, collection_list=['GratefulDead']):
+        # if 'rElOaD' in collection_list:
+        #     self.reload_ids = True
+        #     collection_list.remove('rElOaD')
         self.collection_list = collection_list
         self.archives = []
         phishin_archive = None

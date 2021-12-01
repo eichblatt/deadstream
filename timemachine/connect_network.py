@@ -1,3 +1,5 @@
+import datetime
+import json
 import logging
 import optparse
 import os
@@ -32,6 +34,10 @@ parser.add_option('-d', '--debug',
                   type="int",
                   default=1,
                   help="If > 0, don't run the main script on loading [default %default]")
+parser.add_option('--options_path',
+                  dest='options_path',
+                  default=os.path.join(os.getenv('HOME'), '.timemachine_options.txt'),
+                  help="path to options file [default %default]")
 parser.add_option('--test',
                   dest='test',
                   action="store_true",
@@ -241,8 +247,43 @@ def test_buttons(event, label):
     event.wait()
 
 
+def default_options():
+    d = {}
+    d['COLLECTIONS'] = 'GratefulDead'
+    d['SCROLL_VENUE'] = 'true'
+    d['FAVORED_TAPER'] = 'miller'
+    d['AUTO_UPDATE_ARCHIVE'] = 'false'
+    d['DEFAULT_START_TIME'] = '15:00:00'
+    d['TIMEZONE'] = 'America/New_York'
+    return d
+
+
+def configure_collections(parms):
+    """ is this a GratefulDead or a Phish Time Machine? """
+    if (not parms.test) and os.path.exists(parms.knob_sense_path):
+        return
+    collection = select_option("Collection\nTurn Year, Select", ['GratefulDead', 'Phish', 'GratefulDead,Phish', 'other'])
+    if collection == 'other':
+        collection = select_chars("Collection?\nSelect. Stop to end", character_set=string.printable[36:62])
+    scr.show_text(f"Collection:\n{collection}", font=scr.smallfont, force=True, clear=True)
+    #envs = get_envs()
+    sleep(2)
+    tmpd = default_options()
+    try:
+        tmpd = json.load(open(parms.options_path, 'r'))
+    except Exception as e:
+        logger.warning(F"Failed to read options from {parms.options_path}. Using defaults")
+    tmpd['COLLECTIONS'] = collection
+    try:
+        with open(parms.options_path, 'w') as outfile:
+            optd = json.dump(tmpd, outfile, indent=1)
+    except Exception as e:
+        logger.warning(F"Failed to write options to {parms.options_path}")
+
+
 def test_all_buttons(parms):
-    if os.path.exists(parms.knob_sense_path):
+    """ test that every button on the board works """
+    if (not parms.test) and os.path.exists(parms.knob_sense_path):
         return
     _ = [test_buttons(e, l) for e, l in
          [(done_event, "stop"), (rewind_event, "rewind"), (ffwd_event, "ffwd"), (select_event, "select"),
@@ -591,6 +632,7 @@ def main():
         if parms.test or reconnect or not connected:
             try:
                 test_all_buttons(parms)
+                configure_collections(parms)
                 save_knob_sense(parms)
             except Exception:
                 logger.info("Failed to save knob sense...continuing")

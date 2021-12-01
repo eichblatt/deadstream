@@ -48,7 +48,7 @@ parser.add_option('--state_path',
                   help="path to state [default %default]")
 parser.add_option('--options_path',
                   dest='options_path',
-                  default=os.path.join(GD.ROOT_DIR, 'options.txt'),
+                  default=os.path.join(os.getenv('HOME'), '.timemachine_options.txt'),
                   help="path to options file [default %default]")
 parser.add_option('--knob_sense_path',
                   dest='knob_sense_path',
@@ -100,6 +100,11 @@ screen_event = Event()
 stop_update_event = Event()
 stop_loop_event = Event()
 venue_counter = (0, 0)
+QUIESCENT_TIME = 20
+SLEEP_AFTER_SECONDS = 3600
+PWR_LED_ON = False
+AUTO_PLAY = True
+RELOAD_STATE_ON_START = True
 
 random.seed(datetime.datetime.now())  # to ensure that random show will be new each time.
 
@@ -177,13 +182,8 @@ def save_state(state):
 def default_options():
     d = {}
     d['COLLECTIONS'] = ['GratefulDead']
-    d['QUIESCENT_TIME'] = 20
-    d['SLEEP_AFTER_SECONDS'] = 3600
     d['SCROLL_VENUE'] = True
     d['FAVORED_TAPER'] = ''
-    d['PWR_LED_ON'] = False
-    d['AUTO_PLAY'] = True
-    d['RELOAD_STATE_ON_START'] = True
     d['AUTO_UPDATE_ARCHIVE'] = False
     d['DEFAULT_START_TIME'] = datetime.time(15, 0)
     d['TIMEZONE'] = 'America/New_York'
@@ -198,9 +198,7 @@ def load_options(parms):
         tmpd = json.loads(f.read())
         for k in config.optd.keys():
             try:
-                if k in ['QUIESCENT_TIME', 'SLEEP_AFTER_SECONDS']:
-                    tmpd[k] = int(tmpd[k])
-                if k in ['PWR_LED_ON', 'SCROLL_VENUE', 'AUTO_PLAY', 'AUTO_UPDATE_ARCHIVE', 'RELOAD_STATE_ON_START']:
+                if k in ['SCROLL_VENUE', 'AUTO_UPDATE_ARCHIVE']:
                     tmpd[k] = tmpd[k].lower() == 'true'
                 if k in ['COLLECTIONS']:
                     tmpd[k] = [x.strip() for x in tmpd[k].split(',')]
@@ -217,7 +215,7 @@ def load_options(parms):
     time.tzset()
     led_cmd = 'sudo bash -c "echo default-on > /sys/class/leds/led1/trigger"'
     os.system(led_cmd)
-    if not config.optd["PWR_LED_ON"]:
+    if not PWR_LED_ON:
         led_cmd = 'sudo bash -c "echo none > /sys/class/leds/led1/trigger"'
     logger.info(F"in load_options, running {led_cmd}")
     os.system(led_cmd)
@@ -276,14 +274,12 @@ def select_tape(tape, state, autoplay=False):
 
 
 def select_current_date(state, autoplay=False):
-    if not state.date_reader.tape_available():
-        return
     date_reader = state.date_reader
-    tapes = date_reader.archive.tape_dates[date_reader.fmtdate()]
+    if not date_reader.tape_available():
+        return
     scr.show_playstate(staged_play=True, force=True)
-    _ = [t.tracks() for t in tapes[:3]]   # load the tracks so we can increase the score of those with titles.
-    tapes = sorted(tapes, key=methodcaller('compute_score'), reverse=True)
-    tape = tapes[0]
+    tapes = date_reader.archive.tape_dates[date_reader.fmtdate()]
+    tape = tapes[date_reader.shownum]
     state = select_tape(tape, state, autoplay=autoplay)
 
     logger.debug(F"current state after selecting tape {state}")
@@ -301,7 +297,7 @@ def select_button(button, state):
     # if current['EXPERIENCE']: return
     if current['ON_TOUR'] and current['TOUR_STATE'] in [config.READY, config.PLAYING]:
         return
-    state = select_current_date(state, autoplay=config.optd['AUTO_PLAY'])
+    state = select_current_date(state, autoplay=AUTO_PLAY)
     scr.wake_up()
     logger.debug(F"current state after select button {state}")
     return state
@@ -332,7 +328,7 @@ def select_button_longpress(button, state):
                     break
     scr.show_venue(tape_id, color=id_color)
     tape = tapes[itape]
-    state = select_tape(tape, state, autoplay=config.optd['AUTO_PLAY'])
+    state = select_tape(tape, state, autoplay=AUTO_PLAY)
     select_event.set()
 
 
@@ -488,6 +484,8 @@ def month_button(button, state):
 def month_button_longpress(button, state):
     logger.debug(F"long pressing {button.name} -- nyi")
 
+# def next_show(state):
+
 
 @sequential
 def day_button(button, state):
@@ -495,8 +493,9 @@ def day_button(button, state):
     if button.is_pressed or button.is_held:
         return
     logger.debug("pressing day button")
-    new_date = state.date_reader.next_date()
-    state.date_reader.set_date(new_date)
+    #new_date = state.date_reader.next_date()
+    # state.date_reader.set_date(new_date)
+    state.date_reader.set_date(*state.date_reader.next_show())
     stagedate_event.set()
 
 
@@ -733,12 +732,12 @@ def show_venue_text(arg, color=(0, 255, 255), show_id=False, offset=0, force=Fal
         date_reader = arg
         archive = date_reader.archive
         tapes = archive.tape_dates[date_reader.fmtdate()] if date_reader.fmtdate() in archive.tape_dates.keys() else []
-        num_events = len(set([t.artist for t in tapes]))
+        num_events = len(date_reader.shows_available())
         venue_name = ''
         artist_name = ''
         if num_events > 0:
-            venue_name = tapes[0].venue()
-            artist_name = tapes[0].artist
+            venue_name = tapes[date_reader.shownum].venue()
+            artist_name = tapes[date_reader.shownum].artist
     elif isinstance(arg, Archivary.BaseTape):
         tape = arg
         venue_name = tape.identifier if show_id else tape.venue()
@@ -845,8 +844,8 @@ def event_loop(state, lock):
                 scr.show_playstate()
                 playstate_event.clear()
                 screen_event.set()
-            if q_counter and config.DATE and idle_seconds > config.optd['QUIESCENT_TIME']:
-                logger.debug(F"Reverting staged date back to selected date {idle_seconds}> {config.optd['QUIESCENT_TIME']}")
+            if q_counter and config.DATE and idle_seconds > QUIESCENT_TIME:
+                logger.debug(F"Reverting staged date back to selected date {idle_seconds}> {QUIESCENT_TIME}")
                 scr.show_staged_date(config.DATE)
                 scr.show_venue(config.VENUE)
                 q_counter = False
@@ -867,16 +866,16 @@ def event_loop(state, lock):
                 playstate_event.set()
                 save_state(state)
                 if current['PLAY_STATE'] != config.PLAYING:  # deal with overnight pauses, which freeze the alsa player.
-                    if (now - config.PAUSED_AT).seconds > config.optd['SLEEP_AFTER_SECONDS'] and state.player.get_prop('audio-device') != 'null':
-                        logger.debug(F"Paused at {config.PAUSED_AT}, sleeping after {config.optd['SLEEP_AFTER_SECONDS']}, now {now}")
+                    if (now - config.PAUSED_AT).seconds > SLEEP_AFTER_SECONDS and state.player.get_prop('audio-device') != 'null':
+                        logger.debug(F"Paused at {config.PAUSED_AT}, sleeping after {SLEEP_AFTER_SECONDS}, now {now}")
                         scr.sleep()
                         state.player._set_property('audio-device', 'null')
                         state.player.wait_for_property('audio-device', lambda x: x == 'null')
                         state.set(current)
                         playstate_event.set()
-                    elif (now - current['WOKE_AT']).seconds > config.optd['SLEEP_AFTER_SECONDS']:
+                    elif (now - current['WOKE_AT']).seconds > SLEEP_AFTER_SECONDS:
                         scr.sleep()
-                if idle_seconds > config.optd['QUIESCENT_TIME']:
+                if idle_seconds > QUIESCENT_TIME:
                     if config.DATE:
                         scr.show_staged_date(config.DATE)
                     #refresh_venue(state, idle_second_hand, refresh_times)
@@ -1016,7 +1015,7 @@ scr.clear_area(controls.Bbox(0, 0, 160, 100))
 scr.show_text("Powered by\n archive.org", color=(0, 255, 255), force=True)
 scr.show_text(F"{archive.collection_list}", font=scr.smallfont, loc=(0, 70), force=True)
 
-if config.optd['RELOAD_STATE_ON_START']:
+if RELOAD_STATE_ON_START:
     load_saved_state(state)
 
 lock = Lock()
