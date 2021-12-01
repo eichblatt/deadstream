@@ -74,6 +74,7 @@ def with_semaphore(func):
 class date_knob_reader:
     def __init__(self, y: RotaryEncoder, m: RotaryEncoder, d: RotaryEncoder, archive=None):
         self.date = None
+        self.shownum = 0
         self.archive = archive
         self.y = y
         self.m = m
@@ -86,7 +87,10 @@ class date_knob_reader:
         return self.__repr__()
 
     def __repr__(self):
-        avail = "Tape Available" if self.tape_available() else ""
+        avail = ''
+        shows = self.shows_available()
+        if len(shows) > 0:
+            avail = f'{shows} shows Available. Now at {shows[self.shownum]}'
         return F'Date Knob Says: {self.date.strftime("%Y-%m-%d")}. {avail}'
 
     def update(self):
@@ -105,11 +109,12 @@ class date_knob_reader:
             self.date = datetime.date(y_val, m_val, d_val)
         logger.debug(F"date reader date {self.date}")
 
-    def set_date(self, date):
+    def set_date(self, date, shownum=0):
         new_month, new_day, new_year = (date.month, date.day, date.year)
         self.m.steps = new_month
         self.d.steps = new_day
         self.y.steps = new_year - min((self.archive).year_list())
+        self.shownum = divmod(shownum, max(1, len(self.shows_available())))[1]
         self.update()
 
     def fmtdate(self):
@@ -126,11 +131,27 @@ class date_knob_reader:
                 return ""
         return ""
 
-    def tape_available(self):
+    def shows_available(self):
         if self.archive is None:
-            return False
+            return []
         self.update()
-        return self.fmtdate() in self.archive.dates
+        if self.fmtdate() in self.archive.tape_dates.keys():
+            shows = [t.artist for t in self.archive.tape_dates[self.fmtdate()]]
+            return list(dict.fromkeys(shows))
+        else:
+            return []
+
+    def tape_available(self):
+        return len(self.shows_available()) > 0
+
+    def next_show(self):
+        if self.archive is None:
+            return None
+        self.update()
+        if self.shownum < len(self.shows_available())-1:
+            return (self.date, self.shownum+1)
+        else:
+            return (self.next_date(), 0)
 
     def next_date(self):
         if self.archive is None:
