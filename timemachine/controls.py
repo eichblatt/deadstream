@@ -39,6 +39,7 @@ FONTS_DIR = os.path.join(ROOT_DIR, 'fonts')
 
 screen_semaphore = BoundedSemaphore(1)
 state_semaphore = BoundedSemaphore(1)
+QUIESCENT_TIME = 20
 
 
 def with_state_semaphore(func):
@@ -458,7 +459,7 @@ def controlLoop(item_list, callback, state=None, scr=None):
                 last_active = now
                 refreshed = False
         time_since_active = (now - last_active).seconds
-        if (time_since_active > config.optd['QUIESCENT_TIME']) and not refreshed:
+        if (time_since_active > QUIESCENT_TIME) and not refreshed:
             callback(scr, state, scr)
             refreshed = True
         if (now - last_timer).seconds > 5:

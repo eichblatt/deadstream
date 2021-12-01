@@ -19,11 +19,25 @@ logging.basicConfig(format='%(asctime)s.%(msecs)03d %(levelname)s: %(name)s %(me
 logger = logging.getLogger(__name__)
 
 
+def default_options():
+    d = {}
+    d['COLLECTIONS'] = 'GratefulDead'
+    d['SCROLL_VENUE'] = 'true'
+    d['FAVORED_TAPER'] = 'miller'
+    d['AUTO_UPDATE_ARCHIVE'] = 'false'
+    d['DEFAULT_START_TIME'] = '15:00:00'
+    d['TIMEZONE'] = 'America/New_York'
+    return d
+
+
 class StringGenerator(object):
     @cherrypy.expose
     def index(self):
-        f = open(parms.options_path, 'r')
-        opt_dict = json.loads(f.read())
+        opt_dict = default_options()
+        try:
+            opt_dict = json.load(open(parms.options_path, 'r'))
+        except Exception as e:
+            logger.warning(F"Failed to read options from {parms.options_path}. Using defaults")
         print(F"opt dict {opt_dict}")
         form_strings = [self.get_form_item(x) for x in opt_dict.items() if x[0] != 'TIMEZONE']
         # form_strings = [F'<label>{x[0]} <input type="text" value="{x[1]}" name="{x[0]}" /></label> <p>' for x in opt_dict.items() if  x[0]!='TIMEZONE']
