@@ -880,7 +880,10 @@ def event_loop(state, lock):
                     if config.DATE:
                         scr.show_staged_date(config.DATE)
                     #refresh_venue(state, idle_second_hand, refresh_times)
-                    refresh_venue(state)
+                    try:
+                        refresh_venue(state)
+                    except Exception as e:
+                        logger.warning(e)
                 else:
                     scr.show_staged_date(date_reader.date)
                     show_venue_text(date_reader)
