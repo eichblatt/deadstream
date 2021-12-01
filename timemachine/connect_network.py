@@ -249,7 +249,12 @@ def configure_collections(parms):
     if collection == 'other':
         collection = select_chars("Collection?\nSelect. Stop to end", character_set=string.printable[36:62])
     scr.show_text(f"Collection:\n{collection}", font=scr.smallfont, force=True, clear=True)
+    envs = get_envs()
+    options_path = os.path.join(os.getenv('HOME'), envs[0], 'lib/python3.7/site-packages/timemachine/options.txt')
     sleep(2)
+    opt = json.load(open(options_path, 'r'))
+    opt['COLLECTIONS'] = collection
+    json.dump(opt, open(options_path, 'w'))
 
 
 def test_all_buttons(parms):
