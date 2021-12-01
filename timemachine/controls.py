@@ -81,7 +81,7 @@ class date_knob_reader:
         self.d = d
         self.maxd = [31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]  # max days in a month.
         self.year_baseline = 1965 if archive is None else min(archive.year_list())
-        self.update()
+        self._update()
 
     def __str__(self):
         return self.__repr__()
@@ -94,6 +94,10 @@ class date_knob_reader:
         return F'Date Knob Says: {self.date.strftime("%Y-%m-%d")}. {avail}'
 
     def update(self):
+        self.shownum = 0
+        self._update()
+
+    def _update(self):
         m_val = self.m.steps
         d_val = self.d.steps
         y_val = self.y.steps + self.year_baseline
@@ -115,7 +119,7 @@ class date_knob_reader:
         self.d.steps = new_day
         self.y.steps = new_year - min((self.archive).year_list())
         self.shownum = divmod(shownum, max(1, len(self.shows_available())))[1]
-        self.update()
+        self._update()
 
     def fmtdate(self):
         if self.date is None:
@@ -134,7 +138,7 @@ class date_knob_reader:
     def shows_available(self):
         if self.archive is None:
             return []
-        self.update()
+        self._update()
         if self.fmtdate() in self.archive.tape_dates.keys():
             shows = [t.artist for t in self.archive.tape_dates[self.fmtdate()]]
             return list(dict.fromkeys(shows))
@@ -147,7 +151,7 @@ class date_knob_reader:
     def next_show(self):
         if self.archive is None:
             return None
-        self.update()
+        self._update()
         if self.shownum < len(self.shows_available())-1:
             return (self.date, self.shownum+1)
         else:
@@ -156,7 +160,7 @@ class date_knob_reader:
     def next_date(self):
         if self.archive is None:
             return None
-        self.update()
+        self._update()
         for d in self.archive.dates:
             if d > self.fmtdate():
                 return datetime.datetime.strptime(d, '%Y-%m-%d').date()
@@ -419,7 +423,7 @@ class state:
         self.dict = {}
         if module:
             self.dict = {key: value for key, value in module.__dict__.items() if (not key.startswith('_')) and key.isupper()}
-        self.date_reader.update()
+        self.date_reader._update()
         self.dict['DATE_READER'] = self.date_reader.date
         self.dict['VOLUME'] = 100.0
         try:
