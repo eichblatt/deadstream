@@ -444,7 +444,7 @@ def rewind_button(button, state):
 def rewind_button_longpress(button, state):
     logger.debug("longpress of rewind")
     while button.is_held:
-        state.player.fseek(-30)
+        state.player.fseek(-15)
 
 
 @sequential
