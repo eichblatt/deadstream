@@ -168,7 +168,7 @@ class Archivary():
         pass
 
     def tape_start_time(self, dt, default_start=datetime.time(19, 0)):
-        tst = remove_none([a.tape_start_time(then_time, default_start) for a in self.archives])
+        tst = remove_none([a.tape_start_time(dt, default_start) for a in self.archives])
         if len(tst) == 0:
             return None
         return tst[0]
