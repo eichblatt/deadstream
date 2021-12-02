@@ -535,12 +535,17 @@ def year_button(button, state):
 
 @sequential
 def year_button_longpress(button, state):
-    sleep(3*button._hold_time)
+    sleep(button._hold_time)
     if not button.is_held:
+        return
+    ip_address = get_ip()
+    scr.show_experience(text=F"IP Address\n{ip_address}", force=True)
+    sleep(2*button._hold_time)
+    if not button.is_held:
+        sleep(2*button._hold_time)
         return
     logger.debug(" longpress of year button")
     current = state.get_current()
-    ip_address = get_ip()
     if current['ON_TOUR']:
         scr.show_experience(text=F"ON_TOUR:{current['TOUR_YEAR']}\nHold 3s to exit", force=True)
         sleep(3)
