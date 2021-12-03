@@ -1017,8 +1017,8 @@ d_button.when_held = lambda button: day_button_longpress(button, state)
 y_button.when_held = lambda button: year_button_longpress(button, state)
 
 scr.clear_area(controls.Bbox(0, 0, 160, 100))
-scr.show_text("Powered by\n archive.org", color=(0, 255, 255), force=True)
-scr.show_text(F"{archive.collection_list}", font=scr.smallfont, loc=(0, 70), force=True)
+scr.show_text("Powered by\n archive.org\n & phish.in", color=(0, 255, 255), force=True)
+scr.show_text(str(len(archive.collection_list)).rjust(3), font=scr.boldsmall, loc=(120, 100), color=(255, 100, 0), force=True)
 
 if RELOAD_STATE_ON_START:
     load_saved_state(state)
