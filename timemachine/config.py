@@ -37,9 +37,10 @@ TOUR_STATE = 0
 
 # Hardware pins
 
-year_pins = (16, 22, 23)   # cl, dt, sw
-month_pins = (12, 5, 6)
-day_pins = (13, 17, 27)
+year_pins = (22, 16, 23)   # cl, dt, sw
+month_pins = (5, 12, 6)
+day_pins = (17, 13, 27)
+
 
 screen_led_pin = 19
 

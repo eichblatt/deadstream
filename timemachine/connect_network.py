@@ -177,9 +177,9 @@ def year_button(button):
 
 
 max_choices = len(string.printable)
-m = retry_call(RotaryEncoder, config.month_pins[0], config.month_pins[1], max_steps=0, threshold_steps=(0, 9))
-d = retry_call(RotaryEncoder, config.day_pins[0], config.day_pins[1], max_steps=0, threshold_steps=(0, 1+divmod(max_choices-1, 10)[0]))
-y = retry_call(RotaryEncoder, config.year_pins[0], config.year_pins[1], max_steps=0, threshold_steps=(0, 9))
+m = retry_call(RotaryEncoder, config.month_pins[1], config.month_pins[0], max_steps=0, threshold_steps=(0, 9))
+d = retry_call(RotaryEncoder, config.day_pins[1], config.day_pins[0], max_steps=0, threshold_steps=(0, 1+divmod(max_choices-1, 10)[0]))
+y = retry_call(RotaryEncoder, config.year_pins[1], config.year_pins[0], max_steps=0, threshold_steps=(0, 9))
 counter = decade_counter(d, y, bounds=(0, 100))
 
 m_button = retry_call(Button, config.month_pins[2])
