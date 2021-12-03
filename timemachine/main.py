@@ -709,13 +709,13 @@ def test_update(state):
         pass
     try:
         scr.show_text("Turn Any\nKnob", force=True)
-        if knob_event.wait(290):
+        if knob_event.wait(600):
             knob_event.clear()
             scr.clear()
         else:
             sys.exit(-1)
         scr.show_text("Press Stop\nButton", force=True)
-        if button_event.wait(10):
+        if button_event.wait(120):
             button_event.clear()
             scr.show_text("Passed! ", force=True, clear=True)
             sys.exit(0)
