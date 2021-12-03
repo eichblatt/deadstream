@@ -281,6 +281,17 @@ def configure_collections(parms):
         logger.warning(F"Failed to write options to {parms.options_path}")
 
 
+def test_sound(parms):
+    """ test that sound works """
+    if (not parms.test) and os.path.exists(parms.knob_sense_path):
+        return
+    try:
+        cmd = f'mpv --really-quiet ~/test_sound.ogg &'
+        os.system(cmd)
+    except Exception as e:
+        logger.warning("Failed to play sound file ~/test_sound.ogg")
+
+
 def test_all_buttons(parms):
     """ test that every button on the board works """
     if (not parms.test) and os.path.exists(parms.knob_sense_path):
@@ -631,6 +642,7 @@ def main():
 
         if parms.test or reconnect or not connected:
             try:
+                test_sound(parms)
                 test_all_buttons(parms)
                 configure_collections(parms)
                 save_knob_sense(parms)
