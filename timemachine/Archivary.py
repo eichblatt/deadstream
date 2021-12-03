@@ -153,7 +153,7 @@ class Archivary():
     def best_tape(self, date, resort=True):
         #bt = remove_none([a.best_tape(date, resort) for a in self.archives])
         if date not in self.dates:
-            logger.info("No Tape for date {}".format(date))
+            logger.info(f"No Tape for date {date}")
             return None
         bt = self.tape_dates[date]
         return bt[0]
@@ -168,7 +168,7 @@ class Archivary():
         pass
 
     def tape_start_time(self, dt, default_start=datetime.time(19, 0)):
-        tst = remove_none([a.tape_start_time(then_time, default_start) for a in self.archives])
+        tst = remove_none([a.tape_start_time(dt, default_start) for a in self.archives])
         if len(tst) == 0:
             return None
         return tst[0]
@@ -379,7 +379,7 @@ class PhishinTapeDownloader(BaseTapeDownloader):
         except:
             self.apikey = None
         self.parms = {'sort_attr': 'date',
-                      'sort_dir': 'asc', 'per_page': '300'}
+                      'sort_dir': 'desc', 'per_page': '300'}
         self.headers = {'Accept': 'application/json',
                         'Authorization': f'Bearer {self.apikey}'}
 
@@ -401,11 +401,15 @@ class PhishinTapeDownloader(BaseTapeDownloader):
         n_tapes_added = 0
         n_tapes_total = 0
         tapes = []
+        per_page = self.parms['per_page']
 
-        min_date = '1900-01-01'
-
+        # No need to update if we already have a show from today.
+        if min_addeddate is not None:
+            if to_date(min_addeddate) == datetime.datetime.today().date():
+                return
+            per_page = 50
         page_no = 1
-        r = self.get_page(page_no)
+        r = self.get_page(page_no, per_page)
         json_resp = r.json()
         total = json_resp['total_entries']
         total_pages = json_resp['total_pages']
@@ -414,20 +418,24 @@ class PhishinTapeDownloader(BaseTapeDownloader):
 
         shows = self.extract_show_data(json_resp)
         self.store_metadata(iddir, shows)
-        while current_page < total_pages:
-            r = self.get_page(current_page+1)
+
+        # If min_addeddate is not None, then check that the earliest update on this page is after the latest show we already had.
+        while (current_page < total_pages) if min_addeddate is None else (shows[-1]['date'] > min_addeddate):
+            r = self.get_page(current_page+1, per_page)
             json_resp = r.json()
             shows = self.extract_show_data(json_resp)
             self.store_metadata(iddir, shows)
             current_page = json_resp['page']
         return total
 
-    def get_page(self, page_no):
+    def get_page(self, page_no, per_page=None):
         """Get one page of shows information.
         Returns a list of dictionaries of tape information
         """
         parms = self.parms.copy()
         parms['page'] = page_no
+        if isinstance(per_page, int):
+            parms['per_page'] = per_page
         r = requests.get(self.api, headers=self.headers, params=parms)
         logger.debug(f"url is {r.url}")
         if r.status_code != 200:
@@ -548,7 +556,7 @@ class IATapeDownloader(BaseTapeDownloader):
         if r.status_code != 200:
             logger.error(f"Error {r.status_code} collecting data")
             raise Exception(
-                'Download', 'Error {} collection'.format(r.status_code))
+                'Download', f'Error {r.status_code} collection')
             # ChunkedEncodingError:
         return r
 
@@ -572,7 +580,7 @@ class IATapeDownloader(BaseTapeDownloader):
         if r.status_code != 200:
             logger.error(f"Error {r.status_code} collecting data")
             raise Exception(
-                'Download', 'Error {} collection'.format(r.status_code))
+                'Download', f'Error {r.status_code} collection')
         return r
 
 
@@ -608,8 +616,9 @@ class PhishinArchive(BaseArchive):
             logger.info(f'Loaded {n_tapes} tapes from archive')
 
         if with_latest:
-            logger.debug(f'Refreshing Tapes\nmax addeddate {max_addeddate}\nmin_download_addeddate {min_download_addeddate}')
-            n_tapes = self.downloader.get_all_tapes(self.idpath, min_download_addeddate)
+            max_showdate = max(self.tape_dates.keys())
+            logger.debug(f'Refreshing Tapes\nmax showdate {max_showdate}')
+            n_tapes = self.downloader.get_all_tapes(self.idpath, max_showdate)
             logger.info(f'Loaded {n_tapes} new tapes from archive')
         else:
             if len(self.tapes) > 0:  # The tapes have already been written, and nothing was added
@@ -696,14 +705,14 @@ class PhishinTape(BaseTape):
             parms = self.parms.copy()
             parms['page'] = 1
             r = requests.get(self.url_metadata, headers=self.headers)
-            logger.info("url is {}".format(r.url))
+            logger.info(f"url is {r.url}")
             if r.status_code != 200:
-                logger.warning("error pulling data for {}".format(self.identifier))
-                raise Exception('Download', 'Error {} url {}'.format(r.status_code, self.url_metadata))
+                logger.warning(f"error pulling data for {self.identifier}")
+                raise Exception('Download', f'Error {r.status_code} url {self.url_metadata}')
             try:
                 page_meta = r.json()
             except ValueError:
-                logger.warning("Json Error {}".format(r.url))
+                logger.warning(f"Json Error {r.url}")
                 return None
             except Exception:
                 logger.warning("Error getting metadata (json?)")
@@ -1476,7 +1485,7 @@ class Archivary_Updater(Thread):
         archive = self.state.date_reader.archive
         if self.scr:
             self.scr.show_venue("UPDATING ARCHIVE", color=(255, 0, 0), force=True)
-        archive.load_archive(with_latest=True)
+        archive.load_archive(reload_ids=False, with_latest=True)
         self.last_update_time = datetime.datetime.now()
 
     def run(self):

@@ -177,9 +177,9 @@ def year_button(button):
 
 
 max_choices = len(string.printable)
-m = retry_call(RotaryEncoder, config.month_pins[0], config.month_pins[1], max_steps=0, threshold_steps=(0, 9))
-d = retry_call(RotaryEncoder, config.day_pins[0], config.day_pins[1], max_steps=0, threshold_steps=(0, 1+divmod(max_choices-1, 10)[0]))
-y = retry_call(RotaryEncoder, config.year_pins[0], config.year_pins[1], max_steps=0, threshold_steps=(0, 9))
+m = retry_call(RotaryEncoder, config.month_pins[1], config.month_pins[0], max_steps=0, threshold_steps=(0, 9))
+d = retry_call(RotaryEncoder, config.day_pins[1], config.day_pins[0], max_steps=0, threshold_steps=(0, 1+divmod(max_choices-1, 10)[0]))
+y = retry_call(RotaryEncoder, config.year_pins[1], config.year_pins[0], max_steps=0, threshold_steps=(0, 9))
 counter = decade_counter(d, y, bounds=(0, 100))
 
 m_button = retry_call(Button, config.month_pins[2])
@@ -225,7 +225,7 @@ def get_knob_orientation(knob, label):
     elif label == "year":
         y_knob_event.wait()
     after_value = knob.steps
-    return not after_value > before_value
+    return after_value > before_value
 
 
 def save_knob_sense(parms):
@@ -279,6 +279,17 @@ def configure_collections(parms):
             optd = json.dump(tmpd, outfile, indent=1)
     except Exception as e:
         logger.warning(F"Failed to write options to {parms.options_path}")
+
+
+def test_sound(parms):
+    """ test that sound works """
+    if (not parms.test) and os.path.exists(parms.knob_sense_path):
+        return
+    try:
+        cmd = f'mpv --really-quiet ~/test_sound.ogg &'
+        os.system(cmd)
+    except Exception as e:
+        logger.warning("Failed to play sound file ~/test_sound.ogg")
 
 
 def test_all_buttons(parms):
@@ -631,6 +642,7 @@ def main():
 
         if parms.test or reconnect or not connected:
             try:
+                test_sound(parms)
                 test_all_buttons(parms)
                 configure_collections(parms)
                 save_knob_sense(parms)

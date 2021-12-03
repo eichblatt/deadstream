@@ -444,7 +444,7 @@ def rewind_button(button, state):
 def rewind_button_longpress(button, state):
     logger.debug("longpress of rewind")
     while button.is_held:
-        state.player.fseek(-30)
+        state.player.fseek(-15)
 
 
 @sequential
@@ -535,12 +535,17 @@ def year_button(button, state):
 
 @sequential
 def year_button_longpress(button, state):
-    sleep(3*button._hold_time)
+    sleep(button._hold_time)
     if not button.is_held:
+        return
+    ip_address = get_ip()
+    scr.show_experience(text=F"IP Address\n{ip_address}", force=True)
+    sleep(2*button._hold_time)
+    if not button.is_held:
+        sleep(2*button._hold_time)
         return
     logger.debug(" longpress of year button")
     current = state.get_current()
-    ip_address = get_ip()
     if current['ON_TOUR']:
         scr.show_experience(text=F"ON_TOUR:{current['TOUR_YEAR']}\nHold 3s to exit", force=True)
         sleep(3)
@@ -704,13 +709,13 @@ def test_update(state):
         pass
     try:
         scr.show_text("Turn Any\nKnob", force=True)
-        if knob_event.wait(290):
+        if knob_event.wait(600):
             knob_event.clear()
             scr.clear()
         else:
             sys.exit(-1)
         scr.show_text("Press Stop\nButton", force=True)
-        if button_event.wait(10):
+        if button_event.wait(120):
             button_event.clear()
             scr.show_text("Passed! ", force=True, clear=True)
             sys.exit(0)
@@ -965,7 +970,7 @@ try:
     knob_sense = int(kfile.read())
     kfile.close()
 except Exception:
-    knob_sense = 0
+    knob_sense = 7
 
 year_list = archive.year_list()
 num_years = max(year_list) - min(year_list)
@@ -1012,8 +1017,8 @@ d_button.when_held = lambda button: day_button_longpress(button, state)
 y_button.when_held = lambda button: year_button_longpress(button, state)
 
 scr.clear_area(controls.Bbox(0, 0, 160, 100))
-scr.show_text("Powered by\n archive.org", color=(0, 255, 255), force=True)
-scr.show_text(F"{archive.collection_list}", font=scr.smallfont, loc=(0, 70), force=True)
+scr.show_text("Powered by\n archive.org\n & phish.in", color=(0, 255, 255), force=True)
+scr.show_text(str(len(archive.collection_list)).rjust(3), font=scr.boldsmall, loc=(120, 100), color=(255, 100, 0), force=True)
 
 if RELOAD_STATE_ON_START:
     load_saved_state(state)
