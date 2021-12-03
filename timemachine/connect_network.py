@@ -225,7 +225,7 @@ def get_knob_orientation(knob, label):
     elif label == "year":
         y_knob_event.wait()
     after_value = knob.steps
-    return not after_value > before_value
+    return after_value > before_value
 
 
 def save_knob_sense(parms):

@@ -974,9 +974,9 @@ except Exception:
 
 year_list = archive.year_list()
 num_years = max(year_list) - min(year_list)
-m = retry_call(RotaryEncoder, config.month_pins[knob_sense & 1], config.month_pins[~knob_sense & 1], max_steps=0, threshold_steps=(1, 12))
-d = retry_call(RotaryEncoder, config.day_pins[(knob_sense >> 1) & 1], config.day_pins[~(knob_sense >> 1) & 1], max_steps=0, threshold_steps=(1, 31))
-y = retry_call(RotaryEncoder, config.year_pins[(knob_sense >> 2) & 1], config.year_pins[~(knob_sense >> 2) & 1], max_steps=0, threshold_steps=(0, num_years))
+m = retry_call(RotaryEncoder, config.month_pins[~knob_sense & 1], config.month_pins[knob_sense & 1], max_steps=0, threshold_steps=(1, 12))
+d = retry_call(RotaryEncoder, config.day_pins[~(knob_sense >> 1) & 1], config.day_pins[(knob_sense >> 1) & 1], max_steps=0, threshold_steps=(1, 31))
+y = retry_call(RotaryEncoder, config.year_pins[~(knob_sense >> 2) & 1], config.year_pins[(knob_sense >> 2) & 1], max_steps=0, threshold_steps=(0, num_years))
 m.steps = 1
 d.steps = 1
 y.steps = 0
