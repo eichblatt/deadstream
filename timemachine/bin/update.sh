@@ -76,7 +76,7 @@ fi
 system "sudo service timemachine stop"
 system "sudo service serve_options stop"
 
-system "timemachine_test_update --pid_to_kill $help_on_the_way_pid"
+system "timemachine_test_update --test_update 1 --pid_to_kill $help_on_the_way_pid"
 stat=$?
 echo "status of test command: $stat"
 kill $help_on_the_way_pid

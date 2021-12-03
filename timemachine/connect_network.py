@@ -474,6 +474,7 @@ def get_wifi_choices():
     raw = retry_call(subprocess.check_output, cmd, shell=True)
     choices = [x.lstrip().replace('ESSID:', '').replace('"', '') for x in raw.decode().split('\n')]
     choices = [x for x in choices if bool(re.search(r'[a-z,0-9]', x, re.IGNORECASE))]
+    choices = list(dict.fromkeys(choices))  # distinct
     choices = sorted(choices, key=str.casefold)
     choices = choices + ['HIDDEN_WIFI']
     logger.info(F"Wifi Choices {choices}")
@@ -673,7 +674,7 @@ def main():
         scr.show_text(F"Wifi connected\n{ip}", font=scr.smallfont, force=True, clear=True)
         exit_success(sleeptime=0.5*parms.sleep_time)
     else:
-        scr.show_text("Wifi connection\nfailed\n\nRebooting", font=scr.smallfont, force=True, clear=True)
+        scr.show_text("Wifi connection\n\n\nRebooting", font=scr.smallfont, force=True, clear=True)
         cmd = "sudo reboot"
         os.system(cmd)
         sys.exit(-1)
