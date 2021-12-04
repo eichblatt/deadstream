@@ -522,6 +522,8 @@ def get_ip():
     cmd = "hostname -I"
     ip = subprocess.check_output(cmd, shell=True)
     ip = ip.decode().split(' ')[0]
+    if not re.match(r'\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}', ip):
+        raise Exception('invalid_IP_address')
     return ip
 
 
@@ -669,7 +671,7 @@ def main():
         scr.clear()
 
     if wifi_connected():
-        ip = get_ip()
+        ip = retry_call(get_ip)
         logger.info(F"Wifi connected\n{ip}")
         scr.show_text(F"Wifi connected\n{ip}", font=scr.smallfont, force=True, clear=True)
         exit_success(sleeptime=0.5*parms.sleep_time)
