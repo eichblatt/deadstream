@@ -201,7 +201,9 @@ def load_options(parms):
                 if k in ['SCROLL_VENUE', 'AUTO_UPDATE_ARCHIVE']:
                     tmpd[k] = tmpd[k].lower() == 'true'
                 if k in ['COLLECTIONS']:
-                    tmpd[k] = [x.strip() for x in tmpd[k].split(',')]
+                    c = [x.strip() for x in tmpd[k].split(',')]
+                    c = ['Phish' if x.lower() == 'phish' else x for x in c]
+                    tmpd[k] = c
                 if k in ['DEFAULT_START_TIME']:
                     tmpd[k] = datetime.datetime.strptime(tmpd[k], "%H:%M:%S").time()
             except Exception:
