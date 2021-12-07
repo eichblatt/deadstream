@@ -993,15 +993,18 @@ num_years = max(year_list) - min(year_list)
 m = retry_call(RotaryEncoder, config.month_pins[knob_sense & 1], config.month_pins[~knob_sense & 1], max_steps=0, threshold_steps=(1, 12))
 d = retry_call(RotaryEncoder, config.day_pins[(knob_sense >> 1) & 1], config.day_pins[~(knob_sense >> 1) & 1], max_steps=0, threshold_steps=(1, 31))
 y = retry_call(RotaryEncoder, config.year_pins[(knob_sense >> 2) & 1], config.year_pins[~(knob_sense >> 2) & 1], max_steps=0, threshold_steps=(0, num_years))
-m.steps = 1
-d.steps = 1
-y.steps = 0
 if 'GratefulDead' in archive.collection_list:
     m.steps = 8
     d.steps = 13
     y.steps = min(max(0, 1975 - min(year_list)), num_years)
+else:
+    m.steps = 1
+    d.steps = 1
+    y.steps = 0
+
 date_reader = controls.date_knob_reader(y, m, d, archive)
-date_reader.set_date(*date_reader.next_show())
+if not 'GratefulDead' in archive.collection_list:
+    date_reader.set_date(*date_reader.next_show())
 
 state = controls.state(date_reader, player)
 m.when_rotated = lambda x: twist_knob(m, "month", date_reader)
