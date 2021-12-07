@@ -623,10 +623,25 @@ def play_on_tour(tape, state, seek_to=0):
 @sequential
 def refresh_venue(state):
     global venue_counter
-    vcs = [x.strip() for x in config.VENUE.split(',')]
-    artist = config.ARTIST
-    venue = 'unknown'
-    city_state = 'unknown'
+
+    stream_only = False
+    tape_color = (0, 255, 255)
+    tape = state.player.tape
+    if tape is not None:
+        tape_id = tape.identifier
+        stream_only = tape.stream_only()
+        tape_color = (255, 255, 255) if stream_only else (0, 0, 255)
+    else:
+        tape_id = None
+
+    try:
+        vcs = [x.strip() for x in config.VENUE.split(',')]
+    except:
+        vcs = tape_id if tape_id is not None else ''
+
+    artist = config.ARTIST if config.ARTIST is not None else ''
+    venue = ''
+    city_state = ''
     display_string = ''
     screen_width = 13
     n_fields = 4
@@ -647,16 +662,10 @@ def refresh_venue(state):
     else:
         venue = city_state = vcs
 
-    # logger.debug(f'venue {venue}, city_state {city_state}')
-    stream_only = False
-    tape_color = (0, 255, 255)
-    tape = state.player.tape
-    if tape is not None:
-        tape_id = tape.identifier
-        stream_only = tape.stream_only()
-        tape_color = (255, 255, 255) if stream_only else (0, 0, 255)
-    else:
+    if tape_id is None:
         tape_id = venue
+
+    # logger.debug(f'venue {venue}, city_state {city_state}')
 
     show_collection_list = tape_id == venue  # This is an arbitrary condition...fix!
     id_color = (0, 255, 255)
