@@ -38,7 +38,7 @@ class StringGenerator(object):
         opt_dict = opt_dict_default
         try:
             opt_dict = json.load(open(parms.options_path, 'r'))
-            extra_keys = [k for k in opt_dict_default_keys() if k not in opt_dict.keys()]
+            extra_keys = [k for k in opt_dict_default.keys() if k not in opt_dict.keys()]
             for k in extra_keys:
                 opt_dict[k] = opt_dict_default[k]
         except Exception as e:
