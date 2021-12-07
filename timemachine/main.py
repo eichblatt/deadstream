@@ -898,9 +898,9 @@ def event_loop(state, lock):
                 if idle_seconds > QUIESCENT_TIME:
                     if config.DATE:
                         scr.show_staged_date(config.DATE)
-                    #refresh_venue(state, idle_second_hand, refresh_times)
                     try:
-                        refresh_venue(state)
+                        if current['PLAY_STATE'] > config.INIT:
+                            refresh_venue(state)
                     except Exception as e:
                         raise e
                         logger.warning(f'event_loop, error refreshing venue {e}')
