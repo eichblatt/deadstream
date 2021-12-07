@@ -34,9 +34,13 @@ def default_options():
 class StringGenerator(object):
     @cherrypy.expose
     def index(self):
-        opt_dict = default_options()
+        opt_dict_default = default_options()
+        opt_dict = opt_dict_default
         try:
             opt_dict = json.load(open(parms.options_path, 'r'))
+            extra_keys = [k for k in opt_dict_default_keys() if k not in opt_dict.keys()]
+            for k in extra_keys:
+                opt_dict[k] = opt_dict_default[k]
         except Exception as e:
             logger.warning(F"Failed to read options from {parms.options_path}. Using defaults")
         print(F"opt dict {opt_dict}")
