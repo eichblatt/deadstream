@@ -25,6 +25,7 @@ def default_options():
     d['SCROLL_VENUE'] = 'true'
     d['FAVORED_TAPER'] = 'miller'
     d['AUTO_UPDATE_ARCHIVE'] = 'false'
+    d['ON_TOUR_ALLOWED'] = 'false'
     d['DEFAULT_START_TIME'] = '15:00:00'
     d['TIMEZONE'] = 'America/New_York'
     return d

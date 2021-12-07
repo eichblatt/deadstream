@@ -161,6 +161,8 @@ def load_saved_state(state):
 
         current['DATE_READER'] = state.date_reader
         state.player._set_property('volume', current['VOLUME'])
+        if not config.optd['ON_TOUR_ALLOWED']:
+            current['ON_TOUR'] = False
         current['TOUR_STATE'] = config.INIT
         state.set(current)
         stagedate_event.set()
@@ -185,6 +187,7 @@ def default_options():
     d['SCROLL_VENUE'] = True
     d['FAVORED_TAPER'] = ''
     d['AUTO_UPDATE_ARCHIVE'] = False
+    d['ON_TOUR_ALLOWED'] = False
     d['DEFAULT_START_TIME'] = datetime.time(15, 0)
     d['TIMEZONE'] = 'America/New_York'
     return d
@@ -198,7 +201,7 @@ def load_options(parms):
         tmpd = json.loads(f.read())
         for k in config.optd.keys():
             try:
-                if k in ['SCROLL_VENUE', 'AUTO_UPDATE_ARCHIVE']:
+                if k in ['SCROLL_VENUE', 'AUTO_UPDATE_ARCHIVE', 'ON_TOUR_ALLOWED']:
                     tmpd[k] = tmpd[k].lower() == 'true'
                 if k in ['COLLECTIONS']:
                     c = [x.strip() for x in tmpd[k].split(',')]
@@ -541,7 +544,7 @@ def year_button_longpress(button, state):
     if not button.is_held:
         return
     ip_address = get_ip()
-    scr.show_experience(text=F"IP Address\n{ip_address}", force=True)
+    scr.show_experience(text=F"{ip_address}:9090\nto configure", force=True)
     sleep(2*button._hold_time)
     if not button.is_held:
         sleep(2*button._hold_time)
@@ -557,7 +560,7 @@ def year_button_longpress(button, state):
             current['TOUR_YEAR'] = None
             current['TOUR_STATE'] = config.INIT
             scr.show_experience(text=F"ON_TOUR: Finished\n{ip_address}", force=True)
-    else:
+    elif config.optd['ON_TOUR_ALLOWED']:
         current['ON_TOUR'] = True
         current['TOUR_YEAR'] = state.date_reader.date.year
         current['TOUR_STATE'] = config.INIT
@@ -624,6 +627,7 @@ def refresh_venue(state):
     artist = config.ARTIST
     venue = 'unknown'
     city_state = 'unknown'
+    display_string = ''
     screen_width = 13
     n_fields = 4
     n_subfields = 4
@@ -889,7 +893,8 @@ def event_loop(state, lock):
                     try:
                         refresh_venue(state)
                     except Exception as e:
-                        logger.warning(e)
+                        raise e
+                        logger.warning(f'event_loop, error refreshing venue {e}')
                 else:
                     scr.show_staged_date(date_reader.date)
                     show_venue_text(date_reader)
