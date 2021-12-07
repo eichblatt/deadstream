@@ -161,6 +161,8 @@ def load_saved_state(state):
 
         current['DATE_READER'] = state.date_reader
         state.player._set_property('volume', current['VOLUME'])
+        if not config.optd['ON_TOUR_ALLOWED']:
+            current['ON_TOUR'] = False
         current['TOUR_STATE'] = config.INIT
         state.set(current)
         stagedate_event.set()
@@ -185,6 +187,7 @@ def default_options():
     d['SCROLL_VENUE'] = True
     d['FAVORED_TAPER'] = ''
     d['AUTO_UPDATE_ARCHIVE'] = False
+    d['ON_TOUR_ALLOWED'] = False
     d['DEFAULT_START_TIME'] = datetime.time(15, 0)
     d['TIMEZONE'] = 'America/New_York'
     return d
@@ -198,10 +201,12 @@ def load_options(parms):
         tmpd = json.loads(f.read())
         for k in config.optd.keys():
             try:
-                if k in ['SCROLL_VENUE', 'AUTO_UPDATE_ARCHIVE']:
+                if k in ['SCROLL_VENUE', 'AUTO_UPDATE_ARCHIVE', 'ON_TOUR_ALLOWED']:
                     tmpd[k] = tmpd[k].lower() == 'true'
                 if k in ['COLLECTIONS']:
-                    tmpd[k] = [x.strip() for x in tmpd[k].split(',')]
+                    c = [x.strip() for x in tmpd[k].split(',')]
+                    c = ['Phish' if x.lower() == 'phish' else x for x in c]
+                    tmpd[k] = c
                 if k in ['DEFAULT_START_TIME']:
                     tmpd[k] = datetime.datetime.strptime(tmpd[k], "%H:%M:%S").time()
             except Exception:
@@ -539,7 +544,7 @@ def year_button_longpress(button, state):
     if not button.is_held:
         return
     ip_address = get_ip()
-    scr.show_experience(text=F"IP Address\n{ip_address}", force=True)
+    scr.show_experience(text=F"{ip_address}:9090\nto configure", force=True)
     sleep(2*button._hold_time)
     if not button.is_held:
         sleep(2*button._hold_time)
@@ -555,7 +560,7 @@ def year_button_longpress(button, state):
             current['TOUR_YEAR'] = None
             current['TOUR_STATE'] = config.INIT
             scr.show_experience(text=F"ON_TOUR: Finished\n{ip_address}", force=True)
-    else:
+    elif config.optd['ON_TOUR_ALLOWED']:
         current['ON_TOUR'] = True
         current['TOUR_YEAR'] = state.date_reader.date.year
         current['TOUR_STATE'] = config.INIT
@@ -618,10 +623,26 @@ def play_on_tour(tape, state, seek_to=0):
 @sequential
 def refresh_venue(state):
     global venue_counter
-    vcs = [x.strip() for x in config.VENUE.split(',')]
-    artist = config.ARTIST
-    venue = 'unknown'
-    city_state = 'unknown'
+
+    stream_only = False
+    tape_color = (0, 255, 255)
+    tape = state.player.tape
+    if tape is not None:
+        tape_id = tape.identifier
+        stream_only = tape.stream_only()
+        tape_color = (255, 255, 255) if stream_only else (0, 0, 255)
+    else:
+        tape_id = None
+
+    try:
+        vcs = [x.strip() for x in config.VENUE.split(',')]
+    except:
+        vcs = tape_id if tape_id is not None else ''
+
+    artist = config.ARTIST if config.ARTIST is not None else ''
+    venue = ''
+    city_state = ''
+    display_string = ''
     screen_width = 13
     n_fields = 4
     n_subfields = 4
@@ -641,16 +662,10 @@ def refresh_venue(state):
     else:
         venue = city_state = vcs
 
-    # logger.debug(f'venue {venue}, city_state {city_state}')
-    stream_only = False
-    tape_color = (0, 255, 255)
-    tape = state.player.tape
-    if tape is not None:
-        tape_id = tape.identifier
-        stream_only = tape.stream_only()
-        tape_color = (255, 255, 255) if stream_only else (0, 0, 255)
-    else:
+    if tape_id is None:
         tape_id = venue
+
+    # logger.debug(f'venue {venue}, city_state {city_state}')
 
     show_collection_list = tape_id == venue  # This is an arbitrary condition...fix!
     id_color = (0, 255, 255)
@@ -887,7 +902,8 @@ def event_loop(state, lock):
                     try:
                         refresh_venue(state)
                     except Exception as e:
-                        logger.warning(e)
+                        raise e
+                        logger.warning(f'event_loop, error refreshing venue {e}')
                 else:
                     scr.show_staged_date(date_reader.date)
                     show_venue_text(date_reader)
