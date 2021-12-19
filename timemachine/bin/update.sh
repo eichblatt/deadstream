@@ -4,15 +4,19 @@ echo "home is $HOME"
 echo "Updating "
 date
 
+TIMEMACHINE=$HOME/timemachine/lib/python3.7/site-packages/timemachine
 git_branch=main    # Make this a command-line option!
-if [ $HOSTNAME == deadstream2 ]; then
-#if [ $HOSTNAME == deam2 ]; then
+#if [ $HOSTNAME == deadstream2 ]; then
+if [ $HOSTNAME == deam2 ]; then
    git_branch=dev
 else
    echo "sudo systemctl disable ssh"
    sudo systemctl disable ssh
-   #local_tag=`git describe --tags --always`
-   local_tag="v0.4.3"
+   if [ -f $TIMEMACHINE/.latest_tag ]; then
+       local_tag=`echo $TIMEMACHINE/.latest_tag`
+   else
+       local_tag="v0.4.1"
+   fi
    remote_tag=`git -c 'versionsort.suffix=-' ls-remote --tags --sort='v:refname' git@github.com:eichblatt/deadstream.git | grep -v \{\} | tail --lines=1 | cut --delimiter='/' --fields=3`
    if [ "$local_tag" = "$remote_tag" ]; then
       echo "Local repository up to date. Not updating"
@@ -70,7 +74,7 @@ system "source $env_name/bin/activate"
 system "pip3 install wheel"
 system "pip3 install git+https://github.com/eichblatt/deadstream.git@$git_branch"
 
-current_metadata_path=$HOME/timemachine/lib/python3.7/site-packages/timemachine/metadata
+current_metadata_path=$TIMEMACHINE/metadata
 new_metadata_path=$HOME/$env_name/lib/python3.7/site-packages/timemachine/metadata
 #update_archive=`find $current_metadata_path/GratefulDead_ids.json -mtime +40 | wc -l`
 #if [ $update_archive == 0 ]; then
