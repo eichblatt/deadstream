@@ -2,7 +2,7 @@ from setuptools import setup
 
 setup(
     name='timemachine',
-    version='0.4.4',
+    version='0.4.5',
     author='Steve Eichblatt',
     author_email='gdtimemachine@gmail.com',
     description='A Grateful Dead Time Machine',
