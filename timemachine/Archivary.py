@@ -1060,16 +1060,20 @@ class GDTape(BaseTape):
 
         # make the tracks
         newtracks = []
+        tracknames = [x.title for x in self._tracks]
+        set_breaks_already_in_tape = difflib.get_close_matches('Set Break', tracknames, cutoff=0.6)
+        set_breaks_already_locs = [tracknames.index(x) for x in set_breaks_already_in_tape]
         for i, t in enumerate(self._tracks):
-            for j in breaks['long']:
-                if i == j:
-                    newtracks.append(GDTrack(lbreakd, '', True))
-            for j in breaks['short']:
-                if i == j:
-                    newtracks.append(GDTrack(sbreakd, '', True))
-            for j in breaks['location']:
-                if i == j:
-                    newtracks.append(GDTrack(locbreakd, '', True))
+            if not i in set_breaks_already_locs:
+                for j in breaks['long']:
+                    if i == j:
+                        newtracks.append(GDTrack(lbreakd, '', True))
+                for j in breaks['short']:
+                    if i == j:
+                        newtracks.append(GDTrack(sbreakd, '', True))
+                for j in breaks['location']:
+                    if i == j:
+                        newtracks.append(GDTrack(locbreakd, '', True))
             newtracks.append(t)
         self._breaks_added = True
         self._tracks = newtracks.copy()
