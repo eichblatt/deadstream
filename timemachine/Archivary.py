@@ -1018,6 +1018,9 @@ class GDTape(BaseTape):
         if not self.meta_loaded:
             self.get_metadata()
         tlist = [x.title for x in self._tracks]
+        replacements = {'GDTRFB': 'Going Down the Road Feeling Bad', 'FOTD': 'Friend of the Devil', 'EOTW': 'Eyes of the World'}
+        replacer = replacements.get
+        tlist = [replacer(n, n) for n in tlist]
         sd = self.set_data
         if sd is None:
             sd = {}
@@ -1041,7 +1044,7 @@ class GDTape(BaseTape):
         sb_locations = [j for t, j in {t: j+1 for j, t in enumerate(tlist) if t in short_breaks}.items()]
         locb_locations = [j for t, j in {t: j+1 for j, t in enumerate(tlist) if t in location_breaks}.items()]
         # At this point, i need to add "longbreak" and "shortbreak" tracks to the tape.
-        # This will require creating special GDTracks, I guess.
+        # This will require creating special GDTracks.
         # for now, return the location indices.
         return {'long': lb_locations, 'short': sb_locations, 'location': locb_locations}
 
@@ -1060,9 +1063,9 @@ class GDTape(BaseTape):
 
         # make the tracks
         newtracks = []
-        tracknames = [x.title for x in self._tracks]
-        set_breaks_already_in_tape = difflib.get_close_matches('Set Break', tracknames, cutoff=0.6)
-        set_breaks_already_locs = [tracknames.index(x) for x in set_breaks_already_in_tape]
+        tlist = [x.title for x in self._tracks]
+        set_breaks_already_in_tape = difflib.get_close_matches('Set Break', tlist, cutoff=0.6)
+        set_breaks_already_locs = [tlist.index(x) for x in set_breaks_already_in_tape]
         for i, t in enumerate(self._tracks):
             if not i in set_breaks_already_locs:
                 for j in breaks['long']:
