@@ -12,8 +12,8 @@ else
    echo "sudo systemctl disable ssh"
    sudo systemctl disable ssh
    #local_tag=`git describe --tags --always`
-   local_tag="v0.4.1"
-   remote_tag=`git -c 'versionsort.suffix=-' ls-remote --tags --sort='v:refname' git@github.com:eichblatt/deadstream.git | tail --lines=1 | cut --delimiter='/' --fields=3`
+   local_tag="v0.4.3"
+   remote_tag=`git -c 'versionsort.suffix=-' ls-remote --tags --sort='v:refname' git@github.com:eichblatt/deadstream.git | grep -v \{\} | tail --lines=1 | cut --delimiter='/' --fields=3`
    if [ "$local_tag" = "$remote_tag" ]; then
       echo "Local repository up to date. Not updating"
       exit 0
