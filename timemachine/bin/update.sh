@@ -13,7 +13,7 @@ else
    echo "sudo systemctl disable ssh"
    sudo systemctl disable ssh
    if [ -f $TIMEMACHINE/.latest_tag ]; then
-       local_tag=`cat $TIMEMACHINE/.latest_tag`
+       local_tag=`cat $TIMEMACHINE/.latest_tag | cut -f1 -d"-"`
    else
        local_tag="v0.4.1"
    fi
