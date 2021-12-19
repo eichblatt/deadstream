@@ -5,8 +5,8 @@ echo "Updating "
 date
 
 git_branch=main    # Make this a command-line option!
-#if [ $HOSTNAME == deadstream2 ]; then
-if [ $HOSTNAME == deam2 ]; then
+if [ $HOSTNAME == deadstream2 ]; then
+#if [ $HOSTNAME == deam2 ]; then
    git_branch=dev
 else
    echo "sudo systemctl disable ssh"
