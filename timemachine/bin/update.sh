@@ -5,11 +5,21 @@ echo "Updating "
 date
 
 git_branch=main    # Make this a command-line option!
-if [ $HOSTNAME == deadstream2 ]; then
+#if [ $HOSTNAME == deadstream2 ]; then
+if [ $HOSTNAME == deam2 ]; then
    git_branch=dev
 else
    echo "sudo systemctl disable ssh"
    sudo systemctl disable ssh
+   #local_tag=`git describe --tags --always`
+   local_tag="v0.4.1"
+   remote_tag=`git -c 'versionsort.suffix=-' ls-remote --tags --sort='v:refname' git@github.com:eichblatt/deadstream.git | tail --lines=1 | cut --delimiter='/' --fields=3`
+   if [ "$local_tag" = "$remote_tag" ]; then
+      echo "Local repository up to date. Not updating"
+      exit 0
+   else
+      git_branch=$remote_tag
+   fi
 fi
 echo "git branch is $git_branch"
 
