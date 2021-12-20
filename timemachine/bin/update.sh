@@ -4,33 +4,35 @@ echo "home is $HOME"
 echo "Updating "
 date
 
+TIMEMACHINE=$HOME/timemachine/lib/python3.7/site-packages/timemachine
+
 system () {
    command=$1
    echo "$command"
    $command
 }
 
-TIMEMACHINE=$HOME/timemachine/lib/python3.7/site-packages/timemachine
 git_branch=main    # Make this a command-line option!
+if [ -f $TIMEMACHINE/.latest_tag ]; then
+    local_tag=`cat $TIMEMACHINE/.latest_tag | cut -f1 -d"-"`
+else
+    local_tag="v0.4.1"
+fi
+remote_tag=`git -c 'versionsort.suffix=-' ls-remote --tags --sort='v:refname' git@github.com:eichblatt/deadstream.git | grep -v \{\} | tail --lines=1 | cut --delimiter='/' --fields=3`
+
+git_branch=$remote_tag
+
 if [ $HOSTNAME == deadstream2 ]; then
-#if [ $HOSTNAME == deam2 ]; then
    git_branch=dev
 else
    system "sudo systemctl disable ssh"
-   if [ -f $TIMEMACHINE/.latest_tag ]; then
-       local_tag=`cat $TIMEMACHINE/.latest_tag | cut -f1 -d"-"`
-   else
-       local_tag="v0.4.1"
-   fi
-   remote_tag=`git -c 'versionsort.suffix=-' ls-remote --tags --sort='v:refname' git@github.com:eichblatt/deadstream.git | grep -v \{\} | tail --lines=1 | cut --delimiter='/' --fields=3`
-   if [ "$local_tag" = "$remote_tag" ]; then
-      echo "Local repository up to date. Not updating"
-      exit 0
-   else
-      git_branch=$remote_tag
-   fi
 fi
+
 echo "git branch is $git_branch"
+if [ "$local_tag" = "$git_branch" ]; then
+   echo "Local repository up to date. Not updating"
+   exit 0
+fi
 
 
 # Stop the timemachine service.

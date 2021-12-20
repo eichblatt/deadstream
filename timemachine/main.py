@@ -428,7 +428,7 @@ def stop_button_longpress(button, state):
         scr.wake_up()
         scr.show_text("Updating\nCode\n\nStand By...", force=True)
         sleep(20)
-        scr.show_text("No Update\nRequired...", clear=True, force=True)
+        scr.show_text("No Update\nAvailable...", clear=True, force=True)
         sleep(10)
         scr.image.frombytes(pixels)
         scr.refresh(force=True)
