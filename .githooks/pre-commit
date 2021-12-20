@@ -4,7 +4,7 @@
 import os
 import sys
 
-mycmd = "git describe --abbrev=0 > timemachine/.latest_tag"
+mycmd = "git describe --tags --abbrev=0 > timemachine/.latest_tag"
 print(f"my command is {mycmd}")
 os.system(mycmd)
 
