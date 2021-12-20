@@ -1,8 +1,13 @@
 from setuptools import setup
+from distutils.util import convert_path
+
+version_path = convert_path('timemachine/.latest_tag')
+version_number = open(version_path, 'r').readline().strip()
+print(f"version_number is {version_number}")
 
 setup(
     name='timemachine',
-    version='0.4.6',
+    version=version_number
     author='Steve Eichblatt',
     author_email='gdtimemachine@gmail.com',
     description='A Grateful Dead Time Machine',
