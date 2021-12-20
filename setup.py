@@ -1,8 +1,13 @@
 from setuptools import setup
+from distutils.util import convert_path
+
+version_path = convert_path('timemachine/.latest_tag')
+version_number = open(version_path, 'r').readline().strip()
+print(f"version_number is {version_number}")
 
 setup(
     name='timemachine',
-    version='0.4.1',
+    version=version_number,
     author='Steve Eichblatt',
     author_email='gdtimemachine@gmail.com',
     description='A Grateful Dead Time Machine',
@@ -35,7 +40,7 @@ setup(
         'wheel'],
     package_data={
         'timemachine': ['fonts/ariallgt.ttf', 'fonts/DejaVuSansMono-Bold.ttf', 'fonts/FreeMono.ttf', 'metadata/set_breaks.csv',
-                        'metadata/silence600.ogg', 'metadata/silence300.ogg', 'options.txt']},
+                        'metadata/silence600.ogg', 'metadata/silence300.ogg', 'options.txt', '.latest_tag']},
     entry_points={'console_scripts':
                   ['connect_network=timemachine.connect_network:main',
                    'serve_options=timemachine.serve_options:main',
