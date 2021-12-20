@@ -18,7 +18,7 @@ if [ -f $TIMEMACHINE/.latest_tag ]; then
 else
     local_tag="v0.4.1"
 fi
-remote_tag=`git -c 'versionsort.suffix=-' ls-remote --tags --sort='v:refname' git@github.com:eichblatt/deadstream.git | grep -v \{\} | tail --lines=1 | cut --delimiter='/' --fields=3`
+remote_tag=`git -c 'versionsort.suffix=-' ls-remote --tags --sort='v:refname' https://github.com/eichblatt/deadstream.git | grep -v \{\} | tail --lines=1 | cut --delimiter='/' --fields=3`
 
 git_branch=$remote_tag
 
