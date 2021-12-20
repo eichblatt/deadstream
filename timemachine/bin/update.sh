@@ -4,14 +4,19 @@ echo "home is $HOME"
 echo "Updating "
 date
 
+system () {
+   command=$1
+   echo "$command"
+   $command
+}
+
 TIMEMACHINE=$HOME/timemachine/lib/python3.7/site-packages/timemachine
 git_branch=main    # Make this a command-line option!
 if [ $HOSTNAME == deadstream2 ]; then
 #if [ $HOSTNAME == deam2 ]; then
    git_branch=dev
 else
-   echo "sudo systemctl disable ssh"
-   sudo systemctl disable ssh
+   system "sudo systemctl disable ssh"
    if [ -f $TIMEMACHINE/.latest_tag ]; then
        local_tag=`cat $TIMEMACHINE/.latest_tag | cut -f1 -d"-"`
    else
@@ -27,11 +32,9 @@ else
 fi
 echo "git branch is $git_branch"
 
-system () {
-   command=$1
-   echo "$command"
-   $command
-}
+
+# Stop the timemachine service.
+system "sudo service timemachine stop"
 
 echo "[ ! -f $HOME/helpontheway.ogg ] && wget -O $HOME/helpontheway.ogg https://archive.org/download/gd75-08-13.fm.vernon.23661.sbeok.shnf/gd75-08-13d1t02.ogg "
 [ ! -f $HOME/helpontheway.ogg ] && wget -O $HOME/helpontheway.ogg https://archive.org/download/gd75-08-13.fm.vernon.23661.sbeok.shnf/gd75-08-13d1t02.ogg
