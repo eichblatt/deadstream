@@ -417,6 +417,7 @@ def stop_button(button, state):
 @sequential
 def stop_button_longpress(button, state):
     logger.debug(" longpress of stop button -- loading options menu")
+    pixels = scr.image.tobytes()
     scr.show_experience(text="Hold 5s to Update\nCode and Restart", force=True)
     sleep(5)
     if button.is_held:
@@ -426,8 +427,12 @@ def stop_button_longpress(button, state):
         stop_event.set()
         scr.wake_up()
         scr.show_text("Updating\nCode\n\nStand By...", force=True)
-        sleep(30)
-        exit()
+        sleep(20)
+        scr.show_text("No Update\nRequired...", clear=True, force=True)
+        sleep(10)
+        scr.image.frombytes(pixels)
+        scr.refresh(force=True)
+        # exit()
 
 
 @sequential
