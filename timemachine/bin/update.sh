@@ -6,14 +6,14 @@ date
 
 TIMEMACHINE=$HOME/timemachine/lib/python3.7/site-packages/timemachine
 git_branch=main    # Make this a command-line option!
-#if [ $HOSTNAME == deadstream2 ]; then
-if [ $HOSTNAME == deam2 ]; then
+if [ $HOSTNAME == deadstream2 ]; then
+#if [ $HOSTNAME == deam2 ]; then
    git_branch=dev
 else
    echo "sudo systemctl disable ssh"
    sudo systemctl disable ssh
    if [ -f $TIMEMACHINE/.latest_tag ]; then
-       local_tag=`cat $TIMEMACHINE/metadata/.latest_tag | cut -f1 -d"-"`
+       local_tag=`cat $TIMEMACHINE/.latest_tag | cut -f1 -d"-"`
    else
        local_tag="v0.4.1"
    fi
