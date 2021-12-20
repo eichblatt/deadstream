@@ -7,7 +7,7 @@ print(f"version_number is {version_number}")
 
 setup(
     name='timemachine',
-    version=version_number
+    version=version_number,
     author='Steve Eichblatt',
     author_email='gdtimemachine@gmail.com',
     description='A Grateful Dead Time Machine',
