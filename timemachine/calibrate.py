@@ -19,6 +19,11 @@ from timemachine import config, controls
 
 
 parser = optparse.OptionParser()
+parser.add_option('--wpa_path',
+                  dest='wpa_path',
+                  type="string",
+                  default='/etc/wpa_supplicant/wpa_supplicant.conf',
+                  help="path to wpa_supplicant file [default %default]")
 parser.add_option('--knob_sense_path',
                   dest='knob_sense_path',
                   type="string",
@@ -508,6 +513,8 @@ def welcome_alternatives():
     if rewind_event.is_set():
         rewind_event.clear()
         # remove wpa_supplicant.conf file
+        cmd = F"sudo rm {parms.wpa_path}"
+        _ = subprocess.check_output(cmd, shell=True)
         return True
     if ffwd_event.is_set():
         scr.show_text("recalibrating ", font=scr.font, force=True, clear=True)
