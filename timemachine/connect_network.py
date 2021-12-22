@@ -210,98 +210,6 @@ scr = controls.screen(upside_down=False)
 scr.clear()
 
 
-def get_knob_orientation(knob, label):
-    m_knob_event.clear()
-    d_knob_event.clear()
-    y_knob_event.clear()
-    knob.steps = 0
-    before_value = knob.steps
-    scr.show_text("Calibrating knobs", font=scr.smallfont, force=False, clear=True)
-    scr.show_text(F"Rotate {label}\nclockwise", loc=(0, 40), font=scr.boldsmall, color=(0, 255, 255), force=True)
-    if label == "month":
-        m_knob_event.wait()
-    elif label == "day":
-        d_knob_event.wait()
-    elif label == "year":
-        y_knob_event.wait()
-    after_value = knob.steps
-    return after_value > before_value
-
-
-def save_knob_sense(parms):
-    knob_senses = [get_knob_orientation(knob, label) for knob, label in [(m, "month"), (d, "day"), (y, "year")]]
-    knob_sense = 0
-    for i in range(len(knob_senses)):
-        knob_sense += 1 << i if knob_senses[i] else 0
-    f = open(parms.knob_sense_path, 'w')
-    f.write(str(knob_sense))
-    f.close()
-    scr.show_text("Knobs\nCalibrated", font=scr.boldsmall, color=(0, 255, 255), force=False, clear=True)
-    scr.show_text(F"      {knob_sense}", font=scr.boldsmall, loc=(0, 60), force=True)
-
-
-def test_buttons(event, label):
-    event.clear()
-    scr.show_text("Testing Buttons", font=scr.smallfont, force=False, clear=True)
-    scr.show_text(F"Press {label}", loc=(0, 40), font=scr.boldsmall, color=(0, 255, 255), force=True)
-    event.wait()
-
-
-def default_options():
-    d = {}
-    d['COLLECTIONS'] = 'GratefulDead'
-    d['SCROLL_VENUE'] = 'true'
-    d['FAVORED_TAPER'] = 'miller'
-    d['AUTO_UPDATE_ARCHIVE'] = 'false'
-    d['DEFAULT_START_TIME'] = '15:00:00'
-    d['TIMEZONE'] = 'America/New_York'
-    return d
-
-
-def configure_collections(parms):
-    """ is this a GratefulDead or a Phish Time Machine? """
-    if (not parms.test) and os.path.exists(parms.knob_sense_path):
-        return
-    collection = select_option("Collection\nTurn Year, Select", ['GratefulDead', 'Phish', 'GratefulDead,Phish', 'other'])
-    if collection == 'other':
-        collection = select_chars("Collection?\nSelect. Stop to end", character_set=string.printable[36:62])
-    scr.show_text(f"Collection:\n{collection}", font=scr.smallfont, force=True, clear=True)
-    #envs = get_envs()
-    sleep(2)
-    tmpd = default_options()
-    try:
-        tmpd = json.load(open(parms.options_path, 'r'))
-    except Exception as e:
-        logger.warning(F"Failed to read options from {parms.options_path}. Using defaults")
-    tmpd['COLLECTIONS'] = collection
-    try:
-        with open(parms.options_path, 'w') as outfile:
-            optd = json.dump(tmpd, outfile, indent=1)
-    except Exception as e:
-        logger.warning(F"Failed to write options to {parms.options_path}")
-
-
-def test_sound(parms):
-    """ test that sound works """
-    if (not parms.test) and os.path.exists(parms.knob_sense_path):
-        return
-    try:
-        cmd = f'mpv --really-quiet ~/test_sound.ogg &'
-        os.system(cmd)
-    except Exception as e:
-        logger.warning("Failed to play sound file ~/test_sound.ogg")
-
-
-def test_all_buttons(parms):
-    """ test that every button on the board works """
-    if (not parms.test) and os.path.exists(parms.knob_sense_path):
-        return
-    _ = [test_buttons(e, l) for e, l in
-         [(done_event, "stop"), (rewind_event, "rewind"), (ffwd_event, "ffwd"), (select_event, "select"),
-          (play_pause_event, "play/pause"), (m_event, "month"), (d_event, "day"), (y_event, "year")]]
-    scr.show_text("Testing Buttons\nSucceeded!", font=scr.smallfont, force=True, clear=True)
-
-
 def select_option(message, chooser):
     if type(chooser) == type(lambda: None): choices = chooser()
     else:
@@ -454,9 +362,9 @@ def wifi_connected(max_attempts=1):
     attempt = 0
     while not connected and attempt < max_attempts:
         if attempt > 0:
-            cmd = "sudo killall -HUP wpa_supplicant"
+            cmd2 = "sudo killall -HUP wpa_supplicant"
             if not parms.test:
-                os.system(cmd)
+                os.system(cmd2)
                 sleep(2*parms.sleep_time)
         attempt = attempt + 1
         raw = subprocess.check_output(cmd, shell=True)
@@ -559,102 +467,19 @@ def get_wifi_params():
     return wifi, passkey, extra_dict
 
 
-def check_factory_build():
-    home = os.getenv('HOME')
-    envs = get_envs()
-    if '.factory_env' not in envs:   # create one
-        logger.info("creating factory build")
-        srcdir = os.path.join(home, envs[0])
-        destdir = os.path.join(home, '.factory_env')
-        cmd = f'cp -r {srcdir} {destdir}'
-        os.system(cmd)
-    else:
-        logger.info("factory build present")
-    return
-
-
-def get_envs():
-    home = os.getenv('HOME')
-    current_env = os.path.basename(os.readlink(os.path.join(home, 'timemachine')))
-    envs = [x for x in os.listdir(home) if os.path.isdir(os.path.join(home, x)) and (x.startswith('env_') or x == '.factory_env')]
-    envs = sorted(envs, reverse=True)
-    envs.insert(0, envs.pop(envs.index(current_env)))    # put current_env first in the list.
-    return envs
-
-
-def change_environment():
-    home = os.getenv('HOME')
-    envs = get_envs()
-    new_env = select_option("Select an environment to use", envs)
-    if new_env == envs[0]:
-        return
-    if new_env == '.factory_env':
-        factory_dir = os.path.join(home, new_env)
-        # new_factory = f'env_{datetime.datetime.now().strftime("%Y%m%d.%H%M%S")}'
-        new_factory_tmp = 'env_recent_copy_tmp'    # Create a tmp dir, in case reboot occurs during the copy.
-        new_factory = 'env_recent_copy'    # by using a static name I avoid cleaning up old directories.
-        new_dir_tmp = os.path.join(home, new_factory_tmp)
-        new_dir = os.path.join(home, new_factory)
-        scr.show_text("Resetting Factory\nenvironment", font=scr.smallfont, force=True, clear=True)
-        os.system(f'rm -rf {new_dir_tmp}')
-        cmd = f'cp -r {factory_dir} {new_dir_tmp}'
-        fail = os.system(cmd)
-        if fail != 0:
-            scr.show_text("Failed to\nReset Factory\nenvironment", font=scr.smallfont, force=True, clear=True)
-            return
-        cmd = f'rm -rf {new_dir}'
-        os.system(cmd)
-        cmd = f'mv {new_dir_tmp} {new_dir}'
-        os.system(cmd)
-    else:
-        new_dir = os.path.join(home, new_env)
-    if os.path.isdir(new_dir):
-        make_link_cmd = f"ln -sfn {new_dir} {os.path.join(home,'timemachine')}"
-        fail = os.system(make_link_cmd)
-        if fail == 0:
-            cmd = "sudo reboot"
-            os.system(cmd)
-            sys.exit(-1)
-    scr.show_text("Failed to\nReset Factory\nenvironment", font=scr.smallfont, force=True, clear=True)
-    return
-
-
-def welcome_alternatives():
-    scr.show_text("\n Welcome", color=(0, 0, 255), force=True, clear=True)
-    check_factory_build()
-    button = button_event.wait(0.2*parms.sleep_time)
-    button_event.clear()
-    if rewind_event.is_set():
-        rewind_event.clear()
-        return True
-    if done_event.is_set():
-        change_environment()
-        done_event.clear()
-    return False
-
-
 def main():
     try:
+        scr.show_text("Connecting\nto WiFi", font=scr.font, force=True, clear=True)
         cmd = "sudo rfkill unblock wifi"
         os.system(cmd)
         cmd = "sudo ifconfig wlan0 up"
         os.system(cmd)
-        reconnect = welcome_alternatives()
-        scr.show_text(" . . . . ", font=scr.font, force=True, clear=True)
-        connected = wifi_connected()
+        connected = wifi_connected(max_attempts=3)
 
-        if parms.test or reconnect or not connected:
-            try:
-                test_sound(parms)
-                test_all_buttons(parms)
-                configure_collections(parms)
-                save_knob_sense(parms)
-            except Exception:
-                logger.info("Failed to save knob sense...continuing")
         eth_mac_address = get_mac_address()
         scr.show_text(F"MAC addresses\neth0\n{eth_mac_address}", color=(0, 255, 255), font=scr.smallfont, force=True, clear=True)
         sleep(1)
-        if parms.test or reconnect or not connected:
+        if parms.test or not connected:
             wifi, passkey, extra_dict = get_wifi_params()
             scr.show_text(F"wifi:\n{wifi}\npasskey:\n{passkey}", loc=(0, 0), color=(255, 255, 255), font=scr.oldfont, force=True, clear=True)
             update_wpa_conf(parms.wpa_path, wifi, passkey, extra_dict)
