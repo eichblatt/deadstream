@@ -1,0 +1,9 @@
+[Unit]
+Description=Calibrate Time Machine
+[Service]
+Type=oneshot
+User=deadhead
+ExecStart=/bin/bash -c "source /home/deadhead/timemachine/bin/activate && calibrate --debug 0"
+RemainAfterExit=yes
+[Install]
+WantedBy=multi-user.target
