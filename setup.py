@@ -43,12 +43,13 @@ setup(
                         'metadata/silence600.ogg', 'metadata/silence300.ogg', 'options.txt', '.latest_tag']},
     entry_points={'console_scripts':
                   ['connect_network=timemachine.connect_network:main',
+                   'calibrate=timemachine.calibrate:main',
                    'serve_options=timemachine.serve_options:main',
                    'timemachine=timemachine.main:main',
                    'timemachine_test_update=timemachine.main:main_test_update']},
     scripts=['timemachine/bin/services.sh', 'timemachine/bin/update.sh', 'timemachine/bin/board_version.sh',
              'timemachine/bin/timemachine.service', 'timemachine/bin/update.service', 'timemachine/bin/connect_network.service',
-             'timemachine/bin/serve_options.service'],
+             'timemachine/bin/serve_options.service', 'timemachine/bin/calibrate.service'],
     license_files=('LICENSE',),
     license='GNU General Public License v3 (GPLv3)'
 )
