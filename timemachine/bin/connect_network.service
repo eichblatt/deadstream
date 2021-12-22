@@ -2,6 +2,7 @@
 Description=Check Network Exists or Setup Network
 Wants=network.target
 After=systemd-user-sessions.service
+After=calibrate.service
 [Service]
 Type=oneshot
 User=deadhead

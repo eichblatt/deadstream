@@ -202,7 +202,6 @@ select.when_pressed = lambda x: select_button(x)
 stop.when_pressed = lambda x: stop_button(x)
 
 scr = controls.screen(upside_down=False)
-scr.clear()
 
 
 def get_knob_orientation(knob, label):
@@ -436,8 +435,8 @@ def select_chars(message, message2="So Far", character_set=string.printable):
 
 
 def exit_success(status=0, sleeptime=5):
+    scr.show_text("\n Please\n Stand By\n     . . . ", color=(0, 255, 255), force=True, clear=True)
     sleep(sleeptime)
-    scr.clear()
     sys.exit(status)
 
 
@@ -541,10 +540,8 @@ def main():
                 logger.info("Failed to save knob sense...continuing")
     except Exception:
         sys.exit(-1)
-    finally:
-        scr.clear()
 
-    exit_success(sleeptime=0)
+    exit_success(sleeptime=10)
 
 
 if __name__ == "__main__" and parms.debug == 0:
