@@ -252,7 +252,7 @@ class Time_Machine_Board():
             if knob.steps > knob.threshold_steps[1]:
                 if label == "year" and self.d.steps < self.d.threshold_steps[1]:
                     knob.steps = knob.threshold_steps[0]
-                    self.d.steps = min(d.threshold_steps[1], self.d.steps + 1)
+                    self.d.steps = min(self.d.threshold_steps[1], self.d.steps + 1)
                 else:
                     knob.steps = knob.threshold_steps[1]
             print(f"Knob {label} is inactive")
