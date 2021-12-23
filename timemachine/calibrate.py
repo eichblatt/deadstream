@@ -1,21 +1,17 @@
-import datetime
 import json
 import logging
 import optparse
 import os
-import re
 import string
 import subprocess
 import sys
-from threading import Event
 from time import sleep
 
-from gpiozero import RotaryEncoder, Button
 from tenacity import retry
 from tenacity.stop import stop_after_delay
 from typing import Callable
 
-from timemachine import config, controls
+from timemachine import controls
 
 
 parser = optparse.OptionParser()
@@ -139,7 +135,6 @@ def get_knob_orientation(knob, label):
     TMB.d_knob_event.clear()
     TMB.y_knob_event.clear()
     knob.steps = 0
-    before_value = knob.steps
     TMB.scr.show_text("Calibrating knobs", font=TMB.scr.smallfont, force=False, clear=True)
     TMB.scr.show_text(F"Rotate {label}\nclockwise", loc=(0, 40), font=TMB.scr.boldsmall, color=(0, 255, 255), force=True)
     if label == "month":
@@ -148,12 +143,11 @@ def get_knob_orientation(knob, label):
         TMB.d_knob_event.wait()
     elif label == "year":
         TMB.y_knob_event.wait()
-    after_value = knob.steps
     TMB.m_knob_event.clear()
     TMB.d_knob_event.clear()
     TMB.y_knob_event.clear()
     bounds = knob.threshold_steps
-    return abs(after_value - bounds[0]) < abs(after_value - bounds[1])
+    return abs(knob.steps - bounds[0]) < abs(knob.steps - bounds[1])
 
 
 def save_knob_sense():
@@ -193,7 +187,7 @@ def configure_collections(parms):
     if collection == 'other':
         collection = controls.select_chars(TMB, counter, "Collection?\nSelect. Stop to end", character_set=string.printable[36:62])
     TMB.scr.show_text(f"Collection:\n{collection}", font=TMB.scr.smallfont, force=True, clear=True)
-    #envs = get_envs()
+    # envs = get_envs()
     sleep(2)
     tmpd = default_options()
     try:
@@ -203,7 +197,7 @@ def configure_collections(parms):
     tmpd['COLLECTIONS'] = collection
     try:
         with open(parms.options_path, 'w') as outfile:
-            optd = json.dump(tmpd, outfile, indent=1)
+            json.dump(tmpd, outfile, indent=1)
     except Exception as e:
         logger.warning(F"Failed to write options to {parms.options_path}")
 
@@ -211,7 +205,7 @@ def configure_collections(parms):
 def test_sound(parms):
     """ test that sound works """
     try:
-        cmd = f'mpv --really-quiet ~/test_sound.ogg &'
+        cmd = 'mpv --really-quiet ~/test_sound.ogg &'
         os.system(cmd)
     except Exception as e:
         logger.warning("Failed to play sound file ~/test_sound.ogg")
@@ -294,7 +288,7 @@ def change_environment():
 def welcome_alternatives():
     TMB.scr.show_text("\n Welcome", color=(0, 0, 255), force=True, clear=True)
     check_factory_build()
-    button = TMB.button_event.wait(parms.sleep_time)
+    TMB.button_event.wait(parms.sleep_time)
     TMB.button_event.clear()
     if TMB.rewind_event.is_set():
         TMB.rewind_event.clear()
@@ -321,7 +315,7 @@ def main():
         cmd = "sudo ifconfig wlan0 up"
         os.system(cmd)
 
-        if (parms.test) or not os.path.exists(knob_sense_path):
+        if recalibrate or (parms.test) or not os.path.exists(knob_sense_path):
             try:
                 test_sound(parms)
                 test_all_buttons(parms)
