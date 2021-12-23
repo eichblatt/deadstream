@@ -437,7 +437,6 @@ def get_ip():
 
 def exit_success(status=0, sleeptime=5):
     sleep(sleeptime)
-    scr.clear()
     sys.exit(status)
 
 
