@@ -201,15 +201,16 @@ class decade_counter():
 class Time_Machine_Board():
     """ TMB class describes and addresses the hardware of the Time Machine Board """
 
-    def __init__(self, max_choices, upside_down=False):
+    def __init__(self, mdy_bounds=[(0, 9), (0, 9), (0, 9)], upside_down=False):
         self.setup_events()
-        self.setup_buttons(max_choices)
+        self.setup_buttons(mdy_bounds)
         self.setup_screen(upside_down)
 
-    def setup_buttons(self, max_choices):
-        self.m = retry_call(RotaryEncoder, config.month_pins[1], config.month_pins[0], max_steps=0, threshold_steps=(0, 9))
-        self.d = retry_call(RotaryEncoder, config.day_pins[1], config.day_pins[0], max_steps=0, threshold_steps=(0, 1+divmod(max_choices-1, 10)[0]))
-        self.y = retry_call(RotaryEncoder, config.year_pins[1], config.year_pins[0], max_steps=0, threshold_steps=(0, 9))
+    def setup_buttons(self, mdy_bounds):
+        knob_sense = self.get_knob_sense()
+        self.m = retry_call(RotaryEncoder, config.month_pins[knob_sense & 1], config.month_pins[~knob_sense & 1], max_steps=0, threshold_steps=mdy_bounds[0])
+        self.d = retry_call(RotaryEncoder, config.day_pins[(knob_sense >> 1) & 1], config.day_pins[~(knob_sense >> 1) & 1], max_steps=0, threshold_steps=mdy_bounds[1])
+        self.y = retry_call(RotaryEncoder, config.year_pins[(knob_sense >> 2) & 1], config.year_pins[~(knob_sense >> 2) & 1], max_steps=0, threshold_steps=mdy_bounds[2])
 
         self.m_button = retry_call(Button, config.month_pins[2])
         self.d_button = retry_call(Button, config.day_pins[2], hold_time=0.3, hold_repeat=False)
@@ -262,6 +263,17 @@ class Time_Machine_Board():
             self.d_knob_event.set()
         if label == "year":
             self.y_knob_event.set()
+
+    def get_knob_sense(self):
+        knob_sense_path = os.path.join(os.getenv('HOME'), ".knob_sense")
+        try:
+            kfile = open(knob_sense_path, 'r')
+            knob_sense = int(kfile.read())
+            kfile.close()
+        except Exception:
+            knob_sense = 0
+        finally:
+            return knob_sense
 
 
 def select_option(TMB, counter, message, chooser):

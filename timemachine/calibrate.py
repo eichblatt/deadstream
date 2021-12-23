@@ -24,11 +24,6 @@ parser.add_option('--wpa_path',
                   type="string",
                   default='/etc/wpa_supplicant/wpa_supplicant.conf',
                   help="path to wpa_supplicant file [default %default]")
-parser.add_option('--knob_sense_path',
-                  dest='knob_sense_path',
-                  type="string",
-                  default=os.path.join(os.getenv('HOME'), ".knob_sense"),
-                  help="path to file describing knob directions [default %default]")
 parser.add_option('-d', '--debug',
                   dest='debug',
                   type="int",
@@ -54,6 +49,8 @@ parser.add_option('-v', '--verbose',
                   default=False,
                   help="Print more verbose information [default %default]")
 parms, remainder = parser.parse_args()
+
+knob_sense_path = os.path.join(os.getenv('HOME'), ".knob_sense")
 
 logging.basicConfig(format='%(asctime)s.%(msecs)03d %(levelname)s: %(name)s %(message)s', level=logging.INFO, datefmt='%Y-%m-%d %H:%M:%S')
 logger = logging.getLogger(__name__)
@@ -119,7 +116,7 @@ def year_button(button):
 
 max_choices = len(string.printable)
 
-TMB = controls.Time_Machine_Board(max_choices)
+TMB = controls.Time_Machine_Board(mdy_bounds=[(0, 9), (0, 1+divmod(max_choices-1, 10)[0]), (0, 9)])
 
 TMB.rewind.when_pressed = lambda x: rewind_button(x)
 TMB.rewind.when_held = lambda x: rewind_button(x)
@@ -152,19 +149,24 @@ def get_knob_orientation(knob, label):
     elif label == "year":
         TMB.y_knob_event.wait()
     after_value = knob.steps
-    return after_value > before_value
+    TMB.m_knob_event.clear()
+    TMB.d_knob_event.clear()
+    TMB.y_knob_event.clear()
+    bounds = knob.threshold_steps
+    return abs(after_value - bounds[0]) < abs(after_value - bounds[1])
 
 
-def save_knob_sense(parms):
+def save_knob_sense():
     knob_senses = [get_knob_orientation(knob, label) for knob, label in [(TMB.m, "month"), (TMB.d, "day"), (TMB.y, "year")]]
+    knob_sense_orig = TMB.get_knob_sense()
     knob_sense = 0
     for i in range(len(knob_senses)):
-        knob_sense += 1 << i if knob_senses[i] else 0
-    f = open(parms.knob_sense_path, 'w')
-    f.write(str(knob_sense))
+        knob_sense += 1 << i if not knob_senses[i] else 0
+    f = open(knob_sense_path, 'w')
+    f.write(str(knob_sense ^ knob_sense_orig))
     f.close()
     TMB.scr.show_text("Knobs\nCalibrated", font=TMB.scr.boldsmall, color=(0, 255, 255), force=False, clear=True)
-    TMB.scr.show_text(F"      {knob_sense}", font=TMB.scr.boldsmall, loc=(0, 60), force=True)
+    TMB.scr.show_text(F"      {knob_sense ^ knob_sense_orig}", font=TMB.scr.boldsmall, loc=(0, 60), force=True)
 
 
 def test_buttons(event, label):
@@ -297,10 +299,12 @@ def welcome_alternatives():
     if TMB.rewind_event.is_set():
         TMB.rewind_event.clear()
         # remove wpa_supplicant.conf file
-        cmd = F"sudo rm {parms.wpa_path}"
-        _ = subprocess.check_output(cmd, shell=True)
+        remove_wpa = controls.select_option(TMB, counter, "Forget WiFi?", ["No", "Yes"])
+        if remove_wpa == "Yes":
+            cmd = F"sudo rm {parms.wpa_path}"
+            _ = subprocess.check_output(cmd, shell=True)
         return True
-    if TMB.ffwd_event.is_set():
+    if TMB.play_pause_event.is_set():
         TMB.scr.show_text("recalibrating ", font=TMB.scr.font, force=True, clear=True)
         return True
     if TMB.stop_event.is_set():
@@ -311,18 +315,18 @@ def welcome_alternatives():
 
 def main():
     try:
-        reconnect = welcome_alternatives()
+        recalibrate = welcome_alternatives()
         cmd = "sudo rfkill unblock wifi"
         os.system(cmd)
         cmd = "sudo ifconfig wlan0 up"
         os.system(cmd)
 
-        if reconnect or (parms.test) or not os.path.exists(parms.knob_sense_path):
+        if (parms.test) or not os.path.exists(knob_sense_path):
             try:
                 test_sound(parms)
                 test_all_buttons(parms)
                 configure_collections(parms)
-                save_knob_sense(parms)
+                save_knob_sense()
 
                 os.system('killall mpv')
             except Exception:
