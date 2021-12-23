@@ -1,5 +1,3 @@
-import datetime
-import json
 import logging
 import optparse
 import os
@@ -7,15 +5,13 @@ import re
 import string
 import subprocess
 import sys
-from threading import Event
 from time import sleep
 
-from gpiozero import RotaryEncoder, Button
 from tenacity import retry
 from tenacity.stop import stop_after_delay
 from typing import Callable
 
-from timemachine import config, controls
+from timemachine import controls
 
 
 parser = optparse.OptionParser()
@@ -179,7 +175,7 @@ def update_wpa_conf(wpa_path, wifi, passkey, extra_dict):
     f = open(new_wpa_path, 'w')
     f.write('\n'.join(wpa))
     cmd = F"sudo mv {new_wpa_path} {wpa_path}"
-    raw = subprocess.check_output(cmd, shell=True)
+    _ = subprocess.check_output(cmd, shell=True)
     cmd = F"sudo chown root {wpa_path}"
     _ = subprocess.check_output(cmd, shell=True)
     cmd = F"sudo chgrp root {wpa_path}"
@@ -262,7 +258,7 @@ def main():
                 print(F"not issuing command {cmd}")
             TMB.scr.show_text("wifi connecting\n...", loc=(0, 0), color=(255, 255, 255), font=TMB.scr.smallfont, force=True, clear=True)
             sleep(parms.sleep_time)
-    except Exception:
+    except Exception as e:
         sys.exit(-1)
     finally:
         TMB.scr.clear()
@@ -274,7 +270,7 @@ def main():
             try:
                 ip = get_ip()
                 i = i + 1
-            except:
+            except Exception as e:
                 sleep(2)
         logger.info(F"Wifi connected\n{ip}")
         TMB.scr.show_text(F"Wifi connected\n{ip}", font=TMB.scr.smallfont, force=True, clear=True)
