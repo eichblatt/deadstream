@@ -495,7 +495,14 @@ def main():
         scr.clear()
 
     if wifi_connected():
-        ip = retry_call(get_ip)
+        ip = None
+        i = 0
+        while ip is None and i < 5:
+            try:
+                ip = get_ip()
+                i = i + 1
+            except:
+                sleep(2)
         logger.info(F"Wifi connected\n{ip}")
         scr.show_text(F"Wifi connected\n{ip}", font=scr.smallfont, force=True, clear=True)
         exit_success(sleeptime=0.5*parms.sleep_time)
