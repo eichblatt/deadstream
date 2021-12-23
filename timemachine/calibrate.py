@@ -527,12 +527,11 @@ def welcome_alternatives():
 
 def main():
     try:
-        scr.show_text("Booting\nUp ...", font=scr.font, force=True, clear=True)
+        reconnect = welcome_alternatives()
         cmd = "sudo rfkill unblock wifi"
         os.system(cmd)
         cmd = "sudo ifconfig wlan0 up"
         os.system(cmd)
-        reconnect = welcome_alternatives()
 
         if reconnect or (parms.test) or not os.path.exists(parms.knob_sense_path):
             try:
