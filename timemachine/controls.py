@@ -203,15 +203,19 @@ class Time_Machine_Board():
 
     def __init__(self, mdy_bounds=[(0, 9), (0, 9), (0, 9)], upside_down=False):
         self.setup_events()
-        self.setup_buttons(mdy_bounds)
+        self.setup_knobs(mdy_bounds)
+        self.setup_buttons()
         self.setup_screen(upside_down)
 
-    def setup_buttons(self, mdy_bounds):
+    def setup_knobs(self, mdy_bounds):
+        if mdy_bounds is None:
+            return
         knob_sense = self.get_knob_sense()
         self.m = retry_call(RotaryEncoder, config.month_pins[knob_sense & 1], config.month_pins[~knob_sense & 1], max_steps=0, threshold_steps=mdy_bounds[0])
         self.d = retry_call(RotaryEncoder, config.day_pins[(knob_sense >> 1) & 1], config.day_pins[~(knob_sense >> 1) & 1], max_steps=0, threshold_steps=mdy_bounds[1])
         self.y = retry_call(RotaryEncoder, config.year_pins[(knob_sense >> 2) & 1], config.year_pins[~(knob_sense >> 2) & 1], max_steps=0, threshold_steps=mdy_bounds[2])
 
+    def setup_buttons(self):
         self.m_button = retry_call(Button, config.month_pins[2])
         self.d_button = retry_call(Button, config.day_pins[2], hold_time=0.3, hold_repeat=False)
         self.y_button = retry_call(Button, config.year_pins[2], hold_time=0.5)
@@ -227,6 +231,8 @@ class Time_Machine_Board():
 
     def setup_events(self):
         self.button_event = Event()
+        self.knob_event = Event()
+        self.screen_event = Event()
         self.rewind_event = Event()
         self.stop_event = Event()   # stop button
         self.ffwd_event = Event()
@@ -238,6 +244,17 @@ class Time_Machine_Board():
         self.m_knob_event = Event()
         self.d_knob_event = Event()
         self.y_knob_event = Event()
+
+    def twist_knob(self, knob: RotaryEncoder, label, date_reader: date_knob_reader):
+        if knob.is_active:
+            logger.debug(f"Knob {label} steps={knob.steps} value={knob.value}")
+        else:
+            if knob.steps < knob.threshold_steps[0]:
+                knob.steps = knob.threshold_steps[0]
+            if knob.steps > knob.threshold_steps[1]:
+                knob.steps = knob.threshold_steps[1]
+            logger.debug(f"Knob {label} is inactive")
+        date_reader.update()
 
     def decade_knob(self, knob: RotaryEncoder, label, counter: decade_counter):
         if knob.is_active:
