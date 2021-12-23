@@ -25,7 +25,6 @@ import subprocess
 import threading
 import sys
 import time
-from operator import methodcaller
 from threading import Event, Lock
 from time import sleep
 
@@ -311,7 +310,7 @@ def select_button_longpress(button, state):
         else:
             for i in range(0, max(1, len(tape_id)), 2):
                 show_venue_text(tapes[itape], color=id_color, show_id=True, offset=i, force=True)
-                #TMB.scr.show_venue(tape_id[i:], color=id_color, force=True)
+                # TMB.scr.show_venue(tape_id[i:], color=id_color, force=True)
                 if not button.is_held:
                     break
     TMB.scr.show_venue(tape_id, color=id_color)
@@ -486,8 +485,6 @@ def day_button(button, state):
     if button.is_pressed or button.is_held:
         return
     logger.debug("pressing day button")
-    #new_date = state.date_reader.next_date()
-    # state.date_reader.set_date(new_date)
     state.date_reader.set_date(*state.date_reader.next_show())
     stagedate_event.set()
 
@@ -624,7 +621,7 @@ def refresh_venue(state):
 
     try:
         vcs = [x.strip() for x in config.VENUE.split(',')]
-    except:
+    except Exception:
         vcs = tape_id if tape_id is not None else ''
 
     artist = config.ARTIST if config.ARTIST is not None else ''
@@ -698,7 +695,6 @@ def test_update(state):
     state.set(current)
     date_reader = state.date_reader
     last_sdevent = datetime.datetime.now()
-    clear_stagedate = False
     TMB.scr.update_now = False
     free_event.set()
     stagedate_event.set()
@@ -763,6 +759,7 @@ def show_venue_text(arg, color=(0, 255, 255), show_id=False, offset=0, force=Fal
 
 def event_loop(state, lock):
     global venue_counter
+    key_error_count = 0
     date_reader = state.date_reader
     last_sdevent = datetime.datetime.now()
     q_counter = False
@@ -774,7 +771,7 @@ def event_loop(state, lock):
     last_idle_minute = now.minute
     refresh_times = [4, 9, 14, 19, 24, 29, 34, 39, 44, 49]
     max_second_hand = 50
-    clear_stagedate = False
+    # clear_stagedate = False
     TMB.scr.update_now = False
     free_event.set()
     stagedate_event.set()
@@ -953,7 +950,7 @@ def on_track_event(_name, value):
     if value is None:
         config.PLAY_STATE = config.ENDED
         config.PAUSED_AT = datetime.datetime.now()
-        select_button(select, state)
+        select_button(TMB.select, state)
     track_event.set()
 
 
@@ -983,7 +980,7 @@ else:
     TMB.y.steps = 0
 
 date_reader = controls.date_knob_reader(TMB.y, TMB.m, TMB.d, archive)
-if not 'GratefulDead' in archive.collection_list:
+if 'GratefulDead' not in archive.collection_list:
     date_reader.set_date(*date_reader.next_show())
 
 state = controls.state(date_reader, player)
