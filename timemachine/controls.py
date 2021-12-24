@@ -302,6 +302,46 @@ class Time_Machine_Board():
         finally:
             return knob_sense
 
+    def rewind_button(self, button):
+        logger.debug("pressing or holding rewind")
+        self.button_event.set()
+        self.rewind_event.set()
+
+    def select_button(self, button):
+        logger.debug("pressing select")
+        self.button_event.set()
+        self.select_event.set()
+
+    def stop_button(self, button):
+        logger.debug("pressing stop")
+        self.button_event.set()
+        self.stop_event.set()
+
+    def ffwd_button(self, button):
+        logger.debug("pressing ffwd")
+        self.button_event.set()
+        self.ffwd_event.set()
+
+    def play_pause_button(self, button):
+        logger.debug("pressing play_pause")
+        self.button_event.set()
+        self.play_pause_event.set()
+
+    def month_button(self, button):
+        logger.debug("pressing or holding rewind")
+        self.button_event.set()
+        self.m_event.set()
+
+    def day_button(self, button):
+        logger.debug("pressing or holding rewind")
+        self.button_event.set()
+        self.d_event.set()
+
+    def year_button(self, button):
+        logger.debug("pressing or holding rewind")
+        self.button_event.set()
+        self.y_event.set()
+
 
 def select_option(TMB, counter, message, chooser):
     if type(chooser) == type(lambda: None): choices = chooser()

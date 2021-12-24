@@ -68,61 +68,19 @@ def retry_call(callable: Callable, *args, **kwargs):
     return callable(*args, **kwargs)
 
 
-def rewind_button(button):
-    logger.debug("pressing or holding rewind")
-    TMB.button_event.set()
-    TMB.rewind_event.set()
-
-
-def select_button(button):
-    logger.debug("pressing select")
-    TMB.select_event.set()
-
-
-def stop_button(button):
-    logger.debug("pressing stop")
-    TMB.button_event.set()
-    TMB.stop_event.set()
-
-
-def ffwd_button(button):
-    logger.debug("pressing ffwd")
-    TMB.ffwd_event.set()
-
-
-def play_pause_button(button):
-    logger.debug("pressing play_pause")
-    TMB.play_pause_event.set()
-
-
-def month_button(button):
-    logger.debug("pressing or holding rewind")
-    TMB.m_event.set()
-
-
-def day_button(button):
-    logger.debug("pressing or holding rewind")
-    TMB.d_event.set()
-
-
-def year_button(button):
-    logger.debug("pressing or holding rewind")
-    TMB.y_event.set()
-
-
 max_choices = len(string.printable)
 
 TMB = controls.Time_Machine_Board(mdy_bounds=[(0, 9), (0, 1+divmod(max_choices-1, 10)[0]), (0, 9)])
 
-TMB.rewind.when_pressed = lambda x: rewind_button(x)
-TMB.rewind.when_held = lambda x: rewind_button(x)
-TMB.ffwd.when_pressed = lambda x: ffwd_button(x)
-TMB.play_pause.when_pressed = lambda x: play_pause_button(x)
-TMB.y_button.when_pressed = lambda x: year_button(x)
-TMB.m_button.when_pressed = lambda x: month_button(x)
-TMB.d_button.when_pressed = lambda x: day_button(x)
-TMB.select.when_pressed = lambda x: select_button(x)
-TMB.stop.when_pressed = lambda x: stop_button(x)
+TMB.rewind.when_pressed = lambda x: TMB.rewind_button(x)
+TMB.rewind.when_held = lambda x: TMB.rewind_button(x)
+TMB.ffwd.when_pressed = lambda x: TMB.ffwd_button(x)
+TMB.play_pause.when_pressed = lambda x: TMB.play_pause_button(x)
+TMB.y_button.when_pressed = lambda x: TMB.year_button(x)
+TMB.m_button.when_pressed = lambda x: TMB.month_button(x)
+TMB.d_button.when_pressed = lambda x: TMB.day_button(x)
+TMB.select.when_pressed = lambda x: TMB.select_button(x)
+TMB.stop.when_pressed = lambda x: TMB.stop_button(x)
 
 counter = controls.decade_counter(TMB.d, TMB.y, bounds=(0, 100))
 TMB.m.when_rotated = lambda x: TMB.decade_knob(TMB.m, "month", counter)
