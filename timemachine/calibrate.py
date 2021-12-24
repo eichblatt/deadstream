@@ -219,9 +219,12 @@ def test_all_buttons(parms):
     TMB.scr.show_text("Testing Buttons\nSucceeded!", font=TMB.scr.smallfont, force=True, clear=True)
 
 
-def exit_success(status=0, sleeptime=5):
+def exit_success(status=0, sleeptime=0):
     TMB.scr.show_text("Please\n Stand By\n     . . . ", color=(0, 255, 255), force=True, clear=True)
     sleep(sleeptime)
+    if status == 0:
+        os.system(f'kill {os.getpid()}')  # Killing the process like this will leave the message on the screen.
+    else
     sys.exit(status)
 
 
@@ -307,12 +310,6 @@ def welcome_alternatives():
     return False
 
 
-def stand_by():
-    logger.info("in stand_by function")
-    TMB.scr.show_text("Standing By\n     . . . ", color=(0, 255, 255), force=True, clear=True)
-    os.system(f'kill {os.getpid()}')
-
-
 def main():
     try:
         recalibrate = welcome_alternatives()
@@ -334,7 +331,7 @@ def main():
     except Exception:
         sys.exit(-1)
 
-    exit_success(sleeptime=5)
+    exit_success()
 
 
 if __name__ == "__main__" and parms.debug == 0:
