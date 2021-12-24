@@ -17,8 +17,9 @@
 import datetime
 import logging
 import os
+import string
 from time import sleep
-from threading import BoundedSemaphore
+from threading import BoundedSemaphore, Event
 
 import adafruit_rgb_display.st7735 as st7735
 import board
@@ -26,6 +27,9 @@ import digitalio
 from adafruit_rgb_display import color565
 from gpiozero import Button, LED, RotaryEncoder
 from PIL import Image, ImageDraw, ImageFont
+from tenacity import retry
+from tenacity.stop import stop_after_delay
+from typing import Callable
 
 import pkg_resources
 from timemachine import config
@@ -40,6 +44,12 @@ FONTS_DIR = os.path.join(ROOT_DIR, 'fonts')
 screen_semaphore = BoundedSemaphore(1)
 state_semaphore = BoundedSemaphore(1)
 QUIESCENT_TIME = 20
+
+
+@retry(stop=stop_after_delay(10))
+def retry_call(callable: Callable, *args, **kwargs):
+    """Retry a call."""
+    return callable(*args, **kwargs)
 
 
 def with_state_semaphore(func):
@@ -166,6 +176,317 @@ class date_knob_reader:
             if d > self.fmtdate():
                 return datetime.datetime.strptime(d, '%Y-%m-%d').date()
         return self.date
+
+
+class decade_counter():
+    def __init__(self, tens: RotaryEncoder, ones: RotaryEncoder, bounds=(None, None)):
+        self.bounds = bounds
+        self.tens = tens
+        self.ones = ones
+        self.set_value(tens.steps, ones.steps)
+
+    def set_value(self, tens_val, ones_val):
+        self.value = tens_val*10 + ones_val
+        if self.bounds[0] is not None:
+            self.value = max(self.value, self.bounds[0])
+        if self.bounds[1] is not None:
+            self.value = min(self.value, self.bounds[1])
+        self.tens.steps, self.ones.steps = divmod(self.value, 10)
+        return self.value
+
+    def get_value(self):
+        return self.value
+
+
+class Time_Machine_Board():
+    """ TMB class describes and addresses the hardware of the Time Machine Board """
+
+    def __init__(self, mdy_bounds=[(0, 9), (0, 9), (0, 9)], upside_down=False):
+        self.events = []
+        self.setup_events()
+        self.clear_events()
+        self.setup_knobs(mdy_bounds)
+        self.setup_buttons()
+        self.setup_screen(upside_down)
+
+    def setup_knobs(self, mdy_bounds):
+        if mdy_bounds is None:
+            return
+        knob_sense = self.get_knob_sense()
+        self.m = retry_call(RotaryEncoder, config.month_pins[knob_sense & 1], config.month_pins[~knob_sense & 1], max_steps=0, threshold_steps=mdy_bounds[0])
+        self.d = retry_call(RotaryEncoder, config.day_pins[(knob_sense >> 1) & 1], config.day_pins[~(knob_sense >> 1) & 1], max_steps=0, threshold_steps=mdy_bounds[1])
+        self.y = retry_call(RotaryEncoder, config.year_pins[(knob_sense >> 2) & 1], config.year_pins[~(knob_sense >> 2) & 1], max_steps=0, threshold_steps=mdy_bounds[2])
+
+    def setup_buttons(self):
+        self.m_button = retry_call(Button, config.month_pins[2])
+        self.d_button = retry_call(Button, config.day_pins[2], hold_time=0.3, hold_repeat=False)
+        self.y_button = retry_call(Button, config.year_pins[2], hold_time=0.5)
+
+        self.rewind = retry_call(Button, config.rewind_pin)
+        self.ffwd = retry_call(Button, config.ffwd_pin)
+        self.play_pause = retry_call(Button, config.play_pause_pin)
+        self.select = retry_call(Button, config.select_pin, hold_time=2, hold_repeat=True)
+        self.stop = retry_call(Button, config.stop_pin)
+
+    def setup_screen(self, upside_down=False):
+        self.scr = screen(upside_down)
+
+    def setup_events(self):
+        self.button_event = Event()
+        self.knob_event = Event()
+        self.screen_event = Event()
+        self.rewind_event = Event()
+        self.stop_event = Event()   # stop button
+        self.ffwd_event = Event()
+        self.play_pause_event = Event()
+        self.select_event = Event()
+        self.m_event = Event()
+        self.d_event = Event()
+        self.y_event = Event()
+        self.m_knob_event = Event()
+        self.d_knob_event = Event()
+        self.y_knob_event = Event()
+        self.events = [self.button_event, self.knob_event, self.screen_event, self.rewind_event, self.stop_event, self.ffwd_event, self.play_pause_event,
+                       self.select_event, self.m_event, self.d_event, self.y_event, self.m_knob_event, self.d_knob_event, self.y_knob_event]
+
+    def clear_events(self):
+        _ = [x.clear() for x in self.events]
+
+    def twist_knob(self, knob: RotaryEncoder, label, date_reader: date_knob_reader):
+        if knob.is_active:
+            logger.debug(f"Knob {label} steps={knob.steps} value={knob.value}")
+        else:
+            if knob.steps < knob.threshold_steps[0]:
+                knob.steps = knob.threshold_steps[0]
+            if knob.steps > knob.threshold_steps[1]:
+                knob.steps = knob.threshold_steps[1]
+            logger.debug(f"Knob {label} is inactive")
+        date_reader.update()
+
+    def decade_knob(self, knob: RotaryEncoder, label, counter: decade_counter):
+        if knob.is_active:
+            print(f"Knob {label} steps={knob.steps} value={knob.value}")
+        else:
+            if knob.steps < knob.threshold_steps[0]:
+                if label == "year" and self.d.steps > self.d.threshold_steps[0]:
+                    knob.steps = knob.threshold_steps[1]
+                    self.d.steps = max(self.d.threshold_steps[0], self.d.steps - 1)
+                else:
+                    knob.steps = knob.threshold_steps[0]
+            if knob.steps > knob.threshold_steps[1]:
+                if label == "year" and self.d.steps < self.d.threshold_steps[1]:
+                    knob.steps = knob.threshold_steps[0]
+                    self.d.steps = min(self.d.threshold_steps[1], self.d.steps + 1)
+                else:
+                    knob.steps = knob.threshold_steps[1]
+            print(f"Knob {label} is inactive")
+        counter.set_value(self.d.steps, self.y.steps)
+        if label == "month":
+            self.m_knob_event.set()
+        if label == "day":
+            self.d_knob_event.set()
+        if label == "year":
+            self.y_knob_event.set()
+
+    def get_knob_sense(self):
+        knob_sense_path = os.path.join(os.getenv('HOME'), ".knob_sense")
+        try:
+            kfile = open(knob_sense_path, 'r')
+            knob_sense = int(kfile.read())
+            if knob_sense > 7 or knob_sense < 0:
+                raise ValueError
+            kfile.close()
+        except Exception as e:
+            logger.warning(f'error in get_knob_sense {e}. Setting knob_sense to 0')
+            knob_sense = 0
+        finally:
+            return knob_sense
+
+    def rewind_button(self, button):
+        logger.debug("pressing or holding rewind")
+        self.button_event.set()
+        self.rewind_event.set()
+
+    def select_button(self, button):
+        logger.debug("pressing select")
+        self.button_event.set()
+        self.select_event.set()
+
+    def stop_button(self, button):
+        logger.debug("pressing stop")
+        self.button_event.set()
+        self.stop_event.set()
+
+    def ffwd_button(self, button):
+        logger.debug("pressing ffwd")
+        self.button_event.set()
+        self.ffwd_event.set()
+
+    def play_pause_button(self, button):
+        logger.debug("pressing play_pause")
+        self.button_event.set()
+        self.play_pause_event.set()
+
+    def month_button(self, button):
+        logger.debug("pressing or holding rewind")
+        self.button_event.set()
+        self.m_event.set()
+
+    def day_button(self, button):
+        logger.debug("pressing or holding rewind")
+        self.button_event.set()
+        self.d_event.set()
+
+    def year_button(self, button):
+        logger.debug("pressing or holding rewind")
+        self.button_event.set()
+        self.y_event.set()
+
+
+def select_option(TMB, counter, message, chooser):
+    if type(chooser) == type(lambda: None): choices = chooser()
+    else:
+        choices = chooser
+    scr = TMB.scr
+    scr.clear()
+    counter.set_value(0, 0)
+    selected = None
+    screen_height = 5
+    screen_width = 14
+    update_now = scr.update_now
+    scr.update_now = False
+    TMB.stop_event.clear()
+    TMB.rewind_event.clear()
+    TMB.select_event.clear()
+
+    scr.show_text(message, loc=(0, 0), font=scr.smallfont, color=(0, 255, 255), force=True)
+    (text_width, text_height) = scr.smallfont.getsize(message)
+
+    text_height = text_height + 1
+    y_origin = text_height*(1+message.count('\n'))
+    selection_bbox = Bbox(0, y_origin, 160, 128)
+
+    while not TMB.select_event.is_set():
+        if TMB.rewind_event.is_set():
+            if type(chooser) == type(lambda: None): choices = chooser()
+            else:
+                choices = chooser
+            TMB.rewind_event.clear()
+        scr.clear_area(selection_bbox, force=False)
+        x_loc = 0
+        y_loc = y_origin
+        step = divmod(counter.value, len(choices))[1]
+
+        text = '\n'.join(choices[max(0, step-int(screen_height/2)):step])
+        (text_width, text_height) = scr.smallfont.getsize(text)
+        scr.show_text(text, loc=(x_loc, y_loc), font=scr.smallfont, force=False)
+        y_loc = y_loc + text_height*(1+text.count('\n'))
+
+        if len(choices[step]) > screen_width:
+            text = '>' + '..' + choices[step][-13:]
+        else:
+            text = '>' + choices[step]
+        (text_width, text_height) = scr.smallfont.getsize(text)
+        scr.show_text(text, loc=(x_loc, y_loc), font=scr.smallfont, color=(0, 0, 255), force=False)
+        y_loc = y_loc + text_height
+
+        text = '\n'.join(choices[step+1:min(step+screen_height, len(choices))])
+        (text_width, text_height) = scr.smallfont.getsize(text)
+        scr.show_text(text, loc=(x_loc, y_loc), font=scr.smallfont, force=True)
+
+        sleep(0.01)
+    TMB.select_event.clear()
+    selected = choices[step]
+    # scr.show_text(F"So far: \n{selected}",loc=selected_bbox.origin(),color=(255,255,255),font=scr.smallfont,force=True)
+
+    logger.info(F"word selected {selected}")
+    scr.update_now = update_now
+    return selected
+
+
+def select_chars(TMB, counter, message, message2="So Far", character_set=string.printable):
+    scr = TMB.scr
+    scr.clear()
+    selected = ''
+    counter.set_value(0, 1)
+    screen_width = 12
+    update_now = scr.update_now
+    scr.update_now = False
+    TMB.stop_event.clear()
+    TMB.select_event.clear()
+
+    scr.show_text(message, loc=(0, 0), font=scr.smallfont, color=(0, 255, 255), force=True)
+    (text_width, text_height) = scr.smallfont.getsize(message)
+
+    y_origin = text_height*(1+message.count('\n'))
+    selection_bbox = Bbox(0, y_origin, 160, y_origin+22)
+    selected_bbox = Bbox(0, y_origin+21, 160, 128)
+
+    while not TMB.stop_event.is_set():
+        while not TMB.select_event.is_set() and not TMB.stop_event.is_set():
+            scr.clear_area(selection_bbox, force=False)
+            # scr.draw.rectangle((0,0,scr.width,scr.height),outline=0,fill=(0,0,0))
+            x_loc = 0
+            y_loc = y_origin
+
+            text = 'DEL'
+            (text_width, text_height) = scr.oldfont.getsize(text)
+            if counter.value == 0:  # we are deleting
+                scr.show_text(text, loc=(x_loc, y_loc), font=scr.oldfont, color=(0, 0, 255), force=False)
+                scr.show_text(character_set[:screen_width], loc=(x_loc + text_width, y_loc), font=scr.oldfont, force=True)
+                continue
+            scr.show_text(text, loc=(x_loc, y_loc), font=scr.oldfont, force=False)
+            x_loc = x_loc + text_width
+
+            # print the white before the red, if applicable
+            text = character_set[max(0, -1+counter.value-int(screen_width/2)):-1+counter.value]
+            for x in character_set[94:]:
+                text = text.replace(x, u'\u25A1')
+            (text_width, text_height) = scr.oldfont.getsize(text)
+            scr.show_text(text, loc=(x_loc, y_loc), font=scr.oldfont, force=False)
+            x_loc = x_loc + text_width
+
+            # print the red character
+            text = character_set[-1+min(counter.value, len(character_set))]
+            if text == ' ':
+                text = "SPC"
+            elif text == '\t':
+                text = "\\t"
+            elif text == '\n':
+                text = "\\n"
+            elif text == '\r':
+                text = "\\r"
+            elif text == '\x0b':
+                text = "\\v"
+            elif text == '\x0c':
+                text = "\\f"
+            (text_width, text_height) = scr.oldfont.getsize(text)
+            scr.show_text(text, loc=(x_loc, y_loc), font=scr.oldfont, color=(0, 0, 255), force=False)
+            x_loc = x_loc + text_width
+
+            # print the white after the red, if applicable
+            text = character_set[counter.value:min(-1+counter.value+screen_width, len(character_set))]
+            for x in character_set[94:]:
+                text = text.replace(x, u'\u25A1')
+            (text_width, text_height) = scr.oldfont.getsize(text)
+            scr.show_text(text, loc=(x_loc, y_loc), font=scr.oldfont, force=True)
+            x_loc = x_loc + text_width
+
+            sleep(0.1)
+        TMB.select_event.clear()
+        if TMB.stop_event.is_set():
+            continue
+        if counter.value == 0:
+            selected = selected[:-1]
+            scr.clear_area(selected_bbox, force=False)
+        else:
+            selected = selected + character_set[-1+counter.value]
+        scr.clear_area(selected_bbox, force=False)
+        scr.show_text(F"{message2}:\n{selected[-screen_width:]}", loc=selected_bbox.origin(), color=(255, 255, 255), font=scr.oldfont, force=True)
+
+    logger.info(F"word selected {selected}")
+    scr.update_now = update_now
+    return selected
 
 
 class Bbox:

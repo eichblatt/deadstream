@@ -25,7 +25,6 @@ import subprocess
 import threading
 import sys
 import time
-from operator import methodcaller
 from threading import Event, Lock
 from time import sleep
 
@@ -50,11 +49,6 @@ parser.add_option('--options_path',
                   dest='options_path',
                   default=os.path.join(os.getenv('HOME'), '.timemachine_options.txt'),
                   help="path to options file [default %default]")
-parser.add_option('--knob_sense_path',
-                  dest='knob_sense_path',
-                  type="string",
-                  default=os.path.join(os.getenv('HOME'), ".knob_sense"),
-                  help="path to file describing knob directions [default %default]")
 parser.add_option('--test_update',
                   dest='test_update',
                   action="store_true",
@@ -77,6 +71,8 @@ parser.add_option('-v', '--verbose',
                   help="Print more verbose information [default %default]")
 parms, remainder = parser.parse_args()
 
+knob_sense_path = os.path.join(os.getenv('HOME'), ".knob_sense")
+
 logging.basicConfig(format='%(asctime)s.%(msecs)03d %(levelname)s: %(name)s %(message)s',
                     level=logging.INFO,
                     datefmt='%Y-%m-%d %H:%M:%S')
@@ -88,15 +84,9 @@ GDLogger.setLevel(logging.INFO)
 controlsLogger.setLevel(logging.WARN)
 
 stagedate_event = Event()
-select_event = Event()
 track_event = Event()
 playstate_event = Event()
-# busy_event = Event()
 free_event = Event()
-stop_event = Event()
-knob_event = Event()
-button_event = Event()
-screen_event = Event()
 stop_update_event = Event()
 stop_loop_event = Event()
 venue_counter = (0, 0)
@@ -227,16 +217,8 @@ def load_options(parms):
 
 
 def twist_knob(knob: RotaryEncoder, label, date_reader: controls.date_knob_reader):
-    if knob.is_active:
-        logger.debug(f"Knob {label} steps={knob.steps} value={knob.value}")
-    else:
-        if knob.steps < knob.threshold_steps[0]:
-            knob.steps = knob.threshold_steps[0]
-        if knob.steps > knob.threshold_steps[1]:
-            knob.steps = knob.threshold_steps[1]
-        logger.debug(f"Knob {label} is inactive")
-    date_reader.update()
-    knob_event.set()
+    TMB.twist_knob(knob, label, date_reader)
+    TMB.knob_event.set()
     stagedate_event.set()
 
 
@@ -270,7 +252,7 @@ def select_tape(tape, state, autoplay=False):
     logger.debug(F"current state {current}")
     if autoplay and not EOT:
         logger.debug("Autoplaying tape")
-        scr.show_playstate(staged_play=True, force=True)
+        TMB.scr.show_playstate(staged_play=True, force=True)
         state.player.play()
         current['PLAY_STATE'] = config.PLAYING
         playstate_event.set()
@@ -282,13 +264,13 @@ def select_current_date(state, autoplay=False):
     date_reader = state.date_reader
     if not date_reader.tape_available():
         return
-    scr.show_playstate(staged_play=True, force=True)
+    TMB.scr.show_playstate(staged_play=True, force=True)
     tapes = date_reader.archive.tape_dates[date_reader.fmtdate()]
     tape = tapes[date_reader.shownum]
     state = select_tape(tape, state, autoplay=autoplay)
 
     logger.debug(F"current state after selecting tape {state}")
-    select_event.set()
+    TMB.select_event.set()
     return state
 
 
@@ -303,7 +285,7 @@ def select_button(button, state):
     if current['ON_TOUR'] and current['TOUR_STATE'] in [config.READY, config.PLAYING]:
         return
     state = select_current_date(state, autoplay=AUTO_PLAY)
-    scr.wake_up()
+    TMB.scr.wake_up()
     logger.debug(F"current state after select button {state}")
     return state
 
@@ -328,13 +310,13 @@ def select_button_longpress(button, state):
         else:
             for i in range(0, max(1, len(tape_id)), 2):
                 show_venue_text(tapes[itape], color=id_color, show_id=True, offset=i, force=True)
-                #scr.show_venue(tape_id[i:], color=id_color, force=True)
+                # TMB.scr.show_venue(tape_id[i:], color=id_color, force=True)
                 if not button.is_held:
                     break
-    scr.show_venue(tape_id, color=id_color)
+    TMB.scr.show_venue(tape_id, color=id_color)
     tape = tapes[itape]
     state = select_tape(tape, state, autoplay=AUTO_PLAY)
-    select_event.set()
+    TMB.select_event.set()
 
 
 @sequential
@@ -358,9 +340,9 @@ def play_pause_button(button, state):
         current['PLAY_STATE'] = config.PAUSED
     elif current['PLAY_STATE'] in [config.PAUSED, config.STOPPED, config.READY]:
         current['PLAY_STATE'] = config.PLAYING
-        scr.wake_up()
-        screen_event.set()
-        scr.show_playstate(staged_play=True, force=True)  # show that we've registered the button-press before blocking call.
+        TMB.scr.wake_up()
+        TMB.screen_event.set()
+        TMB.scr.show_playstate(staged_play=True, force=True)  # show that we've registered the button-press before blocking call.
         state.player.play()                              # this is a blocking call. I could move the "wait_until_playing" to the event handler.
     state.set(current)
     playstate_event.set()
@@ -373,7 +355,7 @@ def play_pause_button_longpress(button, state):
     current = state.get_current()
     if current['EXPERIENCE']:
         current['EXPERIENCE'] = False
-    scr.show_playstate(staged_play=True, force=True)  # show that we've registered the button-press before blocking call.
+    TMB.scr.show_playstate(staged_play=True, force=True)  # show that we've registered the button-press before blocking call.
     new_date = random.choice(state.date_reader.archive.dates)
     tape = state.date_reader.archive.best_tape(new_date)
     current['DATE'] = to_date(new_date)
@@ -392,7 +374,7 @@ def play_pause_button_longpress(button, state):
     state.player.play()  # this is a blocking call. I could move the "wait_until_playing" to the event handler.
 
     state.set(current)
-    select_event.set()
+    TMB.select_event.set()
     stagedate_event.set()
     playstate_event.set()
 
@@ -406,7 +388,7 @@ def stop_button(button, state):
         return
     if current['PLAY_STATE'] in [config.READY, config.INIT, config.STOPPED]:
         return
-    button_event.set()
+    TMB.button_event.set()
     state.player.stop()
     current['PLAY_STATE'] = config.STOPPED
     current['PAUSED_AT'] = datetime.datetime.now()
@@ -417,21 +399,21 @@ def stop_button(button, state):
 @sequential
 def stop_button_longpress(button, state):
     logger.debug(" longpress of stop button -- loading options menu")
-    pixels = scr.image.tobytes()
-    scr.show_experience(text="Hold 5s to Update\nCode and Restart", force=True)
+    pixels = TMB.scr.image.tobytes()
+    TMB.scr.show_experience(text="Hold 5s to Update\nCode and Restart", force=True)
     sleep(5)
     if button.is_held:
-        scr.clear()
+        TMB.scr.clear()
         cmd = "sudo service update start"
         os.system(cmd)
-        stop_event.set()
-        scr.wake_up()
-        scr.show_text("Updating\nCode\n\nStand By...", force=True)
+        TMB.stop_event.set()
+        TMB.scr.wake_up()
+        TMB.scr.show_text("Updating\nCode\n\nStand By...", force=True)
         sleep(20)
-        scr.show_text("No Update\nAvailable...", clear=True, force=True)
-        sleep(10)
-        scr.image.frombytes(pixels)
-        scr.refresh(force=True)
+        TMB.scr.show_text("Already\nat Latest\nRelease", clear=True, force=True)
+        sleep(5)
+        TMB.scr.image.frombytes(pixels)
+        TMB.scr.refresh(force=True)
         # exit()
 
 
@@ -503,15 +485,13 @@ def day_button(button, state):
     if button.is_pressed or button.is_held:
         return
     logger.debug("pressing day button")
-    #new_date = state.date_reader.next_date()
-    # state.date_reader.set_date(new_date)
     state.date_reader.set_date(*state.date_reader.next_show())
     stagedate_event.set()
 
 
 def day_button_longpress(button, state):
     logger.debug("long-pressing day button")
-    scr.sleep()
+    TMB.scr.sleep()
 
 
 @sequential
@@ -549,7 +529,7 @@ def year_button_longpress(button, state):
     if not button.is_held:
         return
     ip_address = get_ip()
-    scr.show_experience(text=F"{ip_address}:9090\nto configure", force=True)
+    TMB.scr.show_experience(text=F"{ip_address}:9090\nto configure", force=True)
     sleep(2*button._hold_time)
     if not button.is_held:
         sleep(2*button._hold_time)
@@ -557,20 +537,20 @@ def year_button_longpress(button, state):
     logger.debug(" longpress of year button")
     current = state.get_current()
     if current['ON_TOUR']:
-        scr.show_experience(text=F"ON_TOUR:{current['TOUR_YEAR']}\nHold 3s to exit", force=True)
+        TMB.scr.show_experience(text=F"ON_TOUR:{current['TOUR_YEAR']}\nHold 3s to exit", force=True)
         sleep(3)
         if button.is_held:
             logger.info("   EXITING ON_TOUR mode")
             current['ON_TOUR'] = False
             current['TOUR_YEAR'] = None
             current['TOUR_STATE'] = config.INIT
-            scr.show_experience(text=F"ON_TOUR: Finished\n{ip_address}", force=True)
+            TMB.scr.show_experience(text=F"ON_TOUR: Finished\n{ip_address}", force=True)
     elif config.optd['ON_TOUR_ALLOWED']:
         current['ON_TOUR'] = True
         current['TOUR_YEAR'] = state.date_reader.date.year
         current['TOUR_STATE'] = config.INIT
         logger.info(F" ---> ON_TOUR:{current['TOUR_YEAR']}")
-        scr.show_experience(text=F"ON_TOUR:{current['TOUR_YEAR']}\n{ip_address}", force=True)
+        TMB.scr.show_experience(text=F"ON_TOUR:{current['TOUR_YEAR']}\n{ip_address}", force=True)
     sleep(3)
     track_event.set()
     state.set(current)
@@ -579,12 +559,12 @@ def year_button_longpress(button, state):
 def update_tracks(state):
     current = state.get_current()
     if current['EXPERIENCE']:
-        scr.show_experience()
+        TMB.scr.show_experience()
     elif current['ON_TOUR'] and current['TOUR_STATE'] in [config.READY, config.PLAYING]:
-        scr.show_experience(text=F"Hold Year to\nExit TOUR {current['TOUR_YEAR']}")
+        TMB.scr.show_experience(text=F"Hold Year to\nExit TOUR {current['TOUR_YEAR']}")
     else:
-        scr.show_track(current['TRACK_TITLE'], 0)
-        scr.show_track(current['NEXT_TRACK_TITLE'], 1)
+        TMB.scr.show_track(current['TRACK_TITLE'], 0)
+        TMB.scr.show_track(current['NEXT_TRACK_TITLE'], 1)
 
 
 def to_date(d):
@@ -621,7 +601,7 @@ def play_on_tour(tape, state, seek_to=0):
     else:
         state.player.play()
     state.set(current)
-    select_event.set()
+    TMB.select_event.set()
     return
 
 
@@ -641,7 +621,7 @@ def refresh_venue(state):
 
     try:
         vcs = [x.strip() for x in config.VENUE.split(',')]
-    except:
+    except Exception:
         vcs = tape_id if tape_id is not None else ''
 
     artist = config.ARTIST if config.ARTIST is not None else ''
@@ -689,15 +669,15 @@ def refresh_venue(state):
     # logger.debug(F"display_string is {display_string}")
 
     if not config.optd['SCROLL_VENUE']:
-        scr.show_venue(display_string, color=id_color)
+        TMB.scr.show_venue(display_string, color=id_color)
         return
     else:
         display_offset = min(max(0, len(display_string)-(screen_width-1)), screen_width*venue_counter[1])
         if venue_counter[1] < n_subfields-1:
             display_offset = 0 if (display_offset < screen_width) else display_offset
-            scr.show_venue(display_string[display_offset:], color=id_color)
+            TMB.scr.show_venue(display_string[display_offset:], color=id_color)
         else:
-            scr.show_venue(display_string[-1*(screen_width-1):], color=id_color)
+            TMB.scr.show_venue(display_string[-1*(screen_width-1):], color=id_color)
 
     div, mod = divmod(venue_counter[1]+1, n_subfields)
     venue_counter = (divmod(venue_counter[0] + div, n_fields)[1], mod)
@@ -715,29 +695,28 @@ def test_update(state):
     state.set(current)
     date_reader = state.date_reader
     last_sdevent = datetime.datetime.now()
-    clear_stagedate = False
-    scr.update_now = False
+    TMB.scr.update_now = False
     free_event.set()
     stagedate_event.set()
-    knob_event.clear()
-    button_event.clear()
-    scr.clear()
+    TMB.knob_event.clear()
+    TMB.button_event.clear()
+    TMB.scr.clear()
     try:
         if parms.pid_to_kill is not None:
             os.system(F"kill {parms.pid_to_kill}")
     except Exception:
         pass
     try:
-        scr.show_text("Turn Any\nKnob", force=True)
-        if knob_event.wait(600):
-            knob_event.clear()
-            scr.clear()
+        TMB.scr.show_text("Turn Any\nKnob", force=True)
+        if TMB.knob_event.wait(600):
+            TMB.knob_event.clear()
+            TMB.scr.clear()
         else:
             sys.exit(-1)
-        scr.show_text("Press Stop\nButton", force=True)
-        if button_event.wait(120):
-            button_event.clear()
-            scr.show_text("Passed! ", force=True, clear=True)
+        TMB.scr.show_text("Press Stop\nButton", force=True)
+        if TMB.button_event.wait(120):
+            TMB.button_event.clear()
+            TMB.scr.show_text("Passed! ", force=True, clear=True)
             sys.exit(0)
         else:
             sys.exit(-1)
@@ -769,17 +748,18 @@ def show_venue_text(arg, color=(0, 255, 255), show_id=False, offset=0, force=Fal
         venue_name = venue_name[offset:]
         artist_name = tape.artist
         num_events = 1
-    scr.clear_area(scr.venue_bbox)
-    scr.show_text(venue_name, scr.venue_bbox.origin(), font=scr.boldsmall, color=color, force=force)
+    TMB.scr.clear_area(TMB.scr.venue_bbox)
+    TMB.scr.show_text(venue_name, TMB.scr.venue_bbox.origin(), font=TMB.scr.boldsmall, color=color, force=force)
     if len(config.optd['COLLECTIONS']) > 1:
-        scr.clear_area(scr.track1_bbox)
-        scr.show_text(artist_name, scr.track1_bbox.origin(), font=scr.boldsmall, color=color, force=True)
+        TMB.scr.clear_area(TMB.scr.track1_bbox)
+        TMB.scr.show_text(artist_name, TMB.scr.track1_bbox.origin(), font=TMB.scr.boldsmall, color=color, force=True)
     if num_events > 1:
-        scr.show_nevents(str(num_events), force=force)
+        TMB.scr.show_nevents(str(num_events), force=force)
 
 
 def event_loop(state, lock):
     global venue_counter
+    key_error_count = 0
     date_reader = state.date_reader
     last_sdevent = datetime.datetime.now()
     q_counter = False
@@ -791,11 +771,11 @@ def event_loop(state, lock):
     last_idle_minute = now.minute
     refresh_times = [4, 9, 14, 19, 24, 29, 34, 39, 44, 49]
     max_second_hand = 50
-    clear_stagedate = False
-    scr.update_now = False
+    # clear_stagedate = False
+    TMB.scr.update_now = False
     free_event.set()
     stagedate_event.set()
-    scr.clear()
+    TMB.scr.clear()
 
     try:
         while not stop_loop_event.wait(timeout=0.001):
@@ -823,7 +803,7 @@ def event_loop(state, lock):
                         state.player.stop()
                         current['TAPE_ID'] = None
                         start_time = state.date_reader.archive.tape_start_time(then_time, default_start=default_start)
-                        scr.show_experience(text=F"ON_TOUR:{current['TOUR_YEAR']}\nWaiting for show", force=True)
+                        TMB.scr.show_experience(text=F"ON_TOUR:{current['TOUR_YEAR']}\nWaiting for show", force=True)
                         then_date = then_time.date()
                         random.seed(then_date.year + then_date.month + then_date.day)
                         wait_time = random.randrange(60, 600)
@@ -841,40 +821,40 @@ def event_loop(state, lock):
                         track_event.set()
                         logger.debug(F" ENDED!! TOUR_STATE is {current['TOUR_STATE']}, default_start: {default_start}")
 
-            if screen_event.is_set():
-                scr.refresh()
-                screen_event.clear()
+            if TMB.screen_event.is_set():
+                TMB.scr.refresh()
+                TMB.screen_event.clear()
             if stagedate_event.is_set():
                 last_sdevent = now
                 q_counter = True
-                scr.show_staged_date(date_reader.date)
+                TMB.scr.show_staged_date(date_reader.date)
                 show_venue_text(date_reader)
                 # if clear_stagedate: stagedate_event.clear()
                 # clear_stagedate = not clear_stagedate   # only clear stagedate event after updating twice
                 stagedate_event.clear()
-                scr.wake_up()
-                screen_event.set()
+                TMB.scr.wake_up()
+                TMB.screen_event.set()
             if track_event.is_set():
                 update_tracks(state)
                 track_event.clear()
-                screen_event.set()
-            if select_event.is_set():
+                TMB.screen_event.set()
+            if TMB.select_event.is_set():
                 current = state.get_current()
-                scr.show_selected_date(current['DATE'])
+                TMB.scr.show_selected_date(current['DATE'])
                 update_tracks(state)
-                select_event.clear()
-                scr.wake_up()
-                screen_event.set()
+                TMB.select_event.clear()
+                TMB.scr.wake_up()
+                TMB.screen_event.set()
             if playstate_event.is_set():
-                scr.show_playstate()
+                TMB.scr.show_playstate()
                 playstate_event.clear()
-                screen_event.set()
+                TMB.screen_event.set()
             if q_counter and config.DATE and idle_seconds > QUIESCENT_TIME:
                 logger.debug(F"Reverting staged date back to selected date {idle_seconds}> {QUIESCENT_TIME}")
-                scr.show_staged_date(config.DATE)
-                scr.show_venue(config.VENUE)
+                TMB.scr.show_staged_date(config.DATE)
+                TMB.scr.show_venue(config.VENUE)
                 q_counter = False
-                screen_event.set()
+                TMB.screen_event.set()
             if idle_second_hand in refresh_times and idle_second_hand != last_idle_second_hand:
                 last_idle_second_hand = idle_second_hand
                 # if now.minute != last_idle_minute:
@@ -893,16 +873,16 @@ def event_loop(state, lock):
                 if current['PLAY_STATE'] != config.PLAYING:  # deal with overnight pauses, which freeze the alsa player.
                     if (now - config.PAUSED_AT).seconds > SLEEP_AFTER_SECONDS and state.player.get_prop('audio-device') != 'null':
                         logger.debug(F"Paused at {config.PAUSED_AT}, sleeping after {SLEEP_AFTER_SECONDS}, now {now}")
-                        scr.sleep()
+                        TMB.scr.sleep()
                         state.player._set_property('audio-device', 'null')
                         state.player.wait_for_property('audio-device', lambda x: x == 'null')
                         state.set(current)
                         playstate_event.set()
                     elif (now - current['WOKE_AT']).seconds > SLEEP_AFTER_SECONDS:
-                        scr.sleep()
+                        TMB.scr.sleep()
                 if idle_seconds > QUIESCENT_TIME:
                     if config.DATE:
-                        scr.show_staged_date(config.DATE)
+                        TMB.scr.show_staged_date(config.DATE)
                     try:
                         if current['PLAY_STATE'] > config.INIT:
                             refresh_venue(state)
@@ -910,9 +890,9 @@ def event_loop(state, lock):
                         raise e
                         logger.warning(f'event_loop, error refreshing venue {e}')
                 else:
-                    scr.show_staged_date(date_reader.date)
+                    TMB.scr.show_staged_date(date_reader.date)
                     show_venue_text(date_reader)
-                screen_event.set()
+                TMB.screen_event.set()
             lock.release()
 
     except KeyError as e:
@@ -944,27 +924,20 @@ except Exception:
 config.PAUSED_AT = datetime.datetime.now()
 config.WOKE_AT = datetime.datetime.now()
 
-scr = controls.screen(upside_down=False)
+TMB = controls.Time_Machine_Board(mdy_bounds=None)
 ip_address = get_ip()
-scr.show_text("Time\n  Machine\n   Loading...", color=(0, 255, 255), force=False, clear=True)
-scr.show_text(F"{ip_address}", loc=(0, 100), font=scr.smallfont, color=(255, 255, 255))
+TMB.scr.show_text("Time\n  Machine\n   Loading...", color=(0, 255, 255), force=False, clear=True)
+TMB.scr.show_text(F"{ip_address}", loc=(0, 100), font=TMB.scr.smallfont, color=(255, 255, 255))
 
 if parms.test_update:
     config.optd = default_options()  # no weirdness during update testing
 
-# Define the buttons here
-select = retry_call(Button, config.select_pin, hold_time=0.5, hold_repeat=False)
-play_pause = retry_call(Button, config.play_pause_pin, hold_time=7)
-ffwd = retry_call(Button, config.ffwd_pin, hold_time=0.5, hold_repeat=False)
-rewind = retry_call(Button, config.rewind_pin, hold_time=0.5, hold_repeat=False)
-stop = retry_call(Button, config.stop_pin, hold_time=7)
-
 reload_ids = False
-if rewind.is_pressed:
-    scr.show_text("Reloading\nfrom\narchive.org...", color=(0, 255, 255), force=True, clear=True)
+if TMB.rewind.is_pressed:
+    TMB.scr.show_text("Reloading\nfrom\narchive.org...", color=(0, 255, 255), force=True, clear=True)
     logger.info('Reloading from archive.org')
     # reload_ids = True
-if stop.is_pressed:
+if TMB.stop.is_pressed:
     logger.info('Resetting to factory archive -- nyi')
 
 archive = Archivary.Archivary(parms.dbpath, reload_ids=reload_ids, with_latest=False, collection_list=config.optd['COLLECTIONS'])
@@ -977,7 +950,7 @@ def on_track_event(_name, value):
     if value is None:
         config.PLAY_STATE = config.ENDED
         config.PAUSED_AT = datetime.datetime.now()
-        select_button(select, state)
+        select_button(TMB.select, state)
     track_event.set()
 
 
@@ -987,7 +960,7 @@ def my_handler(event):
 
 
 try:
-    kfile = open(parms.knob_sense_path, 'r')
+    kfile = open(knob_sense_path, 'r')
     knob_sense = int(kfile.read())
     kfile.close()
 except Exception:
@@ -995,56 +968,52 @@ except Exception:
 
 year_list = archive.year_list()
 num_years = max(year_list) - min(year_list)
-m = retry_call(RotaryEncoder, config.month_pins[knob_sense & 1], config.month_pins[~knob_sense & 1], max_steps=0, threshold_steps=(1, 12))
-d = retry_call(RotaryEncoder, config.day_pins[(knob_sense >> 1) & 1], config.day_pins[~(knob_sense >> 1) & 1], max_steps=0, threshold_steps=(1, 31))
-y = retry_call(RotaryEncoder, config.year_pins[(knob_sense >> 2) & 1], config.year_pins[~(knob_sense >> 2) & 1], max_steps=0, threshold_steps=(0, num_years))
-if 'GratefulDead' in archive.collection_list:
-    m.steps = 8
-    d.steps = 13
-    y.steps = min(max(0, 1975 - min(year_list)), num_years)
-else:
-    m.steps = 1
-    d.steps = 1
-    y.steps = 0
+TMB.setup_knobs(mdy_bounds=[(1, 12), (1, 31), (0, num_years)])
 
-date_reader = controls.date_knob_reader(y, m, d, archive)
-if not 'GratefulDead' in archive.collection_list:
+if 'GratefulDead' in archive.collection_list:
+    TMB.m.steps = 8
+    TMB.d.steps = 13
+    TMB.y.steps = min(max(0, 1975 - min(year_list)), num_years)
+else:
+    TMB.m.steps = 1
+    TMB.d.steps = 1
+    TMB.y.steps = 0
+
+date_reader = controls.date_knob_reader(TMB.y, TMB.m, TMB.d, archive)
+if 'GratefulDead' not in archive.collection_list:
     date_reader.set_date(*date_reader.next_show())
 
 state = controls.state(date_reader, player)
-m.when_rotated = lambda x: twist_knob(m, "month", date_reader)
-d.when_rotated = lambda x: twist_knob(d, "day", date_reader)
-y.when_rotated = lambda x: twist_knob(y, "year", date_reader)
-m_button = retry_call(Button, config.month_pins[2])
-d_button = retry_call(Button, config.day_pins[2], hold_time=0.3, hold_repeat=False)
-y_button = retry_call(Button, config.year_pins[2], hold_time=0.5)
+TMB.m.when_rotated = lambda x: twist_knob(TMB.m, "month", date_reader)
+TMB.d.when_rotated = lambda x: twist_knob(TMB.d, "day", date_reader)
+TMB.y.when_rotated = lambda x: twist_knob(TMB.y, "year", date_reader)
 
-play_pause.when_pressed = lambda button: play_pause_button(button, state)
-play_pause.when_held = lambda button: play_pause_button_longpress(button, state)
+TMB.play_pause.when_pressed = lambda button: play_pause_button(button, state)
+TMB.play_pause.when_held = lambda button: play_pause_button_longpress(button, state)
 
-select.when_pressed = lambda button: select_button(button, state)
-select.when_held = lambda button: select_button_longpress(button, state)
+TMB.select.when_pressed = lambda button: select_button(button, state)
+TMB.select.when_held = lambda button: select_button_longpress(button, state)
 
-ffwd.when_pressed = lambda button: ffwd_button(button, state)
-ffwd.when_held = lambda button: ffwd_button_longpress(button, state)
+TMB.ffwd.when_pressed = lambda button: ffwd_button(button, state)
+TMB.ffwd.when_held = lambda button: ffwd_button_longpress(button, state)
 
-rewind.when_pressed = lambda button: rewind_button(button, state)
-rewind.when_held = lambda button: rewind_button_longpress(button, state)
+TMB.rewind.when_pressed = lambda button: rewind_button(button, state)
+TMB.rewind.when_held = lambda button: rewind_button_longpress(button, state)
 
-stop.when_pressed = lambda button: stop_button(button, state)
-stop.when_held = lambda button: stop_button_longpress(button, state)
+TMB.stop.when_pressed = lambda button: stop_button(button, state)
+TMB.stop.when_held = lambda button: stop_button_longpress(button, state)
 
-m_button.when_pressed = lambda button: month_button(button, state)
-d_button.when_pressed = lambda button: day_button(button, state)
-y_button.when_pressed = lambda button: year_button(button, state)
+TMB.m_button.when_pressed = lambda button: month_button(button, state)
+TMB.d_button.when_pressed = lambda button: day_button(button, state)
+TMB.y_button.when_pressed = lambda button: year_button(button, state)
 
-d_button.when_held = lambda button: day_button_longpress(button, state)
+TMB.d_button.when_held = lambda button: day_button_longpress(button, state)
 # m_button.when_held = lambda button: month_button_longpress(button,state)
-y_button.when_held = lambda button: year_button_longpress(button, state)
+TMB.y_button.when_held = lambda button: year_button_longpress(button, state)
 
-scr.clear_area(controls.Bbox(0, 0, 160, 100))
-scr.show_text("Powered by\n archive.org\n & phish.in", color=(0, 255, 255), force=True)
-scr.show_text(str(len(archive.collection_list)).rjust(3), font=scr.boldsmall, loc=(120, 100), color=(255, 100, 0), force=True)
+TMB.scr.clear_area(controls.Bbox(0, 0, 160, 100))
+TMB.scr.show_text("Powered by\n archive.org\n & phish.in", color=(0, 255, 255), force=True)
+TMB.scr.show_text(str(len(archive.collection_list)).rjust(3), font=TMB.scr.boldsmall, loc=(120, 100), color=(255, 100, 0), force=True)
 
 if RELOAD_STATE_ON_START:
     load_saved_state(state)
@@ -1055,7 +1024,7 @@ eloop = threading.Thread(target=event_loop, args=[state, lock])
 
 def main():
     if config.optd['AUTO_UPDATE_ARCHIVE']:
-        archive_updater = Archivary.Archivary_Updater(state, 3600, stop_update_event, scr=scr, lock=lock)
+        archive_updater = Archivary.Archivary_Updater(state, 3600, stop_update_event, scr=TMB.scr, lock=lock)
         archive_updater.start()
     eloop.run()
     exit()
