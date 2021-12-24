@@ -224,8 +224,8 @@ def exit_success(status=0, sleeptime=0):
     sleep(sleeptime)
     if status == 0:
         os.system(f'kill {os.getpid()}')  # Killing the process like this will leave the message on the screen.
-    else
-    sys.exit(status)
+    else:
+        sys.exit(status)
 
 
 def check_factory_build():
