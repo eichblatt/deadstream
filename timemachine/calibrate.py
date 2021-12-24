@@ -91,7 +91,7 @@ def ffwd_button(button):
 
 
 def play_pause_button(button):
-    logger.debug("pressing ffwd")
+    logger.debug("pressing play_pause")
     TMB.play_pause_event.set()
 
 
@@ -134,7 +134,8 @@ def get_knob_orientation(knob, label):
     TMB.m_knob_event.clear()
     TMB.d_knob_event.clear()
     TMB.y_knob_event.clear()
-    knob.steps = 0
+    bounds = knob.threshold_steps
+    initial_value = knob.steps = int((bounds[0]+bounds[1])/2)
     TMB.scr.show_text("Calibrating knobs", font=TMB.scr.smallfont, force=False, clear=True)
     TMB.scr.show_text(F"Rotate {label}\nclockwise", loc=(0, 40), font=TMB.scr.boldsmall, color=(0, 255, 255), force=True)
     if label == "month":
@@ -146,8 +147,8 @@ def get_knob_orientation(knob, label):
     TMB.m_knob_event.clear()
     TMB.d_knob_event.clear()
     TMB.y_knob_event.clear()
-    bounds = knob.threshold_steps
-    return abs(knob.steps - bounds[0]) < abs(knob.steps - bounds[1])
+    logger.info(f'AFTER: knob {label} is {knob.steps}, initial_value {initial_value}. {knob.steps > initial_value}')
+    return knob.steps > initial_value
 
 
 def save_knob_sense():
@@ -155,12 +156,13 @@ def save_knob_sense():
     knob_sense_orig = TMB.get_knob_sense()
     knob_sense = 0
     for i in range(len(knob_senses)):
-        knob_sense += 1 << i if not knob_senses[i] else 0
+        knob_sense += 1 << i if knob_senses[i] else 0
+    new_knob_sense = 7 & ~(knob_sense ^ knob_sense_orig)
     f = open(knob_sense_path, 'w')
-    f.write(str(knob_sense ^ knob_sense_orig))
+    f.write(str(new_knob_sense))
     f.close()
     TMB.scr.show_text("Knobs\nCalibrated", font=TMB.scr.boldsmall, color=(0, 255, 255), force=False, clear=True)
-    TMB.scr.show_text(F"      {knob_sense ^ knob_sense_orig}", font=TMB.scr.boldsmall, loc=(0, 60), force=True)
+    TMB.scr.show_text(F"      {new_knob_sense}", font=TMB.scr.boldsmall, loc=(0, 60), force=True)
 
 
 def test_buttons(event, label):
@@ -292,33 +294,38 @@ def welcome_alternatives():
     TMB.scr.show_text("\n Welcome", color=(0, 0, 255), force=True, clear=True)
     check_factory_build()
     TMB.button_event.wait(parms.sleep_time)
-    TMB.button_event.clear()
     if TMB.rewind_event.is_set():
-        TMB.rewind_event.clear()
+        TMB.clear_events()
         # remove wpa_supplicant.conf file
         remove_wpa = controls.select_option(TMB, counter, "Forget WiFi?", ["No", "Yes"])
         if remove_wpa == "Yes":
             cmd = F"sudo rm {parms.wpa_path}"
             _ = subprocess.check_output(cmd, shell=True)
         return True
-    if TMB.play_pause_event.is_set():
+    if TMB.stop_event.is_set():
+        TMB.clear_events()
+        change_environment()
+        return True
+    if TMB.button_event.is_set():
+        TMB.clear_events()
         TMB.scr.show_text("recalibrating ", font=TMB.scr.font, force=True, clear=True)
         return True
-    if TMB.stop_event.is_set():
-        change_environment()
-        TMB.stop_event.clear()
     return False
+
+
+def unblock_wifi():
+    cmd = "sudo rfkill unblock wifi"
+    os.system(cmd)
+    cmd = "sudo ifconfig wlan0 up"
+    os.system(cmd)
 
 
 def main():
     try:
         recalibrate = welcome_alternatives()
-        cmd = "sudo rfkill unblock wifi"
-        os.system(cmd)
-        cmd = "sudo ifconfig wlan0 up"
-        os.system(cmd)
+        unblock_wifi()
 
-        if recalibrate or (parms.test) or not os.path.exists(knob_sense_path):
+        if recalibrate or parms.test or not os.path.exists(knob_sense_path):
             try:
                 test_sound(parms)
                 test_all_buttons(parms)

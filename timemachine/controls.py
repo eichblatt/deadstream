@@ -202,7 +202,9 @@ class Time_Machine_Board():
     """ TMB class describes and addresses the hardware of the Time Machine Board """
 
     def __init__(self, mdy_bounds=[(0, 9), (0, 9), (0, 9)], upside_down=False):
+        self.events = []
         self.setup_events()
+        self.clear_events()
         self.setup_knobs(mdy_bounds)
         self.setup_buttons()
         self.setup_screen(upside_down)
@@ -244,6 +246,11 @@ class Time_Machine_Board():
         self.m_knob_event = Event()
         self.d_knob_event = Event()
         self.y_knob_event = Event()
+        self.events = [self.button_event, self.knob_event, self.screen_event, self.rewind_event, self.stop_event, self.ffwd_event, self.play_pause_event,
+                       self.select_event, self.m_event, self.d_event, self.y_event, self.m_knob_event, self.d_knob_event, self.y_knob_event]
+
+    def clear_events(self):
+        _ = [x.clear() for x in self.events]
 
     def twist_knob(self, knob: RotaryEncoder, label, date_reader: date_knob_reader):
         if knob.is_active:
@@ -286,8 +293,11 @@ class Time_Machine_Board():
         try:
             kfile = open(knob_sense_path, 'r')
             knob_sense = int(kfile.read())
+            if knob_sense > 7 or knob_sense < 0:
+                raise ValueError
             kfile.close()
-        except Exception:
+        except Exception as e:
+            logger.warning(f'error in get_knob_sense {e}. Setting knob_sense to 0')
             knob_sense = 0
         finally:
             return knob_sense
