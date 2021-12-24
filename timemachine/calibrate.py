@@ -307,6 +307,12 @@ def welcome_alternatives():
     return False
 
 
+def stand_by():
+    logger.info("in stand_by function")
+    TMB.scr.show_text("Standing By\n     . . . ", color=(0, 255, 255), force=True, clear=True)
+    os.system(f'kill {os.getpid()}')
+
+
 def main():
     try:
         recalibrate = welcome_alternatives()
