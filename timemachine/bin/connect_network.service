@@ -6,7 +6,6 @@ After=calibrate.service
 [Service]
 Type=oneshot
 User=deadhead
-#ExecStart=/bin/sh -c 'while ! /usr/bin/python3 /home/deadhead/deadstream/timemachine/connect_network.py --debug 0; do sleep 5; done'
 ExecStart=/bin/bash -c "source /home/deadhead/timemachine/bin/activate && connect_network --debug 0"
 RemainAfterExit=yes
 [Install]
