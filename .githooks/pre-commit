@@ -4,9 +4,9 @@
 import os
 import sys
 
-#mycmd = "git describe --tags --abbrev=0 > timemachine/.latest_tag"
-#print(f"my command is {mycmd}")
-# os.system(mycmd)
+mycmd = "git describe --tags --abbrev=0 > timemachine/.latest_tag"
+print(f"my command is {mycmd}")
+os.system(mycmd)
 
 # we try our best, but the shebang of this script is difficult to determine:
 # - macos doesn't ship with python3
