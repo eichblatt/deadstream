@@ -103,6 +103,8 @@ kill $help_on_the_way_pid
 system "cd $HOME" # NOTE: we should already be here.
 if [ $stat == 0 ]; then
    system "ln -sfn $env_name timemachine"
+   system "TIMEMACHINE=$env_name/lib/python3.7/site-packages/timemachine"
+   system "echo $remote_tag > $TIMEMACHINE/.latest_tag"
 else
    system "rm -rf $env_name"
 fi
