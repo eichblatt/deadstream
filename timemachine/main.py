@@ -410,7 +410,8 @@ def stop_button_longpress(button, state):
         TMB.scr.wake_up()
         TMB.scr.show_text("Updating\nCode\n\nStand By...", force=True)
         sleep(20)
-        TMB.scr.show_text("Already\nat Latest\nRelease", clear=True, force=True)
+        # if this program hasn't been killed after 20 seconds, then the code was already the latest version
+        TMB.scr.show_text("Code is\nup to\nDate", clear=True, force=True)
         sleep(5)
         TMB.scr.image.frombytes(pixels)
         TMB.scr.refresh(force=True)
