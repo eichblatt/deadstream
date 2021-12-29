@@ -3,11 +3,13 @@ import time
 from threading import Event
 
 from timemachine import Archivary
+from timemachine import config
 from timemachine import GD
 
 track_event = Event()
 
-aa = Archivary.Archivary(collection_list=['GratefulDead', 'Phish', 'PhilLeshandFriends'])
+config.optd = {'COLLECTIONS': ['GratefulDead', 'Phish', 'PhilLeshandFriends'], 'FAVORED_TAPER': 'miller'}
+aa = Archivary.Archivary(collection_list=config.optd['COLLECTIONS'])
 
 print(F"tape dates on 1995-07-02 are {aa.tape_dates['1995-07-02']}")
 
