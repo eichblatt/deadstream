@@ -153,6 +153,9 @@ class StringGenerator(object):
            <form method="get" action="index">
              <button type="submit">Return</button>
            </form>
+           <form method="get" action="restart_service">
+             <button type="submit">Restart Timemachine Service</button>
+           </form>
          </body>
        </html>"""
         return page_string
