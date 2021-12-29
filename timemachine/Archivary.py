@@ -846,18 +846,19 @@ class GDArchive(BaseArchive):
         logger.debug("Loading current tapes")
         tapes = []
         addeddates = []
+        collection_path = os.path.join(os.getenv('HOME'), '.etree_collection_names')
+
         if reload_ids or not os.path.exists(self.idpath):
             os.system(f'rm -rf {self.idpath}')
             logger.info('Loading Tapes from the Archive...this will take a few minutes')
             n_tapes = self.downloader.get_all_tapes(self.idpath)  # this will write chunks to folder
-            if self.idpath.endswith('etree_ids'):
-                logger.info('Loading collection names from archive.org')
-                all_collection_names = self.downloader.get_all_collection_names()
-                outpath = os.path.join(os.getenv('HOME'), '.etree_collection_names')
-                with open(outpath, 'w') as outfile:
-                    outfile.write("\n".join(str(item) for item in all_collection_names))
-                logger.info(f'saved {len(all_collection_names)} collection names')
             logger.info(f'Loaded {n_tapes} tapes from archive')
+        if reload_ids or not os.path.exists(collection_path) and self.idpath.endswith('etree_ids'):
+            logger.info('Loading collection names from archive.org')
+            all_collection_names = self.downloader.get_all_collection_names()
+            with open(collection_path, 'w') as outfile:
+                outfile.write("\n".join(str(item) for item in all_collection_names))
+            logger.info(f'saved {len(all_collection_names)} collection names')
         # loop over chunks -- get max addeddate before filtering collections.
         if os.path.isdir(self.idpath):
             for filename in os.listdir(self.idpath):
