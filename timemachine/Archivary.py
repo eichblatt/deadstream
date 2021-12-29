@@ -464,6 +464,27 @@ class IATapeDownloader(BaseTapeDownloader):
                       'sorts': ",".join(sorts),
                       'fields': ",".join(fields)}
 
+    def get_all_collection_names(self):
+        """ This is currently untested and unused , but I want the code here so that I can
+             remember how to download the list of collection names from archive.org
+             This should leverage the _get_piece function
+        """
+        parms = {'debug': 'false', 'xvar': 'production', 'total_only': 'false', 'count': '10000', 'fields': 'collection',
+                 'q': 'collection:etree AND mediatype:collection'}
+        r = requests.get(self.api, params=parms)
+        logger.debug(f"url is {r.url}")
+        if r.status_code != 200:
+            logger.error(f"Error {r.status_code} collecting data")
+            raise Exception(
+                'Download', f'Error {r.status_code} collection')
+            # ChunkedEncodingError:
+        j = r.json()
+        data = j['items']
+        all_collection_names = [x['identifier'] for x in data]
+
+        """ write the collection names to a file """
+        return all_collection_names
+
     def get_all_tapes(self, iddir, min_addeddate=None):
         """Get a list of all tapes.
         Write all tapes to a folder by time period
@@ -824,6 +845,11 @@ class GDArchive(BaseArchive):
             os.system(f'rm -rf {self.idpath}')
             logger.info('Loading Tapes from the Archive...this will take a few minutes')
             n_tapes = self.downloader.get_all_tapes(self.idpath)  # this will write chunks to folder
+            if self.idpath.endswith('etree_ids'):
+                all_collection_names = self.downloader.get_all_collection_names()
+                outpath = os.path.join(os.getenv('HOME'), '.etree_collection_names')
+                with open(outpath, 'w') as outfile:
+                    outfile.write("\n".join(str(item) for item in all_collection_names))
             logger.info(f'Loaded {n_tapes} tapes from archive')
         # loop over chunks -- get max addeddate before filtering collections.
         if os.path.isdir(self.idpath):
