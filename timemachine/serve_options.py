@@ -48,12 +48,11 @@ def default_options():
 
 
 def get_collection_names():
-    collection_path = os.path.join(os.getenv('HOME'), '.etree_collection_names')
+    collection_path = os.path.join(os.getenv('HOME'), '.etree_collection_names.json')
     collection_names = []
     try:
-        with open(collection_path, 'r') as inpath:
-            collection_names = inpath.readlines()
-        collection_names = [x.strip() for x in collection_names]
+        data = json.load(open(collection_path, 'r'))['items']
+        collection_names = [x['identifier'] for x in data]
     except Exception as e:
         logger.warning(F"Failed to read collection names from {collection_path}.")
     finally:

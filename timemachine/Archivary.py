@@ -464,13 +464,14 @@ class IATapeDownloader(BaseTapeDownloader):
                       'sorts': ",".join(sorts),
                       'fields': ",".join(fields)}
 
-    def get_all_collection_names(self):
+    def save_all_collection_names(self):
         """
              get a list of all collection names within archive.org's etree collection.
              This should leverage the _get_piece function
         """
         current_rows = 0
-        parms = {'debug': 'false', 'xvar': 'production', 'total_only': 'false', 'count': '10000', 'fields': 'collection',
+        parms = {'debug': 'false', 'xvar': 'production', 'total_only': 'false', 'count': '10000',
+                 'fields': 'identifier, item_count,collection_size,downloads,num_favorites',
                  'q': 'collection:etree AND mediatype:collection'}
         r = requests.get(self.api, params=parms)
         logger.debug(f"url is {r.url}")
@@ -486,9 +487,16 @@ class IATapeDownloader(BaseTapeDownloader):
         if current_rows < total:
             logger.warning(f"Not all collection names were downloaded. Total:{total} downloaded:{current_rows}")
             # if/when we see this, we need to loop over downloads.
-        all_collection_names = [x['identifier'] for x in data]
 
-        return all_collection_names
+        collection_path = os.path.join(os.getenv('HOME'), '.etree_collection_names.json')
+        try:
+            tmpfile = tempfile.mkstemp('.json')[1]
+            json.dump(j, open(tmpfile, 'w'))
+            os.rename(tmpfile, collection_path)
+        except Exception:
+            logger.debug(f"removing {tmpfile}")
+            os.remove(tmpfile)
+        logger.info(f'saved {len(all_collection_names)} collection names to {collection_path}')
 
     def get_all_tapes(self, iddir, min_addeddate=None):
         """Get a list of all tapes.
@@ -855,10 +863,7 @@ class GDArchive(BaseArchive):
             logger.info(f'Loaded {n_tapes} tapes from archive')
         if reload_ids or not os.path.exists(collection_path) and self.idpath.endswith('etree_ids'):
             logger.info('Loading collection names from archive.org')
-            all_collection_names = self.downloader.get_all_collection_names()
-            with open(collection_path, 'w') as outfile:
-                outfile.write("\n".join(str(item) for item in all_collection_names))
-            logger.info(f'saved {len(all_collection_names)} collection names')
+            self.downloader.save_all_collection_names()
         # loop over chunks -- get max addeddate before filtering collections.
         if os.path.isdir(self.idpath):
             for filename in os.listdir(self.idpath):
