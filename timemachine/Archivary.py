@@ -863,7 +863,10 @@ class GDArchive(BaseArchive):
             logger.info(f'Loaded {n_tapes} tapes from archive')
         if reload_ids or not os.path.exists(collection_path) and self.idpath.endswith('etree_ids'):
             logger.info('Loading collection names from archive.org')
-            self.downloader.save_all_collection_names()
+            try:
+                self.downloader.save_all_collection_names()
+            except Exception as e:
+                logger.warning(f'Error saving all collection_names {e}')
         # loop over chunks -- get max addeddate before filtering collections.
         if os.path.isdir(self.idpath):
             for filename in os.listdir(self.idpath):
