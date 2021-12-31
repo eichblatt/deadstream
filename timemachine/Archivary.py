@@ -496,7 +496,7 @@ class IATapeDownloader(BaseTapeDownloader):
         except Exception:
             logger.debug(f"removing {tmpfile}")
             os.remove(tmpfile)
-        logger.info(f'saved {len(all_collection_names)} collection names to {collection_path}')
+        logger.info(f'saved {current_rows} collection names to {collection_path}')
 
     def get_all_tapes(self, iddir, min_addeddate=None):
         """Get a list of all tapes.
