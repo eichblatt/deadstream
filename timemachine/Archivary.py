@@ -212,6 +212,7 @@ class Archivary():
         td = {date: self.sort_across_collection(tapes) for date, tapes in td.items()}
         return td
 
+    # @memoize  # -- failed...maybe try this manually?
     def resort_tape_date(self, date):
         if date not in self.dates:
             logger.info(f"No Tape for date {date}")
@@ -882,6 +883,7 @@ class GDArchive(BaseArchive):
         tapes = self.tape_dates[date]
         _ = [t.tracks() for t in tapes[:3]]   # load first 3 tapes' tracks. Decrease score of those without titles.
         tapes = sorted(tapes, key=methodcaller('compute_score'), reverse=True)
+        # tapes = [t for t in tapes if not t._remove_from_archive]  # eliminate missing tapes
         return tapes
 
     def best_tape(self, date, resort=True):        # IA
@@ -1017,6 +1019,9 @@ class GDTape(BaseTape):
         n_known = len([t for t in self._tracks if t.title != 'unknown'])
         return (1 + n_known) / (1 + n_tracks)
 
+    def remove_from_archive(self, meta_path, page_meta):
+        self._remove_from_archive = True
+
     def get_metadata(self):
         if self.meta_loaded:
             return
@@ -1044,7 +1049,7 @@ class GDTape(BaseTape):
         orig_titles = {}
         if not 'files' in page_meta.keys():
             # This tape can not be played, and should be removed from the data.
-            self._remove_from_archive = True
+            self.remove_from_archive(meta_path, page_meta)
             return
         for ifile in page_meta['files']:
             try:
@@ -1063,15 +1068,19 @@ class GDTape(BaseTape):
                 pass
             except Exception as e:   # TODO handle this!!!
                 raise (e)
-        os.makedirs(os.path.dirname(meta_path), exist_ok=True)
-        json.dump(page_meta, open(meta_path, 'w'))
-        self.meta_loaded = True
-        # return page_meta
+
+        self.write_metadata(meta_path, page_meta)
+
         for track in self._tracks:
             track.title = re.sub(r'gd\d{2}(?:\d{2})?-\d{2}-\d{2}[ ]*([td]\d*)*', '', track.title).strip()
             track.title = re.sub(r'(.flac)|(.mp3)|(.ogg)$', '', track.title).strip()
         self.insert_breaks()
         return
+
+    def write_metadata(self, meta_path, page_meta):
+        os.makedirs(os.path.dirname(meta_path), exist_ok=True)
+        json.dump(page_meta, open(meta_path, 'w'))
+        self.meta_loaded = True
 
     def append_track(self, tdict, orig_titles={}):
         source = tdict['source']
