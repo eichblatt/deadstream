@@ -265,7 +265,8 @@ def select_current_date(state, autoplay=False):
     if not date_reader.tape_available():
         return
     TMB.scr.show_playstate(staged_play=True, force=True)
-    tapes = date_reader.archive.tape_dates[date_reader.fmtdate()]
+    #tapes = date_reader.archive.tape_dates[date_reader.fmtdate()]
+    tapes = date_reader.archive.resort_tape_date(date_reader.fmtdate())
     tape = tapes[date_reader.shownum]
     state = select_tape(tape, state, autoplay=autoplay)
 

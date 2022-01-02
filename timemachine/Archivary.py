@@ -61,6 +61,14 @@ def memoize(f):
     return helper
 
 
+def flatten(lis):
+    lis_flat = []
+    for elem in lis:
+        for subelem in elem:
+            lis_flat.append(subelem)
+    return lis_flat
+
+
 @memoize
 def to_date(datestring): return datetime.datetime.strptime(datestring, '%Y-%m-%d')
 
@@ -151,10 +159,12 @@ class Archivary():
         return yl
 
     def best_tape(self, date, resort=True):
-        #bt = remove_none([a.best_tape(date, resort) for a in self.archives])
         if date not in self.dates:
             logger.info(f"No Tape for date {date}")
             return None
+        # if resort:
+        #    bt = remove_none([a.best_tape(date, resort) for a in self.archives])
+        # else:
         bt = self.tape_dates[date]
         return bt[0]
 
@@ -201,6 +211,16 @@ class Archivary():
                     td[date] = tapes
         td = {date: self.sort_across_collection(tapes) for date, tapes in td.items()}
         return td
+
+    def resort_tape_date(self, date):
+        if date not in self.dates:
+            logger.info(f"No Tape for date {date}")
+            return None
+        bt = [remove_none(a.resort_tape_date(date)) for a in self.archives]
+        bt = flatten(bt)
+        bt = list(dict.fromkeys(bt))
+        bt = self.sort_across_collection(bt)
+        return bt
 
     def load_archive(self, reload_ids, with_latest):
         for a in self.archives:
@@ -312,6 +332,7 @@ class BaseTape(abc.ABC):
         self.collection = None
         self.artist = None
         self._tracks = []
+        self._remove_from_archive = False
 
     def __str__(self):
         return self.__repr__()
@@ -684,12 +705,25 @@ class PhishinArchive(BaseArchive):
         max_addeddate = None
         return (tapes, max_addeddate)
 
+    def resort_tape_date(self, date):
+        """ Phishin version of this method """
+        if isinstance(date, datetime.date):
+            date = date.strftime('%Y-%m-%d')
+        if date not in self.dates:
+            return [None]
+        tapes = self.tape_dates[date]
+        return tapes
+
     def best_tape(self, date, resort=True):
+        """ Phishin version of this method """
         if isinstance(date, datetime.date):
             date = date.strftime('%Y-%m-%d')
         if date not in self.dates:
             return None
-        tapes = self.tape_dates[date]
+        if resort:
+            tapes = self.resort_tape_date(date)
+        else:
+            tapes = self.tape_dates[date]
         return tapes[0]
 
 
@@ -839,22 +873,35 @@ class GDArchive(BaseArchive):
         self.tape_dates = self.get_tape_dates()
         self.dates = sorted(self.tape_dates.keys())
 
-    def best_tape(self, date, resort=True):
+    def resort_tape_date(self, date):        # IA
+        """  archive.org version of this method """
+        if isinstance(date, datetime.date):
+            date = date.strftime('%Y-%m-%d')
+        if date not in self.dates:
+            return [None]
+        tapes = self.tape_dates[date]
+        _ = [t.tracks() for t in tapes[:3]]   # load first 3 tapes' tracks. Decrease score of those without titles.
+        tapes = sorted(tapes, key=methodcaller('compute_score'), reverse=True)
+        return tapes
+
+    def best_tape(self, date, resort=True):        # IA
+        """  archive.org version of this method """
         if isinstance(date, datetime.date):
             date = date.strftime('%Y-%m-%d')
         if date not in self.dates:
             return None
-        tapes = self.tape_dates[date]
+
         if resort:
-            _ = [t.tracks() for t in tapes[:3]]   # load first 3 tapes' tracks. Decrease score of those without titles.
-            tapes = sorted(tapes, key=methodcaller('compute_score'), reverse=True)
+            tapes = self.resort_tape_date(date)
+        else:
+            tapes = self.tape_dates[date]
         return tapes[0]
 
-    def load_current_tapes(self, reload_ids=False):
+    def load_current_tapes(self, reload_ids=False):   # IA
         logger.debug("Loading current tapes")
         tapes = []
         addeddates = []
-        collection_path = os.path.join(os.getenv('HOME'), '.etree_collection_names')
+        collection_path = os.path.join(os.getenv('HOME'), '.etree_collection_names.json')
 
         if reload_ids or not os.path.exists(self.idpath):
             os.system(f'rm -rf {self.idpath}')
@@ -946,6 +993,8 @@ class GDTape(BaseTape):
 
     def compute_score(self):
         """ compute a score for sorting the tape. High score means it should be played first """
+        if self._remove_from_archive:
+            return -1
         score = 3
         if self.stream_only():
             score = score + 10
@@ -986,13 +1035,17 @@ class GDTape(BaseTape):
                 page_meta = r.json()
             except ValueError:
                 logger.warning("Json Error {}".format(r.url))
-                return None
+                return
             except Exception:
                 logger.warning("Error getting metadata (json?)")
-                return None
+                return
 
         # self.reviews = page_meta['reviews'] if 'reviews' in page_meta.keys() else []
         orig_titles = {}
+        if not 'files' in page_meta.keys():
+            # This tape can not be played, and should be removed from the data.
+            self._remove_from_archive = True
+            return
         for ifile in page_meta['files']:
             try:
                 if ifile['source'] == 'original':
