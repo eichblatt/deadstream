@@ -48,6 +48,8 @@ parms, remainder = parser.parse_args()
 
 knob_sense_path = os.path.join(os.getenv('HOME'), ".knob_sense")
 
+CALIBRATED = os.path.exists(knob_sense_path)
+
 logging.basicConfig(format='%(asctime)s.%(msecs)03d %(levelname)s: %(name)s %(message)s', level=logging.INFO, datefmt='%Y-%m-%d %H:%M:%S')
 logger = logging.getLogger(__name__)
 controlsLogger = logging.getLogger('timemachine.controls')
@@ -109,18 +111,22 @@ def get_knob_orientation(knob, label):
     return knob.steps > initial_value
 
 
-def save_knob_sense():
+def save_knob_sense(save_calibration=True):
     knob_senses = [get_knob_orientation(knob, label) for knob, label in [(TMB.m, "month"), (TMB.d, "day"), (TMB.y, "year")]]
     knob_sense_orig = TMB.get_knob_sense()
     knob_sense = 0
     for i in range(len(knob_senses)):
         knob_sense += 1 << i if knob_senses[i] else 0
     new_knob_sense = 7 & ~(knob_sense ^ knob_sense_orig)
-    f = open(knob_sense_path, 'w')
-    f.write(str(new_knob_sense))
-    f.close()
     TMB.scr.show_text("Knobs\nCalibrated", font=TMB.scr.boldsmall, color=(0, 255, 255), force=False, clear=True)
     TMB.scr.show_text(F"      {new_knob_sense}", font=TMB.scr.boldsmall, loc=(0, 60), force=True)
+    if save_calibration:
+        f = open(knob_sense_path, 'w')
+        f.write(str(new_knob_sense))
+        f.close()
+    else:
+        TMB.scr.show_text(F"{new_knob_sense}", font=TMB.scr.boldsmall, loc=(0, 60), force=True)
+        sleep(1)
 
 
 def test_buttons(event, label):
@@ -147,7 +153,8 @@ def configure_collections(parms):
     if collection == 'other':
         collection = controls.select_chars(TMB, counter, "Collection?\nSelect. Stop to end", character_set=string.printable[36:62])
     TMB.scr.show_text(f"Collection:\n{collection}", font=TMB.scr.smallfont, force=True, clear=True)
-    # envs = get_envs()
+    if collection == '':
+        return collection
     sleep(2)
     tmpd = default_options()
     try:
@@ -160,6 +167,8 @@ def configure_collections(parms):
             json.dump(tmpd, outfile, indent=1)
     except Exception as e:
         logger.warning(F"Failed to write options to {parms.options_path}")
+
+    return collection
 
 
 def test_sound(parms):
@@ -249,7 +258,10 @@ def change_environment():
 
 
 def welcome_alternatives():
-    TMB.scr.show_text("\n Welcome", color=(0, 0, 255), force=True, clear=True)
+    TMB.scr.show_text("  Welcome", color=(0, 0, 255), force=True, clear=True)
+    if CALIBRATED:
+        TMB.scr.show_text("press play/pause\n  to recalibrate", loc=(0, 30), font=TMB.scr.smallfont, force=False)
+        TMB.scr.show_text("  spertilo.net/faq", loc=(0, 100), font=TMB.scr.smallfont, color=(0, 200, 200), force=True)
     check_factory_build()
     TMB.button_event.wait(parms.sleep_time)
     if TMB.rewind_event.is_set():
@@ -287,8 +299,8 @@ def main():
             try:
                 test_sound(parms)
                 test_all_buttons(parms)
-                configure_collections(parms)
-                save_knob_sense()
+                collection = configure_collections(parms)
+                save_knob_sense(collection != '')
 
                 os.system('killall mpv')
             except Exception:
