@@ -231,6 +231,8 @@ if parms.verbose or parms.debug:
 
 def select_tape(tape, state, autoplay=False):
     global venue_counter
+    if tape._remove_from_archive:
+        return
     current = state.get_current()
     if tape.identifier == current['TAPE_ID']:
         return                           # already selected.
@@ -247,16 +249,19 @@ def select_tape(tape, state, autoplay=False):
     current['ARTIST'] = tape.artist
     venue_counter = (0, 0)
 
-    state.player.insert_tape(tape)
-    state.player._set_property('volume', current['VOLUME'])
-    logger.debug(F"current state {current}")
-    if autoplay and not EOT:
-        logger.debug("Autoplaying tape")
-        TMB.scr.show_playstate(staged_play=True, force=True)
-        state.player.play()
-        current['PLAY_STATE'] = config.PLAYING
-        playstate_event.set()
-    state.set(current)
+    try:
+        state.player.insert_tape(tape)
+        state.player._set_property('volume', current['VOLUME'])
+        logger.debug(F"current state {current}")
+        if autoplay and not EOT:
+            logger.debug("Autoplaying tape")
+            TMB.scr.show_playstate(staged_play=True, force=True)
+            state.player.play()
+            current['PLAY_STATE'] = config.PLAYING
+            playstate_event.set()
+            state.set(current)
+    except Exception:
+        pass
     return state
 
 
@@ -265,7 +270,8 @@ def select_current_date(state, autoplay=False):
     if not date_reader.tape_available():
         return
     TMB.scr.show_playstate(staged_play=True, force=True)
-    tapes = date_reader.archive.tape_dates[date_reader.fmtdate()]
+    #tapes = date_reader.archive.tape_dates[date_reader.fmtdate()]
+    tapes = date_reader.archive.resort_tape_date(date_reader.fmtdate())
     tape = tapes[date_reader.shownum]
     state = select_tape(tape, state, autoplay=autoplay)
 
@@ -296,7 +302,7 @@ def select_button_longpress(button, state):
     if not state.date_reader.tape_available():
         return
     date_reader = state.date_reader
-    tapes = date_reader.archive.tape_dates[date_reader.fmtdate()]
+    tapes = date_reader.archive.resort_tape_date(date_reader.fmtdate())
     itape = -1
     while button.is_held:
         itape = divmod(itape + 1, len(tapes))[1]
@@ -410,7 +416,8 @@ def stop_button_longpress(button, state):
         TMB.scr.wake_up()
         TMB.scr.show_text("Updating\nCode\n\nStand By...", force=True)
         sleep(20)
-        TMB.scr.show_text("Already\nat Latest\nRelease", clear=True, force=True)
+        # if this program hasn't been killed after 20 seconds, then the code was already the latest version
+        TMB.scr.show_text("Code is\nup to\nDate", clear=True, force=True)
         sleep(5)
         TMB.scr.image.frombytes(pixels)
         TMB.scr.refresh(force=True)

@@ -1,4 +1,5 @@
 from time import sleep
+import difflib
 import os
 import optparse
 import logging
@@ -9,10 +10,25 @@ import subprocess
 
 ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
 parser = optparse.OptionParser()
-parser.add_option('-d', '--debug', dest='debug', type="int", default=0, help="If > 0, don't run the main script on loading [default %default]")
-parser.add_option('--options_path', dest='options_path', default=os.path.join(os.getenv('HOME'), '.timemachine_options.txt'), help="path to options file [default %default]")
-parser.add_option('--sleep_time', dest='sleep_time', type="int", default=10, help="how long to sleep before checking network status [default %default]")
-parser.add_option('-v', '--verbose', dest='verbose', action="store_true", default=False, help="Print more verbose information [default %default]")
+parser.add_option('-d', '--debug',
+                  dest='debug',
+                  type="int",
+                  default=0,
+                  help="If > 0, don't run the main script on loading [default %default]")
+parser.add_option('--options_path',
+                  dest='options_path',
+                  default=os.path.join(os.getenv('HOME'), '.timemachine_options.txt'),
+                  help="path to options file [default %default]")
+parser.add_option('--sleep_time',
+                  dest='sleep_time',
+                  type="int",
+                  default=10,
+                  help="how long to sleep before checking network status [default %default]")
+parser.add_option('-v', '--verbose',
+                  dest='verbose',
+                  action="store_true",
+                  default=False,
+                  help="Print more verbose information [default %default]")
 parms, remainder = parser.parse_args()
 
 logging.basicConfig(format='%(asctime)s.%(msecs)03d %(levelname)s: %(name)s %(message)s', level=logging.INFO, datefmt='%Y-%m-%d %H:%M:%S')
@@ -29,6 +45,18 @@ def default_options():
     d['DEFAULT_START_TIME'] = '15:00:00'
     d['TIMEZONE'] = 'America/New_York'
     return d
+
+
+def get_collection_names():
+    collection_path = os.path.join(os.getenv('HOME'), '.etree_collection_names.json')
+    collection_names = []
+    try:
+        data = json.load(open(collection_path, 'r'))['items']
+        collection_names = [x['identifier'] for x in data]
+    except Exception as e:
+        logger.warning(F"Failed to read collection names from {collection_path}.")
+    finally:
+        return collection_names
 
 
 class StringGenerator(object):
@@ -60,8 +88,8 @@ class StringGenerator(object):
            <form method="get" action="save_values">""" + form_string + """
              <label for="timezone"> Choose a Time Zone:</label>
              <select id="timezone" name="TIMEZONE">""" + tz_string + """ </select><p>
-             <button type="submit">Submit</button>
-             <button type="reset">Reset</button>
+             <button type="submit">Save Values</button>
+             <button type="reset">Restore</button>
            </form>
            <form method="get" action="restart_service">
              <button type="submit">Restart Timemachine Service</button>
@@ -95,6 +123,24 @@ class StringGenerator(object):
 
     @cherrypy.expose
     def save_values(self, *args, **kwargs):
+        collections = kwargs['COLLECTIONS']
+        colls = collections.split(',')
+        valid_collection_names = get_collection_names()
+        proper_collections = []
+
+        for artist in colls:
+            artist = artist.replace(" ", "")
+            if artist in valid_collection_names:
+                proper_collections.append(artist)
+            elif artist.lower().strip() == 'phish':
+                proper_collections.append('Phish')
+            else:
+                candidates = difflib.get_close_matches(artist, valid_collection_names, cutoff=0.85)
+                if len(candidates) > 0:
+                    proper_collections.append(candidates[0])
+                else:
+                    proper_collections.append(artist)
+        kwargs['COLLECTIONS'] = str.join(',', proper_collections)
         with open(parms.options_path, 'w') as outfile:
             opt_dict = json.dump(kwargs, outfile, indent=1)
         print(F'args: {args},kwargs:{kwargs},\nType: {type(kwargs)}')
@@ -105,6 +151,9 @@ class StringGenerator(object):
          <body> Options set to <p> """ + form_string + """
            <form method="get" action="index">
              <button type="submit">Return</button>
+           </form>
+           <form method="get" action="restart_service">
+             <button type="submit">Restart Timemachine Service</button>
            </form>
          </body>
        </html>"""
