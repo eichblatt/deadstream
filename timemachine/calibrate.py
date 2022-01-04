@@ -149,11 +149,11 @@ def default_options():
 
 def configure_collections(parms):
     """ is this a GratefulDead or a Phish Time Machine? """
-    collection = controls.select_option(TMB, counter, "Collection\nTurn Year, Select", ['GratefulDead', 'Phish', 'GratefulDead,Phish', 'other'])
+    collection = controls.select_option(TMB, counter, "Collection\nTurn Year, Select", ['GratefulDead', 'Phish', 'GratefulDead,Phish', 'no change', 'other'])
     if collection == 'other':
         collection = controls.select_chars(TMB, counter, "Collection?\nSelect. Stop to end", character_set=string.printable[36:62])
     TMB.scr.show_text(f"Collection:\n{collection}", font=TMB.scr.smallfont, force=True, clear=True)
-    if collection == '':
+    if collection == '' or collection == 'no change':
         return collection
     sleep(2)
     tmpd = default_options()
