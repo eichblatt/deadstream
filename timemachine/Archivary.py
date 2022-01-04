@@ -1002,7 +1002,7 @@ class GDTape(BaseTape):
         if self.stream_only():
             score = score + 10
         if 'optd' in dir(config) and len(config.optd['FAVORED_TAPER']) > 0:
-            if config.optd['FAVORED_TAPER'].lower() in self.identifier.lower():
+            if any(x.lower() in self.identifier.lower() for x in config.optd['FAVORED_TAPER']):
                 score = score + 3
         # This is now taken care of at the Archivary level.
         # if 'optd' in dir(config) and len(config.optd['COLLECTIONS']) > 1:

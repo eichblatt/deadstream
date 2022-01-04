@@ -175,7 +175,7 @@ def default_options():
     d = {}
     d['COLLECTIONS'] = ['GratefulDead']
     d['SCROLL_VENUE'] = True
-    d['FAVORED_TAPER'] = ''
+    d['FAVORED_TAPER'] = []
     d['AUTO_UPDATE_ARCHIVE'] = False
     d['ON_TOUR_ALLOWED'] = False
     d['DEFAULT_START_TIME'] = datetime.time(15, 0)
@@ -191,13 +191,14 @@ def load_options(parms):
         tmpd = json.loads(f.read())
         for k in config.optd.keys():
             try:
-                if k in ['SCROLL_VENUE', 'AUTO_UPDATE_ARCHIVE', 'ON_TOUR_ALLOWED']:
+                if k in ['SCROLL_VENUE', 'AUTO_UPDATE_ARCHIVE', 'ON_TOUR_ALLOWED']:  # make booleans.
                     tmpd[k] = tmpd[k].lower() == 'true'
-                if k in ['COLLECTIONS']:
-                    c = [x.strip() for x in tmpd[k].split(',')]
-                    c = ['Phish' if x.lower() == 'phish' else x for x in c]
+                if k in ['COLLECTIONS', 'FAVORED_TAPER']:   # make lists from comma-separated strings.
+                    c = [x.strip() for x in tmpd[k].split(',') if x != '']
+                    if k == 'COLLECTIONS':
+                        c = ['Phish' if x.lower() == 'phish' else x for x in c]
                     tmpd[k] = c
-                if k in ['DEFAULT_START_TIME']:
+                if k in ['DEFAULT_START_TIME']:            # make datetime
                     tmpd[k] = datetime.datetime.strptime(tmpd[k], "%H:%M:%S").time()
             except Exception:
                 logger.warning(F"Failed to set option {k}. Using {config.optd[k]}")
