@@ -26,6 +26,7 @@ import os
 import random
 import re
 import requests
+import string
 import tempfile
 import time
 from threading import Event, Lock, Thread
@@ -1009,14 +1010,15 @@ class GDTape(BaseTape):
         #    score = score + 5 * (len(colls) - min([colls.index(c) if c in colls else 100 for c in self.collection]))
         if self.meta_loaded:
             score = score + 3*(self.title_fraction()-1)  # reduce score for tapes without titles.
-            score = score + len(self._tracks)/4
+            score = score + min(20, len(self._tracks))/4
         score = score + math.log(1+self.downloads)
         score = score + 0.5 * (self.avg_rating - 2.0/math.sqrt(self.num_reviews))  # down-weigh avg_rating: it's usually about the show, not the tape.
         return score
 
     def title_fraction(self):
         n_tracks = len(self._tracks)
-        n_known = len([t for t in self._tracks if t.title != 'unknown'])
+        lc = string.ascii_lowercase
+        n_known = len([t for t in self._tracks if t.title != 'unknown' and sum([x in lc for x in t.title.lower()]) > 4])
         return (1 + n_known) / (1 + n_tracks)
 
     def remove_from_archive(self, meta_path, page_meta):
