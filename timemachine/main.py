@@ -329,8 +329,6 @@ def select_button_longpress(button, state):
 @sequential
 def play_pause_button(button, state):
     current = state.get_current()
-    if current['PLAY_STATE'] in [config.ENDED]:
-        return
     if current['EXPERIENCE'] and current['PLAY_STATE'] in [config.PLAYING, config.PAUSED]:
         return
     if current['ON_TOUR'] and current['TOUR_STATE'] in [config.READY, config.PLAYING]:
@@ -345,7 +343,7 @@ def play_pause_button(button, state):
         state.player.pause()
         current['PAUSED_AT'] = datetime.datetime.now()
         current['PLAY_STATE'] = config.PAUSED
-    elif current['PLAY_STATE'] in [config.PAUSED, config.STOPPED, config.READY]:
+    elif current['PLAY_STATE'] in [config.PAUSED, config.STOPPED, config.READY, config.ENDED]:
         current['PLAY_STATE'] = config.PLAYING
         TMB.scr.wake_up()
         TMB.screen_event.set()
@@ -395,6 +393,10 @@ def stop_button(button, state):
         return
     if current['PLAY_STATE'] in [config.READY, config.INIT, config.STOPPED]:
         return
+    if current['PLAY_STATE'] == config.ENDED:
+        current['PLAY_STATE'] = config.STOPPED
+        state.set(current)
+
     TMB.button_event.set()
     state.player.stop()
     current['PLAY_STATE'] = config.STOPPED
