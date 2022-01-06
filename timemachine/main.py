@@ -237,10 +237,7 @@ def select_tape(tape, state, autoplay=False):
     current = state.get_current()
     if tape.identifier == current['TAPE_ID']:
         return                           # already selected.
-    logger.debug(F"current state at entry {current}")
-    EOT = False
-    if current['PLAY_STATE'] == config.ENDED:
-        EOT = True
+    logger.debug(F"select_tape: current state at entry {current}")
     current['PLAY_STATE'] = config.READY  # eject current tape, insert new one in player
     current['TAPE_ID'] = tape.identifier
     logger.info(F"Set TAPE_ID to {current['TAPE_ID']}")
@@ -253,8 +250,8 @@ def select_tape(tape, state, autoplay=False):
     try:
         state.player.insert_tape(tape)
         state.player._set_property('volume', current['VOLUME'])
-        logger.debug(F"current state {current}")
-        if autoplay and not EOT:
+        logger.debug(F"select_tape: current state {current}")
+        if autoplay:
             logger.debug("Autoplaying tape")
             TMB.scr.show_playstate(staged_play=True, force=True)
             state.player.play()
@@ -271,7 +268,6 @@ def select_current_date(state, autoplay=False):
     if not date_reader.tape_available():
         return
     TMB.scr.show_playstate(staged_play=True, force=True)
-    #tapes = date_reader.archive.tape_dates[date_reader.fmtdate()]
     tapes = date_reader.archive.resort_tape_date(date_reader.fmtdate())
     tape = tapes[date_reader.shownum]
     state = select_tape(tape, state, autoplay=autoplay)
@@ -288,7 +284,11 @@ def select_button(button, state):
         return
     logger.debug("pressing select")
     current = state.get_current()
-    # if current['EXPERIENCE']: return
+    if current['PLAY_STATE'] == config.ENDED:
+        logger.debug("setting PLAY_STATE to READY, AUTO_PLAY to False")
+        AUTO_PLAY = False
+        current['PLAY_STATE'] = config.READY
+        state.set(current)
     if current['ON_TOUR'] and current['TOUR_STATE'] in [config.READY, config.PLAYING]:
         return
     state = select_current_date(state, autoplay=AUTO_PLAY)

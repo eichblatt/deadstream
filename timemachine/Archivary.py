@@ -1487,7 +1487,7 @@ class GDPlayer(MPV):
             if abs(time_pos - destination) > threshold:
                 raise Exception(F'Not close enough: time_pos {time_pos} - destination ({time_pos - destination})>{threshold}')
         except Exception as e:
-            logger.warning(e)
+            logger.warning(f"in seek_to {e}")
         finally:
             pass
 
@@ -1516,7 +1516,7 @@ class GDPlayer(MPV):
             else:
                 self.seek_to(current_track, destination)
         except Exception as e:
-            logger.warning(F'exception in seeking {e}')
+            logger.warning(F'fseek exception {e}')
         finally:
             time.sleep(sleeptime)
 
