@@ -279,19 +279,20 @@ def select_current_date(state, autoplay=False):
 
 @sequential
 def select_button(button, state):
+    autoplay = AUTO_PLAY
     sleep(button._hold_time * 1.01)
     if button.is_pressed or button.is_held:
         return
     logger.debug("pressing select")
     current = state.get_current()
     if current['PLAY_STATE'] == config.ENDED:
-        logger.debug("setting PLAY_STATE to READY, AUTO_PLAY to False")
-        AUTO_PLAY = False
+        logger.debug("setting PLAY_STATE to READY, autoplay to False")
+        autoplay = False
         current['PLAY_STATE'] = config.READY
         state.set(current)
     if current['ON_TOUR'] and current['TOUR_STATE'] in [config.READY, config.PLAYING]:
         return
-    state = select_current_date(state, autoplay=AUTO_PLAY)
+    state = select_current_date(state, autoplay=autoplay)
     TMB.scr.wake_up()
     logger.debug(F"current state after select button {state}")
     return state
