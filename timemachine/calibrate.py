@@ -257,11 +257,26 @@ def change_environment():
     return
 
 
+def get_version():
+    __version__ = 'v1.0'
+    try:
+        latest_tag_path = controls.pkg_resources.resource_filename('timemachine', '.latest_tag')
+        with open(latest_tag_path, 'r') as tag:
+            __version__ = tag.readline()
+        __version__ = __version__.strip()
+        return __version__
+    except Exception as e:
+        logging.warning(f"get_version error {e}")
+    finally:
+        return __version__
+
+
 def welcome_alternatives():
     TMB.scr.show_text("  Welcome", color=(0, 0, 255), force=True, clear=True)
     if CALIBRATED:
         TMB.scr.show_text("press play/pause\n  to recalibrate", loc=(0, 30), font=TMB.scr.smallfont, force=False)
         TMB.scr.show_text("  spertilo.net/faq", loc=(0, 100), font=TMB.scr.smallfont, color=(0, 200, 200), force=True)
+    TMB.scr.show_text(f"{get_version()}", loc=(10, 75), font=TMB.scr.smallfont, color=(255, 100, 0), stroke_width=1, force=True)
     check_factory_build()
     TMB.button_event.wait(parms.sleep_time)
     if TMB.rewind_event.is_set():
