@@ -274,7 +274,7 @@ def get_version():
 def welcome_alternatives():
     TMB.scr.show_text("  Welcome", color=(0, 0, 255), force=True, clear=True)
     if CALIBRATED:
-        TMB.scr.show_text("press play/pause\n  to recalibrate", loc=(0, 30), font=TMB.scr.smallfont, force=False)
+        TMB.scr.show_text("to recalibrate\n press play/pause", loc=(0, 30), font=TMB.scr.smallfont, force=False)
         TMB.scr.show_text("  spertilo.net/faq", loc=(0, 100), font=TMB.scr.smallfont, color=(0, 200, 200), force=True)
     TMB.scr.show_text(f"{get_version()}", loc=(10, 75), font=TMB.scr.smallfont, color=(255, 100, 0), stroke_width=1, force=True)
     check_factory_build()
