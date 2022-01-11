@@ -105,10 +105,11 @@ Such as setting the COLLECTIONS list, and the Time Zone and stuff like that.
 You can access this server from a browser on the same WiFi with <IP_ADDRESS>:9090
 ### update.service
 runs on demand.
-The user can asks for an update in the timemachine service by pressing and holding the "stop" button.
-Update will check if there is a new tag on github, and if so, create a new virtual environment, download, install,
-and test the latest code. If the code passes the test, then it will put the new virtual environment in place,
-and hold on to the previous 8 virtual environments, for rollback if needed.
+The user can ask for an update in the timemachine service by pressing and holding the "stop" button.
+Update will check if there is a new tag on github, and if so, download, install,
+and test the latest code in a virtual environment.
+If the code passes the test, then it will put the new virtual environment in place, and retain the previous 8 virtual
+environments for rollback if needed. Note: The factory environment is also retained.
 
 ## About the code
 
