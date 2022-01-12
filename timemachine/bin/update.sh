@@ -28,6 +28,9 @@ else
    system "sudo systemctl disable ssh"
 fi
 
+#echo "[ ! -f $HOME/.phishinkey ] && echo '8003bcd8c378844cfb69aad8b0981309f289e232fb417df560f7192edd295f1d49226ef6883902e59b465991d0869c77' > $HOME/.phishinkey"
+[ ! -f $HOME/.phishinkey ] && echo '8003bcd8c378844cfb69aad8b0981309f289e232fb417df560f7192edd295f1d49226ef6883902e59b465991d0869c77' > $HOME/.phishinkey
+
 echo "git branch is $git_branch"
 if [ "$local_tag" = "$git_branch" ]; then
    echo "Local repository up to date. Not updating"
@@ -44,8 +47,6 @@ echo "mpv --volume=60 --really-quiet $HOME/helpontheway.ogg $HOME/helpontheway.o
 mpv --volume=60 --really-quiet $HOME/helpontheway.ogg $HOME/helpontheway.ogg $HOME/helpontheway.ogg &
 help_on_the_way_pid=$!
 
-#echo "[ ! -f $HOME/.phishinkey ] && echo '8003bcd8c378844cfb69aad8b0981309f289e232fb417df560f7192edd295f1d49226ef6883902e59b465991d0869c77' > $HOME/.phishinkey"
-[ ! -f $HOME/.phishinkey ] && echo '8003bcd8c378844cfb69aad8b0981309f289e232fb417df560f7192edd295f1d49226ef6883902e59b465991d0869c77' > $HOME/.phishinkey
 
 restore_services () {
    # put the old services back in place.
