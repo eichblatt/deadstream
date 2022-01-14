@@ -4,7 +4,8 @@ echo "home is $HOME"
 echo "Updating "
 date
 
-TIMEMACHINE=$HOME/timemachine/lib/python3.7/site-packages/timemachine
+python_version=`python -c 'import sys; v = sys.version_info; print(f"{v[0]}.{v[1]}")'`
+TIMEMACHINE=$HOME/timemachine/lib/python$python_version/site-packages/timemachine
 
 system () {
    command=$1
@@ -81,7 +82,7 @@ system "pip3 install wheel"
 system "pip3 install git+https://github.com/eichblatt/deadstream.git@$git_branch"
 
 current_metadata_path=$TIMEMACHINE/metadata
-new_metadata_path=$HOME/$env_name/lib/python3.7/site-packages/timemachine/metadata
+new_metadata_path=$HOME/$env_name/lib/python$python_version/site-packages/timemachine/metadata
 #update_archive=`find $current_metadata_path/GratefulDead_ids.json -mtime +40 | wc -l`
 #if [ $update_archive == 0 ]; then
 #   system "cp -pR $current_metadata_path/*.json $new_metadata_path/."
@@ -104,8 +105,8 @@ kill $help_on_the_way_pid
 system "cd $HOME" # NOTE: we should already be here.
 if [ $stat == 0 ]; then
    system "ln -sfn $env_name timemachine"
-   echo "echo $remote_tag > $env_name/lib/python3.7/site-packages/timemachine/.latest_tag"
-   sudo echo $remote_tag > $env_name/lib/python3.7/site-packages/timemachine/.latest_tag
+   echo "echo $remote_tag > $env_name/lib/python$python_version/site-packages/timemachine/.latest_tag"
+   sudo echo $remote_tag > $env_name/lib/python$python_version/site-packages/timemachine/.latest_tag
 else
    system "rm -rf $env_name"
 fi
