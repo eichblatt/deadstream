@@ -96,7 +96,7 @@ PWR_LED_ON = False
 AUTO_PLAY = True
 RELOAD_STATE_ON_START = True
 
-random.seed(datetime.datetime.now())  # to ensure that random show will be new each time.
+random.seed(datetime.datetime.now().strftime('%Y-%m-%d'))  # to ensure that random show will be new each time.
 
 
 @retry(stop=stop_after_delay(10))
@@ -961,7 +961,7 @@ def on_track_event(_name, value):
     if value is None:
         config.PLAY_STATE = config.ENDED
         config.PAUSED_AT = datetime.datetime.now()
-        select_button(TMB.select, state)
+        # select_button(TMB.select, state)
     track_event.set()
 
 

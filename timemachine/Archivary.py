@@ -97,6 +97,7 @@ class BaseTapeDownloader(abc.ABC):
         n_tapes_added = 0
         os.makedirs(iddir, exist_ok=True)
         periods = sorted(list(set([period_func(t['date']) for t in tapes])))
+        logger.debug(f"storing metadata {periods}")
 
         for period in periods:
             orig_tapes = []
@@ -547,6 +548,7 @@ class IATapeDownloader(BaseTapeDownloader):
         n_tapes_total = n_tapes_added
 
         while (current_rows < 1.25*total) and n_tapes_added > 0:
+            logger.debug("in while loop")
             min_date_field = tapes[-1]['date']
             min_date = min_date_field[:10]  # Should we subtract some days for overlap?
             r = self._get_piece(min_date, max_date, min_addeddate)
@@ -602,13 +604,29 @@ class IATapeDownloader(BaseTapeDownloader):
         Returns a list of dictionaries of tape information
         """
         parms = self.parms.copy()
+        n_tries = 0
+        need_retry = False
         if min_addeddate is None:
             query = F'collection:{self.collection_list} AND date:[{min_date} TO {max_date}]'
         else:
             # max_addeddate = datetime.datetime.now().strftime('%Y-%m-%dT%H:%M:%SZ')
             query = F'collection:{self.collection_list} AND date:[{min_date} TO {max_date}] AND addeddate:[{min_addeddate} TO {max_date}]'
         parms['q'] = query
-        r = requests.get(self.api, params=parms)
+        try:
+            r = requests.get(self.api, params=parms)
+        except Exception as e:
+            logger.exception(e)
+            need_retry = True
+        while need_retry or r.status_code == 502 and n_tries < 5: 
+            n_tries = n_tries + 1
+            logger.warning(f"trying to pull data for {n_tries} time")
+            if n_tries > 4: need_retry = False
+            time.sleep(5*n_tries)
+            try: 
+                r = requests.get(self.api, params=parms)
+            except Exception as e:
+                logger.exception(e)
+
         logger.debug(f"url is {r.url}")
         if r.status_code != 200:
             logger.error(f"Error {r.status_code} collecting data")
