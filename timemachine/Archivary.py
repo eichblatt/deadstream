@@ -617,12 +617,13 @@ class IATapeDownloader(BaseTapeDownloader):
         except Exception as e:
             logger.exception(e)
             need_retry = True
-        while need_retry or r.status_code == 502 and n_tries < 5: 
+        while need_retry or r.status_code == 502 and n_tries < 5:
             n_tries = n_tries + 1
             logger.warning(f"trying to pull data for {n_tries} time")
-            if n_tries > 4: need_retry = False
+            if n_tries > 4:
+                need_retry = False
             time.sleep(5*n_tries)
-            try: 
+            try:
                 r = requests.get(self.api, params=parms)
             except Exception as e:
                 logger.exception(e)
