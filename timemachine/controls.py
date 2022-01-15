@@ -132,7 +132,7 @@ class date_knob_reader:
         self.shownum = divmod(shownum, max(1, len(self.shows_available())))[1]
         self._update()
 
-    def fmtdate(self):
+    def fmtdate(self): 
         if self.date is None:
             return None
         return self.date.strftime('%Y-%m-%d')
