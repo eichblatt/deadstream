@@ -299,7 +299,7 @@ def select_button(button, state):
     select_current_date(state, autoplay=autoplay)
     TMB.scr.wake_up()
     logger.debug(F"current state after select button {state}")
-    return 
+    return
 
 
 @sequential
@@ -1026,7 +1026,7 @@ TMB.d_button.when_pressed = lambda button: day_button(button, state)
 TMB.y_button.when_pressed = lambda button: year_button(button, state)
 
 TMB.d_button.when_held = lambda button: day_button_longpress(button, state)
-# m_button.when_held = lambda button: month_button_longpress(button,state)
+# TMB.m_button.when_held = lambda button: month_button_longpress(button,state)
 TMB.y_button.when_held = lambda button: year_button_longpress(button, state)
 
 TMB.scr.clear_area(controls.Bbox(0, 0, 160, 100))
