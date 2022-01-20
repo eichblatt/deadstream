@@ -723,13 +723,13 @@ def test_update(state):
         pass
     try:
         TMB.scr.show_text("Turn Any\nKnob", force=True)
-        if TMB.knob_event.wait(600):
+        if TMB.knob_event.wait(3600):
             TMB.knob_event.clear()
             TMB.scr.clear()
         else:
             sys.exit(-1)
         TMB.scr.show_text("Press Stop\nButton", force=True)
-        if TMB.button_event.wait(120):
+        if TMB.button_event.wait(600):
             TMB.button_event.clear()
             TMB.scr.show_text("Passed! ", force=True, clear=True)
             sys.exit(0)
