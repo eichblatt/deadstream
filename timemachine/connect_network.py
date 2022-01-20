@@ -92,7 +92,8 @@ def wifi_connected(max_attempts=1):
             cmd2 = "sudo killall -HUP wpa_supplicant"
             if not parms.test:
                 os.system(cmd2)
-                sleep_or_button(2*parms.sleep_time)
+                button_press = sleep_or_button(2*parms.sleep_time)
+                if button_press: return connected
         attempt = attempt + 1
         raw = subprocess.check_output(cmd, shell=True)
         raw = raw.decode()
@@ -194,8 +195,9 @@ def get_wifi_params():
 
 def sleep_or_button(seconds):
     TMB.button_event.clear()
-    TMB.button_event.wait(seconds)
+    status = TMB.button_event.wait(seconds)
     TMB.button_event.clear()
+    return status
 
 def main():
     try:
