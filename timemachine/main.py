@@ -96,7 +96,7 @@ PWR_LED_ON = False
 AUTO_PLAY = True
 RELOAD_STATE_ON_START = True
 
-random.seed(datetime.datetime.now())  # to ensure that random show will be new each time.
+random.seed(datetime.datetime.now().strftime('%Y-%m-%d'))  # to ensure that random show will be new each time.
 
 
 @retry(stop=stop_after_delay(10))
@@ -159,8 +159,11 @@ def load_saved_state(state):
     except BaseException:
         logger.warning(F"Failed while Loading Saved State from {parms.state_path}")
         # raise
-        return (state_orig)
-    return state
+        state = state_orig
+    finally:
+        current['PLAY_STATE'] = config.INIT
+        state.set(current)
+    return
 
 
 @sequential
@@ -230,7 +233,7 @@ if parms.verbose or parms.debug:
     controlsLogger.setLevel(logging.INFO)
 
 
-def select_tape(tape, state, autoplay=False):
+def select_tape(tape, state, autoplay=True):
     global venue_counter
     if tape._remove_from_archive:
         return
@@ -258,12 +261,13 @@ def select_tape(tape, state, autoplay=False):
             current['PLAY_STATE'] = config.PLAYING
             playstate_event.set()
             state.set(current)
-    except Exception:
+    except Exception as e:
+        logger.exception(e)
         pass
     return state
 
 
-def select_current_date(state, autoplay=False):
+def select_current_date(state, autoplay=True):
     date_reader = state.date_reader
     if not date_reader.tape_available():
         return
@@ -292,10 +296,10 @@ def select_button(button, state):
         state.set(current)
     if current['ON_TOUR'] and current['TOUR_STATE'] in [config.READY, config.PLAYING]:
         return
-    state = select_current_date(state, autoplay=autoplay)
+    select_current_date(state, autoplay=autoplay)
     TMB.scr.wake_up()
     logger.debug(F"current state after select button {state}")
-    return state
+    return
 
 
 @sequential
@@ -421,7 +425,7 @@ def stop_button_longpress(button, state):
         TMB.scr.show_text("Updating\nCode\n\nStand By...", force=True)
         sleep(20)
         # if this program hasn't been killed after 20 seconds, then the code was already the latest version
-        TMB.scr.show_text("Code is\nup to\nDate", clear=True, force=True)
+        TMB.scr.show_text("Code is\nup to Date", clear=True, force=True)
         sleep(5)
         TMB.scr.image.frombytes(pixels)
         TMB.scr.refresh(force=True)
@@ -719,13 +723,13 @@ def test_update(state):
         pass
     try:
         TMB.scr.show_text("Turn Any\nKnob", force=True)
-        if TMB.knob_event.wait(600):
+        if TMB.knob_event.wait(3600):
             TMB.knob_event.clear()
             TMB.scr.clear()
         else:
             sys.exit(-1)
         TMB.scr.show_text("Press Stop\nButton", force=True)
-        if TMB.button_event.wait(120):
+        if TMB.button_event.wait(600):
             TMB.button_event.clear()
             TMB.scr.show_text("Passed! ", force=True, clear=True)
             sys.exit(0)
@@ -961,7 +965,10 @@ def on_track_event(_name, value):
     if value is None:
         config.PLAY_STATE = config.ENDED
         config.PAUSED_AT = datetime.datetime.now()
-        select_button(TMB.select, state)
+        try:
+            select_button(TMB.select, state)
+        except Exception:  # variable state not defined at startup, but is defined later.
+            pass
     track_event.set()
 
 
@@ -1019,7 +1026,7 @@ TMB.d_button.when_pressed = lambda button: day_button(button, state)
 TMB.y_button.when_pressed = lambda button: year_button(button, state)
 
 TMB.d_button.when_held = lambda button: day_button_longpress(button, state)
-# m_button.when_held = lambda button: month_button_longpress(button,state)
+# TMB.m_button.when_held = lambda button: month_button_longpress(button,state)
 TMB.y_button.when_held = lambda button: year_button_longpress(button, state)
 
 TMB.scr.clear_area(controls.Bbox(0, 0, 160, 100))
@@ -1028,6 +1035,7 @@ TMB.scr.show_text(str(len(archive.collection_list)).rjust(3), font=TMB.scr.bolds
 
 if RELOAD_STATE_ON_START:
     load_saved_state(state)
+
 
 lock = Lock()
 eloop = threading.Thread(target=event_loop, args=[state, lock])

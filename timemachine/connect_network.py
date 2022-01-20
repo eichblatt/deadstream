@@ -92,7 +92,8 @@ def wifi_connected(max_attempts=1):
             cmd2 = "sudo killall -HUP wpa_supplicant"
             if not parms.test:
                 os.system(cmd2)
-                sleep(2*parms.sleep_time)
+                button_press = sleep_or_button(2*parms.sleep_time)
+                if button_press: return connected
         attempt = attempt + 1
         raw = subprocess.check_output(cmd, shell=True)
         raw = raw.decode()
@@ -163,7 +164,7 @@ def get_ip():
 
 
 def exit_success(status=0, sleeptime=5):
-    sleep(sleeptime)
+    sleep_or_button(sleeptime)
     sys.exit(status)
 
 
@@ -175,7 +176,7 @@ def get_wifi_params():
     extra_dict['country'] = country_code
     TMB.scr.show_text("scanning networks\nPress rewind\nat any time\nto re-scan",
                       font=TMB.scr.smallfont, color=(0, 255, 255), force=True, clear=True)
-    sleep(1)
+    sleep_or_button(1)
     wifi = controls.select_option(TMB, counter, "Select Wifi Name\nTurn Year, Select", get_wifi_choices)
     if wifi == 'HIDDEN_WIFI':
         wifi = controls.select_chars(TMB, counter, "Input Wifi Name\nSelect. Stop to end")
@@ -192,6 +193,11 @@ def get_wifi_params():
         need_extra_fields = controls.select_option(TMB, counter, "More Fields\nRequired?", ['no', 'yes'])
     return wifi, passkey, extra_dict
 
+def sleep_or_button(seconds):
+    TMB.button_event.clear()
+    status = TMB.button_event.wait(seconds)
+    TMB.button_event.clear()
+    return status
 
 def main():
     try:
@@ -204,7 +210,7 @@ def main():
 
         eth_mac_address = get_mac_address()
         TMB.scr.show_text(F"MAC addresses\neth0\n{eth_mac_address}", color=(0, 255, 255), font=TMB.scr.smallfont, force=True, clear=True)
-        sleep(1)
+        sleep_or_button(1)
         if parms.test or not connected:
             wifi, passkey, extra_dict = get_wifi_params()
             TMB.scr.show_text(F"wifi:\n{wifi}\npasskey:\n{passkey}", loc=(0, 0), color=(255, 255, 255), font=TMB.scr.oldfont, force=True, clear=True)
@@ -215,7 +221,7 @@ def main():
             else:
                 print(F"not issuing command {cmd}")
             TMB.scr.show_text("wifi connecting\n...", loc=(0, 0), color=(255, 255, 255), font=TMB.scr.smallfont, force=True, clear=True)
-            sleep(parms.sleep_time)
+            sleep_or_button(parms.sleep_time)
     except Exception as e:
         sys.exit(-1)
     finally:
@@ -230,7 +236,8 @@ def main():
                 ip = get_ip()
                 i = i + 1
             except Exception as e:
-                sleep(2)
+                sleep_or_button(2)
+                # sleep(2)
         logger.info(F"Wifi connected\n{ip}")
         TMB.scr.show_text(F"Wifi connected\n{ip}", font=TMB.scr.smallfont, force=True, clear=True)
         exit_success(sleeptime=0.5*parms.sleep_time)
