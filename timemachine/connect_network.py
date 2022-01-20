@@ -92,7 +92,7 @@ def wifi_connected(max_attempts=1):
             cmd2 = "sudo killall -HUP wpa_supplicant"
             if not parms.test:
                 os.system(cmd2)
-                button_press = sleep_or_button(2*parms.sleep_time)
+                button_press = sleep_or_button(parms.sleep_time)
                 if button_press: return connected
         attempt = attempt + 1
         raw = subprocess.check_output(cmd, shell=True)
@@ -206,7 +206,7 @@ def main():
         os.system(cmd)
         cmd = "sudo ifconfig wlan0 up"
         os.system(cmd)
-        connected = wifi_connected(max_attempts=3)
+        connected = wifi_connected(max_attempts=6)
 
         eth_mac_address = get_mac_address()
         TMB.scr.show_text(F"MAC addresses\neth0\n{eth_mac_address}", color=(0, 255, 255), font=TMB.scr.smallfont, force=True, clear=True)
