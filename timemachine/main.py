@@ -239,6 +239,8 @@ def select_tape(tape, state, autoplay=True):
         return
     current = state.get_current()
     if tape.identifier == current['TAPE_ID']:
+        TMB.scr.show_experience(text=F"{controls.get_version()}", color=(255, 100, 0), force=True)
+        sleep(1)
         return                           # already selected.
     logger.debug(F"select_tape: current state at entry {current}")
     current['PLAY_STATE'] = config.READY  # eject current tape, insert new one in player
@@ -490,8 +492,6 @@ def month_button(button, state):
 
 def month_button_longpress(button, state):
     logger.debug(F"long pressing {button.name} -- nyi")
-
-# def next_show(state):
 
 
 @sequential
