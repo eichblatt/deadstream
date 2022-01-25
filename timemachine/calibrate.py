@@ -213,7 +213,7 @@ def check_factory_build():
 
 def get_envs():
     home = os.getenv('HOME')
-    current_env = os.path.basename(os.readlink(os.path.join(home, 'timemachine')))
+    current_env = os.path.basename(os.readlink(os.path.join(home, 'timemachine')).rstrip('/'))
     envs = [x for x in os.listdir(home) if os.path.isdir(os.path.join(home, x)) and (x.startswith('env_') or x == '.factory_env')]
     envs = sorted(envs, reverse=True)
     envs.insert(0, envs.pop(envs.index(current_env)))    # put current_env first in the list.
