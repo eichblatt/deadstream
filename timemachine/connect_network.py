@@ -162,7 +162,6 @@ def get_ip():
     ip = ip.decode().split(' ')[0]
     if not re.match(r'\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}', ip):
         ip = None
-        # raise Exception('invalid_IP_address')
     return ip
 
 
@@ -239,11 +238,9 @@ def main():
     if connected or wifi_connected():
         i = 0
         while ip is None and i < 5:
-            try:
-                ip = get_ip()
-                i = i + 1
-            except Exception as e:
-                sleep_or_button(2)
+            ip = get_ip()
+            i = i + 1
+            sleep_or_button(2)
         logger.info(F"Wifi connected\n{ip}")
         TMB.scr.show_text(F"Wifi connected\n{ip}", font=TMB.scr.smallfont, force=True, clear=True)
         exit_success(sleeptime=0.5*parms.sleep_time)
