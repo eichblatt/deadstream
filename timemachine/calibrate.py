@@ -280,6 +280,8 @@ def welcome_alternatives():
     if TMB.button_event.is_set():
         TMB.clear_events()
         TMB.scr.show_text("recalibrating ", font=TMB.scr.font, force=True, clear=True)
+        if os.path.exists(knob_sense_path):
+            os.remove(knob_sense_path)
         return True
     return False
 
