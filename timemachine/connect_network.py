@@ -162,7 +162,7 @@ def get_ip():
     ip = ip.decode().split(' ')[0]
     if not re.match(r'\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}', ip):
         ip = None
-        raise Exception('invalid_IP_address')
+        # raise Exception('invalid_IP_address')
     return ip
 
 
