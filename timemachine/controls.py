@@ -132,7 +132,7 @@ class date_knob_reader:
         self.shownum = divmod(shownum, max(1, len(self.shows_available())))[1]
         self._update()
 
-    def fmtdate(self): 
+    def fmtdate(self):
         if self.date is None:
             return None
         return self.date.strftime('%Y-%m-%d')
@@ -487,6 +487,20 @@ def select_chars(TMB, counter, message, message2="So Far", character_set=string.
     logger.info(F"word selected {selected}")
     scr.update_now = update_now
     return selected
+
+
+def get_version():
+    __version__ = 'v1.0'
+    try:
+        latest_tag_path = pkg_resources.resource_filename('timemachine', '.latest_tag')
+        with open(latest_tag_path, 'r') as tag:
+            __version__ = tag.readline()
+        __version__ = __version__.strip()
+        return __version__
+    except Exception as e:
+        logging.warning(f"get_version error {e}")
+    finally:
+        return __version__
 
 
 class Bbox:

@@ -55,7 +55,7 @@ remote_tag=`git -c 'versionsort.suffix=-' ls-remote --tags --sort='v:refname' ht
 
 git_branch=$remote_tag
 
-if [ $HOSTNAME == deadstream2 ]; then
+if [[ $HOSTNAME == deadstream* ]]; then
    git_branch=dev
 else
    system "sudo systemctl disable ssh"

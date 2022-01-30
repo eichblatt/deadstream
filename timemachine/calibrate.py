@@ -213,7 +213,7 @@ def check_factory_build():
 
 def get_envs():
     home = os.getenv('HOME')
-    current_env = os.path.basename(os.readlink(os.path.join(home, 'timemachine')))
+    current_env = os.path.basename(os.readlink(os.path.join(home, 'timemachine')).rstrip('/'))
     envs = [x for x in os.listdir(home) if os.path.isdir(os.path.join(home, x)) and (x.startswith('env_') or x == '.factory_env')]
     envs = sorted(envs, reverse=True)
     envs.insert(0, envs.pop(envs.index(current_env)))    # put current_env first in the list.
@@ -257,26 +257,12 @@ def change_environment():
     return
 
 
-def get_version():
-    __version__ = 'v1.0'
-    try:
-        latest_tag_path = controls.pkg_resources.resource_filename('timemachine', '.latest_tag')
-        with open(latest_tag_path, 'r') as tag:
-            __version__ = tag.readline()
-        __version__ = __version__.strip()
-        return __version__
-    except Exception as e:
-        logging.warning(f"get_version error {e}")
-    finally:
-        return __version__
-
-
 def welcome_alternatives():
     TMB.scr.show_text("  Welcome", color=(0, 0, 255), force=True, clear=True)
     if CALIBRATED:
         TMB.scr.show_text("to recalibrate\n press play/pause", loc=(0, 30), font=TMB.scr.smallfont, force=False)
         TMB.scr.show_text("  spertilo.net/faq", loc=(0, 100), font=TMB.scr.smallfont, color=(0, 200, 200), force=True)
-    TMB.scr.show_text(f"{get_version()}", loc=(10, 75), font=TMB.scr.smallfont, color=(255, 100, 0), stroke_width=1, force=True)
+    TMB.scr.show_text(f"{controls.get_version()}", loc=(10, 75), font=TMB.scr.smallfont, color=(255, 100, 0), stroke_width=1, force=True)
     check_factory_build()
     TMB.button_event.wait(parms.sleep_time)
     if TMB.rewind_event.is_set():
@@ -294,6 +280,8 @@ def welcome_alternatives():
     if TMB.button_event.is_set():
         TMB.clear_events()
         TMB.scr.show_text("recalibrating ", font=TMB.scr.font, force=True, clear=True)
+        if os.path.exists(knob_sense_path):
+            os.remove(knob_sense_path)
         return True
     return False
 
