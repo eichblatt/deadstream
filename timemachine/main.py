@@ -173,16 +173,16 @@ def save_state(state):
     with open(parms.state_path, 'w') as statefile:
         json.dump(current, statefile, indent=1, default=str)
 
-def save_pid():
-    try:
-        pid_file = os.path.join(os.getenv('HOME'),'tm.pid')
-        if os.path.exists(pid_file):
-            os.remove(pid_file)
-        f = open(pid_file,'w') 
-        f.write(str(os.getpid()))
-    except Exception as e:
-        logger.exception(f'{e} while trying to write pid file')
-        raise e
+# def save_pid():
+#    try:
+#        pid_file = os.path.join(os.getenv('HOME'),'tm.pid')
+#        if os.path.exists(pid_file):
+#            os.remove(pid_file)
+#        f = open(pid_file,'w') 
+#        f.write(str(os.getpid()))
+#    except Exception as e:
+#        logger.exception(f'{e} while trying to write pid file')
+#        raise e
 
 def default_options():
     d = {}
@@ -933,6 +933,7 @@ def event_loop(state, lock):
         pass
         # lock.release()
 
+"""
 def get_ip():
     cmd = "hostname -I"
     ip = subprocess.check_output(cmd, shell=True)
@@ -942,6 +943,7 @@ def get_ip():
 while len(get_ip())==0:
     logger.info("Waiting for IP address")
     sleep(2)
+"""
 
 try:
     load_options(parms)
@@ -1049,7 +1051,7 @@ if RELOAD_STATE_ON_START:
     load_saved_state(state)
 
 
-save_pid()
+# save_pid()
 lock = Lock()
 eloop = threading.Thread(target=event_loop, args=[state, lock])
 
