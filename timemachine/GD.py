@@ -93,10 +93,10 @@ class GDPlayer(MPV):
         self._set_property('audio-device', audio_device)
         self.download_when_possible = False
         self.tape = None
-        if tape is not None:
-            self.insert_tape(tape)
         if self.default_audio_device == 'pulse':
             self.restart_pulse_audio()
+        if tape is not None:
+            self.insert_tape(tape)
 
     def __str__(self):
         return self.__repr__()
