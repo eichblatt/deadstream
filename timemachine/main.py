@@ -897,7 +897,7 @@ def event_loop(state, lock):
                 save_state(state)
                 if current['PLAY_STATE'] != config.PLAYING:  # deal with overnight pauses, which freeze the alsa player.
                     if (now - config.PAUSED_AT).seconds > SLEEP_AFTER_SECONDS and state.player.get_prop('audio-device') != 'null':
-                        logger.debug(F"Paused at {config.PAUSED_AT}, sleeping after {SLEEP_AFTER_SECONDS}, now {now}")
+                        logger.info(F"Paused at {config.PAUSED_AT}, sleeping after {SLEEP_AFTER_SECONDS}, now {now}")
                         TMB.scr.sleep()
                         state.player._set_property('audio-device', 'null')
                         state.player.wait_for_property('audio-device', lambda x: x == 'null')
@@ -932,7 +932,6 @@ def event_loop(state, lock):
     finally:
         pass
         # lock.release()
-
 
 def get_ip():
     cmd = "hostname -I"
