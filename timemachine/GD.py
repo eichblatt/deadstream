@@ -95,6 +95,8 @@ class GDPlayer(MPV):
         self.tape = None
         if tape is not None:
             self.insert_tape(tape)
+        if self.default_audio_device == 'pulse':
+            self.restart_pulse_audio()
 
     def __str__(self):
         return self.__repr__()
@@ -141,7 +143,15 @@ class GDPlayer(MPV):
         logger.info(F"Playlist {self.playlist}")
         return
 
+    def restart_pulse_audio(self):
+        logger.info("Restarting the pulseaudio service")
+        cmd = "sudo service pulseaudio restart"
+        os.system(cmd)
+        return 
+
     def reset_audio_device(self, kwarg=None):
+        # if self.get_prop('audio-device') == 'pulse':
+        #    self.restart_pulse_audio()
         if self.get_prop('audio-device') == 'null':
             logger.info(F"changing audio-device to {self.default_audio_device}")
             audio_device = self.default_audio_device
