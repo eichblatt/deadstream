@@ -87,8 +87,8 @@ class GDPlayer(MPV):
         # self._set_property('cache-on-disk','yes')
         self._set_property('audio-buffer', 10.0)  # This allows to play directly from the html without a gap!
         self._set_property('cache', 'yes')
-        self.default_audio_device = 'pulse'
-        # self.default_audio_device = 'auto'
+        # self.default_audio_device = 'pulse'
+        self.default_audio_device = 'auto'
         audio_device = self.default_audio_device
         self._set_property('audio-device', audio_device)
         self.download_when_possible = False
