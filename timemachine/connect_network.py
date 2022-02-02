@@ -82,26 +82,28 @@ TMB.y.when_rotated = lambda x: TMB.decade_knob(TMB.y, "year", counter)
 
 
 def wifi_connected(max_attempts=1):
+    wifi_conn = False
     TMB.scr.show_text("Checking for\nWifi connection", font=TMB.scr.smallfont, force=True, clear=True)
+    if not os.path.exists(parms.wpa_path):
+        return False
     logger.info("Checking if Wifi connected")
     cmd = "iwconfig"
-    connected = False
     attempt = 0
-    while not connected and attempt < max_attempts:
+    while not wifi_conn and attempt < max_attempts:
         if attempt > 0:
             cmd2 = "sudo killall -HUP wpa_supplicant"
             if not parms.test:
                 os.system(cmd2)
                 button_press = sleep_or_button(parms.sleep_time)
-                if button_press: return connected
+                if button_press:
+                    return wifi_conn
         attempt = attempt + 1
         raw = subprocess.check_output(cmd, shell=True)
         raw = raw.decode()
         address = raw.split("\n")[0].split()[3]
         logger.info(F"wifi address read as {address}")
-        connected = '"' in str.replace(address, "ESSID:", "")
-    return connected
-    # return False
+        wifi_conn = '"' in str.replace(address, "ESSID:", "")
+    return wifi_conn
 
 
 def get_wifi_choices():
@@ -159,7 +161,7 @@ def get_ip():
     ip = subprocess.check_output(cmd, shell=True)
     ip = ip.decode().split(' ')[0]
     if not re.match(r'\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}', ip):
-        raise Exception('invalid_IP_address')
+        ip = None
     return ip
 
 
@@ -193,11 +195,13 @@ def get_wifi_params():
         need_extra_fields = controls.select_option(TMB, counter, "More Fields\nRequired?", ['no', 'yes'])
     return wifi, passkey, extra_dict
 
+
 def sleep_or_button(seconds):
     TMB.button_event.clear()
     status = TMB.button_event.wait(seconds)
     TMB.button_event.clear()
     return status
+
 
 def main():
     try:
@@ -206,7 +210,10 @@ def main():
         os.system(cmd)
         cmd = "sudo ifconfig wlan0 up"
         os.system(cmd)
-        connected = wifi_connected(max_attempts=6)
+        ip = get_ip()
+        connected = ip != None
+        if not connected:
+            connected = wifi_connected(max_attempts=4)
 
         eth_mac_address = get_mac_address()
         TMB.scr.show_text(F"MAC addresses\neth0\n{eth_mac_address}", color=(0, 255, 255), font=TMB.scr.smallfont, force=True, clear=True)
@@ -228,16 +235,12 @@ def main():
         TMB.clear_events()
         TMB.scr.clear()
 
-    if wifi_connected():
-        ip = None
+    if connected or wifi_connected():
         i = 0
         while ip is None and i < 5:
-            try:
-                ip = get_ip()
-                i = i + 1
-            except Exception as e:
-                sleep_or_button(2)
-                # sleep(2)
+            ip = get_ip()
+            i = i + 1
+            sleep_or_button(2)
         logger.info(F"Wifi connected\n{ip}")
         TMB.scr.show_text(F"Wifi connected\n{ip}", font=TMB.scr.smallfont, force=True, clear=True)
         exit_success(sleeptime=0.5*parms.sleep_time)
