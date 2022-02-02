@@ -933,13 +933,13 @@ def event_loop(state, lock):
         pass
         # lock.release()
 
-"""
 def get_ip():
     cmd = "hostname -I"
     ip = subprocess.check_output(cmd, shell=True)
     ip = ip.decode().split(' ')[0]
     return ip
 
+"""
 while len(get_ip())==0:
     logger.info("Waiting for IP address")
     sleep(2)
