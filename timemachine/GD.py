@@ -60,7 +60,7 @@ def return_last_value(retry_state):
        wait=wait_random(min=1,max=2),
        retry=retry_if_result(lambda x:not x),
        retry_error_callback=return_last_value)
-def retry_with_wait(callable: Callable, *args, **kwargs):
+def retry_until_true(callable: Callable, *args, **kwargs):
     return callable(*args, **kwargs)
 
 
@@ -163,25 +163,26 @@ class GDPlayer(MPV):
         return 
 
     def reset_audio_device(self, kwarg=None):
+        logger.info(F"in reset_audio_device")
         if self.get_prop('audio-device') == 'null':
             logger.info(F"changing audio-device to {self.default_audio_device}")
             audio_device = self.default_audio_device
-            self._set_property('audio-device', audio_device)
-            if self.get_prop('audio-device') == 'pulse':
+            if audio_device == 'pulse':
                 self.restart_pulse_audio()
+            self._set_property('audio-device', audio_device)
             self.wait_for_property('audio-device', lambda v: v == audio_device)
             if self.get_prop('current-ao') is None:
                 logger.warning("Current-ao is None")
-                self.stop()
+                # self.stop()
                 return False
-            self.pause()
-            self._set_property('pause', False)
-            self.wait_until_playing()
-            self.pause()
+            # self.pause()
+            # self._set_property('pause', False)
+            # self.wait_until_playing()
+            # self.pause()
         return True
 
     def play(self):
-        if not retry_with_wait(self.reset_audio_device, None):
+        if not retry_until_true(self.reset_audio_device, None):
             logger.warning("Failed to reset audio device when playing")
         logger.info("playing")
         self._set_property('pause', False)
@@ -314,7 +315,7 @@ class GDPlayer(MPV):
             time.sleep(sleeptime)
 
     def get_prop(self, property_name):
-        return retry_call(self._get_property, property_name)
+        return retry_call.retry_with(stop=stop_after_attempt(20))(self._get_property, property_name)
 
     def status(self):
         if self.playlist_pos is None:
