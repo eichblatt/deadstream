@@ -224,6 +224,7 @@ def change_environment():
     home = os.getenv('HOME')
     envs = get_envs()
     new_env = controls.select_option(TMB, counter, "Select an environment to use", envs)
+    logger.info(f"new env is {new_env}")
     if new_env == envs[0]:
         return
     if new_env == '.factory_env':
@@ -246,6 +247,8 @@ def change_environment():
         os.system(cmd)
     else:
         new_dir = os.path.join(home, new_env)
+
+    logger.info(f"resetting environment. New dir is {new_dir}")
     if os.path.isdir(new_dir):
         make_link_cmd = f"ln -sfn {new_dir} {os.path.join(home,'timemachine')}"
         fail = os.system(make_link_cmd)
