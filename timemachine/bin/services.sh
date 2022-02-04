@@ -10,6 +10,7 @@ sudo cp $SCRIPT_DIR/connect_network.service /etc/systemd/system/.
 sudo cp $SCRIPT_DIR/serve_options.service /etc/systemd/system/.
 sudo cp $SCRIPT_DIR/update.service /etc/systemd/system/.
 sudo cp $SCRIPT_DIR/calibrate.service /etc/systemd/system/.
+sudo cp $SCRIPT_DIR/pulseaudio.service /etc/systemd/system/.
 
 echo "changing permissions on wpa_supplicant"
 sudo chmod 644 /etc/wpa_supplicant/wpa_supplicant.conf
@@ -23,6 +24,7 @@ sudo systemctl enable connect_network.service
 sudo systemctl enable timemachine.service
 sudo systemctl enable serve_options.service
 sudo systemctl disable update.service
+sudo systemctl enable pulseaudio.service
 
 echo "finished $SCRIPT_NAME"
 exit 0
