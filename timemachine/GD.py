@@ -33,7 +33,7 @@ from threading import Event, Lock, Thread
 from operator import methodcaller
 from mpv import MPV
 from tenacity import retry
-from tenacity.stop import stop_after_delay,stop_after_attempt
+from tenacity.stop import stop_after_delay, stop_after_attempt
 from tenacity.wait import wait_random
 from tenacity.retry import retry_if_result
 from typing import Callable, Optional
@@ -52,13 +52,15 @@ def retry_call(callable: Callable, *args, **kwargs):
     """Retry a call."""
     return callable(*args, **kwargs)
 
+
 def return_last_value(retry_state):
     """ return the result of the last call made in a tenacity retry """
     return retry_state.outcome.result()
 
+
 @retry(stop=stop_after_attempt(7),
-       wait=wait_random(min=1,max=2),
-       retry=retry_if_result(lambda x:not x),
+       wait=wait_random(min=1, max=2),
+       retry=retry_if_result(lambda x: not x),
        retry_error_callback=return_last_value)
 def retry_until_true(callable: Callable, *args, **kwargs):
     return callable(*args, **kwargs)
@@ -100,12 +102,17 @@ class GDPlayer(MPV):
         # self._set_property('cache-on-disk','yes')
         self._set_property('audio-buffer', 10.0)  # This allows to play directly from the html without a gap!
         self._set_property('cache', 'yes')
-        self.default_audio_device = 'pulse'
-        # self.default_audio_device = 'auto'
+        self.tape = None
+        self.download_when_possible = False
+
+        # check to see if pulse audio daemon is running system-wide before setting audio device
+        if os.path.exists('/etc/systemd/system/pulseaudio.service'):
+            self.default_audio_device = 'pulse'
+        else:
+            self.default_audio_device = 'auto'
         audio_device = self.default_audio_device
         self._set_property('audio-device', audio_device)
-        self.download_when_possible = False
-        self.tape = None
+
         if self.default_audio_device == 'pulse':
             self.restart_pulse_audio()
         if tape is not None:
@@ -160,7 +167,7 @@ class GDPlayer(MPV):
         logger.info("Restarting the pulseaudio service")
         cmd = "sudo service pulseaudio restart"
         os.system(cmd)
-        return 
+        return
 
     def reset_audio_device(self, kwarg=None):
         logger.info(F"in reset_audio_device")
