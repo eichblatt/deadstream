@@ -41,6 +41,7 @@ if parms.debug: logger.setLevel(logging.DEBUG)
 bt = None
 bt_devices = []
 bt_connected = None
+bt_connected_device_name = ''
 hostname = subprocess.check_output('hostname').decode().strip()
 pulse = pulsectl.Pulse('volume_increaser')
 
@@ -85,14 +86,14 @@ class OptionsServer(object):
     @cherrypy.expose
     def index(self):
         opt_dict = read_optd()
-        logging.info(F"opt dict {opt_dict}")
+        logger.debug(F"opt dict {opt_dict}")
         form_strings = [self.get_form_item(x) for x in opt_dict.items() if x[0] not in ['TIMEZONE','BLUETOOTH_DEVICE']]
         form_string = '\n'.join(form_strings)
-        logging.info(F"form_string {form_string}")
+        logger.debug(F"form_string {form_string}")
         tz_list = ["America/New_York", "America/Chicago", "America/Phoenix", "America/Los_Angeles", "America/Mexico_City", "America/Anchorage", "Pacific/Honolulu"]
         tz_strings = [F'<option value="{x}" {self.current_choice(opt_dict,"TIMEZONE",x)}>{x}</option>' for x in tz_list]
         tz_string = '\n'.join(tz_strings)
-        logger.info(f'tz string {tz_string}')
+        logger.debug(f'tz string {tz_string}')
 
         audio_string = self.get_audio_string()
 
@@ -114,6 +115,7 @@ class OptionsServer(object):
         page_string = """<html>
          <head></head>
          <body>
+           <!-- <meta http-equiv="refresh" content="30"> -->
            <h1> Time Machine Options """ + hostname + """</h1>
            <form method="get" action="save_values">""" + form_string + """
              <label for="timezone"> Choose a Time Zone:</label>
@@ -135,47 +137,54 @@ class OptionsServer(object):
         return page_string
 
     def get_audio_string(self):
-        sink_dict = {}
-        for sink in pulse.sink_list():
-            sink_dict[sink.description] = sink.state._value
+        audio_string = ""
+        try:
+            sink_dict = {}
+            for sink in pulse.sink_list():
+                sink_dict[sink.description] = sink.state._value
 
-        sink_list = sorted(sink_dict, key=sink_dict.get)
+            sink_list = sorted(sink_dict, key=sink_dict.get)
 
-        sink_strings = [F'<option value="{x}" {x[0]}>{x}</option>' for x in sink_list]
-        audio_string = '\n'.join(sink_strings)
-        logger.info(f'audio_string {audio_string}')
-
+            sink_strings = [F'<option value="{x}" {x[0]}>{x}</option>' for x in sink_list]
+            audio_string = '\n'.join(sink_strings)
+        except Exception as e:
+            logger.warn(f"Error in getting audio string {e}")
+        logger.debug(f'audio_string {audio_string}')
         return audio_string
 
 
 
     @cherrypy.expose
     def bluetooth_settings(self):
-        bt_list = [x['name'] for x in bt_devices] 
+
+        connected_string = F"<p> Currently connected to {bt_connected_device_name} </p>" if len(bt_connected_device_name)>0 else ""
+
+        bt_list = [bt_connected_device_name] + [x['name'] for x in bt_devices] 
+        bt_list = list(dict.fromkeys(bt_list))
         bt_strings = [F'<option value="{x}" {self.current_choice(opt_dict,"BLUETOOTH_DEVICE",x)}>{x}</option>' for x in bt_list] 
         bt_device = '\n'.join(bt_strings)
-        logger.info(f'bluetooth devices {bt_device}')
+        logger.debug(f'bluetooth devices {bt_device}')
 
         rescan_bluetooth_string = ""
         bluetooth_device_string = ""
-        if opt_dict["BLUETOOTH_ENABLE"] == 'true':
+        if self.current_choice(opt_dict,"BLUETOOTH_ENABLE",'true'):
             rescan_bluetooth_string = """
                 <form action="rescan_bluetooth" method="get">
                 <button type="submit">Rescan Bluetooth</button>
                 </form>  """ 
-            bt_button_label = "Connected" if bt_connected else "Connect Bluetooth Device"
-            if self.current_choice(opt_dict,"BLUETOOTH_ENABLE",'true'):
-                bluetooth_device_string = """
+            bt_button_label = "Connect Bluetooth Device"
+            bluetooth_device_string = """
                 <form name="add" action="connect_bluetooth_device" method="post">
                 <select name="BLUETOOTH_DEVICE">""" + bt_device + """ </select> 
-                    <button type="submit"> """ + bt_button_label + """ </button> </form>"""
+                <button type="submit"> """ + bt_button_label + """ </button> </form>"""
+
         return_button = """ <form method="get" action="index"> <button type="submit">Return</button> </form> """
 
         page_string = """
            <html>
                <head></head>
                <body>
-                     <h1> Time Machine Bluetooth Settings """ + hostname + """</h1>""" + rescan_bluetooth_string + bluetooth_device_string + return_button + """ 
+                     <h1> Time Machine Bluetooth Settings """ + hostname + """</h1>""" + connected_string + bluetooth_device_string + rescan_bluetooth_string + return_button + """ 
                </body>
            <html> """
         return page_string
@@ -184,11 +193,11 @@ class OptionsServer(object):
     def connect_bluetooth_device(self,BLUETOOTH_DEVICE=None):
         """ set the bluetooth device """
         global bt_connected
-        return_button = """ <form method="get" action="index"> <button type="submit">Return</button> </form> """
+        return_button = """ <form method="get" action="bluetooth_settings"> <button type="submit">Return</button> </form> """
         if not BLUETOOTH_DEVICE: return return_button
 
         txt = F"Setting the bluetooth device to {BLUETOOTH_DEVICE}"
-        logging.info("\n\n\n"+txt)
+        logger.debug("\n\n\n"+txt)
 
         mac_address = [x['mac_address'] for x in bt_devices if x['name']==BLUETOOTH_DEVICE][0]
         if not bt.trust(mac_address):
@@ -199,11 +208,7 @@ class OptionsServer(object):
         if bt_connected: 
             opt_dict["BLUETOOTH_DEVICE"] = BLUETOOTH_DEVICE
         return_string = F"Connected to {BLUETOOTH_DEVICE} :)" if bt_connected else F"Failed to connect to {BLUETOOTH_DEVICE} :("
-        return_string = return_string + """
-        <form method="get" action="bluetooth_settings">
-             <button type="submit">Return</button>
-        </form>
-        """
+        return_string = return_string + return_button
         return return_string
 
     def current_choice(self, d, k, v):
@@ -256,7 +261,7 @@ class OptionsServer(object):
                 else:
                     proper_collections.append(artist)
         kwargs['COLLECTIONS'] = str.join(',', proper_collections)
-        logging.info(F'args: {args},kwargs:{kwargs},\nType: {type(kwargs)}')
+        logger.debug(F'args: {args},kwargs:{kwargs},\nType: {type(kwargs)}')
 
         self.save_options(kwargs)
         desired_sink = kwargs['audio-sink']
@@ -295,7 +300,7 @@ class OptionsServer(object):
            </form>
           </body>
        </html>"""
-        logging.info(F'Update timemachine command {cmd}')
+        logger.debug(F'Update timemachine command {cmd}')
         sleep(parms.sleep_time)
         os.system(cmd)
         return page_string
@@ -311,7 +316,7 @@ class OptionsServer(object):
            </form>
           </body>
        </html>"""
-        logging.info(F'Restart_service command {cmd}')
+        logger.debug(F'Restart_service command {cmd}')
         sleep(parms.sleep_time)
         os.system(cmd)
         return page_string
@@ -330,7 +335,7 @@ class OptionsServer(object):
            </form>
           </body>
        </html>"""
-        logging.info(F'Rescan bluetooth')
+        logger.debug(F'Rescan bluetooth')
         bt.scan(timeout=5)
         bt_devices = bt.get_candidate_devices()
         return page_string
@@ -346,18 +351,23 @@ def get_ip():
 def initialize_bluetooth(scan=True):
     global bt
     global bt_devices
+    global bt_connected_device_name
     if not bt:
         bt = bluetoothctl.Bluetoothctl()
     bt.send('power on')
-    if scan or bt_devices==[]:
+    itry = 0
+    while len(bt_connected_device_name)<1 or itry<5:
+        itry = itry + 1
+        bt_connected_device_name = bt.get_connected_device_name()
+    if scan or bt_devices==[] and bt_connected_device_name == '':
         bt.scan()
     bt_devices = bt.get_candidate_devices()
 
 
 opt_dict = read_optd()
-logging.info (F"opt_dict is now {opt_dict}")
+logger.debug (F"opt_dict is now {opt_dict}")
 if opt_dict['BLUETOOTH_ENABLE'] == 'true':
-    initialize_bluetooth()
+    initialize_bluetooth(scan=False)
 
 def main():
     ip_address = get_ip()
@@ -366,7 +376,7 @@ def main():
 
 
 for k in parms.__dict__.keys():
-    logging.info(F"{k:20s} : {parms.__dict__[k]}")
+    logger.debug(F"{k:20s} : {parms.__dict__[k]}")
 if __name__ == "__main__" and parms.debug == 0:
     main()
     exit(0)
