@@ -191,16 +191,29 @@ class Bluetoothctl:
 
     def pair(self, mac_address):
         """Try to pair with a device by mac address."""
+        if mac_address in [x['mac_address'] for x in self.get_paired_devices()]:
+            logger.warn("Already Paired")
+            return True
         try:
             self.send(f"pair {mac_address}", 4)
         except Exception as e:
             logger.error(e)
             return False
         else:
-            res = self.process.expect(
-                ["Failed to pair", "Pairing successful", pexpect.EOF]
-            )
-            return res == 1
+            res = self.process.expect(["Failed to pair", "Pairing successful", "Confirm passkey", "Request confirmation", pexpect.EOF])
+            if res == 1:
+                return True
+            elif res in [2, 3]:
+                logger.warn("Pairing automatically")
+                self.send("yes")
+                time.sleep(2)
+                if mac_address in [x['mac_address'] for x in self.get_paired_devices()]:
+                    return True
+                res = self.process.expect(["Request confirmation", pexpect.EOF])
+                return res == 0
+            else:
+                logger.warn(F"Failed to pair. Res = {res}")
+                return False
 
     def trust(self, mac_address):
         try:
