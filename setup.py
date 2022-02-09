@@ -30,6 +30,7 @@ setup(
         'aiofiles',
         'cherrypy',
         'gpiozero',
+        'pexpect',
         'pickle5',
         'Pillow',
         'pre-commit',
