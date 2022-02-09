@@ -94,6 +94,8 @@ class Bluetoothctl:
         s = re.search(r'\[(.*)\]',device_string)
         if s:
             device_name = s.group(1)
+        if device_name == 'bluetooth':
+            device_name = ''
         return device_name
 
     def make_discoverable(self):

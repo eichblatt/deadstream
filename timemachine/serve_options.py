@@ -137,7 +137,7 @@ class OptionsServer(object):
         return page_string
 
     def get_audio_string(self):
-        audio_string = ""
+        audio_string = "headphone jack"
         try:
             sink_dict = {}
             for sink in pulse.sink_list():
