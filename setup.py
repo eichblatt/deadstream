@@ -33,6 +33,7 @@ setup(
         'pickle5',
         'Pillow',
         'pre-commit',
+        'pulsectl',
         'python-mpv',
         'requests',
         'RPi.GPIO',
