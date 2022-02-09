@@ -1,6 +1,6 @@
 # Based on ReachView code from Egor Fedorov (egor.fedorov@emlid.com)
 # Updated for Python 3.6.8 on a Raspberry  Pi
-# source: https://gist.github.com/castis/0b7a162995d0b465ba9c84728e60ec01#file-bluetoothctl-py 
+# source: https://gist.github.com/castis/0b7a162995d0b465ba9c84728e60ec01#file-bluetoothctl-py
 
 # If you are interested in using ReachView code as a part of a
 # closed source project, please contact Emlid Limited (info@emlid.com).
@@ -30,11 +30,13 @@ import logging
 
 logger = logging.getLogger("btctl")
 
+
 def escape_ansi(line):
     ansi_escape = re.compile(r'(?:\x1B[@-_]|[\x80-\x9F])[0-?]*[ -/]*[@-~]')
-    if isinstance(line,list):
+    if isinstance(line, list):
         return [ansi_escape.sub('', l) for l in line]
     return ansi_escape.sub('', line)
+
 
 class Bluetoothctl:
     """A wrapper for bluetoothctl utility."""
@@ -91,7 +93,7 @@ class Bluetoothctl:
         if len(prompt) < 1:
             return device_name
         device_string = escape_ansi(prompt[0])
-        s = re.search(r'\[(.*)\]',device_string)
+        s = re.search(r'\[(.*)\]', device_string)
         if s:
             device_name = s.group(1)
         if device_name == 'bluetooth':
@@ -160,7 +162,7 @@ class Bluetoothctl:
     def is_candidate(self, device):
         """Filter interesting devices out of available."""
         mac_address = device['mac_address']
-        dash_address = mac_address.replace(':','-')
+        dash_address = mac_address.replace(':', '-')
         name = device['name']
         if name == dash_address or name.startswith('RSSI') or name.startswith('TxPower'):
             return False
@@ -171,7 +173,7 @@ class Bluetoothctl:
         try:
             dd = self.get_discoverable_devices()
             ad = self.get_available_devices()
-            unique_devices = list({v['mac_address']:v for v in dd+ad}.values())
+            unique_devices = list({v['mac_address']: v for v in dd+ad}.values())
             candidate_devices = [d for d in unique_devices if self.is_candidate(d)]
         except Exception as e:
             logger.error(e)
