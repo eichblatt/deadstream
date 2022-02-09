@@ -7,9 +7,9 @@ import json
 import cherrypy
 import subprocess
 
-import bluetoothctl
 import pulsectl
 
+from timemachine import bluetoothctl
 
 ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
 parser = optparse.OptionParser()
