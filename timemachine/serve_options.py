@@ -276,15 +276,17 @@ class OptionsServer(object):
         form_string = '\n'.join(form_strings)
         page_string = """<html>
          <head></head>
-         <body> Options set to <p> """ + form_string + """
-           <form method="get" action="index">
-             <button type="submit">Return</button>
-           </form>
-           <form method="get" action="restart_service">
-             <button type="submit">Restart Timemachine Service</button>
-           </form>
-         </body>
-       </html>"""
+             <body> Options set to <p> """ + form_string + """
+               <form method="get" action="index">
+                 <button type="submit">Return</button>
+               </form>
+               <form method="get" action="restart_service">
+                 <button type="submit">Restart Timemachine Service</button>
+               </form>
+             </body>
+         </html>"""
+
+        sleep(0.2*parms.sleep_time)
         return page_string
 
     @cherrypy.expose

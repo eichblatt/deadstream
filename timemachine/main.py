@@ -178,11 +178,12 @@ def save_state(state):
 #        pid_file = os.path.join(os.getenv('HOME'),'tm.pid')
 #        if os.path.exists(pid_file):
 #            os.remove(pid_file)
-#        f = open(pid_file,'w') 
+#        f = open(pid_file,'w')
 #        f.write(str(os.getpid()))
 #    except Exception as e:
 #        logger.exception(f'{e} while trying to write pid file')
 #        raise e
+
 
 def default_options():
     d = {}
@@ -933,11 +934,13 @@ def event_loop(state, lock):
         pass
         # lock.release()
 
+
 def get_ip():
     cmd = "hostname -I"
     ip = subprocess.check_output(cmd, shell=True)
     ip = ip.decode().split(' ')[0]
     return ip
+
 
 """
 while len(get_ip())==0:
@@ -1054,6 +1057,7 @@ if RELOAD_STATE_ON_START:
 # save_pid()
 lock = Lock()
 eloop = threading.Thread(target=event_loop, args=[state, lock])
+
 
 def main():
     if config.optd['AUTO_UPDATE_ARCHIVE']:
