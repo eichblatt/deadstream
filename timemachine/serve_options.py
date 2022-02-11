@@ -44,7 +44,7 @@ bt_devices = []
 bt_connected = None
 bt_connected_device_name = ''
 hostname = subprocess.check_output('hostname').decode().strip()
-pulse = pulsectl.Pulse('volume_increaser')
+pulse = pulsectl.Pulse('pulsectl')
 
 
 def default_options():
@@ -139,6 +139,7 @@ class OptionsServer(object):
         return page_string
 
     def get_audio_string(self):
+        global pulse
         audio_string = "headphone jack"
         try:
             sink_dict = {}
@@ -150,7 +151,11 @@ class OptionsServer(object):
             sink_strings = [F'<option value="{x}" {x[0]}>{x}</option>' for x in sink_list]
             audio_string = '\n'.join(sink_strings)
         except Exception as e:
-            logger.warn(f"Error in getting audio string {e}")
+            logger.warning("Error in getting audio string")
+            logger.warning(f"sink_dict{sink_dict}")
+            logger.warning(f"sink_list{sink_list}")
+            logger.warning(f"sink_strings{sink_strings}")
+            pulse = pulsectl.Pulse('pulsectl')
         logger.debug(f'audio_string {audio_string}')
         return audio_string
 
