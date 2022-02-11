@@ -67,7 +67,7 @@ def get_collection_names():
     try:
         data = json.load(open(collection_path, 'r'))['items']
         collection_names = [x['identifier'] for x in data]
-    except Exception as e:
+    except Exception:
         logger.warning(F"Failed to read collection names from {collection_path}.")
     finally:
         return collection_names
@@ -81,7 +81,7 @@ def read_optd():
         extra_keys = [k for k in opt_dict_default.keys() if k not in opt_dict.keys()]
         for k in extra_keys:
             opt_dict[k] = opt_dict_default[k]
-    except Exception as e:
+    except Exception:
         logger.warning(F"Failed to read options from {parms.options_path}. Using defaults")
     return opt_dict
 
@@ -113,8 +113,6 @@ class OptionsServer(object):
                 bt.send('power off')
             except Exception:
                 pass
-            bt_devices = []
-            bt_connected = None
 
         page_string = """<html>
          <head></head>
@@ -240,7 +238,7 @@ class OptionsServer(object):
             if arg == arg.upper():
                 options[arg] = kwargs[arg]
         with open(parms.options_path, 'w') as outfile:
-            opt_dict = json.dump(options, outfile, indent=1)
+            json.dump(options, outfile, indent=1)
 
     @cherrypy.expose
     def save_values(self, *args, **kwargs):
@@ -327,7 +325,7 @@ class OptionsServer(object):
     @cherrypy.expose
     def rescan_bluetooth(self, *args, **kwargs):
         global bt_devices
-        logger.debug(F'Rescan bluetooth')
+        logger.debug('Rescan bluetooth')
 
         device_string = ""
         try:
@@ -336,8 +334,8 @@ class OptionsServer(object):
             logger.debug(F'bt_devices is {bt_devices}')
             device_string = "\n".join([x['name'] for x in bt_devices])
             logger.debug(F'device_string is {device_string}')
-        except Exception:
-            logger.warn(F"Exception in scanning for bluetooth {e}")
+        except Exception as e:
+            logger.exception(F"Exception in scanning for bluetooth {e}")
             pass
 
         page_string = """<html>

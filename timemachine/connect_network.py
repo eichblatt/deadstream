@@ -5,7 +5,6 @@ import re
 import string
 import subprocess
 import sys
-from time import sleep
 
 from tenacity import retry
 from tenacity.stop import stop_after_delay
@@ -230,6 +229,7 @@ def main():
             TMB.scr.show_text("wifi connecting\n...", loc=(0, 0), color=(255, 255, 255), font=TMB.scr.smallfont, force=True, clear=True)
             sleep_or_button(parms.sleep_time)
     except Exception as e:
+        logger.exception(e)
         sys.exit(-1)
     finally:
         TMB.clear_events()

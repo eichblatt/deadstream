@@ -678,7 +678,7 @@ def refresh_venue(state):
 
     # logger.debug(f'venue {venue}, city_state {city_state}')
 
-    show_collection_list = tape_id == venue  # This is an arbitrary condition...fix!
+    tape_id == venue  # This is an arbitrary condition...fix!
     id_color = (0, 255, 255)
 
     if venue_counter[0] == 0:
@@ -753,7 +753,6 @@ def test_update(state):
 
 def get_current(state):
     current = state.get_current()
-    on_tour = current['ON_TOUR']
     return current
 
 

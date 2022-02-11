@@ -159,7 +159,7 @@ def configure_collections(parms):
     tmpd = default_options()
     try:
         tmpd = json.load(open(parms.options_path, 'r'))
-    except Exception as e:
+    except Exception:
         logger.warning(F"Failed to read options from {parms.options_path}. Using defaults")
     tmpd['COLLECTIONS'] = collection
     try:

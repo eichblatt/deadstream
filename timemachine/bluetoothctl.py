@@ -24,7 +24,6 @@ import time
 import pexpect
 import re
 import subprocess
-import sys
 import logging
 
 
@@ -34,7 +33,7 @@ logger = logging.getLogger("btctl")
 def escape_ansi(line):
     ansi_escape = re.compile(r'(?:\x1B[@-_]|[\x80-\x9F])[0-?]*[ -/]*[@-~]')
     if isinstance(line, list):
-        return [ansi_escape.sub('', l) for l in line]
+        return [ansi_escape.sub('', elem) for elem in line]
     return ansi_escape.sub('', line)
 
 
@@ -46,9 +45,9 @@ class Bluetoothctl:
         self.process = pexpect.spawnu("bluetoothctl", echo=False)
         self.process.expect("Agent registered")
         self.terminator = "#"
-        #p = self.get_prompt()
+        # p = self.get_prompt()
         # self.terminator = escape_ansi(self.process.before)
-        #self.terminator = self.get_connected_device_name()
+        # self.terminator = self.get_connected_device_name()
 
     def send(self, command, pause=0):
         self.process.send(f"{command}\n")
@@ -217,7 +216,7 @@ class Bluetoothctl:
 
     def trust(self, mac_address):
         try:
-            output = self.get_output(f"trust {mac_address}")
+            self.get_output(f"trust {mac_address}")
         except Exception as e:
             logger.error(e)
             return False
