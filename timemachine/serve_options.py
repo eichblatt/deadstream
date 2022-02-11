@@ -141,8 +141,10 @@ class OptionsServer(object):
     def get_audio_string(self):
         global pulse
         audio_string = "headphone jack"
+        sink_dict = {}
+        sink_list = []
+        sink_strings = ''
         try:
-            sink_dict = {}
             for sink in pulse.sink_list():
                 sink_dict[sink.description] = sink.state._value
 
