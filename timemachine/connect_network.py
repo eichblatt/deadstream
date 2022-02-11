@@ -210,7 +210,7 @@ def main():
         cmd = "sudo ifconfig wlan0 up"
         os.system(cmd)
         ip = get_ip()
-        connected = ip != None
+        connected = ip is not None
         if not connected:
             connected = wifi_connected(max_attempts=4)
 

@@ -1,4 +1,3 @@
-import sys
 import time
 from threading import Event
 

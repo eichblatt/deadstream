@@ -165,7 +165,7 @@ def configure_collections(parms):
     try:
         with open(parms.options_path, 'w') as outfile:
             json.dump(tmpd, outfile, indent=1)
-    except Exception as e:
+    except Exception:
         logger.warning(F"Failed to write options to {parms.options_path}")
 
     return collection
@@ -176,7 +176,7 @@ def test_sound(parms):
     try:
         cmd = 'mpv --really-quiet ~/test_sound.ogg &'
         os.system(cmd)
-    except Exception as e:
+    except Exception:
         logger.warning("Failed to play sound file ~/test_sound.ogg")
 
 

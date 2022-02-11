@@ -28,7 +28,7 @@ import time
 from threading import Event, Lock
 from time import sleep
 
-from gpiozero import Button, RotaryEncoder
+from gpiozero import RotaryEncoder
 from tenacity import retry
 from tenacity.stop import stop_after_delay
 from typing import Callable
