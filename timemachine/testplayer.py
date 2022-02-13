@@ -2,12 +2,14 @@ import sys
 import time
 from threading import Event
 
-from timemachine import GD
-GD.logger.setLevel(10)
+from timemachine import Archivary,config,GD
+Archivary.logger.setLevel(10)
+
 
 track_event = Event()
+config.optd = {'COLLECTIONS': ['GratefulDead', 'Phish', 'PhilLeshandFriends'], 'FAVORED_TAPER': 'miller'}
 
-archive = GD.GDArchive()
+archive = Archivary.GDArchive()
 tapedate = '1982-11-25'
 tapedate = '1980-10-29'
 tapes = archive.tape_dates[tapedate]
