@@ -151,7 +151,7 @@ class GDPlayer(MPV):
     def restart_pulse_audio(self):
         logger.info("Restarting the pulseaudio service")
         cmd = "sudo service pulseaudio restart"
-        os.system(cmd)
+        # os.system(cmd)
         return
 
     def reset_audio_device(self, kwarg=None):

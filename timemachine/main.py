@@ -899,8 +899,8 @@ def event_loop(state, lock):
                     if (now - config.PAUSED_AT).seconds > SLEEP_AFTER_SECONDS and state.player.get_prop('audio-device') != 'null':
                         logger.info(F"Paused at {config.PAUSED_AT}, sleeping after {SLEEP_AFTER_SECONDS}, now {now}")
                         TMB.scr.sleep()
-                        state.player._set_property('audio-device', 'null')
-                        state.player.wait_for_property('audio-device', lambda x: x == 'null')
+                        # state.player._set_property('audio-device', 'null')
+                        # state.player.wait_for_property('audio-device', lambda x: x == 'null')
                         state.set(current)
                         playstate_event.set()
                     elif (now - current['WOKE_AT']).seconds > SLEEP_AFTER_SECONDS:
