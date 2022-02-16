@@ -54,7 +54,7 @@ def default_options():
     d['FAVORED_TAPER'] = 'miller'
     d['AUTO_UPDATE_ARCHIVE'] = 'false'
     d['ON_TOUR_ALLOWED'] = 'false'
-    d['BLUETOOTH_ENABLE'] = 'false'
+    # d['BLUETOOTH_ENABLE'] = 'false'
     d['BLUETOOTH_DEVICE'] = 'None'
     d['DEFAULT_START_TIME'] = '15:00:00'
     d['TIMEZONE'] = 'America/New_York'
@@ -102,17 +102,17 @@ class OptionsServer(object):
         audio_string = self.get_audio_string()
 
         bluetooth_button = ""
-        if self.current_choice(opt_dict, "BLUETOOTH_ENABLE", 'true'):
-            initialize_bluetooth(scan=False)
-            bluetooth_button = """
-               <form method="get" action="bluetooth_settings">
-                 <button type="submit">Bluetooth Settings</button>
-               </form> """
-        else:
-            try:
-                bt.send('power off')
-            except Exception:
-                pass
+        # if self.current_choice(opt_dict, "BLUETOOTH_ENABLE", 'true'):
+        #     initialize_bluetooth(scan=False)
+        #     bluetooth_button = """
+        #        <form method="get" action="bluetooth_settings">
+        #          <button type="submit">Bluetooth Settings</button>
+        #        </form> """
+        # else:
+        #     try:
+        #         bt.send('power off')
+        #     except Exception:
+        #         pass
 
         page_string = """<html>
          <head></head>
@@ -161,7 +161,7 @@ class OptionsServer(object):
         logger.debug(f'audio_string {audio_string}')
         return audio_string
 
-    @cherrypy.expose
+    # @cherrypy.expose
     def bluetooth_settings(self):
 
         connected_string = F"<p> Currently connected to {bt_connected_device_name} </p>" if len(bt_connected_device_name) > 0 else ""
@@ -196,7 +196,7 @@ class OptionsServer(object):
            <html> """
         return page_string
 
-    @cherrypy.expose
+    # @cherrypy.expose
     def connect_bluetooth_device(self, BLUETOOTH_DEVICE=None):
         """ set the bluetooth device """
         global bt_connected
@@ -329,7 +329,7 @@ class OptionsServer(object):
         os.system(cmd)
         return page_string
 
-    @cherrypy.expose
+    # @cherrypy.expose
     def rescan_bluetooth(self, *args, **kwargs):
         global bt_devices
         logger.debug('Rescan bluetooth')
@@ -384,8 +384,9 @@ def initialize_bluetooth(scan=True):
 
 opt_dict = read_optd()
 logger.debug(F"opt_dict is now {opt_dict}")
-if opt_dict['BLUETOOTH_ENABLE'] == 'true':
-    initialize_bluetooth(scan=False)
+
+# if opt_dict['BLUETOOTH_ENABLE'] == 'true':
+#     initialize_bluetooth(scan=False)
 
 
 def main():
