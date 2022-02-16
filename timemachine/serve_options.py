@@ -144,20 +144,25 @@ class OptionsServer(object):
         sink_dict = {}
         sink_list = []
         sink_strings = ''
-        try:
-            for sink in pulse.sink_list():
-                sink_dict[sink.description] = sink.state._value
+        itry = 0
+        while len(sink_list)==0 and itry<4:
+            itry = itry + 1
+            try:
+                for sink in pulse.sink_list():
+                    sink_dict[sink.description] = sink.state._value
 
-            sink_list = sorted(sink_dict, key=sink_dict.get)
+                sink_list = sorted(sink_dict, key=sink_dict.get)
 
-            sink_strings = [F'<option value="{x}" {x[0]}>{x}</option>' for x in sink_list]
-            audio_string = '\n'.join(sink_strings)
-        except Exception as e:
-            logger.warning("Error in getting audio string")
-            logger.warning(f"sink_dict{sink_dict}")
-            logger.warning(f"sink_list{sink_list}")
-            logger.warning(f"sink_strings{sink_strings}")
-            pulse = pulsectl.Pulse('pulsectl')
+                sink_strings = [F'<option value="{x}" {x[0]}>{x}</option>' for x in sink_list]
+                audio_string = '\n'.join(sink_strings)
+            except Exception as e:
+                logger.warning("Error in getting audio string")
+                logger.warning(f"sink_dict{sink_dict}")
+                logger.warning(f"sink_list{sink_list}")
+                logger.warning(f"sink_strings{sink_strings}")
+                sleep(0.2*parms.sleep_time)
+                pulse = pulsectl.Pulse('pulsectl')
+
         logger.debug(f'audio_string {audio_string}')
         return audio_string
 
@@ -270,11 +275,17 @@ class OptionsServer(object):
         logger.debug(F'args: {args},kwargs:{kwargs},\nType: {type(kwargs)}')
 
         self.save_options(kwargs)
-        desired_sink = kwargs['audio-sink']
+        try:
+            desired_sink = kwargs['audio-sink']
+        except KeyError:
+            logger.warn("audio-sink not in kwargs")
+            desired_sink = 'headphone jack'
         if desired_sink != pulse.server_info().default_sink_name:
             for sink in pulse.sink_list():
                 if sink.description == desired_sink:
                     pulse.default_set(sink)
+                    cmd = 'sudo service pulseaudio restart'
+                    os.system(cmd)
                     continue
 
         form_strings = [F'<label>{x[0]}:{x[1]}</label> <p>' for x in kwargs.items()]
