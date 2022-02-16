@@ -14,32 +14,17 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
-import abc
-import codecs
-import csv
 import datetime
-import difflib
-import json
 import logging
-import math
 import os
-import random
-import re
-import requests
-import tempfile
 import time
-from threading import Event, Lock, Thread
 
-from operator import methodcaller
 from mpv import MPV
 from tenacity import retry
 from tenacity.stop import stop_after_delay, stop_after_attempt
 from tenacity.wait import wait_random
 from tenacity.retry import retry_if_result
 from typing import Callable, Optional
-
-import pkg_resources
-from timemachine import config
 
 logging.basicConfig(format='%(asctime)s.%(msecs)03d %(levelname)s: %(name)s %(message)s', level=logging.INFO, datefmt='%Y-%m-%d %H:%M:%S')
 logger = logging.getLogger(__name__)
@@ -166,11 +151,11 @@ class GDPlayer(MPV):
     def restart_pulse_audio(self):
         logger.info("Restarting the pulseaudio service")
         cmd = "sudo service pulseaudio restart"
-        os.system(cmd)
+        # os.system(cmd)
         return
 
     def reset_audio_device(self, kwarg=None):
-        logger.info(F"in reset_audio_device")
+        logger.info("in reset_audio_device")
         if self.get_prop('audio-device') == 'null':
             logger.info(F"changing audio-device to {self.default_audio_device}")
             audio_device = self.default_audio_device

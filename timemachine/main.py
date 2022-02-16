@@ -28,7 +28,7 @@ import time
 from threading import Event, Lock
 from time import sleep
 
-from gpiozero import Button, RotaryEncoder
+from gpiozero import RotaryEncoder
 from tenacity import retry
 from tenacity.stop import stop_after_delay
 from typing import Callable
@@ -178,11 +178,12 @@ def save_state(state):
 #        pid_file = os.path.join(os.getenv('HOME'),'tm.pid')
 #        if os.path.exists(pid_file):
 #            os.remove(pid_file)
-#        f = open(pid_file,'w') 
+#        f = open(pid_file,'w')
 #        f.write(str(os.getpid()))
 #    except Exception as e:
 #        logger.exception(f'{e} while trying to write pid file')
 #        raise e
+
 
 def default_options():
     d = {}
@@ -677,7 +678,7 @@ def refresh_venue(state):
 
     # logger.debug(f'venue {venue}, city_state {city_state}')
 
-    show_collection_list = tape_id == venue  # This is an arbitrary condition...fix!
+    tape_id == venue  # This is an arbitrary condition...fix!
     id_color = (0, 255, 255)
 
     if venue_counter[0] == 0:
@@ -752,7 +753,6 @@ def test_update(state):
 
 def get_current(state):
     current = state.get_current()
-    on_tour = current['ON_TOUR']
     return current
 
 
@@ -899,8 +899,8 @@ def event_loop(state, lock):
                     if (now - config.PAUSED_AT).seconds > SLEEP_AFTER_SECONDS and state.player.get_prop('audio-device') != 'null':
                         logger.info(F"Paused at {config.PAUSED_AT}, sleeping after {SLEEP_AFTER_SECONDS}, now {now}")
                         TMB.scr.sleep()
-                        state.player._set_property('audio-device', 'null')
-                        state.player.wait_for_property('audio-device', lambda x: x == 'null')
+                        # state.player._set_property('audio-device', 'null')
+                        # state.player.wait_for_property('audio-device', lambda x: x == 'null')
                         state.set(current)
                         playstate_event.set()
                     elif (now - current['WOKE_AT']).seconds > SLEEP_AFTER_SECONDS:
@@ -933,11 +933,13 @@ def event_loop(state, lock):
         pass
         # lock.release()
 
+
 def get_ip():
     cmd = "hostname -I"
     ip = subprocess.check_output(cmd, shell=True)
     ip = ip.decode().split(' ')[0]
     return ip
+
 
 """
 while len(get_ip())==0:
@@ -1054,6 +1056,7 @@ if RELOAD_STATE_ON_START:
 # save_pid()
 lock = Lock()
 eloop = threading.Thread(target=event_loop, args=[state, lock])
+
 
 def main():
     if config.optd['AUTO_UPDATE_ARCHIVE']:

@@ -1,18 +1,14 @@
 from timemachine import controls
 from timemachine import config
 import datetime
-from time import sleep
 from threading import Event
 from typing import Callable
 import board
 import digitalio
 from adafruit_rgb_display.st7735 import ST7735R
-from adafruit_rgb_display import color565
 from gpiozero import RotaryEncoder, Button
 from tenacity import retry
 from tenacity.stop import stop_after_delay
-from PIL import Image, ImageDraw, ImageFont
-import pkg_resources
 
 controls.logger.setLevel(50)
 d1 = '1977-05-08'
@@ -65,8 +61,8 @@ rewind = retry_call(Button, config.rewind_pin, hold_repeat=True)
 stop = retry_call(Button, config.stop_pin)
 
 play_state = config.PLAY_STATE
-#state = ctl.state(date_reader)
-#cfg = state.get_current()
+# state = ctl.state(date_reader)
+# cfg = state.get_current()
 
 config.PLAY_STATE = 1   # Ready
 
@@ -93,11 +89,11 @@ except KeyboardInterrupt:
 
 
 if __name__ == "__main__":
-    print(f"Initializing inputs and outputs")
+    print("Initializing inputs and outputs")
     stop_event = Event()
     screen_event = Event()
 
-    print(f"Initializing display")
+    print("Initializing display")
     display = ST7735R(board.SPI(),
                       rotation=90,
                       width=128,

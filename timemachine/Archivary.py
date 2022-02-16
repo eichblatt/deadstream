@@ -32,7 +32,6 @@ import time
 from threading import Event, Lock, Thread
 
 from operator import methodcaller
-from mpv import MPV
 from tenacity import retry
 from tenacity.stop import stop_after_delay
 from typing import Callable, Optional
@@ -128,8 +127,8 @@ class BaseTapeDownloader(abc.ABC):
         pass
 
 
-def remove_none(l):
-    return [a for a in l if a is not None]
+def remove_none(lis):
+    return [a for a in lis if a is not None]
 
 
 class Archivary():
@@ -147,7 +146,7 @@ class Archivary():
         if 'Phish' in self.collection_list:
             try:
                 phishin_archive = PhishinArchive(dbpath=dbpath, reload_ids=reload_ids, with_latest=with_latest)
-            except:
+            except Exception:
                 pass
         if len(ia_collections) > 0:
             ia_archive = GDArchive(dbpath=dbpath, reload_ids=reload_ids, with_latest=with_latest, collection_list=ia_collections)
@@ -400,7 +399,7 @@ class PhishinTapeDownloader(BaseTapeDownloader):
         self.api = f"{self.url}/api/v1/shows"
         try:
             self.apikey = open(os.path.join(os.getenv('HOME'), '.phishinkey'), 'r').read().rstrip()
-        except:
+        except Exception:
             self.apikey = None
         self.parms = {'sort_attr': 'date',
                       'sort_dir': 'desc', 'per_page': '300'}
@@ -421,10 +420,6 @@ class PhishinTapeDownloader(BaseTapeDownloader):
         """Get a list of all Phish.in shows
         Write all tapes to a folder by time period
         """
-        current_rows = 0
-        n_tapes_added = 0
-        n_tapes_total = 0
-        tapes = []
         per_page = self.parms['per_page']
 
         # No need to update if we already have a show from today.
@@ -506,7 +501,6 @@ class IATapeDownloader(BaseTapeDownloader):
             # ChunkedEncodingError:
         j = r.json()
         total = j['total']
-        data = j['items']
         current_rows += j['count']
         if current_rows < total:
             logger.warning(f"Not all collection names were downloaded. Total:{total} downloaded:{current_rows}")
@@ -706,7 +700,6 @@ class PhishinArchive(BaseArchive):
     def load_current_tapes(self, reload_ids=False):
         logger.debug("Loading current tapes")
         tapes = []
-        addeddates = []
         if reload_ids or not os.path.exists(self.idpath):
             os.system(f'rm -rf {self.idpath}')
             logger.info('Loading Tapes from the Archive...this will take a few minutes')
@@ -765,7 +758,7 @@ class PhishinTape(BaseTape):
         self.url_metadata = 'https://phish.in/api/v1/shows/' + self.date
         try:
             self.apikey = open(os.path.join(os.getenv('HOME'), '.phishinkey'), 'r').read().rstrip()
-        except:
+        except Exception:
             self.apikey = None
         self.parms = {'sort_attr': 'date',
                       'sort_dir': 'asc', 'per_page': '300'}
@@ -845,7 +838,6 @@ class PhishinTrack(BaseTrack):
         self.add_file(tdict, break_track)
 
     def add_file(self, tdict, break_track=False):
-        attribs = ['name', 'format', 'size', 'source', 'path']
         d = {}
         d['source'] = 'phishin'
         if not break_track:
@@ -865,7 +857,7 @@ class PhishinTrack(BaseTrack):
                 logger.info(f"path is {d['path']}")
                 self.title = 'Set Break'
             d['format'] = 'Ogg Vorbis'
-            #d['url'] = 'file://'+os.path.join(d['path'], d['name'])
+            # d['url'] = 'file://'+os.path.join(d['path'], d['name'])
             d['url'] = f'file://{d["path"]}'
         self.files.append(d)
 
@@ -1068,7 +1060,7 @@ class GDTape(BaseTape):
 
         # self.reviews = page_meta['reviews'] if 'reviews' in page_meta.keys() else []
         orig_titles = {}
-        if not 'files' in page_meta.keys():
+        if 'files' not in page_meta.keys():
             # This tape can not be played, and should be removed from the data.
             self.remove_from_archive(meta_path, page_meta)
             return
@@ -1192,7 +1184,7 @@ class GDTape(BaseTape):
         set_breaks_already_in_tape = difflib.get_close_matches('Set Break', tlist, cutoff=0.6)
         set_breaks_already_locs = [tlist.index(x) for x in set_breaks_already_in_tape]
         for i, t in enumerate(self._tracks):
-            if not i in set_breaks_already_locs:
+            if i not in set_breaks_already_locs:
                 for j in breaks['long']:
                     if i == j:
                         newtracks.append(GDTrack(lbreakd, '', True))
