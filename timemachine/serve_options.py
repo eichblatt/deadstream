@@ -55,6 +55,7 @@ def default_options():
     d['AUTO_UPDATE_ARCHIVE'] = 'false'
     d['ON_TOUR_ALLOWED'] = 'false'
     # d['BLUETOOTH_ENABLE'] = 'false'
+    d['PLAY_LOSSLESS'] = 'false'
     d['BLUETOOTH_DEVICE'] = 'None'
     d['DEFAULT_START_TIME'] = '15:00:00'
     d['TIMEZONE'] = 'America/New_York'
