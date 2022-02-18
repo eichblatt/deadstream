@@ -779,8 +779,10 @@ class PhishinTape(BaseTape):
         """return the venue, city, state"""
         return F"{self.venue_name},{self.venue_location}"
 
-    def get_metadata(self):
+    def get_metadata(self,only_if_cached=False):
         if self.meta_loaded:
+            return
+        if only_if_cached and not self.meta_path:
             return
         self._tracks = []
         date = to_date(self.date).date()
@@ -1041,8 +1043,10 @@ class GDTape(BaseTape):
     def remove_from_archive(self, page_meta):
         self._remove_from_archive = True
 
-    def get_metadata(self):
+    def get_metadata(self,only_if_cached=False):
         if self.meta_loaded:
+            return
+        if only_if_cached and not self.meta_path:   # we don't have it cached, so return.
             return
         self._tracks = []
         date = to_date(self.date).date()
@@ -1131,11 +1135,13 @@ class GDTape(BaseTape):
         """return the venue, city, state"""
         # Note, if tracknum > 0, this could be a second show...check after running insert_breaks
         # 1970-02-14 is an example with 2 shows.
-        if self.artist not in ['GratefulDead'] and self.meta_loaded:
-            venue_name = self.venue_name
-            city_state = self.coverage
-            venue_string = f'{venue_name}, {city_state}'
-            return venue_string
+        if self.artist not in ['GratefulDead']:
+            self.get_metadata(only_if_cached=True)
+            if self.meta_loaded:
+                venue_name = self.venue_name
+                city_state = self.coverage
+                venue_string = f'{venue_name}, {city_state}'
+                return venue_string
         sd = self.set_data
         if sd is None:
             return self.identifier
