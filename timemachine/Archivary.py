@@ -784,9 +784,9 @@ class PhishinTape(BaseTape):
             return
         self._tracks = []
         date = to_date(self.date).date()
-        meta_path = self.meta_path = os.path.join(self.dbpath, str(date.year), str(date.month), self.identifier+'.json')
+        self.meta_path = os.path.join(self.dbpath, str(date.year), str(date.month), self.identifier+'.json')
         try:     # I used to check if file exists, but it may also be corrupt, so this is safer.
-            page_meta = json.load(open(meta_path, 'r'))
+            page_meta = json.load(open(self.meta_path, 'r'))
         except Exception:
             parms = self.parms.copy()
             parms['page'] = 1
@@ -817,8 +817,8 @@ class PhishinTape(BaseTape):
                 current_set = set_name
             self._tracks.append(PhishinTrack(track_data, self.identifier))
 
-        os.makedirs(os.path.dirname(meta_path), exist_ok=True)
-        json.dump(page_meta, open(meta_path, 'w'))
+        os.makedirs(os.path.dirname(self.meta_path), exist_ok=True)
+        json.dump(page_meta, open(self.meta_path, 'w'))
         self.meta_loaded = True
         # return page_meta
         for track in self._tracks:
@@ -1038,7 +1038,7 @@ class GDTape(BaseTape):
         n_known = len([t for t in self._tracks if t.title != 'unknown' and sum([x in lc for x in t.title.lower()]) > 4])
         return (1 + n_known) / (1 + n_tracks)
 
-    def remove_from_archive(self, meta_path, page_meta):
+    def remove_from_archive(self, page_meta):
         self._remove_from_archive = True
 
     def get_metadata(self):
@@ -1046,9 +1046,9 @@ class GDTape(BaseTape):
             return
         self._tracks = []
         date = to_date(self.date).date()
-        meta_path = self.meta_path = os.path.join(self.dbpath, str(date.year), str(date.month), self.identifier+'.json')
+        self.meta_path = os.path.join(self.dbpath, str(date.year), str(date.month), self.identifier+'.json')
         try:     # I used to check if file exists, but it may also be corrupt, so this is safer.
-            page_meta = json.load(open(meta_path, 'r'))
+            page_meta = json.load(open(self.meta_path, 'r'))
         except Exception:
             r = requests.get(self.url_metadata)
             logger.info("url is {}".format(r.url))
@@ -1068,7 +1068,7 @@ class GDTape(BaseTape):
         orig_titles = {}
         if 'files' not in page_meta.keys():
             # This tape can not be played, and should be removed from the data.
-            self.remove_from_archive(meta_path, page_meta)
+            self.remove_from_archive(page_meta)
             return
         for ifile in page_meta['files']:
             try:
@@ -1095,7 +1095,7 @@ class GDTape(BaseTape):
             logger.warn("Failed to read venue, city, state from metadata")
             pass
 
-        self.write_metadata(meta_path, page_meta)
+        self.write_metadata(page_meta)
 
         for track in self._tracks:
             track.title = re.sub(r'gd\d{2}(?:\d{2})?-\d{2}-\d{2}[ ]*([td]\d*)*', '', track.title).strip()
@@ -1103,9 +1103,9 @@ class GDTape(BaseTape):
         self.insert_breaks()
         return
 
-    def write_metadata(self, meta_path, page_meta):
-        os.makedirs(os.path.dirname(meta_path), exist_ok=True)
-        json.dump(page_meta, open(meta_path, 'w'))
+    def write_metadata(self, page_meta):
+        os.makedirs(os.path.dirname(self.meta_path), exist_ok=True)
+        json.dump(page_meta, open(self.meta_path, 'w'))
         self.meta_loaded = True
 
     def append_track(self, tdict, orig_titles={}):
