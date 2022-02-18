@@ -140,8 +140,9 @@ class GDPlayer(MPV):
     def create_playlist(self):
         self.playlist_clear()
         urls = self.extract_urls(self.tape)
+        if len(urls) == 0: self.tape._remove_from_archive = True
         self.command('loadfile', urls[0])
-        if len(urls) > 0:
+        if len(urls)>1:
             _ = [self.command('loadfile', x, 'append') for x in urls[1:]]
         self.playlist_pos = 0
         self.pause()
