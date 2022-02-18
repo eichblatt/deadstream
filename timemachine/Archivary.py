@@ -336,6 +336,7 @@ class BaseTape(abc.ABC):
         self.format = None
         self.collection = None
         self.artist = None
+        self.meta_path = None
         self._tracks = []
         self._remove_from_archive = False
 
@@ -783,7 +784,7 @@ class PhishinTape(BaseTape):
             return
         self._tracks = []
         date = to_date(self.date).date()
-        meta_path = os.path.join(self.dbpath, str(date.year), str(date.month), self.identifier+'.json')
+        meta_path = self.meta_path = os.path.join(self.dbpath, str(date.year), str(date.month), self.identifier+'.json')
         try:     # I used to check if file exists, but it may also be corrupt, so this is safer.
             page_meta = json.load(open(meta_path, 'r'))
         except Exception:
@@ -976,7 +977,6 @@ class GDTape(BaseTape):
     def __init__(self, dbpath, raw_json, set_data):
         super().__init__(dbpath, raw_json, set_data)
         self.meta_loaded = False
-        self.meta_path = None
         self.venue_name = None
         self.coverage = None
         attribs = ['date', 'identifier', 'avg_rating', 'format', 'collection', 'num_reviews', 'downloads', 'addeddate']
@@ -1046,7 +1046,7 @@ class GDTape(BaseTape):
             return
         self._tracks = []
         date = to_date(self.date).date()
-        self.meta_path = meta_path = os.path.join(self.dbpath, str(date.year), str(date.month), self.identifier+'.json')
+        meta_path = self.meta_path = os.path.join(self.dbpath, str(date.year), str(date.month), self.identifier+'.json')
         try:     # I used to check if file exists, but it may also be corrupt, so this is safer.
             page_meta = json.load(open(meta_path, 'r'))
         except Exception:
