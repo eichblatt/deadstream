@@ -67,8 +67,8 @@ fi
 # Perform shell tasks which may require 2 updates to take effect
 [ ! -f $HOME/.phishinkey ] && echo '8003bcd8c378844cfb69aad8b0981309f289e232fb417df560f7192edd295f1d49226ef6883902e59b465991d0869c77' > $HOME/.phishinkey
 sudo grep -qF -- "enable_uart=1" /boot/config.txt || echo "enable_uart=1" | sudo tee -a /boot/config.txt
-sudo grep -qF -- "^default-server = /var/run/pulse/native" /etc/pulse/client.conf || echo "default-server = /var/run/pulse/native" | sudo tee -a /etc/pulse/client.conf
-sudo grep -qF -- "^autospawn = no" /etc/pulse/client.conf || echo "autospawn = no" | sudo tee -a /etc/pulse/client.conf
+sudo grep -q -- "^default-server = /var/run/pulse/native" /etc/pulse/client.conf || echo "default-server = /var/run/pulse/native" | sudo tee -a /etc/pulse/client.conf
+sudo grep -q -- "^autospawn = no" /etc/pulse/client.conf || echo "autospawn = no" | sudo tee -a /etc/pulse/client.conf
 sudo usermod -a -G audio,video,bluetooth,spi,gpio,pulse,pulse-access deadhead
 sudo usermod -a -G audio,bluetooth pulse
 sudo usermod -a -G pulse,pulse-access root
