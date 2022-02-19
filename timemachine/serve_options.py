@@ -146,23 +146,30 @@ class OptionsServer(object):
         sink_list = []
         sink_strings = ''
         itry = 0
-        while len(sink_list)==0 and itry<4:
+        while len(sink_list)==0 and itry<2:     # Try reading again.
             itry = itry + 1
             try:
-                for sink in pulse.sink_list():
-                    sink_dict[sink.description] = sink.state._value
-
-                sink_list = sorted(sink_dict, key=sink_dict.get)
-
-                sink_strings = [F'<option value="{x}" {x[0]}>{x}</option>' for x in sink_list]
-                audio_string = '\n'.join(sink_strings)
+                sink_list = pulse.sink_list()
             except Exception as e:
-                logger.warning("Error in getting audio string")
-                logger.warning(f"sink_dict{sink_dict}")
-                logger.warning(f"sink_list{sink_list}")
-                logger.warning(f"sink_strings{sink_strings}")
                 sleep(0.2*parms.sleep_time)
+                logger.warning("delay in getting audio string")
+
+        itry = 0
+        while len(sink_list)==0 and itry<4:     # Try creating a new pulsectl object.
+            try:
                 pulse = pulsectl.Pulse('pulsectl')
+                sink_list = pulse.sink_list()
+            except Exception as e:        
+                sleep(0.2*parms.sleep_time)
+                logger.warning("Error getting audio string -- creating a new pulsectl object")
+
+        for sink in sink_list:
+            sink_dict[sink.description] = sink.state._value
+
+        sink_list = sorted(sink_dict, key=sink_dict.get)
+
+        sink_strings = [F'<option value="{x}" {x[0]}>{x}</option>' for x in sink_list]
+        audio_string = '\n'.join(sink_strings)
 
         logger.debug(f'audio_string {audio_string}')
         return audio_string
@@ -281,7 +288,12 @@ class OptionsServer(object):
         except KeyError:
             logger.warn("audio-sink not in kwargs")
             desired_sink = 'headphone jack'
-        if desired_sink != pulse.server_info().default_sink_name:
+
+        current_sink_name = pulse.server_info().default_sink_name
+        current_sink_desc = [x.description for x in pulse.sink_list() if x.name == current_sink_name][0]
+
+        if desired_sink != current_sink_desc:
+            logger.warning(f'resetting pulseaudio service. desired sink {desired_sink} <> {pulse.server_info().default_sink_name}')
             for sink in pulse.sink_list():
                 if sink.description == desired_sink:
                     pulse.default_set(sink)
