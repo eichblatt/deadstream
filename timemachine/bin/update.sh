@@ -67,8 +67,8 @@ fi
 # Perform shell tasks which may require 2 updates to take effect
 [ ! -f $HOME/.phishinkey ] && echo '8003bcd8c378844cfb69aad8b0981309f289e232fb417df560f7192edd295f1d49226ef6883902e59b465991d0869c77' > $HOME/.phishinkey
 
-echo "yes | sudo apt-get install pulseaudio" 
-sudo apt-get install -y pulseaudio pulseaudio-module-jack pulseaudio-module-bluetooth
+echo "sudo apt-get install -y pulseaudio pulseaudio-module-jack pulseaudio-module-bluetooth pulseaudio-utils"
+system "sudo apt-get install -y pulseaudio pulseaudio-module-jack pulseaudio-module-bluetooth pulseaudio-utils bluetooth"
 
 sudo grep -qF -- "enable_uart=1" /boot/config.txt || echo "enable_uart=1" | sudo tee -a /boot/config.txt
 sudo grep -q -- "^default-server = /var/run/pulse/native" /etc/pulse/client.conf || echo "default-server = /var/run/pulse/native" | sudo tee -a /etc/pulse/client.conf
