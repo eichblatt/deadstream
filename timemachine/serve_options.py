@@ -146,7 +146,7 @@ class OptionsServer(object):
         sink_list = []
         sink_strings = ''
         itry = 0
-        while len(sink_list)==0 and itry<2:     # Try reading again.
+        while len(sink_list) == 0 and itry < 2:     # Try reading again.
             itry = itry + 1
             try:
                 sink_list = pulse.sink_list()
@@ -155,11 +155,11 @@ class OptionsServer(object):
                 logger.warning("delay in getting audio string")
 
         itry = 0
-        while len(sink_list)==0 and itry<4:     # Try creating a new pulsectl object.
+        while len(sink_list) == 0 and itry < 4:     # Try creating a new pulsectl object.
             try:
                 pulse = pulsectl.Pulse('pulsectl')
                 sink_list = pulse.sink_list()
-            except Exception as e:        
+            except Exception as e:
                 sleep(0.2*parms.sleep_time)
                 logger.warning("Error getting audio string -- creating a new pulsectl object")
 
