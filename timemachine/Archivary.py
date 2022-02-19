@@ -32,7 +32,6 @@ import time
 from threading import Event, Lock, Thread
 
 from operator import methodcaller
-from mpv import MPV
 from tenacity import retry
 from tenacity.stop import stop_after_delay
 from typing import Callable, Optional
@@ -128,8 +127,8 @@ class BaseTapeDownloader(abc.ABC):
         pass
 
 
-def remove_none(l):
-    return [a for a in l if a is not None]
+def remove_none(lis):
+    return [a for a in lis if a is not None]
 
 
 class Archivary():
@@ -147,7 +146,7 @@ class Archivary():
         if 'Phish' in self.collection_list:
             try:
                 phishin_archive = PhishinArchive(dbpath=dbpath, reload_ids=reload_ids, with_latest=with_latest)
-            except:
+            except Exception:
                 pass
         if len(ia_collections) > 0:
             ia_archive = GDArchive(dbpath=dbpath, reload_ids=reload_ids, with_latest=with_latest, collection_list=ia_collections)
@@ -327,13 +326,17 @@ class BaseArchive(abc.ABC):
 class BaseTape(abc.ABC):
     def __init__(self, dbpath, raw_json, set_data=None):
         self.dbpath = dbpath
-        self._playable_formats = ['Ogg Vorbis', 'VBR MP3', 'MP3']  # , 'Shorten', 'Flac']
+        if config.optd['PLAY_LOSSLESS']:
+            self._playable_formats = ['Flac', 'Shorten', 'Ogg Vorbis', 'VBR MP3', 'MP3']  
+        else:
+            self._playable_formats = ['Ogg Vorbis', 'VBR MP3', 'MP3']  
         self._lossy_formats = ['Ogg Vorbis', 'VBR MP3', 'MP3']
         self._breaks_added = False
         self.meta_loaded = False
         self.format = None
         self.collection = None
         self.artist = None
+        self.meta_path = None
         self._tracks = []
         self._remove_from_archive = False
 
@@ -400,7 +403,7 @@ class PhishinTapeDownloader(BaseTapeDownloader):
         self.api = f"{self.url}/api/v1/shows"
         try:
             self.apikey = open(os.path.join(os.getenv('HOME'), '.phishinkey'), 'r').read().rstrip()
-        except:
+        except Exception:
             self.apikey = None
         self.parms = {'sort_attr': 'date',
                       'sort_dir': 'desc', 'per_page': '300'}
@@ -421,10 +424,6 @@ class PhishinTapeDownloader(BaseTapeDownloader):
         """Get a list of all Phish.in shows
         Write all tapes to a folder by time period
         """
-        current_rows = 0
-        n_tapes_added = 0
-        n_tapes_total = 0
-        tapes = []
         per_page = self.parms['per_page']
 
         # No need to update if we already have a show from today.
@@ -506,7 +505,6 @@ class IATapeDownloader(BaseTapeDownloader):
             # ChunkedEncodingError:
         j = r.json()
         total = j['total']
-        data = j['items']
         current_rows += j['count']
         if current_rows < total:
             logger.warning(f"Not all collection names were downloaded. Total:{total} downloaded:{current_rows}")
@@ -706,7 +704,6 @@ class PhishinArchive(BaseArchive):
     def load_current_tapes(self, reload_ids=False):
         logger.debug("Loading current tapes")
         tapes = []
-        addeddates = []
         if reload_ids or not os.path.exists(self.idpath):
             os.system(f'rm -rf {self.idpath}')
             logger.info('Loading Tapes from the Archive...this will take a few minutes')
@@ -765,7 +762,7 @@ class PhishinTape(BaseTape):
         self.url_metadata = 'https://phish.in/api/v1/shows/' + self.date
         try:
             self.apikey = open(os.path.join(os.getenv('HOME'), '.phishinkey'), 'r').read().rstrip()
-        except:
+        except Exception:
             self.apikey = None
         self.parms = {'sort_attr': 'date',
                       'sort_dir': 'asc', 'per_page': '300'}
@@ -782,14 +779,16 @@ class PhishinTape(BaseTape):
         """return the venue, city, state"""
         return F"{self.venue_name},{self.venue_location}"
 
-    def get_metadata(self):
+    def get_metadata(self,only_if_cached=False):
         if self.meta_loaded:
+            return
+        if only_if_cached and not self.meta_path:
             return
         self._tracks = []
         date = to_date(self.date).date()
-        meta_path = os.path.join(self.dbpath, str(date.year), str(date.month), self.identifier+'.json')
+        self.meta_path = os.path.join(self.dbpath, str(date.year), str(date.month), self.identifier+'.json')
         try:     # I used to check if file exists, but it may also be corrupt, so this is safer.
-            page_meta = json.load(open(meta_path, 'r'))
+            page_meta = json.load(open(self.meta_path, 'r'))
         except Exception:
             parms = self.parms.copy()
             parms['page'] = 1
@@ -820,8 +819,8 @@ class PhishinTape(BaseTape):
                 current_set = set_name
             self._tracks.append(PhishinTrack(track_data, self.identifier))
 
-        os.makedirs(os.path.dirname(meta_path), exist_ok=True)
-        json.dump(page_meta, open(meta_path, 'w'))
+        os.makedirs(os.path.dirname(self.meta_path), exist_ok=True)
+        json.dump(page_meta, open(self.meta_path, 'w'))
         self.meta_loaded = True
         # return page_meta
         for track in self._tracks:
@@ -845,7 +844,6 @@ class PhishinTrack(BaseTrack):
         self.add_file(tdict, break_track)
 
     def add_file(self, tdict, break_track=False):
-        attribs = ['name', 'format', 'size', 'source', 'path']
         d = {}
         d['source'] = 'phishin'
         if not break_track:
@@ -865,7 +863,7 @@ class PhishinTrack(BaseTrack):
                 logger.info(f"path is {d['path']}")
                 self.title = 'Set Break'
             d['format'] = 'Ogg Vorbis'
-            #d['url'] = 'file://'+os.path.join(d['path'], d['name'])
+            # d['url'] = 'file://'+os.path.join(d['path'], d['name'])
             d['url'] = f'file://{d["path"]}'
         self.files.append(d)
 
@@ -981,6 +979,8 @@ class GDTape(BaseTape):
     def __init__(self, dbpath, raw_json, set_data):
         super().__init__(dbpath, raw_json, set_data)
         self.meta_loaded = False
+        self.venue_name = None
+        self.coverage = None
         attribs = ['date', 'identifier', 'avg_rating', 'format', 'collection', 'num_reviews', 'downloads', 'addeddate']
         for k, v in raw_json.items():
             if k in attribs:
@@ -1040,17 +1040,19 @@ class GDTape(BaseTape):
         n_known = len([t for t in self._tracks if t.title != 'unknown' and sum([x in lc for x in t.title.lower()]) > 4])
         return (1 + n_known) / (1 + n_tracks)
 
-    def remove_from_archive(self, meta_path, page_meta):
+    def remove_from_archive(self, page_meta):
         self._remove_from_archive = True
 
-    def get_metadata(self):
+    def get_metadata(self,only_if_cached=False):
         if self.meta_loaded:
+            return
+        if only_if_cached and not self.meta_path:   # we don't have it cached, so return.
             return
         self._tracks = []
         date = to_date(self.date).date()
-        meta_path = os.path.join(self.dbpath, str(date.year), str(date.month), self.identifier+'.json')
+        self.meta_path = os.path.join(self.dbpath, str(date.year), str(date.month), self.identifier+'.json')
         try:     # I used to check if file exists, but it may also be corrupt, so this is safer.
-            page_meta = json.load(open(meta_path, 'r'))
+            page_meta = json.load(open(self.meta_path, 'r'))
         except Exception:
             r = requests.get(self.url_metadata)
             logger.info("url is {}".format(r.url))
@@ -1068,9 +1070,9 @@ class GDTape(BaseTape):
 
         # self.reviews = page_meta['reviews'] if 'reviews' in page_meta.keys() else []
         orig_titles = {}
-        if not 'files' in page_meta.keys():
+        if 'files' not in page_meta.keys():
             # This tape can not be played, and should be removed from the data.
-            self.remove_from_archive(meta_path, page_meta)
+            self.remove_from_archive(page_meta)
             return
         for ifile in page_meta['files']:
             try:
@@ -1090,7 +1092,14 @@ class GDTape(BaseTape):
             except Exception as e:   # TODO handle this!!!
                 raise (e)
 
-        self.write_metadata(meta_path, page_meta)
+        try:
+            self.venue_name = page_meta['metadata']['venue']
+            self.coverage = page_meta['metadata']['coverage']
+        except Exception:
+            logger.warn("Failed to read venue, city, state from metadata")
+            pass
+
+        self.write_metadata(page_meta)
 
         for track in self._tracks:
             track.title = re.sub(r'gd\d{2}(?:\d{2})?-\d{2}-\d{2}[ ]*([td]\d*)*', '', track.title).strip()
@@ -1098,9 +1107,9 @@ class GDTape(BaseTape):
         self.insert_breaks()
         return
 
-    def write_metadata(self, meta_path, page_meta):
-        os.makedirs(os.path.dirname(meta_path), exist_ok=True)
-        json.dump(page_meta, open(meta_path, 'w'))
+    def write_metadata(self, page_meta):
+        os.makedirs(os.path.dirname(self.meta_path), exist_ok=True)
+        json.dump(page_meta, open(self.meta_path, 'w'))
         self.meta_loaded = True
 
     def append_track(self, tdict, orig_titles={}):
@@ -1126,6 +1135,13 @@ class GDTape(BaseTape):
         """return the venue, city, state"""
         # Note, if tracknum > 0, this could be a second show...check after running insert_breaks
         # 1970-02-14 is an example with 2 shows.
+        if self.artist not in ['GratefulDead']:
+            self.get_metadata(only_if_cached=True)
+            if self.meta_loaded:
+                venue_name = self.venue_name
+                city_state = self.coverage
+                venue_string = f'{venue_name}, {city_state}'
+                return venue_string
         sd = self.set_data
         if sd is None:
             return self.identifier
@@ -1192,7 +1208,7 @@ class GDTape(BaseTape):
         set_breaks_already_in_tape = difflib.get_close_matches('Set Break', tlist, cutoff=0.6)
         set_breaks_already_locs = [tlist.index(x) for x in set_breaks_already_in_tape]
         for i, t in enumerate(self._tracks):
-            if not i in set_breaks_already_locs:
+            if i not in set_breaks_already_locs:
                 for j in breaks['long']:
                     if i == j:
                         newtracks.append(GDTrack(lbreakd, '', True))
@@ -1322,241 +1338,6 @@ class GDSet:
     def __repr__(self):
         retstr = "Grateful Dead set data"
         return retstr
-
-
-class GDPlayer(MPV):
-    """ A media player to play a GDTape """
-
-    def __init__(self, tape=None):
-        super().__init__()
-        # self._set_property('prefetch-playlist','yes')
-        # self._set_property('cache-dir','/home/steve/cache')
-        # self._set_property('cache-on-disk','yes')
-        self._set_property('audio-buffer', 10.0)  # This allows to play directly from the html without a gap!
-        self._set_property('cache', 'yes')
-        # self.default_audio_device = 'pulse'
-        self.default_audio_device = 'auto'
-        audio_device = self.default_audio_device
-        self._set_property('audio-device', audio_device)
-        self.download_when_possible = False
-        self.tape = None
-        if tape is not None:
-            self.insert_tape(tape)
-
-    def __str__(self):
-        return self.__repr__()
-
-    def __repr__(self):
-        retstr = str(self.playlist)
-        return retstr
-
-    def insert_tape(self, tape):
-        self.tape = tape
-        self.create_playlist()
-
-    def eject_tape(self):
-        self.stop()
-        self.tape = None
-        self.playlist_clear()
-
-    def extract_urls(self, tape):  # NOTE this should also give a list of backup URL's.
-        tape.get_metadata()
-        urls = []
-        playable_formats = tape._playable_formats
-        preferred_format = playable_formats[0]
-        for track_files in [x.files for x in tape.tracks()]:
-            best_track = None
-            candidates = []
-            for f in track_files:
-                if f['format'] == preferred_format:
-                    best_track = f['url']
-                elif f['format'] in playable_formats:
-                    candidates.append(f['url'])
-            if best_track is None and len(candidates) > 0:
-                best_track = candidates[0]
-            urls.append(best_track)
-        return urls
-
-    def create_playlist(self):
-        self.playlist_clear()
-        urls = self.extract_urls(self.tape)
-        self.command('loadfile', urls[0])
-        if len(urls) > 0:
-            _ = [self.command('loadfile', x, 'append') for x in urls[1:]]
-        self.playlist_pos = 0
-        self.pause()
-        logger.info(F"Playlist {self.playlist}")
-        return
-
-    def reset_audio_device(self, kwarg=None):
-        if self.get_prop('audio-device') == 'null':
-            logger.info(F"changing audio-device to {self.default_audio_device}")
-            audio_device = self.default_audio_device
-            self._set_property('audio-device', audio_device)
-            self.wait_for_property('audio-device', lambda v: v == audio_device)
-            if self.get_prop('current-ao') is None:
-                logger.warning("Current-ao is None")
-                self.stop()
-                return False
-            self.pause()
-            self._set_property('pause', False)
-            self.wait_until_playing()
-            self.pause()
-        return True
-
-    def play(self):
-        if not retry_call(self.reset_audio_device, None):
-            logger.warning("Failed to reset audio device when playing")
-        # if not self.reset_audio_device():
-        #    return
-        logger.info("playing")
-        self._set_property('pause', False)
-        self.wait_until_playing()
-
-    def pause(self):
-        logger.info("pausing")
-        self._set_property('pause', True)
-        self.wait_until_paused()
-
-    def stop(self):
-        self.playlist_pos = 0
-        self.pause()
-
-    def next(self, blocking=False):
-        pos = self.get_prop('playlist-pos')
-        if pos is None or pos + 1 == len(self.playlist):
-            return
-        self.command('playlist-next')
-        if blocking:
-            self.wait_for_event('file-loaded')
-
-    def prev(self):
-        pos = self.get_prop('playlist-pos')
-        if pos is None or pos == 0:
-            return
-        self.command('playlist-prev')
-
-    def time_remaining(self):
-        icounter = 0
-        self.wait_for_property('time-remaining', lambda v: v is not None)
-        time_remaining = self.get_prop('time-remaining')
-        while time_remaining is None and icounter < 20:
-            logger.info(F'time-remaining is {time_remaining},icounter:{icounter},playlist:{self.playlist}')
-            time.sleep(1)
-            icounter = icounter + 1
-            time_remaining = self.get_prop('time-remaining')
-            self.status()
-        logger.debug(F'time-remaining is {time_remaining}')
-        return time_remaining
-
-    def seek_in_tape_to(self, destination, ticking=True, threshold=1):
-        """ Seek to a time position in a tape. Since this can take some
-            time, the ticking option allows to take into account the time
-            required to seek (the slippage).
-            destination -- seconds from current tape location (from beginning?)
-        """
-        logger.debug(F'seek_in_tape_to {destination}')
-
-        start_tick = datetime.datetime.now()
-        slippage = 0
-        skipped = 0
-        dest_orig = destination
-        time_remaining = self.time_remaining()
-        playlist_pos = self.get_prop('playlist-pos')
-        logger.debug(F'seek_in_tape_to dest:{destination},time-remainig:{time_remaining},playlist-pos:{playlist_pos}')
-        while (destination > time_remaining) and self.get_prop('playlist-pos') + 1 < len(self.playlist):
-            duration = self.get_prop('duration')
-            logger.debug(F'seek_in_tape_to dest:{destination},time-remainig:{time_remaining},playlist-pos:{playlist_pos}, duration: {duration}, slippage {slippage}')
-            self.next(blocking=True)
-            skipped = skipped + time_remaining
-            destination = dest_orig - skipped
-            time_remaining = self.time_remaining()
-            if ticking:
-                now_tick = datetime.datetime.now()
-                slippage = (now_tick - start_tick).seconds
-                destination = destination + slippage
-            playlist_pos = self.get_prop('playlist-pos')
-        self.seek(destination)
-        self.status()
-        self.play()
-        return
-
-    def seek_to(self, track_no, destination=0.0, threshold=1):
-        logger.debug(F'seek_to {track_no},{destination}')
-        try:
-            if track_no < 0 or track_no > len(self.playlist):
-                raise Exception(F'seek_to track {track_no} out of bounds')
-            paused = self.get_prop('pause')
-            current_track = self.get_prop('playlist-pos')
-            self.status()
-            if current_track != track_no:
-                self._set_property('playlist-pos', track_no)
-                # self.wait_for_event('file-loaded')   # NOTE: this could wait forever!
-                time.sleep(5)
-            duration = self.get_prop('duration')
-            if destination < 0:
-                destination = duration + destination
-            if (destination > duration) or (destination < 0):
-                raise Exception(F'seek_to destination {destination} out of bounds (0,{duration})')
-
-            self.seek(destination, reference='absolute')
-            if not paused:
-                self.play()
-            time_pos = self.get_prop('time-pos')
-            if abs(time_pos - destination) > threshold:
-                raise Exception(F'Not close enough: time_pos {time_pos} - destination ({time_pos - destination})>{threshold}')
-        except Exception as e:
-            logger.warning(f"in seek_to {e}")
-        finally:
-            pass
-
-    def fseek(self, jumpsize=30, sleeptime=2):
-        try:
-            logger.debug(F'seeking {jumpsize}')
-
-            current_track = self.get_prop('playlist-pos')
-            time_pos = self.get_prop('time-pos')
-            if time_pos is None:
-                time_pos = 0
-            time_pos = max(0, time_pos)
-            duration = self.get_prop('duration')
-            # self.wait_for_property('duration', lambda v: v is not None)
-
-            destination = time_pos + jumpsize
-
-            logger.debug(F'destination {destination} time_pos {time_pos} duration {duration}')
-
-            if destination < 0:
-                if abs(destination) < abs(sleeptime*5):
-                    destination = destination - sleeptime*5
-                self.seek_to(current_track-1, destination)
-            if destination > duration:
-                self.seek_to(current_track+1, destination-duration)
-            else:
-                self.seek_to(current_track, destination)
-        except Exception as e:
-            logger.warning(F'fseek exception {e}')
-        finally:
-            time.sleep(sleeptime)
-
-    def get_prop(self, property_name):
-        return retry_call(self._get_property, property_name)
-
-    def status(self):
-        if self.playlist_pos is None:
-            logger.info("Playlist not started")
-            return None
-        playlist_pos = self.get_prop('playlist-pos')
-        paused = self.get_prop('pause')
-        logger.info(F"Playlist at track {playlist_pos}, Paused {paused}")
-        if self.raw.time_pos is None:
-            logger.info("Track not started")
-            return None
-        duration = self.get_prop('duration')
-        logger.info(F"duration: {duration}. time: {datetime.timedelta(seconds=int(self.raw.time_pos))}, time remaining: {datetime.timedelta(seconds=int(self.raw.time_remaining))}")
-        return int(self.raw.time_remaining)
-
-    def close(self): self.terminate()
 
 
 class Archivary_Updater(Thread):

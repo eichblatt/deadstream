@@ -3,8 +3,34 @@
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
 version=v2
 image_date=`date +%Y%m%d`
-image_file=$SCRIPT_DIR/$version\_$image_date.img
+image_name=$version\_$image_date
 media_folder=/media/steve
+
+while [[ $# -gt 0 ]]
+do
+key=$1
+
+case $key in 
+	-n | --name)
+	image_name=$2; shift; shift
+	;;
+	-f | --folder)
+	media_folder=$2; shift; shift
+	;;
+	-h | --help)
+	echo "Usage: $0 [-n image_name] [-f media_folder] [-h]"
+	exit 0
+	;;
+	*)
+	POSITIONAL+=("$1")
+	shift
+	;;
+esac
+done
+
+set -- "${POSITIONAL[@]}"
+image_file=$SCRIPT_DIR/$image_name.img
+echo "image_file is ${image_file}, media_folder is ${media_folder}"
 
 critical_command () {
    command=$1

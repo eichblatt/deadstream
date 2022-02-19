@@ -28,7 +28,7 @@ import time
 from threading import Event, Lock
 from time import sleep
 
-from gpiozero import Button, RotaryEncoder
+from gpiozero import RotaryEncoder
 from tenacity import retry
 from tenacity.stop import stop_after_delay
 from typing import Callable
@@ -173,6 +173,17 @@ def save_state(state):
     with open(parms.state_path, 'w') as statefile:
         json.dump(current, statefile, indent=1, default=str)
 
+# def save_pid():
+#    try:
+#        pid_file = os.path.join(os.getenv('HOME'),'tm.pid')
+#        if os.path.exists(pid_file):
+#            os.remove(pid_file)
+#        f = open(pid_file,'w')
+#        f.write(str(os.getpid()))
+#    except Exception as e:
+#        logger.exception(f'{e} while trying to write pid file')
+#        raise e
+
 
 def default_options():
     d = {}
@@ -181,6 +192,7 @@ def default_options():
     d['FAVORED_TAPER'] = []
     d['AUTO_UPDATE_ARCHIVE'] = False
     d['ON_TOUR_ALLOWED'] = False
+    d['PLAY_LOSSLESS'] = 'false'
     d['DEFAULT_START_TIME'] = datetime.time(15, 0)
     d['TIMEZONE'] = 'America/New_York'
     return d
@@ -194,7 +206,7 @@ def load_options(parms):
         tmpd = json.loads(f.read())
         for k in config.optd.keys():
             try:
-                if k in ['SCROLL_VENUE', 'AUTO_UPDATE_ARCHIVE', 'ON_TOUR_ALLOWED']:  # make booleans.
+                if k in ['SCROLL_VENUE', 'AUTO_UPDATE_ARCHIVE', 'ON_TOUR_ALLOWED', 'PLAY_LOSSLESS']:  # make booleans.
                     tmpd[k] = tmpd[k].lower() == 'true'
                 if k in ['COLLECTIONS', 'FAVORED_TAPER']:   # make lists from comma-separated strings.
                     c = [x.strip() for x in tmpd[k].split(',') if x != '']
@@ -667,7 +679,7 @@ def refresh_venue(state):
 
     # logger.debug(f'venue {venue}, city_state {city_state}')
 
-    show_collection_list = tape_id == venue  # This is an arbitrary condition...fix!
+    tape_id == venue  # This is an arbitrary condition...fix!
     id_color = (0, 255, 255)
 
     if venue_counter[0] == 0:
@@ -742,7 +754,6 @@ def test_update(state):
 
 def get_current(state):
     current = state.get_current()
-    on_tour = current['ON_TOUR']
     return current
 
 
@@ -887,10 +898,10 @@ def event_loop(state, lock):
                 save_state(state)
                 if current['PLAY_STATE'] != config.PLAYING:  # deal with overnight pauses, which freeze the alsa player.
                     if (now - config.PAUSED_AT).seconds > SLEEP_AFTER_SECONDS and state.player.get_prop('audio-device') != 'null':
-                        logger.debug(F"Paused at {config.PAUSED_AT}, sleeping after {SLEEP_AFTER_SECONDS}, now {now}")
+                        logger.info(F"Paused at {config.PAUSED_AT}, sleeping after {SLEEP_AFTER_SECONDS}, now {now}")
                         TMB.scr.sleep()
-                        state.player._set_property('audio-device', 'null')
-                        state.player.wait_for_property('audio-device', lambda x: x == 'null')
+                        # state.player._set_property('audio-device', 'null')
+                        # state.player.wait_for_property('audio-device', lambda x: x == 'null')
                         state.set(current)
                         playstate_event.set()
                     elif (now - current['WOKE_AT']).seconds > SLEEP_AFTER_SECONDS:
@@ -930,6 +941,12 @@ def get_ip():
     ip = ip.decode().split(' ')[0]
     return ip
 
+
+"""
+while len(get_ip())==0:
+    logger.info("Waiting for IP address")
+    sleep(2)
+"""
 
 try:
     load_options(parms)
@@ -1037,6 +1054,7 @@ if RELOAD_STATE_ON_START:
     load_saved_state(state)
 
 
+# save_pid()
 lock = Lock()
 eloop = threading.Thread(target=event_loop, args=[state, lock])
 

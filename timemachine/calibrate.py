@@ -142,6 +142,7 @@ def default_options():
     d['SCROLL_VENUE'] = 'true'
     d['FAVORED_TAPER'] = 'miller'
     d['AUTO_UPDATE_ARCHIVE'] = 'false'
+    d['PLAY_LOSSLESS'] = 'false'
     d['DEFAULT_START_TIME'] = '15:00:00'
     d['TIMEZONE'] = 'America/New_York'
     return d
@@ -159,13 +160,13 @@ def configure_collections(parms):
     tmpd = default_options()
     try:
         tmpd = json.load(open(parms.options_path, 'r'))
-    except Exception as e:
+    except Exception:
         logger.warning(F"Failed to read options from {parms.options_path}. Using defaults")
     tmpd['COLLECTIONS'] = collection
     try:
         with open(parms.options_path, 'w') as outfile:
             json.dump(tmpd, outfile, indent=1)
-    except Exception as e:
+    except Exception:
         logger.warning(F"Failed to write options to {parms.options_path}")
 
     return collection
@@ -176,7 +177,7 @@ def test_sound(parms):
     try:
         cmd = 'mpv --really-quiet ~/test_sound.ogg &'
         os.system(cmd)
-    except Exception as e:
+    except Exception:
         logger.warning("Failed to play sound file ~/test_sound.ogg")
 
 
@@ -224,6 +225,7 @@ def change_environment():
     home = os.getenv('HOME')
     envs = get_envs()
     new_env = controls.select_option(TMB, counter, "Select an environment to use", envs)
+    logger.info(f"new env is {new_env}")
     if new_env == envs[0]:
         return
     if new_env == '.factory_env':
@@ -246,6 +248,8 @@ def change_environment():
         os.system(cmd)
     else:
         new_dir = os.path.join(home, new_env)
+
+    logger.info(f"resetting environment. New dir is {new_dir}")
     if os.path.isdir(new_dir):
         make_link_cmd = f"ln -sfn {new_dir} {os.path.join(home,'timemachine')}"
         fail = os.system(make_link_cmd)

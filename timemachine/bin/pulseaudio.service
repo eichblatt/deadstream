@@ -1,0 +1,11 @@
+[Unit]
+Description=PulseAudio system server
+# DO NOT ADD ConditionUser=!root
+
+[Service]
+Type=notify
+ExecStart=pulseaudio --daemonize=no --disallow-exit --system --realtime --log-target=journal
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target

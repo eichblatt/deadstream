@@ -7,6 +7,9 @@ import json
 import cherrypy
 import subprocess
 
+import pulsectl
+
+from timemachine import bluetoothctl
 
 ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
 parser = optparse.OptionParser()
@@ -33,6 +36,15 @@ parms, remainder = parser.parse_args()
 
 logging.basicConfig(format='%(asctime)s.%(msecs)03d %(levelname)s: %(name)s %(message)s', level=logging.INFO, datefmt='%Y-%m-%d %H:%M:%S')
 logger = logging.getLogger(__name__)
+if parms.debug:
+    logger.setLevel(logging.DEBUG)
+
+bt = None
+bt_devices = []
+bt_connected = None
+bt_connected_device_name = ''
+hostname = subprocess.check_output('hostname').decode().strip()
+pulse = pulsectl.Pulse('pulsectl')
 
 
 def default_options():
@@ -42,6 +54,9 @@ def default_options():
     d['FAVORED_TAPER'] = 'miller'
     d['AUTO_UPDATE_ARCHIVE'] = 'false'
     d['ON_TOUR_ALLOWED'] = 'false'
+    # d['BLUETOOTH_ENABLE'] = 'false'
+    d['PLAY_LOSSLESS'] = 'false'
+    d['BLUETOOTH_DEVICE'] = 'None'
     d['DEFAULT_START_TIME'] = '15:00:00'
     d['TIMEZONE'] = 'America/New_York'
     return d
@@ -53,44 +68,66 @@ def get_collection_names():
     try:
         data = json.load(open(collection_path, 'r'))['items']
         collection_names = [x['identifier'] for x in data]
-    except Exception as e:
+    except Exception:
         logger.warning(F"Failed to read collection names from {collection_path}.")
     finally:
         return collection_names
 
 
-class StringGenerator(object):
+def read_optd():
+    opt_dict_default = default_options()
+    opt_dict = opt_dict_default
+    try:
+        opt_dict = json.load(open(parms.options_path, 'r'))
+        extra_keys = [k for k in opt_dict_default.keys() if k not in opt_dict.keys()]
+        for k in extra_keys:
+            opt_dict[k] = opt_dict_default[k]
+    except Exception:
+        logger.warning(F"Failed to read options from {parms.options_path}. Using defaults")
+    return opt_dict
+
+
+class OptionsServer(object):
     @cherrypy.expose
     def index(self):
-        opt_dict_default = default_options()
-        opt_dict = opt_dict_default
-        try:
-            opt_dict = json.load(open(parms.options_path, 'r'))
-            extra_keys = [k for k in opt_dict_default.keys() if k not in opt_dict.keys()]
-            for k in extra_keys:
-                opt_dict[k] = opt_dict_default[k]
-        except Exception as e:
-            logger.warning(F"Failed to read options from {parms.options_path}. Using defaults")
-        print(F"opt dict {opt_dict}")
-        form_strings = [self.get_form_item(x) for x in opt_dict.items() if x[0] != 'TIMEZONE']
-        # form_strings = [F'<label>{x[0]} <input type="text" value="{x[1]}" name="{x[0]}" /></label> <p>' for x in opt_dict.items() if  x[0]!='TIMEZONE']
+        opt_dict = read_optd()
+        logger.debug(F"opt dict {opt_dict}")
+        form_strings = [self.get_form_item(x) for x in opt_dict.items() if x[0] not in ['TIMEZONE', 'BLUETOOTH_DEVICE']]
         form_string = '\n'.join(form_strings)
-        print(F"form_string {form_string}")
+        logger.debug(F"form_string {form_string}")
         tz_list = ["America/New_York", "America/Chicago", "America/Phoenix", "America/Los_Angeles", "America/Mexico_City", "America/Anchorage", "Pacific/Honolulu"]
         tz_strings = [F'<option value="{x}" {self.current_choice(opt_dict,"TIMEZONE",x)}>{x}</option>' for x in tz_list]
         tz_string = '\n'.join(tz_strings)
-        logger.info(f'tz string {tz_string}')
-        hostname = subprocess.check_output('hostname').decode().strip()
+        logger.debug(f'tz string {tz_string}')
+
+        audio_string = self.get_audio_string()
+
+        bluetooth_button = ""
+        # if self.current_choice(opt_dict, "BLUETOOTH_ENABLE", 'true'):
+        #     initialize_bluetooth(scan=False)
+        #     bluetooth_button = """
+        #        <form method="get" action="bluetooth_settings">
+        #          <button type="submit">Bluetooth Settings</button>
+        #        </form> """
+        # else:
+        #     try:
+        #         bt.send('power off')
+        #     except Exception:
+        #         pass
+
         page_string = """<html>
          <head></head>
          <body>
+           <!-- <meta http-equiv="refresh" content="30"> -->
            <h1> Time Machine Options """ + hostname + """</h1>
            <form method="get" action="save_values">""" + form_string + """
              <label for="timezone"> Choose a Time Zone:</label>
              <select id="timezone" name="TIMEZONE">""" + tz_string + """ </select><p>
+             <label for="audio-sink"> Audio Sink:</label>
+             <select id="audio-sink" name="audio-sink">""" + audio_string + """ </select><p>
              <button type="submit">Save Values</button>
              <button type="reset">Restore</button>
-           </form>
+           </form> """ + bluetooth_button + """
            <form method="get" action="restart_service">
              <button type="submit">Restart Timemachine Service</button>
            </form>
@@ -101,6 +138,99 @@ class StringGenerator(object):
         #  </form>
 
         return page_string
+
+    def get_audio_string(self):
+        global pulse
+        audio_string = "headphone jack"
+        sink_dict = {}
+        sink_list = []
+        sink_strings = ''
+        itry = 0
+        while len(sink_list) == 0 and itry < 2:     # Try reading again.
+            itry = itry + 1
+            try:
+                sink_list = pulse.sink_list()
+            except Exception as e:
+                sleep(0.2*parms.sleep_time)
+                logger.warning("delay in getting audio string")
+
+        itry = 0
+        while len(sink_list) == 0 and itry < 4:     # Try creating a new pulsectl object.
+            try:
+                pulse = pulsectl.Pulse('pulsectl')
+                sink_list = pulse.sink_list()
+            except Exception as e:
+                sleep(0.2*parms.sleep_time)
+                logger.warning("Error getting audio string -- creating a new pulsectl object")
+
+        for sink in sink_list:
+            sink_dict[sink.description] = sink.state._value
+
+        sink_list = sorted(sink_dict, key=sink_dict.get)
+
+        sink_strings = [F'<option value="{x}" {x[0]}>{x}</option>' for x in sink_list]
+        audio_string = '\n'.join(sink_strings)
+
+        logger.debug(f'audio_string {audio_string}')
+        return audio_string
+
+    # @cherrypy.expose
+    def bluetooth_settings(self):
+
+        connected_string = F"<p> Currently connected to {bt_connected_device_name} </p>" if len(bt_connected_device_name) > 0 else ""
+
+        bt_list = [bt_connected_device_name] + [x['name'] for x in bt_devices]
+        bt_list = list(dict.fromkeys(bt_list))
+        bt_strings = [F'<option value="{x}" {self.current_choice(opt_dict,"BLUETOOTH_DEVICE",x)}>{x}</option>' for x in bt_list]
+        bt_device = '\n'.join(bt_strings)
+        logger.debug(f'bluetooth devices {bt_device}')
+
+        rescan_bluetooth_string = ""
+        bluetooth_device_string = ""
+        if self.current_choice(opt_dict, "BLUETOOTH_ENABLE", 'true'):
+            rescan_bluetooth_string = """
+                <form action="rescan_bluetooth" method="get">
+                <button type="submit">Rescan Bluetooth</button>
+                </form>  """
+            bt_button_label = "Connect Bluetooth Device"
+            bluetooth_device_string = """
+                <form name="add" action="connect_bluetooth_device" method="post">
+                <select name="BLUETOOTH_DEVICE">""" + bt_device + """ </select>
+                <button type="submit"> """ + bt_button_label + """ </button> </form>"""
+
+        return_button = """ <form method="get" action="index"> <button type="submit">Return</button> </form> """
+
+        page_string = """
+           <html>
+               <head></head>
+               <body>
+                     <h1> Time Machine Bluetooth Settings """ + hostname + """</h1>""" + connected_string + bluetooth_device_string + rescan_bluetooth_string + return_button + """
+               </body>
+           <html> """
+        return page_string
+
+    # @cherrypy.expose
+    def connect_bluetooth_device(self, BLUETOOTH_DEVICE=None):
+        """ set the bluetooth device """
+        global bt_connected
+        return_button = """ <form method="get" action="bluetooth_settings"> <button type="submit">Return</button> </form> """
+        if not BLUETOOTH_DEVICE:
+            return return_button
+
+        txt = F"Setting the bluetooth device to {BLUETOOTH_DEVICE}"
+        logger.debug("\n\n\n"+txt)
+
+        mac_address = [x['mac_address'] for x in bt_devices if x['name'] == BLUETOOTH_DEVICE][0]
+        if not bt.trust(mac_address):
+            return F"Failed to Trust {mac_address}" + return_button
+        if not bt.pair(mac_address):
+            return F"Failed to pair {mac_address}" + return_button
+        bt_connected = bt.connect(mac_address)
+        if bt_connected:
+            opt_dict["BLUETOOTH_DEVICE"] = BLUETOOTH_DEVICE
+        return_string = F"Connected to {BLUETOOTH_DEVICE} :)" if bt_connected else F"Failed to connect to {BLUETOOTH_DEVICE} :("
+        return_string = return_string + return_button
+        return return_string
 
     def current_choice(self, d, k, v):
         if d[k] == v:
@@ -120,6 +250,15 @@ class StringGenerator(object):
             outstring += '> <p>'
         outstring += '</label>'
         return outstring
+
+    def save_options(self, kwargs):
+        logger.debug(F"in save_options. kwargs {kwargs}")
+        options = {}
+        for arg in kwargs.keys():
+            if arg == arg.upper():
+                options[arg] = kwargs[arg]
+        with open(parms.options_path, 'w') as outfile:
+            json.dump(options, outfile, indent=1)
 
     @cherrypy.expose
     def save_values(self, *args, **kwargs):
@@ -141,22 +280,42 @@ class StringGenerator(object):
                 else:
                     proper_collections.append(artist)
         kwargs['COLLECTIONS'] = str.join(',', proper_collections)
-        with open(parms.options_path, 'w') as outfile:
-            opt_dict = json.dump(kwargs, outfile, indent=1)
-        print(F'args: {args},kwargs:{kwargs},\nType: {type(kwargs)}')
+        logger.debug(F'args: {args},kwargs:{kwargs},\nType: {type(kwargs)}')
+
+        self.save_options(kwargs)
+        try:
+            desired_sink = kwargs['audio-sink']
+        except KeyError:
+            logger.warn("audio-sink not in kwargs")
+            desired_sink = 'headphone jack'
+
+        current_sink_name = pulse.server_info().default_sink_name
+        current_sink_desc = [x.description for x in pulse.sink_list() if x.name == current_sink_name][0]
+
+        if desired_sink != current_sink_desc:
+            logger.warning(f'resetting pulseaudio service. desired sink {desired_sink} <> {pulse.server_info().default_sink_name}')
+            for sink in pulse.sink_list():
+                if sink.description == desired_sink:
+                    pulse.default_set(sink)
+                    cmd = 'sudo service pulseaudio restart'
+                    os.system(cmd)
+                    continue
+
         form_strings = [F'<label>{x[0]}:{x[1]}</label> <p>' for x in kwargs.items()]
         form_string = '\n'.join(form_strings)
         page_string = """<html>
          <head></head>
-         <body> Options set to <p> """ + form_string + """
-           <form method="get" action="index">
-             <button type="submit">Return</button>
-           </form>
-           <form method="get" action="restart_service">
-             <button type="submit">Restart Timemachine Service</button>
-           </form>
-         </body>
-       </html>"""
+             <body> Options set to <p> """ + form_string + """
+               <form method="get" action="index">
+                 <button type="submit">Return</button>
+               </form>
+               <form method="get" action="restart_service">
+                 <button type="submit">Restart Timemachine Service</button>
+               </form>
+             </body>
+         </html>"""
+
+        sleep(0.2*parms.sleep_time)
         return page_string
 
     @cherrypy.expose
@@ -173,7 +332,7 @@ class StringGenerator(object):
            </form>
           </body>
        </html>"""
-        print(F'Update timemachine command {cmd}')
+        logger.debug(F'Update timemachine command {cmd}')
         sleep(parms.sleep_time)
         os.system(cmd)
         return page_string
@@ -189,9 +348,37 @@ class StringGenerator(object):
            </form>
           </body>
        </html>"""
-        print(F'Restart_service command {cmd}')
+        logger.debug(F'Restart_service command {cmd}')
         sleep(parms.sleep_time)
         os.system(cmd)
+        return page_string
+
+    # @cherrypy.expose
+    def rescan_bluetooth(self, *args, **kwargs):
+        global bt_devices
+        logger.debug('Rescan bluetooth')
+
+        device_string = ""
+        try:
+            bt.scan(timeout=15)
+            bt_devices = bt.get_candidate_devices()
+            logger.debug(F'bt_devices is {bt_devices}')
+            device_string = "\n".join([x['name'] for x in bt_devices])
+            logger.debug(F'device_string is {device_string}')
+        except Exception as e:
+            logger.exception(F"Exception in scanning for bluetooth {e}")
+            pass
+
+        page_string = """<html>
+         <head></head>
+         <body> Rescanned for bluetooth devices <p>
+           <p> Found: """ + device_string + """ </p>
+           <form method="get" action="bluetooth_settings">
+             <button type="submit">Return</button>
+           </form>
+          </body>
+        </html>"""
+
         return page_string
 
 
@@ -202,14 +389,38 @@ def get_ip():
     return ip
 
 
+def initialize_bluetooth(scan=True):
+    global bt
+    global bt_devices
+    global bt_connected_device_name
+    if not bt:
+        bt = bluetoothctl.Bluetoothctl()
+    bt.send('power on')
+    itry = 0
+    while len(bt_connected_device_name) < 1 and itry < 5:
+        itry = itry + 1
+        logger.debug(F"trying to get device name {itry}")
+        bt_connected_device_name = bt.get_connected_device_name()
+    if scan or bt_devices == [] and bt_connected_device_name == '':
+        bt.scan()
+    bt_devices = bt.get_candidate_devices()
+
+
+opt_dict = read_optd()
+logger.debug(F"opt_dict is now {opt_dict}")
+
+# if opt_dict['BLUETOOTH_ENABLE'] == 'true':
+#     initialize_bluetooth(scan=False)
+
+
 def main():
     ip_address = get_ip()
     cherrypy.config.update({'server.socket_host': ip_address, 'server.socket_port': 9090})
-    cherrypy.quickstart(StringGenerator())
+    cherrypy.quickstart(OptionsServer())
 
 
 for k in parms.__dict__.keys():
-    print(F"{k:20s} : {parms.__dict__[k]}")
+    logger.debug(F"{k:20s} : {parms.__dict__[k]}")
 if __name__ == "__main__" and parms.debug == 0:
     main()
     exit(0)

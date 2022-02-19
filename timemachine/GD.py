@@ -14,30 +14,17 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
-import abc
-import codecs
-import csv
 import datetime
-import difflib
-import json
 import logging
-import math
 import os
-import random
-import re
-import requests
-import tempfile
 import time
-from threading import Event, Lock, Thread
 
-from operator import methodcaller
 from mpv import MPV
 from tenacity import retry
-from tenacity.stop import stop_after_delay
+from tenacity.stop import stop_after_delay, stop_after_attempt
+from tenacity.wait import wait_random
+from tenacity.retry import retry_if_result
 from typing import Callable, Optional
-
-import pkg_resources
-from timemachine import config
 
 logging.basicConfig(format='%(asctime)s.%(msecs)03d %(levelname)s: %(name)s %(message)s', level=logging.INFO, datefmt='%Y-%m-%d %H:%M:%S')
 logger = logging.getLogger(__name__)
@@ -48,6 +35,19 @@ BIN_DIR = os.path.join(os.path.dirname(ROOT_DIR), 'bin')
 @retry(stop=stop_after_delay(30))
 def retry_call(callable: Callable, *args, **kwargs):
     """Retry a call."""
+    return callable(*args, **kwargs)
+
+
+def return_last_value(retry_state):
+    """ return the result of the last call made in a tenacity retry """
+    return retry_state.outcome.result()
+
+
+@retry(stop=stop_after_attempt(7),
+       wait=wait_random(min=1, max=2),
+       retry=retry_if_result(lambda x: not x),
+       retry_error_callback=return_last_value)
+def retry_until_true(callable: Callable, *args, **kwargs):
     return callable(*args, **kwargs)
 
 
@@ -87,12 +87,19 @@ class GDPlayer(MPV):
         # self._set_property('cache-on-disk','yes')
         self._set_property('audio-buffer', 10.0)  # This allows to play directly from the html without a gap!
         self._set_property('cache', 'yes')
-        # self.default_audio_device = 'pulse'
-        self.default_audio_device = 'auto'
+        self.tape = None
+        self.download_when_possible = False
+
+        # check to see if pulse audio daemon is running system-wide before setting audio device
+        if os.path.exists('/etc/systemd/system/pulseaudio.service'):
+            self.default_audio_device = 'pulse'
+        else:
+            self.default_audio_device = 'auto'
         audio_device = self.default_audio_device
         self._set_property('audio-device', audio_device)
-        self.download_when_possible = False
-        self.tape = None
+
+        if self.default_audio_device == 'pulse':
+            self.restart_pulse_audio()
         if tape is not None:
             self.insert_tape(tape)
 
@@ -133,35 +140,43 @@ class GDPlayer(MPV):
     def create_playlist(self):
         self.playlist_clear()
         urls = self.extract_urls(self.tape)
+        if len(urls) == 0: self.tape._remove_from_archive = True
         self.command('loadfile', urls[0])
-        if len(urls) > 0:
+        if len(urls)>1:
             _ = [self.command('loadfile', x, 'append') for x in urls[1:]]
         self.playlist_pos = 0
         self.pause()
         logger.info(F"Playlist {self.playlist}")
         return
 
+    def restart_pulse_audio(self):
+        logger.info("Restarting the pulseaudio service")
+        cmd = "sudo service pulseaudio restart"
+        os.system(cmd)
+        return
+
     def reset_audio_device(self, kwarg=None):
+        logger.info("in reset_audio_device")
         if self.get_prop('audio-device') == 'null':
             logger.info(F"changing audio-device to {self.default_audio_device}")
             audio_device = self.default_audio_device
+            if audio_device == 'pulse':
+                self.restart_pulse_audio()
             self._set_property('audio-device', audio_device)
             self.wait_for_property('audio-device', lambda v: v == audio_device)
             if self.get_prop('current-ao') is None:
                 logger.warning("Current-ao is None")
-                self.stop()
+                # self.stop()
                 return False
-            self.pause()
-            self._set_property('pause', False)
-            self.wait_until_playing()
-            self.pause()
+            # self.pause()
+            # self._set_property('pause', False)
+            # self.wait_until_playing()
+            # self.pause()
         return True
 
     def play(self):
-        if not retry_call(self.reset_audio_device, None):
+        if not retry_until_true(self.reset_audio_device, None):
             logger.warning("Failed to reset audio device when playing")
-        # if not self.reset_audio_device():
-        #    return
         logger.info("playing")
         self._set_property('pause', False)
         self.wait_until_playing()
@@ -293,7 +308,7 @@ class GDPlayer(MPV):
             time.sleep(sleeptime)
 
     def get_prop(self, property_name):
-        return retry_call(self._get_property, property_name)
+        return retry_call.retry_with(stop=stop_after_attempt(20))(self._get_property, property_name)
 
     def status(self):
         if self.playlist_pos is None:
