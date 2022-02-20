@@ -328,10 +328,10 @@ class BaseTape(abc.ABC):
         self.dbpath = dbpath
 
         """ NOTE This should be part of the player, not part of the tape or track, as it is now """
-        if config.optd['PLAY_LOSSLESS']: 
-            self._playable_formats = ['Flac', 'Shorten', 'Ogg Vorbis', 'VBR MP3', 'MP3']  
+        if config.optd['PLAY_LOSSLESS']:
+            self._playable_formats = ['Flac', 'Shorten', 'Ogg Vorbis', 'VBR MP3', 'MP3']
         else:
-            self._playable_formats = ['Ogg Vorbis', 'VBR MP3', 'MP3']  
+            self._playable_formats = ['Ogg Vorbis', 'VBR MP3', 'MP3']
         self._lossy_formats = ['Ogg Vorbis', 'VBR MP3', 'MP3']
         """ ----------------------------------------------------------------------------------- """
 
@@ -783,7 +783,7 @@ class PhishinTape(BaseTape):
         """return the venue, city, state"""
         return F"{self.venue_name},{self.venue_location}"
 
-    def get_metadata(self,only_if_cached=False):
+    def get_metadata(self, only_if_cached=False):
         if self.meta_loaded:
             return
         if only_if_cached and not self.meta_path:
@@ -1047,7 +1047,7 @@ class GDTape(BaseTape):
     def remove_from_archive(self, page_meta):
         self._remove_from_archive = True
 
-    def get_metadata(self,only_if_cached=False):
+    def get_metadata(self, only_if_cached=False):
         if self.meta_loaded:
             return
         if only_if_cached and not self.meta_path:   # we don't have it cached, so return.
@@ -1235,10 +1235,10 @@ class GDTrack(BaseTrack):
         attribs = ['track', 'original', 'title']
 
         """ NOTE This should be part of the player, not part of the tape or track, as it is now """
-        if config.optd['PLAY_LOSSLESS']: 
-            self._playable_formats = ['Flac', 'Shorten', 'Ogg Vorbis', 'VBR MP3', 'MP3']  
+        if config.optd['PLAY_LOSSLESS']:
+            self._playable_formats = ['Flac', 'Shorten', 'Ogg Vorbis', 'VBR MP3', 'MP3']
         else:
-            self._playable_formats = ['Ogg Vorbis', 'VBR MP3', 'MP3']  
+            self._playable_formats = ['Ogg Vorbis', 'VBR MP3', 'MP3']
         self._lossy_formats = ['Ogg Vorbis', 'VBR MP3', 'MP3']
         """ ----------------------------------------------------------------------------------- """
 
@@ -1265,7 +1265,7 @@ class GDTrack(BaseTrack):
         else:
             d['url'] = 'file://'+os.path.join(d['path'], d['name'])
         self.files.append(d)
-        self.files = sorted(self.files,key=lambda x:self._playable_formats.index(x['format']))
+        self.files = sorted(self.files, key=lambda x: self._playable_formats.index(x['format']))
 
 
 class GDSet:
