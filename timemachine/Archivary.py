@@ -326,11 +326,15 @@ class BaseArchive(abc.ABC):
 class BaseTape(abc.ABC):
     def __init__(self, dbpath, raw_json, set_data=None):
         self.dbpath = dbpath
-        if config.optd['PLAY_LOSSLESS']:
+
+        """ NOTE This should be part of the player, not part of the tape or track, as it is now """
+        if config.optd['PLAY_LOSSLESS']: 
             self._playable_formats = ['Flac', 'Shorten', 'Ogg Vorbis', 'VBR MP3', 'MP3']  
         else:
             self._playable_formats = ['Ogg Vorbis', 'VBR MP3', 'MP3']  
         self._lossy_formats = ['Ogg Vorbis', 'VBR MP3', 'MP3']
+        """ ----------------------------------------------------------------------------------- """
+
         self._breaks_added = False
         self.meta_loaded = False
         self.format = None
@@ -1229,6 +1233,15 @@ class GDTrack(BaseTrack):
     def __init__(self, tdict, parent_id, break_track=False):
         super().__init__(tdict, parent_id, break_track)
         attribs = ['track', 'original', 'title']
+
+        """ NOTE This should be part of the player, not part of the tape or track, as it is now """
+        if config.optd['PLAY_LOSSLESS']: 
+            self._playable_formats = ['Flac', 'Shorten', 'Ogg Vorbis', 'VBR MP3', 'MP3']  
+        else:
+            self._playable_formats = ['Ogg Vorbis', 'VBR MP3', 'MP3']  
+        self._lossy_formats = ['Ogg Vorbis', 'VBR MP3', 'MP3']
+        """ ----------------------------------------------------------------------------------- """
+
         if 'title' not in tdict.keys():
             tdict['title'] = tdict['name'] if 'name' in tdict.keys() else 'unknown'
         for k, v in tdict.items():
@@ -1252,6 +1265,7 @@ class GDTrack(BaseTrack):
         else:
             d['url'] = 'file://'+os.path.join(d['path'], d['name'])
         self.files.append(d)
+        self.files = sorted(self.files,key=lambda x:self._playable_formats.index(x['format']))
 
 
 class GDSet:
