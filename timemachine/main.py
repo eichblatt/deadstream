@@ -265,7 +265,7 @@ def select_tape(tape, state, autoplay=True):
     venue_counter = (0, 0)
 
     try:
-        state.player.insert_tape(tape)
+        state.player.insert_tape(tape)  
         state.player._set_property('volume', current['VOLUME'])
         logger.debug(F"select_tape: current state {current}")
         if autoplay:
