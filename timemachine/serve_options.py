@@ -92,6 +92,40 @@ def read_optd():
     return opt_dict
 
 
+def restart_pulseaudio():
+    cmd = 'sudo service pulseaudio restart'
+    logger.info(f'restarting pulse audio service {cmd}')
+    os.system(cmd)
+
+
+def stop_pulseaudio():
+    cmd = 'sudo service pulseaudio stop'
+    logger.info(f'STOPPING pulseaudio {cmd}')
+    os.system(cmd)
+
+
+def enable_pulse():
+    global pulse
+    try:
+        restart_pulseaudio()
+        sleep(2)
+        pulse = pulsectl.Pulse('pulsectl')
+    except pulsectl.PulseError:
+        pulse = None
+        logger.warning("Pulse audio not working on this machine")
+
+
+def disable_pulse():
+    global pulse
+    try:
+        stop_pulseaudio()
+        sleep(2)
+        pulse = None
+    except pulsectl.PulseError:
+        pulse = None
+        logger.warning("Pulse audio still working on this machine")
+
+
 class OptionsServer(object):
     @cherrypy.expose
     def index(self):
@@ -274,16 +308,6 @@ class OptionsServer(object):
         with open(parms.options_path, 'w') as outfile:
             json.dump(options, outfile, indent=1)
 
-    def restart_pulseaudio(self):
-        cmd = 'sudo service pulseaudio restart'
-        logger.info(f'restarting pulse audio service {cmd}')
-        os.system(cmd)
-
-    def stop_pulseaudio(self):
-        cmd = 'sudo service pulseaudio stop'
-        logger.info(f'STOPPING pulseaudio {cmd}')
-        os.system(cmd)
-
     def set_pulse_values(self, pulse, desired_sink):
         if pulse is None:
             return
@@ -294,28 +318,8 @@ class OptionsServer(object):
             for sink in pulse.sink_list():
                 if sink.description == desired_sink:
                     pulse.default_set(sink)
-                    self.restart_pulseaudio()
+                    restart_pulseaudio()
                     continue
-
-    def enable_pulse(self):
-        global pulse
-        try:
-            self.restart_pulseaudio()
-            sleep(2)
-            pulse = pulsectl.Pulse('pulsectl')
-        except pulsectl.PulseError:
-            pulse = None
-            logger.warning("Pulse audio not working on this machine")
-
-    def disable_pulse(self):
-        global pulse
-        try:
-            self.stop_pulseaudio()
-            sleep(2)
-            pulse = None
-        except pulsectl.PulseError:
-            pulse = None
-            logger.warning("Pulse audio still working on this machine")
 
     @cherrypy.expose
     def save_values(self, *args, **kwargs):
@@ -343,10 +347,10 @@ class OptionsServer(object):
 
         if kwargs['ENABLE_PULSEAUDIO'] == 'true':
             logger.info(f"kwargs['ENABLE_PULSEAUDIO'] is {kwargs}")
-            self.enable_pulse()
+            enable_pulse()
         else:
             logger.info(f"kwargs['ENABLE_PULSEAUDIO'] is false")
-            self.disable_pulse()
+            disable_pulse()
 
         try:
             desired_sink = kwargs['audio-sink']
@@ -463,6 +467,9 @@ def initialize_bluetooth(scan=True):
 
 opt_dict = read_optd()
 logger.debug(F"opt_dict is now {opt_dict}")
+
+if opt_dict['ENABLE_PULSEAUDIO'] == 'true':
+    enable_pulse()
 
 # if opt_dict['BLUETOOTH_ENABLE'] == 'true':
 #     initialize_bluetooth(scan=False)
