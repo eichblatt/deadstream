@@ -24,12 +24,14 @@ restore_services () {
    echo "services.sh"
    services.sh
    # Restart the services (Can i get the timemachine service to launch the serve_options?)
+   echo "sudo systemctl disable pulseaudio"
+   sudo systemctl disable pulseaudio
    echo "sudo service timemachine restart"
    sudo service timemachine restart
    echo "sudo service serve_options restart"
    sudo service serve_options restart
-   echo "sudo service pulseaudio restart"
-   sudo service pulseaudio restart
+   # echo "sudo service pulseaudio restart"
+   # sudo service pulseaudio restart
 }
 
 cleanup_old_envs () {

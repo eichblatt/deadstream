@@ -1,6 +1,7 @@
 *mp3
 *ogg
 *wav
+*_ids
 
 # python binaries
 __pycache__/

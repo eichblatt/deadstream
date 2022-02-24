@@ -7,7 +7,9 @@ import subprocess
 import sys
 
 from tenacity import retry
-from tenacity.stop import stop_after_delay
+from tenacity.retry import retry_if_result
+from tenacity.stop import stop_after_attempt, stop_after_delay
+from tenacity.wait import wait_random
 from typing import Callable
 
 from timemachine import controls
@@ -61,6 +63,19 @@ def retry_call(callable: Callable, *args, **kwargs):
     return callable(*args, **kwargs)
 
 
+def return_last_value(retry_state):
+    """ return the result of the last call made in a tenacity retry """
+    return retry_state.outcome.result()
+
+
+@retry(stop=stop_after_attempt(7),
+       wait=wait_random(min=1, max=2),
+       retry=retry_if_result(lambda x: not x),
+       retry_error_callback=return_last_value)
+def retry_until_true(callable: Callable, *args, **kwargs):
+    return callable(*args, **kwargs)
+
+
 max_choices = len(string.printable)
 TMB = controls.Time_Machine_Board(mdy_bounds=[(0, 9), (0, 1+divmod(max_choices-1, 10)[0]), (0, 9)])
 
@@ -98,7 +113,7 @@ def wifi_connected(max_attempts=1):
                     return wifi_conn
         attempt = attempt + 1
         raw = subprocess.check_output(cmd, shell=True)
-        raw = raw.decode()
+        raw = raw.decode('utf-8')
         address = raw.split("\n")[0].split()[3]
         logger.info(F"wifi address read as {address}")
         wifi_conn = '"' in str.replace(address, "ESSID:", "")
@@ -109,7 +124,8 @@ def get_wifi_choices():
     logger.info("Getting Wifi Choices")
     cmd = "sudo iwlist wlan0 scan | grep ESSID:"
     raw = retry_call(subprocess.check_output, cmd, shell=True)
-    choices = [x.lstrip().replace('ESSID:', '').replace('"', '') for x in raw.decode().split('\n')]
+    # choices = [x.lstrip().replace(b'ESSID:', b'').replace(b'"', b'') for x in raw.split(b'\n')]
+    choices = [x.lstrip().replace('ESSID:', '').replace('"', '') for x in raw.decode('utf-8').split('\n')]
     choices = [x for x in choices if bool(re.search(r'[a-z,0-9]', x, re.IGNORECASE))]
     choices = list(dict.fromkeys(choices))  # distinct
     choices = sorted(choices, key=str.casefold)
@@ -121,7 +137,11 @@ def get_wifi_choices():
 def update_wpa_conf(wpa_path, wifi, passkey, extra_dict):
     logger.info(F"Updating the wpa_conf file {wpa_path}")
     wpa_lines = ['ctrl_interface=DIR=/var/run/wpa_supplicant GROUP=netdev', 'update_config=1', F'country={extra_dict["country"]}']
-    wpa = wpa_lines + ['', 'network={', F'        ssid="{wifi}"']
+    if "\\x" in wifi:
+        wifi_hex = wifi.encode('utf-8').decode('unicode-escape').encode('ISO-8859-1').hex()  # unbelievable!! Thank you Google.
+        wpa = wpa_lines + ['', 'network={', F'        ssid={wifi_hex}']
+    else:
+        wpa = wpa_lines + ['', 'network={', F'        ssid="{wifi}"']
     if len(passkey) == 0:
         wpa = wpa + ['        key_mgmt=NONE\n        priority=0\n']
     else:
@@ -181,6 +201,7 @@ def get_wifi_params():
     wifi = controls.select_option(TMB, counter, "Select Wifi Name\nTurn Year, Select", get_wifi_choices)
     if wifi == 'HIDDEN_WIFI':
         wifi = controls.select_chars(TMB, counter, "Input Wifi Name\nSelect. Stop to end")
+
     passkey = controls.select_chars(TMB, counter, "Passkey:Turn Year\nSelect. Stop to end", message2=wifi)
     need_extra_fields = 'no'
     need_extra_fields = controls.select_option(TMB, counter, "Extra Fields\nRequired?", ['no', 'yes'])

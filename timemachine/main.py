@@ -192,7 +192,8 @@ def default_options():
     d['FAVORED_TAPER'] = []
     d['AUTO_UPDATE_ARCHIVE'] = False
     d['ON_TOUR_ALLOWED'] = False
-    d['PLAY_LOSSLESS'] = 'false'
+    d['PLAY_LOSSLESS'] = False
+    d['ENABLE_PULSEAUDIO'] = False
     d['DEFAULT_START_TIME'] = datetime.time(15, 0)
     d['TIMEZONE'] = 'America/New_York'
     return d
@@ -206,7 +207,7 @@ def load_options(parms):
         tmpd = json.loads(f.read())
         for k in config.optd.keys():
             try:
-                if k in ['SCROLL_VENUE', 'AUTO_UPDATE_ARCHIVE', 'ON_TOUR_ALLOWED', 'PLAY_LOSSLESS']:  # make booleans.
+                if k in ['SCROLL_VENUE', 'AUTO_UPDATE_ARCHIVE', 'ON_TOUR_ALLOWED', 'PLAY_LOSSLESS', 'ENABLE_PULSEAUDIO']:  # make booleans.
                     tmpd[k] = tmpd[k].lower() == 'true'
                 if k in ['COLLECTIONS', 'FAVORED_TAPER']:   # make lists from comma-separated strings.
                     c = [x.strip() for x in tmpd[k].split(',') if x != '']
@@ -974,6 +975,8 @@ if TMB.stop.is_pressed:
 
 archive = Archivary.Archivary(parms.dbpath, reload_ids=reload_ids, with_latest=False, collection_list=config.optd['COLLECTIONS'])
 player = GD.GDPlayer()
+if config.optd['ENABLE_PULSEAUDIO']:
+    player.set_audio_device('pulse')
 
 
 @player.property_observer('playlist-pos')
