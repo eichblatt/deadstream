@@ -192,7 +192,8 @@ def default_options():
     d['FAVORED_TAPER'] = []
     d['AUTO_UPDATE_ARCHIVE'] = False
     d['ON_TOUR_ALLOWED'] = False
-    d['PLAY_LOSSLESS'] = 'false'
+    d['PLAY_LOSSLESS'] = False
+    d['ENABLE_PULSEAUDIO'] = False
     d['DEFAULT_START_TIME'] = datetime.time(15, 0)
     d['TIMEZONE'] = 'America/New_York'
     return d
@@ -974,6 +975,8 @@ if TMB.stop.is_pressed:
 
 archive = Archivary.Archivary(parms.dbpath, reload_ids=reload_ids, with_latest=False, collection_list=config.optd['COLLECTIONS'])
 player = GD.GDPlayer()
+if config.optd['ENABLE_PULSEAUDIO']:
+    player.set_audio_device('pulse')
 
 
 @player.property_observer('playlist-pos')
