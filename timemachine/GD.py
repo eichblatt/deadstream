@@ -80,7 +80,7 @@ def to_decade(datestring):
 class GDPlayer(MPV):
     """ A media player to play a GDTape """
 
-    def __init__(self, tape=None, use_pulseaudio=False):
+    def __init__(self, tape=None):
         super().__init__()
         # self._set_property('prefetch-playlist','yes')
         # self._set_property('cache-dir','/home/steve/cache')
@@ -108,11 +108,12 @@ class GDPlayer(MPV):
             self.default_audio_device = 'pulse'
         else:
             self.default_audio_device = 'auto'
-        audio_device = self.default_audio_device
-        self._set_property('audio-device', audio_device)
+        self._set_property('audio-device', self.default_audio_device)
 
         if self.default_audio_device == 'pulse':
             self.restart_pulse_audio()
+        else:
+            self.stop_pulse_audio()
 
     def insert_tape(self, tape):
         self.tape = tape
@@ -154,6 +155,12 @@ class GDPlayer(MPV):
         logger.info(F"Playlist {self.playlist}")
         return
 
+    def stop_pulse_audio(self):
+        logger.info("Restarting the pulseaudio service")
+        cmd = "sudo service pulseaudio stop"
+        os.system(cmd)
+        return
+
     def restart_pulse_audio(self):
         logger.info("Restarting the pulseaudio service")
         cmd = "sudo service pulseaudio restart"
@@ -167,6 +174,8 @@ class GDPlayer(MPV):
             audio_device = self.default_audio_device
             if audio_device == 'pulse':
                 self.restart_pulse_audio()
+            else:
+                self.stop_pulse_audio()
             self._set_property('audio-device', audio_device)
             self.wait_for_property('audio-device', lambda v: v == audio_device)
             if self.get_prop('current-ao') is None:
