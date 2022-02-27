@@ -156,7 +156,6 @@ class GDPlayer(MPV):
         return
 
     def stop_pulse_audio(self):
-        logger.info("Restarting the pulseaudio service")
         cmd = "sudo service pulseaudio stop"
         os.system(cmd)
         return
