@@ -288,7 +288,8 @@ def select_current_date(state, autoplay=True):
         return
     tapes = date_reader.archive.resort_tape_date(date_reader.fmtdate())
     if len(tapes) == 0:
-        TMB.scr.show_venue('No Audio', force=True)
+        TMB.scr.show_venue('No Audio', color=(255, 255, 255), force=True)
+        sleep(2)
         return
     tape = tapes[date_reader.shownum]
     TMB.scr.show_playstate(staged_play=True, force=True)
