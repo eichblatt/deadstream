@@ -1121,6 +1121,8 @@ class GDTape(BaseTape):
         self.meta_loaded = True
 
     def append_track(self, tdict, orig_titles={}):
+        if not 'original' in tdict.keys():  # This is not a valid track
+            return
         source = tdict['source']
         if source == 'original':
             orig = tdict['name']
