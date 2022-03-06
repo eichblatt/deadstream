@@ -44,7 +44,11 @@ bt_devices = []
 bt_connected = None
 bt_connected_device_name = ''
 hostname = subprocess.check_output('hostname').decode().strip()
-pulse = pulsectl.Pulse('pulsectl')
+try:
+    pulse = pulsectl.Pulse('pulsectl')
+except pulsectl.PulseError:
+    pulse = None
+    logger.warn("Pulse audio not working on this machine")
 
 
 def default_options():
@@ -54,9 +58,10 @@ def default_options():
     d['FAVORED_TAPER'] = 'miller'
     d['AUTO_UPDATE_ARCHIVE'] = 'false'
     d['ON_TOUR_ALLOWED'] = 'false'
-    # d['BLUETOOTH_ENABLE'] = 'false'
     d['PLAY_LOSSLESS'] = 'false'
-    d['BLUETOOTH_DEVICE'] = 'None'
+    d['ENABLE_PULSEAUDIO'] = 'false'
+    # d['BLUETOOTH_ENABLE'] = 'false'
+    # d['BLUETOOTH_DEVICE'] = 'None'
     d['DEFAULT_START_TIME'] = '15:00:00'
     d['TIMEZONE'] = 'America/New_York'
     return d
@@ -87,6 +92,40 @@ def read_optd():
     return opt_dict
 
 
+def restart_pulseaudio():
+    cmd = 'sudo service pulseaudio restart'
+    logger.info(f'restarting pulse audio service {cmd}')
+    os.system(cmd)
+
+
+def stop_pulseaudio():
+    cmd = 'sudo service pulseaudio stop'
+    logger.info(f'STOPPING pulseaudio {cmd}')
+    os.system(cmd)
+
+
+def enable_pulse():
+    global pulse
+    try:
+        restart_pulseaudio()
+        sleep(2)
+        pulse = pulsectl.Pulse('pulsectl')
+    except pulsectl.PulseError:
+        pulse = None
+        logger.warning("Pulse audio not working on this machine")
+
+
+def disable_pulse():
+    global pulse
+    try:
+        stop_pulseaudio()
+        sleep(2)
+        pulse = None
+    except pulsectl.PulseError:
+        pulse = None
+        logger.warning("Pulse audio still working on this machine")
+
+
 class OptionsServer(object):
     @cherrypy.expose
     def index(self):
@@ -115,6 +154,14 @@ class OptionsServer(object):
         #     except Exception:
         #         pass
 
+        if pulse is None:
+            pulse_string = ""
+        else:
+            pulse_string = """
+             <label for="audio-sink"> Audio Sink:</label>
+             <select id="audio-sink" name="audio-sink">""" + audio_string + """ </select><p>
+             """
+
         page_string = """<html>
          <head></head>
          <body>
@@ -122,9 +169,7 @@ class OptionsServer(object):
            <h1> Time Machine Options """ + hostname + """</h1>
            <form method="get" action="save_values">""" + form_string + """
              <label for="timezone"> Choose a Time Zone:</label>
-             <select id="timezone" name="TIMEZONE">""" + tz_string + """ </select><p>
-             <label for="audio-sink"> Audio Sink:</label>
-             <select id="audio-sink" name="audio-sink">""" + audio_string + """ </select><p>
+             <select id="timezone" name="TIMEZONE">""" + tz_string + """ </select><p> """ + pulse_string + """
              <button type="submit">Save Values</button>
              <button type="reset">Restore</button>
            </form> """ + bluetooth_button + """
@@ -142,11 +187,13 @@ class OptionsServer(object):
     def get_audio_string(self):
         global pulse
         audio_string = "headphone jack"
+        if pulse is None:
+            return audio_string
         sink_dict = {}
         sink_list = []
         sink_strings = ''
         itry = 0
-        while len(sink_list) == 0 and itry < 2:     # Try reading again.
+        while len(sink_list) == 0 and itry < 2 and pulse is not None:     # Try reading again.
             itry = itry + 1
             try:
                 sink_list = pulse.sink_list()
@@ -155,11 +202,12 @@ class OptionsServer(object):
                 logger.warning("delay in getting audio string")
 
         itry = 0
-        while len(sink_list) == 0 and itry < 4:     # Try creating a new pulsectl object.
+        while len(sink_list) == 0 and itry < 4 and pulse is not None:     # Try creating a new pulsectl object.
             try:
                 pulse = pulsectl.Pulse('pulsectl')
                 sink_list = pulse.sink_list()
             except Exception as e:
+                itry = itry + 1
                 sleep(0.2*parms.sleep_time)
                 logger.warning("Error getting audio string -- creating a new pulsectl object")
 
@@ -260,6 +308,19 @@ class OptionsServer(object):
         with open(parms.options_path, 'w') as outfile:
             json.dump(options, outfile, indent=1)
 
+    def set_pulse_values(self, pulse, desired_sink):
+        if pulse is None:
+            return
+        current_sink_name = pulse.server_info().default_sink_name
+        current_sink_desc = [x.description for x in pulse.sink_list() if x.name == current_sink_name][0]
+        if desired_sink != current_sink_desc:
+            logger.warning(f'resetting pulseaudio service. desired sink {desired_sink} <> {pulse.server_info().default_sink_name}')
+            for sink in pulse.sink_list():
+                if sink.description == desired_sink:
+                    pulse.default_set(sink)
+                    restart_pulseaudio()
+                    continue
+
     @cherrypy.expose
     def save_values(self, *args, **kwargs):
         collections = kwargs['COLLECTIONS']
@@ -283,23 +344,21 @@ class OptionsServer(object):
         logger.debug(F'args: {args},kwargs:{kwargs},\nType: {type(kwargs)}')
 
         self.save_options(kwargs)
+
+        if kwargs['ENABLE_PULSEAUDIO'] == 'true':
+            logger.info(f"kwargs['ENABLE_PULSEAUDIO'] is {kwargs}")
+            enable_pulse()
+        else:
+            logger.info(f"kwargs['ENABLE_PULSEAUDIO'] is false")
+            disable_pulse()
+
         try:
             desired_sink = kwargs['audio-sink']
         except KeyError:
-            logger.warn("audio-sink not in kwargs")
+            logger.warning("audio-sink not in kwargs")
             desired_sink = 'headphone jack'
 
-        current_sink_name = pulse.server_info().default_sink_name
-        current_sink_desc = [x.description for x in pulse.sink_list() if x.name == current_sink_name][0]
-
-        if desired_sink != current_sink_desc:
-            logger.warning(f'resetting pulseaudio service. desired sink {desired_sink} <> {pulse.server_info().default_sink_name}')
-            for sink in pulse.sink_list():
-                if sink.description == desired_sink:
-                    pulse.default_set(sink)
-                    cmd = 'sudo service pulseaudio restart'
-                    os.system(cmd)
-                    continue
+        self.set_pulse_values(pulse, desired_sink)
 
         form_strings = [F'<label>{x[0]}:{x[1]}</label> <p>' for x in kwargs.items()]
         form_string = '\n'.join(form_strings)
@@ -408,6 +467,9 @@ def initialize_bluetooth(scan=True):
 
 opt_dict = read_optd()
 logger.debug(F"opt_dict is now {opt_dict}")
+
+if opt_dict['ENABLE_PULSEAUDIO'] == 'true':
+    enable_pulse()
 
 # if opt_dict['BLUETOOTH_ENABLE'] == 'true':
 #     initialize_bluetooth(scan=False)

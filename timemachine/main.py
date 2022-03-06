@@ -192,7 +192,8 @@ def default_options():
     d['FAVORED_TAPER'] = []
     d['AUTO_UPDATE_ARCHIVE'] = False
     d['ON_TOUR_ALLOWED'] = False
-    d['PLAY_LOSSLESS'] = 'false'
+    d['PLAY_LOSSLESS'] = False
+    d['ENABLE_PULSEAUDIO'] = False
     d['DEFAULT_START_TIME'] = datetime.time(15, 0)
     d['TIMEZONE'] = 'America/New_York'
     return d
@@ -206,7 +207,7 @@ def load_options(parms):
         tmpd = json.loads(f.read())
         for k in config.optd.keys():
             try:
-                if k in ['SCROLL_VENUE', 'AUTO_UPDATE_ARCHIVE', 'ON_TOUR_ALLOWED', 'PLAY_LOSSLESS']:  # make booleans.
+                if k in ['SCROLL_VENUE', 'AUTO_UPDATE_ARCHIVE', 'ON_TOUR_ALLOWED', 'PLAY_LOSSLESS', 'ENABLE_PULSEAUDIO']:  # make booleans.
                     tmpd[k] = tmpd[k].lower() == 'true'
                 if k in ['COLLECTIONS', 'FAVORED_TAPER']:   # make lists from comma-separated strings.
                     c = [x.strip() for x in tmpd[k].split(',') if x != '']
@@ -285,9 +286,13 @@ def select_current_date(state, autoplay=True):
     date_reader = state.date_reader
     if not date_reader.tape_available():
         return
-    TMB.scr.show_playstate(staged_play=True, force=True)
     tapes = date_reader.archive.resort_tape_date(date_reader.fmtdate())
+    if len(tapes) == 0:
+        TMB.scr.show_venue('No Audio', color=(255, 255, 255), force=True)
+        sleep(2)
+        return
     tape = tapes[date_reader.shownum]
+    TMB.scr.show_playstate(staged_play=True, force=True)
     state = select_tape(tape, state, autoplay=autoplay)
 
     logger.debug(F"current state after selecting tape {state}")
@@ -974,6 +979,8 @@ if TMB.stop.is_pressed:
 
 archive = Archivary.Archivary(parms.dbpath, reload_ids=reload_ids, with_latest=False, collection_list=config.optd['COLLECTIONS'])
 player = GD.GDPlayer()
+if config.optd['ENABLE_PULSEAUDIO']:
+    player.set_audio_device('pulse')
 
 
 @player.property_observer('playlist-pos')

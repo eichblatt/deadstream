@@ -90,16 +90,8 @@ class GDPlayer(MPV):
         self.tape = None
         self.download_when_possible = False
 
-        # check to see if pulse audio daemon is running system-wide before setting audio device
-        if os.path.exists('/etc/systemd/system/pulseaudio.service'):
-            self.default_audio_device = 'pulse'
-        else:
-            self.default_audio_device = 'auto'
-        audio_device = self.default_audio_device
-        self._set_property('audio-device', audio_device)
+        self.set_audio_device()
 
-        if self.default_audio_device == 'pulse':
-            self.restart_pulse_audio()
         if tape is not None:
             self.insert_tape(tape)
 
@@ -109,6 +101,19 @@ class GDPlayer(MPV):
     def __repr__(self):
         retstr = str(self.playlist)
         return retstr
+
+    def set_audio_device(self, audio_device=None):
+        # check to see if pulse audio daemon is running system-wide before setting audio device
+        if audio_device == 'pulse' and os.path.exists('/etc/systemd/system/pulseaudio.service'):
+            self.default_audio_device = 'pulse'
+        else:
+            self.default_audio_device = 'auto'
+        self._set_property('audio-device', self.default_audio_device)
+
+        if self.default_audio_device == 'pulse':
+            self.restart_pulse_audio()
+        else:
+            self.stop_pulse_audio()
 
     def insert_tape(self, tape):
         self.tape = tape
@@ -140,13 +145,19 @@ class GDPlayer(MPV):
     def create_playlist(self):
         self.playlist_clear()
         urls = self.extract_urls(self.tape)
-        if len(urls) == 0: self.tape._remove_from_archive = True
+        if len(urls) == 0:
+            self.tape._remove_from_archive = True
         self.command('loadfile', urls[0])
-        if len(urls)>1:
+        if len(urls) > 1:
             _ = [self.command('loadfile', x, 'append') for x in urls[1:]]
         self.playlist_pos = 0
         self.pause()
         logger.info(F"Playlist {self.playlist}")
+        return
+
+    def stop_pulse_audio(self):
+        cmd = "sudo service pulseaudio stop"
+        os.system(cmd)
         return
 
     def restart_pulse_audio(self):
@@ -162,6 +173,8 @@ class GDPlayer(MPV):
             audio_device = self.default_audio_device
             if audio_device == 'pulse':
                 self.restart_pulse_audio()
+            else:
+                self.stop_pulse_audio()
             self._set_property('audio-device', audio_device)
             self.wait_for_property('audio-device', lambda v: v == audio_device)
             if self.get_prop('current-ao') is None:

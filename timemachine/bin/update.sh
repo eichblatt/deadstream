@@ -24,12 +24,14 @@ restore_services () {
    echo "services.sh"
    services.sh
    # Restart the services (Can i get the timemachine service to launch the serve_options?)
+   echo "sudo systemctl disable pulseaudio"
+   sudo systemctl disable pulseaudio
    echo "sudo service timemachine restart"
    sudo service timemachine restart
    echo "sudo service serve_options restart"
    sudo service serve_options restart
-   echo "sudo service pulseaudio restart"
-   sudo service pulseaudio restart
+   # echo "sudo service pulseaudio restart"
+   # sudo service pulseaudio restart
 }
 
 cleanup_old_envs () {
@@ -66,6 +68,9 @@ fi
 
 # Perform shell tasks which may require 2 updates to take effect
 [ ! -f $HOME/.phishinkey ] && echo '8003bcd8c378844cfb69aad8b0981309f289e232fb417df560f7192edd295f1d49226ef6883902e59b465991d0869c77' > $HOME/.phishinkey
+
+system "sudo apt-get install -y pulseaudio pulseaudio-module-jack pulseaudio-module-bluetooth pulseaudio-utils bluetooth"
+
 sudo grep -qF -- "enable_uart=1" /boot/config.txt || echo "enable_uart=1" | sudo tee -a /boot/config.txt
 sudo grep -q -- "^default-server = /var/run/pulse/native" /etc/pulse/client.conf || echo "default-server = /var/run/pulse/native" | sudo tee -a /etc/pulse/client.conf
 sudo grep -q -- "^autospawn = no" /etc/pulse/client.conf || echo "autospawn = no" | sudo tee -a /etc/pulse/client.conf
