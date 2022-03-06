@@ -286,9 +286,13 @@ def select_current_date(state, autoplay=True):
     date_reader = state.date_reader
     if not date_reader.tape_available():
         return
-    TMB.scr.show_playstate(staged_play=True, force=True)
     tapes = date_reader.archive.resort_tape_date(date_reader.fmtdate())
+    if len(tapes) == 0:
+        TMB.scr.show_venue('No Audio', color=(255, 255, 255), force=True)
+        sleep(2)
+        return
     tape = tapes[date_reader.shownum]
+    TMB.scr.show_playstate(staged_play=True, force=True)
     state = select_tape(tape, state, autoplay=autoplay)
 
     logger.debug(F"current state after selecting tape {state}")
@@ -898,11 +902,11 @@ def event_loop(state, lock):
                 playstate_event.set()
                 save_state(state)
                 if current['PLAY_STATE'] != config.PLAYING:  # deal with overnight pauses, which freeze the alsa player.
-                    if (now - config.PAUSED_AT).seconds > SLEEP_AFTER_SECONDS and state.player.get_prop('audio-device') != 'null':
+                    if (now - config.PAUSED_AT).seconds > SLEEP_AFTER_SECONDS and state.player.get_prop('audio-device') not in ['null', 'pulse']:
                         logger.info(F"Paused at {config.PAUSED_AT}, sleeping after {SLEEP_AFTER_SECONDS}, now {now}")
                         TMB.scr.sleep()
-                        # state.player._set_property('audio-device', 'null')
-                        # state.player.wait_for_property('audio-device', lambda x: x == 'null')
+                        state.player._set_property('audio-device', 'null')
+                        state.player.wait_for_property('audio-device', lambda x: x == 'null')
                         state.set(current)
                         playstate_event.set()
                     elif (now - current['WOKE_AT']).seconds > SLEEP_AFTER_SECONDS:

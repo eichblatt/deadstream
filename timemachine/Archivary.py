@@ -763,6 +763,8 @@ class PhishinTape(BaseTape):
         self.collection = ['Phish']
         self.artist = 'Phish'
         delattr(self, 'id')
+        date = to_date(self.date).date()
+        self.meta_path = os.path.join(self.dbpath, str(date.year), str(date.month), self.identifier+'.json')
         self.url_metadata = 'https://phish.in/api/v1/shows/' + self.date
         try:
             self.apikey = open(os.path.join(os.getenv('HOME'), '.phishinkey'), 'r').read().rstrip()
@@ -786,11 +788,9 @@ class PhishinTape(BaseTape):
     def get_metadata(self, only_if_cached=False):
         if self.meta_loaded:
             return
-        if only_if_cached and not self.meta_path:
+        if only_if_cached and not os.path.exists(self.meta_path):
             return
         self._tracks = []
-        date = to_date(self.date).date()
-        self.meta_path = os.path.join(self.dbpath, str(date.year), str(date.month), self.identifier+'.json')
         try:     # I used to check if file exists, but it may also be corrupt, so this is safer.
             page_meta = json.load(open(self.meta_path, 'r'))
         except Exception:
@@ -905,7 +905,7 @@ class GDArchive(BaseArchive):
         tapes = self.tape_dates[date]
         _ = [t.tracks() for t in tapes[:3]]   # load first 3 tapes' tracks. Decrease score of those without titles.
         tapes = sorted(tapes, key=methodcaller('compute_score'), reverse=True)
-        # tapes = [t for t in tapes if not t._remove_from_archive]  # eliminate missing tapes
+        tapes = [t for t in tapes if not t._remove_from_archive]  # eliminate missing tapes
         return tapes
 
     def best_tape(self, date, resort=True):        # IA
@@ -1000,6 +1000,8 @@ class GDTape(BaseTape):
         self.set_data = set_data.get(self.date)
         colls = config.optd['COLLECTIONS']
         self.artist = colls[min([colls.index(c) if c in colls else 100 for c in self.collection])]
+        date = to_date(self.date).date()
+        self.meta_path = os.path.join(self.dbpath, str(date.year), str(date.month), self.identifier+'.json')
 
         if 'avg_rating' in raw_json.keys():
             self.avg_rating = float(self.avg_rating)
@@ -1031,7 +1033,11 @@ class GDTape(BaseTape):
         # if 'optd' in dir(config) and len(config.optd['COLLECTIONS']) > 1:
         #    colls = config.optd['COLLECTIONS']
         #    score = score + 5 * (len(colls) - min([colls.index(c) if c in colls else 100 for c in self.collection]))
+        self.get_metadata(only_if_cached=True)
         if self.meta_loaded:
+            if not self.contains_sound():
+                self._remove_from_archive = True
+                return -1
             score = score + 3*(self.title_fraction()-1)  # reduce score for tapes without titles.
             score = score + min(20, len(self._tracks))/4
         score = score + math.log(1+self.downloads)
@@ -1050,11 +1056,9 @@ class GDTape(BaseTape):
     def get_metadata(self, only_if_cached=False):
         if self.meta_loaded:
             return
-        if only_if_cached and not self.meta_path:   # we don't have it cached, so return.
+        if only_if_cached and not os.path.exists(self.meta_path):   # we don't have it cached, so return.
             return
         self._tracks = []
-        date = to_date(self.date).date()
-        self.meta_path = os.path.join(self.dbpath, str(date.year), str(date.month), self.identifier+'.json')
         try:     # I used to check if file exists, but it may also be corrupt, so this is safer.
             page_meta = json.load(open(self.meta_path, 'r'))
         except Exception:
@@ -1100,7 +1104,7 @@ class GDTape(BaseTape):
             self.venue_name = page_meta['metadata']['venue']
             self.coverage = page_meta['metadata']['coverage']
         except Exception:
-            logger.warn("Failed to read venue, city, state from metadata")
+            logger.warn(f"Failed to read venue, city, state from metadata. {self.meta_path}")
             pass
 
         self.write_metadata(page_meta)
@@ -1117,6 +1121,8 @@ class GDTape(BaseTape):
         self.meta_loaded = True
 
     def append_track(self, tdict, orig_titles={}):
+        if not 'original' in tdict.keys():  # This is not a valid track
+            return
         source = tdict['source']
         if source == 'original':
             orig = tdict['name']
