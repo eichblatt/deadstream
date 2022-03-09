@@ -12,6 +12,9 @@ import pulsectl
 from timemachine import bluetoothctl
 
 ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
+PULSE_ENABLED = False
+OS_VERSION = None
+
 parser = optparse.OptionParser()
 parser.add_option('-d', '--debug',
                   dest='debug',
@@ -60,8 +63,9 @@ def default_options():
     d['ON_TOUR_ALLOWED'] = 'false'
     d['PLAY_LOSSLESS'] = 'false'
     d['ENABLE_PULSEAUDIO'] = 'false'
-    # d['BLUETOOTH_ENABLE'] = 'false'
-    # d['BLUETOOTH_DEVICE'] = 'None'
+    if get_os_version() != 10:
+        d['BLUETOOTH_ENABLE'] = 'false'
+        d['BLUETOOTH_DEVICE'] = 'None'
     d['DEFAULT_START_TIME'] = '15:00:00'
     d['TIMEZONE'] = 'America/New_York'
     return d
@@ -106,17 +110,26 @@ def stop_pulseaudio():
 
 def enable_pulse():
     global pulse
+    global PULSE_ENABLED
+    if PULSE_ENABLED and pulse is not None:
+        return
     try:
         restart_pulseaudio()
         sleep(2)
         pulse = pulsectl.Pulse('pulsectl')
+        PULSE_ENABLED = True
     except pulsectl.PulseError:
         pulse = None
+        PULSE_ENABLED = False
         logger.warning("Pulse audio not working on this machine")
 
 
 def disable_pulse():
     global pulse
+    global PULSE_ENABLED
+    if not PULSE_ENABLED:
+        return
+    PULSE_ENABLED = False
     try:
         stop_pulseaudio()
         sleep(2)
@@ -142,17 +155,18 @@ class OptionsServer(object):
         audio_string = self.get_audio_string()
 
         bluetooth_button = ""
-        # if self.current_choice(opt_dict, "BLUETOOTH_ENABLE", 'true'):
-        #     initialize_bluetooth(scan=False)
-        #     bluetooth_button = """
-        #        <form method="get" action="bluetooth_settings">
-        #          <button type="submit">Bluetooth Settings</button>
-        #        </form> """
-        # else:
-        #     try:
-        #         bt.send('power off')
-        #     except Exception:
-        #         pass
+        if get_os_version() != 10:
+            if self.current_choice(opt_dict, "BLUETOOTH_ENABLE", 'true'):
+                initialize_bluetooth(scan=False)
+                bluetooth_button = """
+                   <form method="get" action="bluetooth_settings">
+                     <button type="submit">Bluetooth Settings</button>
+                   </form> """
+            else:
+                try:
+                    bt.send('power off')
+                except Exception:
+                    pass
 
         if pulse is None:
             pulse_string = ""
@@ -222,7 +236,7 @@ class OptionsServer(object):
         logger.debug(f'audio_string {audio_string}')
         return audio_string
 
-    # @cherrypy.expose
+    @cherrypy.expose
     def bluetooth_settings(self):
 
         connected_string = F"<p> Currently connected to {bt_connected_device_name} </p>" if len(bt_connected_device_name) > 0 else ""
@@ -257,7 +271,7 @@ class OptionsServer(object):
            <html> """
         return page_string
 
-    # @cherrypy.expose
+    @cherrypy.expose
     def connect_bluetooth_device(self, BLUETOOTH_DEVICE=None):
         """ set the bluetooth device """
         global bt_connected
@@ -266,7 +280,7 @@ class OptionsServer(object):
             return return_button
 
         txt = F"Setting the bluetooth device to {BLUETOOTH_DEVICE}"
-        logger.debug("\n\n\n"+txt)
+        logger.warning("\n\n\n"+txt)
 
         mac_address = [x['mac_address'] for x in bt_devices if x['name'] == BLUETOOTH_DEVICE][0]
         if not bt.trust(mac_address):
@@ -314,11 +328,13 @@ class OptionsServer(object):
         current_sink_name = pulse.server_info().default_sink_name
         current_sink_desc = [x.description for x in pulse.sink_list() if x.name == current_sink_name][0]
         if desired_sink != current_sink_desc:
-            logger.warning(f'resetting pulseaudio service. desired sink {desired_sink} <> {pulse.server_info().default_sink_name}')
+            logger.warning(f'\n\n\n\nresetting pulseaudio service. desired sink {desired_sink} <> {pulse.server_info().default_sink_name}')
             for sink in pulse.sink_list():
                 if sink.description == desired_sink:
+                    logger.warning(f'\n\n\n\n{desired_sink} found')
                     pulse.default_set(sink)
-                    restart_pulseaudio()
+                    logger.warning(f'\n\n\n\nsink is now {pulse.server_info().default_sink_name}')
+                    # restart_pulseaudio()
                     continue
 
     @cherrypy.expose
@@ -412,7 +428,7 @@ class OptionsServer(object):
         os.system(cmd)
         return page_string
 
-    # @cherrypy.expose
+    @cherrypy.expose
     def rescan_bluetooth(self, *args, **kwargs):
         global bt_devices
         logger.debug('Rescan bluetooth')
@@ -439,6 +455,22 @@ class OptionsServer(object):
         </html>"""
 
         return page_string
+
+
+def get_os_version():
+    global OS_VERSION
+    if OS_VERSION is None:
+        try:
+            cmd = "cat /etc/os-release"
+            lines = subprocess.check_output(cmd, shell=True)
+            lines = lines.decode().split('\n')
+            for line in lines:
+                split_line = line.split('=')
+                if split_line[0] == 'VERSION_ID':
+                    OS_VERSION = int(split_line[1].strip('"'))
+        except Exception:
+            logger.warning("Failed to get OS Version")
+    return OS_VERSION
 
 
 def get_ip():
@@ -471,8 +503,9 @@ logger.debug(F"opt_dict is now {opt_dict}")
 if opt_dict['ENABLE_PULSEAUDIO'] == 'true':
     enable_pulse()
 
-# if opt_dict['BLUETOOTH_ENABLE'] == 'true':
-#     initialize_bluetooth(scan=False)
+if get_os_version() != 10:
+    if opt_dict['BLUETOOTH_ENABLE'] == 'true':
+        initialize_bluetooth(scan=False)
 
 
 def main():
