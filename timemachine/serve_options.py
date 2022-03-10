@@ -84,6 +84,7 @@ def get_collection_names():
 
 
 def read_optd():
+    global PULSE_ENABLED
     opt_dict_default = default_options()
     opt_dict = opt_dict_default
     try:
@@ -91,6 +92,8 @@ def read_optd():
         extra_keys = [k for k in opt_dict_default.keys() if k not in opt_dict.keys()]
         for k in extra_keys:
             opt_dict[k] = opt_dict_default[k]
+        if 'ENABLE_PULSEAUDIO' in opt_dict.keys():
+            PULSE_ENABLED = opt_dict['ENABLE_PULSEAUDIO'] == 'true'
     except Exception:
         logger.warning(F"Failed to read options from {parms.options_path}. Using defaults")
     return opt_dict
@@ -275,7 +278,8 @@ class OptionsServer(object):
     def connect_bluetooth_device(self, BLUETOOTH_DEVICE=None):
         """ set the bluetooth device """
         global bt_connected
-        return_button = """ <form method="get" action="bluetooth_settings"> <button type="submit">Return</button> </form> """
+        return_button_success = """ <form method="get" action="index"> <button type="submit">Return</button> </form> """
+        return_button_fail = """ <form method="get" action="bluetooth_settings"> <button type="submit">Return</button> </form> """
         if not BLUETOOTH_DEVICE:
             return return_button
 
@@ -291,7 +295,7 @@ class OptionsServer(object):
         if bt_connected:
             opt_dict["BLUETOOTH_DEVICE"] = BLUETOOTH_DEVICE
         return_string = F"Connected to {BLUETOOTH_DEVICE} :)" if bt_connected else F"Failed to connect to {BLUETOOTH_DEVICE} :("
-        return_string = return_string + return_button
+        return_string = return_string + (return_button_success if bt_connected else return_button_fail)
         return return_string
 
     def current_choice(self, d, k, v):
