@@ -193,7 +193,7 @@ def default_options():
     d['AUTO_UPDATE_ARCHIVE'] = False
     d['ON_TOUR_ALLOWED'] = False
     d['PLAY_LOSSLESS'] = False
-    d['ENABLE_PULSEAUDIO'] = False
+    d['PULSEAUDIO_ENABLE'] = False
     d['DEFAULT_START_TIME'] = datetime.time(15, 0)
     d['TIMEZONE'] = 'America/New_York'
     return d
@@ -207,7 +207,7 @@ def load_options(parms):
         tmpd = json.loads(f.read())
         for k in config.optd.keys():
             try:
-                if k in ['SCROLL_VENUE', 'AUTO_UPDATE_ARCHIVE', 'ON_TOUR_ALLOWED', 'PLAY_LOSSLESS', 'ENABLE_PULSEAUDIO']:  # make booleans.
+                if k in ['SCROLL_VENUE', 'AUTO_UPDATE_ARCHIVE', 'ON_TOUR_ALLOWED', 'PLAY_LOSSLESS', 'PULSEAUDIO_ENABLE']:  # make booleans.
                     tmpd[k] = tmpd[k].lower() == 'true'
                 if k in ['COLLECTIONS', 'FAVORED_TAPER']:   # make lists from comma-separated strings.
                     c = [x.strip() for x in tmpd[k].split(',') if x != '']
@@ -562,9 +562,9 @@ def year_button_longpress(button, state):
         return
     ip_address = get_ip()
     TMB.scr.show_experience(text=F"{ip_address}:9090\nto configure", force=True)
-    sleep(2*button._hold_time)
+    sleep(2 * button._hold_time)
     if not button.is_held:
-        sleep(2*button._hold_time)
+        sleep(2 * button._hold_time)
         return
     logger.debug(" longpress of year button")
     current = state.get_current()
@@ -704,14 +704,14 @@ def refresh_venue(state):
         TMB.scr.show_venue(display_string, color=id_color)
         return
     else:
-        display_offset = min(max(0, len(display_string)-(screen_width-1)), screen_width*venue_counter[1])
-        if venue_counter[1] < n_subfields-1:
+        display_offset = min(max(0, len(display_string) - (screen_width - 1)), screen_width * venue_counter[1])
+        if venue_counter[1] < n_subfields - 1:
             display_offset = 0 if (display_offset < screen_width) else display_offset
             TMB.scr.show_venue(display_string[display_offset:], color=id_color)
         else:
-            TMB.scr.show_venue(display_string[-1*(screen_width-1):], color=id_color)
+            TMB.scr.show_venue(display_string[-1 * (screen_width - 1):], color=id_color)
 
-    div, mod = divmod(venue_counter[1]+1, n_subfields)
+    div, mod = divmod(venue_counter[1] + 1, n_subfields)
     venue_counter = (divmod(venue_counter[0] + div, n_fields)[1], mod)
 
 
@@ -979,7 +979,7 @@ if TMB.stop.is_pressed:
 
 archive = Archivary.Archivary(parms.dbpath, reload_ids=reload_ids, with_latest=False, collection_list=config.optd['COLLECTIONS'])
 player = GD.GDPlayer()
-if config.optd['ENABLE_PULSEAUDIO']:
+if config.optd['PULSEAUDIO_ENABLE']:
     player.set_audio_device('pulse')
 
 
