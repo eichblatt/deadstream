@@ -12,7 +12,6 @@ import pulsectl
 from timemachine import bluetoothctl
 
 ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
-PULSE_ENABLED = False
 OS_VERSION = None
 
 parser = optparse.OptionParser()
@@ -42,6 +41,7 @@ logger = logging.getLogger(__name__)
 if parms.debug:
     logger.setLevel(logging.DEBUG)
 
+
 bt = None
 bt_devices = []
 bt_connected = None
@@ -54,6 +54,25 @@ except pulsectl.PulseError:
     logger.warn("Pulse audio not working on this machine")
 
 
+def get_os_version():
+    global OS_VERSION   # cache the value of os version
+    if OS_VERSION is None:
+        try:
+            cmd = "cat /etc/os-release"
+            lines = subprocess.check_output(cmd, shell=True)
+            lines = lines.decode().split('\n')
+            for line in lines:
+                split_line = line.split('=')
+                if split_line[0] == 'VERSION_ID':
+                    OS_VERSION = int(split_line[1].strip('"'))
+        except Exception:
+            logger.warning("Failed to get OS Version")
+    return OS_VERSION
+
+
+PULSE_ENABLED = get_os_version() > 10
+
+
 def default_options():
     d = {}
     d['COLLECTIONS'] = 'GratefulDead'
@@ -62,9 +81,10 @@ def default_options():
     d['AUTO_UPDATE_ARCHIVE'] = 'false'
     d['ON_TOUR_ALLOWED'] = 'false'
     d['PLAY_LOSSLESS'] = 'false'
-    d['ENABLE_PULSEAUDIO'] = 'false'
-    if get_os_version() != 10:
-        d['BLUETOOTH_ENABLE'] = 'false'
+    d['PULSEAUDIO_ENABLE'] = 'false'
+    if get_os_version() > 10:
+        d['PULSEAUDIO_ENABLE'] = 'true'
+        d['BLUETOOTH_ENABLE'] = 'true'
         d['BLUETOOTH_DEVICE'] = 'None'
     d['DEFAULT_START_TIME'] = '15:00:00'
     d['TIMEZONE'] = 'America/New_York'
@@ -92,8 +112,8 @@ def read_optd():
         extra_keys = [k for k in opt_dict_default.keys() if k not in opt_dict.keys()]
         for k in extra_keys:
             opt_dict[k] = opt_dict_default[k]
-        if 'ENABLE_PULSEAUDIO' in opt_dict.keys():
-            PULSE_ENABLED = opt_dict['ENABLE_PULSEAUDIO'] == 'true'
+        if 'PULSEAUDIO_ENABLE' in opt_dict.keys():
+            PULSE_ENABLED = opt_dict['PULSEAUDIO_ENABLE'] == 'true'
     except Exception:
         logger.warning(F"Failed to read options from {parms.options_path}. Using defaults")
     return opt_dict
@@ -365,12 +385,13 @@ class OptionsServer(object):
 
         self.save_options(kwargs)
 
-        if kwargs['ENABLE_PULSEAUDIO'] == 'true':
-            logger.info(f"kwargs['ENABLE_PULSEAUDIO'] is {kwargs}")
+        if kwargs['PULSEAUDIO_ENABLE'] == 'true':
+            logger.info(f"kwargs['PULSEAUDIO_ENABLE'] is {kwargs}")
             enable_pulse()
         else:
-            logger.info(f"kwargs['ENABLE_PULSEAUDIO'] is false")
+            logger.info(f"kwargs['PULSEAUDIO_ENABLE'] is false")
             disable_pulse()
+            disable_bluetooth()
 
         try:
             desired_sink = kwargs['audio-sink']
@@ -461,22 +482,6 @@ class OptionsServer(object):
         return page_string
 
 
-def get_os_version():
-    global OS_VERSION
-    if OS_VERSION is None:
-        try:
-            cmd = "cat /etc/os-release"
-            lines = subprocess.check_output(cmd, shell=True)
-            lines = lines.decode().split('\n')
-            for line in lines:
-                split_line = line.split('=')
-                if split_line[0] == 'VERSION_ID':
-                    OS_VERSION = int(split_line[1].strip('"'))
-        except Exception:
-            logger.warning("Failed to get OS Version")
-    return OS_VERSION
-
-
 def get_ip():
     cmd = "hostname -I"
     ip = subprocess.check_output(cmd, shell=True)
@@ -501,14 +506,22 @@ def initialize_bluetooth(scan=True):
     bt_devices = bt.get_candidate_devices()
 
 
+def disable_bluetooth():
+    global opt_dict
+    try:
+        bt.send('power off')
+        opt_dict['BLUETOOTH_ENABLE'] = 'false'
+        save_options(opt_dict)
+    except Exception:
+        pass
+
+
 opt_dict = read_optd()
 logger.debug(F"opt_dict is now {opt_dict}")
 
-if opt_dict['ENABLE_PULSEAUDIO'] == 'true':
+if opt_dict['PULSEAUDIO_ENABLE'] == 'true':
     enable_pulse()
-
-if get_os_version() != 10:
-    if opt_dict['BLUETOOTH_ENABLE'] == 'true':
+    if (get_os_version() > 10) and opt_dict['BLUETOOTH_ENABLE'] == 'true':
         initialize_bluetooth(scan=False)
 
 
