@@ -982,6 +982,7 @@ if TMB.stop.is_pressed:
 archive = Archivary.Archivary(parms.dbpath, reload_ids=reload_ids, with_latest=False, collection_list=config.optd['COLLECTIONS'])
 player = GD.GDPlayer()
 if config.optd['PULSEAUDIO_ENABLE']:
+    logger.debug('Setting Audio device to pulse')
     player.set_audio_device('pulse')
 
 
