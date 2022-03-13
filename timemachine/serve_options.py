@@ -210,8 +210,11 @@ class OptionsServer(object):
              <button type="submit">Save Values</button>
              <button type="reset">Restore</button>
            </form> {bluetooth_button}
-           <form method="get" action="restart_service">
+           <form method="get" action="restart_tm_service">
              <button type="submit">Restart Timemachine Service</button>
+           </form>
+           <form method="get" action="restart_options_service">
+             <button type="submit">Restart Options Service</button>
            </form>
          </body>
         </html>"""
@@ -409,8 +412,11 @@ class OptionsServer(object):
                <form method="get" action="index">
                  <button type="submit">Return</button>
                </form>
-               <form method="get" action="restart_service">
+               <form method="get" action="restart_tm_service">
                  <button type="submit">Restart Timemachine Service</button>
+               </form>
+               <form method="get" action="restart_options_service">
+                 <button type="submit">Restart Options Service</button>
                </form>
              </body>
          </html>"""
@@ -438,8 +444,16 @@ class OptionsServer(object):
         return page_string
 
     @cherrypy.expose
+    def restart_tm_service(self, *args, **kwargs):
+        return self.restart_service(service_name='timemachine')
+
+    @cherrypy.expose
+    def restart_options_service(self, *args, **kwargs):
+        return self.restart_service(service_name='serve_options')
+
+    @cherrypy.expose
     def restart_service(self, *args, **kwargs):
-        cmd = "sudo service timemachine restart"
+        cmd = f"sudo service {kwargs['service_name']} restart"
         page_string = f"""<html>
          <head></head>
          <body> Restarting Service <p> Command: {cmd}
