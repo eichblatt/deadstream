@@ -194,6 +194,8 @@ def default_options():
     d['ON_TOUR_ALLOWED'] = False
     d['PLAY_LOSSLESS'] = False
     d['PULSEAUDIO_ENABLE'] = False
+    if controls.get_os_version() > 10:
+        d['PULSEAUDIO_ENABLE'] = True
     d['DEFAULT_START_TIME'] = datetime.time(15, 0)
     d['TIMEZONE'] = 'America/New_York'
     return d

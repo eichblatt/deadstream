@@ -49,6 +49,7 @@ parms, remainder = parser.parse_args()
 knob_sense_path = os.path.join(os.getenv('HOME'), ".knob_sense")
 
 CALIBRATED = os.path.exists(knob_sense_path)
+OS_VERSION = None
 
 logging.basicConfig(format='%(asctime)s.%(msecs)03d %(levelname)s: %(name)s %(message)s', level=logging.INFO, datefmt='%Y-%m-%d %H:%M:%S')
 logger = logging.getLogger(__name__)
@@ -145,6 +146,9 @@ def default_options():
     d['ON_TOUR_ALLOWED'] = 'false'
     d['PLAY_LOSSLESS'] = 'false'
     d['PULSEAUDIO_ENABLE'] = 'false'
+    if controls.get_os_version() > 10:
+        d['PULSEAUDIO_ENABLE'] = 'true'
+        d['BLUETOOTH_ENABLE'] = 'true'
     d['DEFAULT_START_TIME'] = '15:00:00'
     d['TIMEZONE'] = 'America/New_York'
     return d
