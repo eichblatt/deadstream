@@ -57,9 +57,11 @@ files=`find . -maxdepth 1 -mindepth 1 -name env_\* -a -not -name $current_env -p
 system "sudo rm -rf $files"
 system "sudo mv .knob_sense $HOME/.knob_sense"
 system "sudo mv .timemachine_options.txt $HOME/.timemachine_options.txt"
-system "sudo rm -rf .ssh .bash_history .python_history .viminfo .wget-hsts .gnupg .lesshst .ipython .local"
+system "sudo mv .ssh $HOME/timemachine_dot_ssh"
+system "sudo rm -rf .ssh .bash_history .python_history .viminfo .wget-hsts .gnupg .lesshst .ipython .local .gitconfig .xsession*"
 system "sudo rm -rf .factory_env"
 system "sudo cp -r $current_env .factory_env"
+system "sudo cp $HOME/test_sound.ogg ."
 
 
 echo "Removing wpa_supplicant"
@@ -80,6 +82,7 @@ echo "Replacing wpa_supplicant and knob_sense files"
 system "sudo mv $HOME/wpa_supplicant.conf $media_folder/rootfs/etc/wpa_supplicant/wpa_supplicant.conf"
 system "sudo mv $HOME/.knob_sense $media_folder/rootfs/home/deadhead/."
 system "sudo mv $HOME/.timemachine_options.txt $media_folder/rootfs/home/deadhead/."
+system "sudo mv $HOME/timemachine_dot_ssh $media_folder/rootfs/home/deadhead/."
 
 # NOTE: to burn an image use the command (or similar):
 # sudo sh -c "pv v2_20210625.img > /dev/sdb"

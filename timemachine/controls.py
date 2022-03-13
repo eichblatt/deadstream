@@ -18,6 +18,7 @@ import datetime
 import logging
 import os
 import string
+import subprocess
 from time import sleep
 from threading import BoundedSemaphore, Event
 
@@ -82,6 +83,25 @@ def with_semaphore(func):
     return inner
 
 
+OS_VERSION = None
+
+
+def get_os_version():
+    global OS_VERSION   # cache the value of os version
+    if OS_VERSION is None:
+        try:
+            cmd = "cat /etc/os-release"
+            lines = subprocess.check_output(cmd, shell=True)
+            lines = lines.decode().split('\n')
+            for line in lines:
+                split_line = line.split('=')
+                if split_line[0] == 'VERSION_ID':
+                    OS_VERSION = int(split_line[1].strip('"'))
+        except Exception:
+            logger.warning("Failed to get OS Version")
+    return OS_VERSION
+
+
 class date_knob_reader:
     def __init__(self, y: RotaryEncoder, m: RotaryEncoder, d: RotaryEncoder, archive=None):
         self.date = None
@@ -113,14 +133,14 @@ class date_knob_reader:
         d_val = self.d.steps
         y_val = self.y.steps + self.year_baseline
         logger.debug(F"updating date reader. m:{m_val},d:{d_val},y:{y_val}")
-        if d_val > self.maxd[m_val-1]:
-            self.d.steps = self.maxd[m_val-1]
+        if d_val > self.maxd[m_val - 1]:
+            self.d.steps = self.maxd[m_val - 1]
             d_val = self.d.steps
         try:
             self.date = datetime.date(y_val, m_val, d_val)
         except ValueError:
             self.d.steps = self.d.steps - 1
-            d_val = d_val-1
+            d_val = d_val - 1
             self.date = datetime.date(y_val, m_val, d_val)
         logger.debug(F"date reader date {self.date}")
 
@@ -163,8 +183,8 @@ class date_knob_reader:
         if self.archive is None:
             return None
         self._update()
-        if self.shownum < len(self.shows_available())-1:
-            return (self.date, self.shownum+1)
+        if self.shownum < len(self.shows_available()) - 1:
+            return (self.date, self.shownum + 1)
         else:
             return (self.next_date(), 0)
 
@@ -186,7 +206,7 @@ class decade_counter():
         self.set_value(tens.steps, ones.steps)
 
     def set_value(self, tens_val, ones_val):
-        self.value = tens_val*10 + ones_val
+        self.value = tens_val * 10 + ones_val
         if self.bounds[0] is not None:
             self.value = max(self.value, self.bounds[0])
         if self.bounds[1] is not None:
@@ -363,7 +383,7 @@ def select_option(TMB, counter, message, chooser):
     (text_width, text_height) = scr.smallfont.getsize(message)
 
     text_height = text_height + 1
-    y_origin = text_height*(1+message.count('\n'))
+    y_origin = text_height * (1 + message.count('\n'))
     selection_bbox = Bbox(0, y_origin, 160, 128)
 
     while not TMB.select_event.is_set():
@@ -377,10 +397,10 @@ def select_option(TMB, counter, message, chooser):
         y_loc = y_origin
         step = divmod(counter.value, len(choices))[1]
 
-        text = '\n'.join(choices[max(0, step-int(screen_height/2)):step])
+        text = '\n'.join(choices[max(0, step - int(screen_height / 2)):step])
         (text_width, text_height) = scr.smallfont.getsize(text)
         scr.show_text(text, loc=(x_loc, y_loc), font=scr.smallfont, force=False)
-        y_loc = y_loc + text_height*(1+text.count('\n'))
+        y_loc = y_loc + text_height * (1 + text.count('\n'))
 
         if len(choices[step]) > screen_width:
             text = '>' + '..' + choices[step][-13:]
@@ -390,7 +410,7 @@ def select_option(TMB, counter, message, chooser):
         scr.show_text(text, loc=(x_loc, y_loc), font=scr.smallfont, color=(0, 0, 255), force=False)
         y_loc = y_loc + text_height
 
-        text = '\n'.join(choices[step+1:min(step+screen_height, len(choices))])
+        text = '\n'.join(choices[step + 1:min(step + screen_height, len(choices))])
         (text_width, text_height) = scr.smallfont.getsize(text)
         scr.show_text(text, loc=(x_loc, y_loc), font=scr.smallfont, force=True)
 
@@ -418,9 +438,9 @@ def select_chars(TMB, counter, message, message2="So Far", character_set=string.
     scr.show_text(message, loc=(0, 0), font=scr.smallfont, color=(0, 255, 255), force=True)
     (text_width, text_height) = scr.smallfont.getsize(message)
 
-    y_origin = text_height*(1+message.count('\n'))
-    selection_bbox = Bbox(0, y_origin, 160, y_origin+22)
-    selected_bbox = Bbox(0, y_origin+21, 160, 128)
+    y_origin = text_height * (1 + message.count('\n'))
+    selection_bbox = Bbox(0, y_origin, 160, y_origin + 22)
+    selected_bbox = Bbox(0, y_origin + 21, 160, 128)
 
     while not TMB.stop_event.is_set():
         while not TMB.select_event.is_set() and not TMB.stop_event.is_set():
@@ -439,7 +459,7 @@ def select_chars(TMB, counter, message, message2="So Far", character_set=string.
             x_loc = x_loc + text_width
 
             # print the white before the red, if applicable
-            text = character_set[max(0, -1+counter.value-int(screen_width/2)):-1+counter.value]
+            text = character_set[max(0, -1 + counter.value - int(screen_width / 2)):-1 + counter.value]
             for x in character_set[94:]:
                 text = text.replace(x, u'\u25A1')
             (text_width, text_height) = scr.oldfont.getsize(text)
@@ -447,7 +467,7 @@ def select_chars(TMB, counter, message, message2="So Far", character_set=string.
             x_loc = x_loc + text_width
 
             # print the red character
-            text = character_set[-1+min(counter.value, len(character_set))]
+            text = character_set[-1 + min(counter.value, len(character_set))]
             if text == ' ':
                 text = "SPC"
             elif text == '\t':
@@ -465,7 +485,7 @@ def select_chars(TMB, counter, message, message2="So Far", character_set=string.
             x_loc = x_loc + text_width
 
             # print the white after the red, if applicable
-            text = character_set[counter.value:min(-1+counter.value+screen_width, len(character_set))]
+            text = character_set[counter.value:min(-1 + counter.value + screen_width, len(character_set))]
             for x in character_set[94:]:
                 text = text.replace(x, u'\u25A1')
             (text_width, text_height) = scr.oldfont.getsize(text)
@@ -480,7 +500,7 @@ def select_chars(TMB, counter, message, message2="So Far", character_set=string.
             selected = selected[:-1]
             scr.clear_area(selected_bbox, force=False)
         else:
-            selected = selected + character_set[-1+counter.value]
+            selected = selected + character_set[-1 + counter.value]
         scr.clear_area(selected_bbox, force=False)
         scr.show_text(F"{message2}:\n{selected[-screen_width:]}", loc=selected_bbox.origin(), color=(255, 255, 255), font=scr.oldfont, force=True)
 
@@ -519,8 +539,8 @@ class Bbox:
     def origin(self): return (self.x0, self.y0)
     def topright(self): return (self.x1, self.y1)
     def size(self): return (int(self.height()), int(self.width()))
-    def center(self): return (int((self.x0+self.x1)/2), int((self.y0+self.y1)/2))
-    def shift(self, d): return Bbox(self.x0-d.x0, self.y0-d.y0, self.x1-d.x1, self.y1-d.y1)
+    def center(self): return (int((self.x0 + self.x1) / 2), int((self.y0 + self.y1) / 2))
+    def shift(self, d): return Bbox(self.x0 - d.x0, self.y0 - d.y0, self.x1 - d.x1, self.y1 - d.y1)
 
 
 class screen:
@@ -633,13 +653,13 @@ class screen:
             if excess > 0:
                 self.show_text(text, bbox.origin(), font=font, color=color, stroke_width=stroke_width)
                 sleep(2)
-                for i in range(int(excess/inc)+2):
+                for i in range(int(excess / inc) + 2):
                     # logger.debug(F"scrolling excess {excess}, inc: {inc}, i:{i}")
                     if self.venue_name != text:
                         break
                     # sleep(0.005)
                     self.clear_area(bbox)
-                    self.show_text(text, bbox.shift(Bbox(inc*i, 0, 0, 0)).origin(), font=font, color=color, stroke_width=stroke_width)
+                    self.show_text(text, bbox.shift(Bbox(inc * i, 0, 0, 0)).origin(), font=font, color=color, stroke_width=stroke_width)
                 sleep(1)
                 self.clear_area(bbox)
 
@@ -698,8 +718,8 @@ class screen:
         if config.PLAY_STATE == config.PLAYING:
             self.draw.regular_polygon((bbox.center(), 10), 3, rotation=30, fill=color)
         elif config.PLAY_STATE == config.PAUSED:
-            self.draw.line([(bbox.x0+10, bbox.y0+4), (bbox.x0+10, bbox.y0+20)], width=4, fill=color)
-            self.draw.line([(bbox.x0+20, bbox.y0+4), (bbox.x0+20, bbox.y0+20)], width=4, fill=color)
+            self.draw.line([(bbox.x0 + 10, bbox.y0 + 4), (bbox.x0 + 10, bbox.y0 + 20)], width=4, fill=color)
+            self.draw.line([(bbox.x0 + 20, bbox.y0 + 4), (bbox.x0 + 20, bbox.y0 + 20)], width=4, fill=color)
         elif config.PLAY_STATE == config.STOPPED:
             self.draw.regular_polygon((bbox.center(), 10), 4, rotation=0, fill=color)
         elif config.PLAY_STATE in [config.INIT, config.READY, config.ENDED]:
@@ -767,8 +787,8 @@ class state:
             self.dict['TRACK_NUM'] = self.player._get_property('playlist-pos')
             self.dict['TAPE_ID'] = self.player.tape.identifier
             self.dict['TRACK_TITLE'] = self.player.tape.tracks()[self.dict['TRACK_NUM']].title
-            if (self.dict['TRACK_NUM']+1) < len(self.player.playlist):
-                next_track = self.dict['TRACK_NUM']+1
+            if (self.dict['TRACK_NUM'] + 1) < len(self.player.playlist):
+                next_track = self.dict['TRACK_NUM'] + 1
                 self.dict['NEXT_TRACK_TITLE'] = self.player.tape.tracks()[next_track].title
             else:
                 self.dict['NEXT_TRACK_TITLE'] = ''

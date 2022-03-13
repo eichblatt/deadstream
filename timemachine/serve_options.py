@@ -12,6 +12,8 @@ import pulsectl
 from timemachine import bluetoothctl
 
 ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
+OS_VERSION = None
+
 parser = optparse.OptionParser()
 parser.add_option('-d', '--debug',
                   dest='debug',
@@ -39,6 +41,7 @@ logger = logging.getLogger(__name__)
 if parms.debug:
     logger.setLevel(logging.DEBUG)
 
+
 bt = None
 bt_devices = []
 bt_connected = None
@@ -51,6 +54,25 @@ except pulsectl.PulseError:
     logger.warn("Pulse audio not working on this machine")
 
 
+def get_os_version():
+    global OS_VERSION   # cache the value of os version
+    if OS_VERSION is None:
+        try:
+            cmd = "cat /etc/os-release"
+            lines = subprocess.check_output(cmd, shell=True)
+            lines = lines.decode().split('\n')
+            for line in lines:
+                split_line = line.split('=')
+                if split_line[0] == 'VERSION_ID':
+                    OS_VERSION = int(split_line[1].strip('"'))
+        except Exception:
+            logger.warning("Failed to get OS Version")
+    return OS_VERSION
+
+
+PULSE_ENABLED = get_os_version() > 10
+
+
 def default_options():
     d = {}
     d['COLLECTIONS'] = 'GratefulDead'
@@ -59,9 +81,11 @@ def default_options():
     d['AUTO_UPDATE_ARCHIVE'] = 'false'
     d['ON_TOUR_ALLOWED'] = 'false'
     d['PLAY_LOSSLESS'] = 'false'
-    d['ENABLE_PULSEAUDIO'] = 'false'
-    # d['BLUETOOTH_ENABLE'] = 'false'
-    # d['BLUETOOTH_DEVICE'] = 'None'
+    d['PULSEAUDIO_ENABLE'] = 'false'
+    if get_os_version() > 10:
+        d['PULSEAUDIO_ENABLE'] = 'true'
+        d['BLUETOOTH_ENABLE'] = 'true'
+        d['BLUETOOTH_DEVICE'] = 'None'
     d['DEFAULT_START_TIME'] = '15:00:00'
     d['TIMEZONE'] = 'America/New_York'
     return d
@@ -80,6 +104,7 @@ def get_collection_names():
 
 
 def read_optd():
+    global PULSE_ENABLED
     opt_dict_default = default_options()
     opt_dict = opt_dict_default
     try:
@@ -87,6 +112,8 @@ def read_optd():
         extra_keys = [k for k in opt_dict_default.keys() if k not in opt_dict.keys()]
         for k in extra_keys:
             opt_dict[k] = opt_dict_default[k]
+        if 'PULSEAUDIO_ENABLE' in opt_dict.keys():
+            PULSE_ENABLED = opt_dict['PULSEAUDIO_ENABLE'] == 'true'
     except Exception:
         logger.warning(F"Failed to read options from {parms.options_path}. Using defaults")
     return opt_dict
@@ -106,17 +133,26 @@ def stop_pulseaudio():
 
 def enable_pulse():
     global pulse
+    global PULSE_ENABLED
+    if PULSE_ENABLED and pulse is not None:
+        return
     try:
         restart_pulseaudio()
         sleep(2)
         pulse = pulsectl.Pulse('pulsectl')
+        PULSE_ENABLED = True
     except pulsectl.PulseError:
         pulse = None
+        PULSE_ENABLED = False
         logger.warning("Pulse audio not working on this machine")
 
 
 def disable_pulse():
     global pulse
+    global PULSE_ENABLED
+    if not PULSE_ENABLED:
+        return
+    PULSE_ENABLED = False
     try:
         stop_pulseaudio()
         sleep(2)
@@ -142,37 +178,38 @@ class OptionsServer(object):
         audio_string = self.get_audio_string()
 
         bluetooth_button = ""
-        # if self.current_choice(opt_dict, "BLUETOOTH_ENABLE", 'true'):
-        #     initialize_bluetooth(scan=False)
-        #     bluetooth_button = """
-        #        <form method="get" action="bluetooth_settings">
-        #          <button type="submit">Bluetooth Settings</button>
-        #        </form> """
-        # else:
-        #     try:
-        #         bt.send('power off')
-        #     except Exception:
-        #         pass
+        if get_os_version() != 10:
+            if self.current_choice(opt_dict, "BLUETOOTH_ENABLE", 'true'):
+                initialize_bluetooth(scan=False)
+                bluetooth_button = """
+                   <form method="get" action="bluetooth_settings">
+                     <button type="submit">Bluetooth Settings</button>
+                   </form> """
+            else:
+                try:
+                    bt.send('power off')
+                except Exception:
+                    pass
 
         if pulse is None:
             pulse_string = ""
         else:
-            pulse_string = """
+            pulse_string = f"""
              <label for="audio-sink"> Audio Sink:</label>
-             <select id="audio-sink" name="audio-sink">""" + audio_string + """ </select><p>
-             """
+             <select id="audio-sink" name="audio-sink"> {audio_string} </select><p> """
 
-        page_string = """<html>
+        page_string = f"""<html>
          <head></head>
          <body>
            <!-- <meta http-equiv="refresh" content="30"> -->
-           <h1> Time Machine Options """ + hostname + """</h1>
-           <form method="get" action="save_values">""" + form_string + """
+           <h1> Time Machine Options </h1>
+           <h2> host: {hostname} -- Raspbian version {get_os_version()} </h2>
+           <form method="get" action="save_values"> {form_string}
              <label for="timezone"> Choose a Time Zone:</label>
-             <select id="timezone" name="TIMEZONE">""" + tz_string + """ </select><p> """ + pulse_string + """
+             <select id="timezone" name="TIMEZONE"> {tz_string} </select><p> {pulse_string}
              <button type="submit">Save Values</button>
              <button type="reset">Restore</button>
-           </form> """ + bluetooth_button + """
+           </form> {bluetooth_button}
            <form method="get" action="restart_service">
              <button type="submit">Restart Timemachine Service</button>
            </form>
@@ -198,7 +235,7 @@ class OptionsServer(object):
             try:
                 sink_list = pulse.sink_list()
             except Exception as e:
-                sleep(0.2*parms.sleep_time)
+                sleep(0.2 * parms.sleep_time)
                 logger.warning("delay in getting audio string")
 
         itry = 0
@@ -208,7 +245,7 @@ class OptionsServer(object):
                 sink_list = pulse.sink_list()
             except Exception as e:
                 itry = itry + 1
-                sleep(0.2*parms.sleep_time)
+                sleep(0.2 * parms.sleep_time)
                 logger.warning("Error getting audio string -- creating a new pulsectl object")
 
         for sink in sink_list:
@@ -222,7 +259,7 @@ class OptionsServer(object):
         logger.debug(f'audio_string {audio_string}')
         return audio_string
 
-    # @cherrypy.expose
+    @cherrypy.expose
     def bluetooth_settings(self):
 
         connected_string = F"<p> Currently connected to {bt_connected_device_name} </p>" if len(bt_connected_device_name) > 0 else ""
@@ -241,43 +278,44 @@ class OptionsServer(object):
                 <button type="submit">Rescan Bluetooth</button>
                 </form>  """
             bt_button_label = "Connect Bluetooth Device"
-            bluetooth_device_string = """
+            bluetooth_device_string = f"""
                 <form name="add" action="connect_bluetooth_device" method="post">
-                <select name="BLUETOOTH_DEVICE">""" + bt_device + """ </select>
-                <button type="submit"> """ + bt_button_label + """ </button> </form>"""
+                <select name="BLUETOOTH_DEVICE"> {bt_device} </select>
+                <button type="submit"> {bt_button_label} </button> </form>"""
 
         return_button = """ <form method="get" action="index"> <button type="submit">Return</button> </form> """
 
-        page_string = """
+        page_string = f"""
            <html>
                <head></head>
                <body>
-                     <h1> Time Machine Bluetooth Settings """ + hostname + """</h1>""" + connected_string + bluetooth_device_string + rescan_bluetooth_string + return_button + """
+                     <h1> Time Machine Bluetooth Settings {hostname}</h1> {connected_string} {bluetooth_device_string} {rescan_bluetooth_string} {return_button}
                </body>
            <html> """
         return page_string
 
-    # @cherrypy.expose
+    @cherrypy.expose
     def connect_bluetooth_device(self, BLUETOOTH_DEVICE=None):
         """ set the bluetooth device """
         global bt_connected
-        return_button = """ <form method="get" action="bluetooth_settings"> <button type="submit">Return</button> </form> """
+        return_button_success = """ <form method="get" action="index"> <button type="submit">Return</button> </form> """
+        return_button_fail = """ <form method="get" action="bluetooth_settings"> <button type="submit">Return</button> </form> """
         if not BLUETOOTH_DEVICE:
-            return return_button
+            return return_button_success
 
         txt = F"Setting the bluetooth device to {BLUETOOTH_DEVICE}"
-        logger.debug("\n\n\n"+txt)
+        logger.warning("\n\n\n" + txt)
 
         mac_address = [x['mac_address'] for x in bt_devices if x['name'] == BLUETOOTH_DEVICE][0]
         if not bt.trust(mac_address):
-            return F"Failed to Trust {mac_address}" + return_button
+            return F"Failed to Trust {mac_address} {return_button_fail}"
         if not bt.pair(mac_address):
-            return F"Failed to pair {mac_address}" + return_button
+            return F"Failed to pair {mac_address} {return_button_fail}"
         bt_connected = bt.connect(mac_address)
         if bt_connected:
             opt_dict["BLUETOOTH_DEVICE"] = BLUETOOTH_DEVICE
         return_string = F"Connected to {BLUETOOTH_DEVICE} :)" if bt_connected else F"Failed to connect to {BLUETOOTH_DEVICE} :("
-        return_string = return_string + return_button
+        return_string = return_string + (return_button_success if bt_connected else return_button_fail)
         return return_string
 
     def current_choice(self, d, k, v):
@@ -314,11 +352,13 @@ class OptionsServer(object):
         current_sink_name = pulse.server_info().default_sink_name
         current_sink_desc = [x.description for x in pulse.sink_list() if x.name == current_sink_name][0]
         if desired_sink != current_sink_desc:
-            logger.warning(f'resetting pulseaudio service. desired sink {desired_sink} <> {pulse.server_info().default_sink_name}')
+            logger.warning(f'\n\n\n\nresetting pulseaudio service. desired sink {desired_sink} <> {pulse.server_info().default_sink_name}')
             for sink in pulse.sink_list():
                 if sink.description == desired_sink:
+                    logger.warning(f'\n\n\n\n{desired_sink} found')
                     pulse.default_set(sink)
-                    restart_pulseaudio()
+                    logger.warning(f'\n\n\n\nsink is now {pulse.server_info().default_sink_name}')
+                    # restart_pulseaudio()
                     continue
 
     @cherrypy.expose
@@ -345,12 +385,13 @@ class OptionsServer(object):
 
         self.save_options(kwargs)
 
-        if kwargs['ENABLE_PULSEAUDIO'] == 'true':
-            logger.info(f"kwargs['ENABLE_PULSEAUDIO'] is {kwargs}")
+        if kwargs['PULSEAUDIO_ENABLE'] == 'true':
+            logger.info(f"kwargs['PULSEAUDIO_ENABLE'] is {kwargs}")
             enable_pulse()
         else:
-            logger.info(f"kwargs['ENABLE_PULSEAUDIO'] is false")
+            logger.info(f"kwargs['PULSEAUDIO_ENABLE'] is false")
             disable_pulse()
+            disable_bluetooth()
 
         try:
             desired_sink = kwargs['audio-sink']
@@ -362,9 +403,9 @@ class OptionsServer(object):
 
         form_strings = [F'<label>{x[0]}:{x[1]}</label> <p>' for x in kwargs.items()]
         form_string = '\n'.join(form_strings)
-        page_string = """<html>
+        page_string = f"""<html>
          <head></head>
-             <body> Options set to <p> """ + form_string + """
+             <body> Options set to <p> {form_string}
                <form method="get" action="index">
                  <button type="submit">Return</button>
                </form>
@@ -374,15 +415,15 @@ class OptionsServer(object):
              </body>
          </html>"""
 
-        sleep(0.2*parms.sleep_time)
+        sleep(0.2 * parms.sleep_time)
         return page_string
 
     @cherrypy.expose
     def update_timemachine(self, *args, **kwargs):
         cmd = "sudo service update start"
-        page_string = """<html>
+        page_string = f"""<html>
          <head></head>
-         <body> Updating Time Machine <p> Command: """ + cmd + """
+         <body> Updating Time Machine <p> Command: {cmd} 
            <form method="get" action="index">
 #             <button type="submit">Return</button>
              <input class="btn btn-primary" type="submit" name="submit"
@@ -399,9 +440,9 @@ class OptionsServer(object):
     @cherrypy.expose
     def restart_service(self, *args, **kwargs):
         cmd = "sudo service timemachine restart"
-        page_string = """<html>
+        page_string = f"""<html>
          <head></head>
-         <body> Restarting Service <p> Command: """ + cmd + """
+         <body> Restarting Service <p> Command: {cmd}
            <form method="get" action="index">
              <button type="submit">Return</button>
            </form>
@@ -412,7 +453,7 @@ class OptionsServer(object):
         os.system(cmd)
         return page_string
 
-    # @cherrypy.expose
+    @cherrypy.expose
     def rescan_bluetooth(self, *args, **kwargs):
         global bt_devices
         logger.debug('Rescan bluetooth')
@@ -428,10 +469,10 @@ class OptionsServer(object):
             logger.exception(F"Exception in scanning for bluetooth {e}")
             pass
 
-        page_string = """<html>
+        page_string = f"""<html>
          <head></head>
          <body> Rescanned for bluetooth devices <p>
-           <p> Found: """ + device_string + """ </p>
+           <p> Found: {device_string} </p>
            <form method="get" action="bluetooth_settings">
              <button type="submit">Return</button>
            </form>
@@ -465,14 +506,23 @@ def initialize_bluetooth(scan=True):
     bt_devices = bt.get_candidate_devices()
 
 
+def disable_bluetooth():
+    global opt_dict
+    try:
+        bt.send('power off')
+        opt_dict['BLUETOOTH_ENABLE'] = 'false'
+        save_options(opt_dict)
+    except Exception:
+        pass
+
+
 opt_dict = read_optd()
 logger.debug(F"opt_dict is now {opt_dict}")
 
-if opt_dict['ENABLE_PULSEAUDIO'] == 'true':
+if opt_dict['PULSEAUDIO_ENABLE'] == 'true':
     enable_pulse()
-
-# if opt_dict['BLUETOOTH_ENABLE'] == 'true':
-#     initialize_bluetooth(scan=False)
+    if (get_os_version() > 10) and opt_dict['BLUETOOTH_ENABLE'] == 'true':
+        initialize_bluetooth(scan=False)
 
 
 def main():

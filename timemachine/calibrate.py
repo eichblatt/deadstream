@@ -49,6 +49,7 @@ parms, remainder = parser.parse_args()
 knob_sense_path = os.path.join(os.getenv('HOME'), ".knob_sense")
 
 CALIBRATED = os.path.exists(knob_sense_path)
+OS_VERSION = None
 
 logging.basicConfig(format='%(asctime)s.%(msecs)03d %(levelname)s: %(name)s %(message)s', level=logging.INFO, datefmt='%Y-%m-%d %H:%M:%S')
 logger = logging.getLogger(__name__)
@@ -72,7 +73,7 @@ def retry_call(callable: Callable, *args, **kwargs):
 
 max_choices = len(string.printable)
 
-TMB = controls.Time_Machine_Board(mdy_bounds=[(0, 9), (0, 1+divmod(max_choices-1, 10)[0]), (0, 9)])
+TMB = controls.Time_Machine_Board(mdy_bounds=[(0, 9), (0, 1 + divmod(max_choices - 1, 10)[0]), (0, 9)])
 
 TMB.rewind.when_pressed = lambda x: TMB.rewind_button(x)
 TMB.rewind.when_held = lambda x: TMB.rewind_button(x)
@@ -95,7 +96,7 @@ def get_knob_orientation(knob, label):
     TMB.d_knob_event.clear()
     TMB.y_knob_event.clear()
     bounds = knob.threshold_steps
-    initial_value = knob.steps = int((bounds[0]+bounds[1])/2)
+    initial_value = knob.steps = int((bounds[0] + bounds[1]) / 2)
     TMB.scr.show_text("Calibrating knobs", font=TMB.scr.smallfont, force=False, clear=True)
     TMB.scr.show_text(F"Rotate {label}\nclockwise", loc=(0, 40), font=TMB.scr.boldsmall, color=(0, 255, 255), force=True)
     if label == "month":
@@ -144,7 +145,10 @@ def default_options():
     d['AUTO_UPDATE_ARCHIVE'] = 'false'
     d['ON_TOUR_ALLOWED'] = 'false'
     d['PLAY_LOSSLESS'] = 'false'
-    d['ENABLE_PULSEAUDIO'] = 'false'
+    d['PULSEAUDIO_ENABLE'] = 'false'
+    if controls.get_os_version() > 10:
+        d['PULSEAUDIO_ENABLE'] = 'true'
+        d['BLUETOOTH_ENABLE'] = 'true'
     d['DEFAULT_START_TIME'] = '15:00:00'
     d['TIMEZONE'] = 'America/New_York'
     return d
