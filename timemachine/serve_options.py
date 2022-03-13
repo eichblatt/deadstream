@@ -215,7 +215,7 @@ class OptionsServer(object):
             try:
                 sink_list = pulse.sink_list()
             except Exception as e:
-                sleep(0.2*parms.sleep_time)
+                sleep(0.2 * parms.sleep_time)
                 logger.warning("delay in getting audio string")
 
         itry = 0
@@ -225,7 +225,7 @@ class OptionsServer(object):
                 sink_list = pulse.sink_list()
             except Exception as e:
                 itry = itry + 1
-                sleep(0.2*parms.sleep_time)
+                sleep(0.2 * parms.sleep_time)
                 logger.warning("Error getting audio string -- creating a new pulsectl object")
 
         for sink in sink_list:
@@ -281,16 +281,16 @@ class OptionsServer(object):
         return_button_success = """ <form method="get" action="index"> <button type="submit">Return</button> </form> """
         return_button_fail = """ <form method="get" action="bluetooth_settings"> <button type="submit">Return</button> </form> """
         if not BLUETOOTH_DEVICE:
-            return return_button
+            return return_button_success
 
         txt = F"Setting the bluetooth device to {BLUETOOTH_DEVICE}"
-        logger.warning("\n\n\n"+txt)
+        logger.warning("\n\n\n" + txt)
 
         mac_address = [x['mac_address'] for x in bt_devices if x['name'] == BLUETOOTH_DEVICE][0]
         if not bt.trust(mac_address):
-            return F"Failed to Trust {mac_address}" + return_button
+            return F"Failed to Trust {mac_address}" + return_button_fail
         if not bt.pair(mac_address):
-            return F"Failed to pair {mac_address}" + return_button
+            return F"Failed to pair {mac_address}" + return_button_fail
         bt_connected = bt.connect(mac_address)
         if bt_connected:
             opt_dict["BLUETOOTH_DEVICE"] = BLUETOOTH_DEVICE
@@ -394,7 +394,7 @@ class OptionsServer(object):
              </body>
          </html>"""
 
-        sleep(0.2*parms.sleep_time)
+        sleep(0.2 * parms.sleep_time)
         return page_string
 
     @cherrypy.expose
