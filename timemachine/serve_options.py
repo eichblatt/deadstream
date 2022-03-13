@@ -194,22 +194,22 @@ class OptionsServer(object):
         if pulse is None:
             pulse_string = ""
         else:
-            pulse_string = """
+            pulse_string = f"""
              <label for="audio-sink"> Audio Sink:</label>
-             <select id="audio-sink" name="audio-sink">""" + audio_string + """ </select><p>
-             """
+             <select id="audio-sink" name="audio-sink"> {audio_string} </select><p> """
 
-        page_string = """<html>
+        page_string = f"""<html>
          <head></head>
          <body>
            <!-- <meta http-equiv="refresh" content="30"> -->
-           <h1> Time Machine Options """ + hostname + """</h1>
-           <form method="get" action="save_values">""" + form_string + """
+           <h1> Time Machine Options </h1>
+           <h2> host: {hostname} -- Raspbian version {get_os_version()} </h2>
+           <form method="get" action="save_values"> {form_string}
              <label for="timezone"> Choose a Time Zone:</label>
-             <select id="timezone" name="TIMEZONE">""" + tz_string + """ </select><p> """ + pulse_string + """
+             <select id="timezone" name="TIMEZONE"> {tz_string} </select><p> {pulse_string}
              <button type="submit">Save Values</button>
              <button type="reset">Restore</button>
-           </form> """ + bluetooth_button + """
+           </form> {bluetooth_button}
            <form method="get" action="restart_service">
              <button type="submit">Restart Timemachine Service</button>
            </form>
@@ -278,18 +278,18 @@ class OptionsServer(object):
                 <button type="submit">Rescan Bluetooth</button>
                 </form>  """
             bt_button_label = "Connect Bluetooth Device"
-            bluetooth_device_string = """
+            bluetooth_device_string = f"""
                 <form name="add" action="connect_bluetooth_device" method="post">
-                <select name="BLUETOOTH_DEVICE">""" + bt_device + """ </select>
-                <button type="submit"> """ + bt_button_label + """ </button> </form>"""
+                <select name="BLUETOOTH_DEVICE"> {bt_device} </select>
+                <button type="submit"> {bt_button_label} </button> </form>"""
 
         return_button = """ <form method="get" action="index"> <button type="submit">Return</button> </form> """
 
-        page_string = """
+        page_string = f"""
            <html>
                <head></head>
                <body>
-                     <h1> Time Machine Bluetooth Settings """ + hostname + """</h1>""" + connected_string + bluetooth_device_string + rescan_bluetooth_string + return_button + """
+                     <h1> Time Machine Bluetooth Settings {hostname}</h1> {connected_string} {bluetooth_device_string} {rescan_bluetooth_string} {return_button}
                </body>
            <html> """
         return page_string
@@ -308,9 +308,9 @@ class OptionsServer(object):
 
         mac_address = [x['mac_address'] for x in bt_devices if x['name'] == BLUETOOTH_DEVICE][0]
         if not bt.trust(mac_address):
-            return F"Failed to Trust {mac_address}" + return_button_fail
+            return F"Failed to Trust {mac_address} {return_button_fail}"
         if not bt.pair(mac_address):
-            return F"Failed to pair {mac_address}" + return_button_fail
+            return F"Failed to pair {mac_address} {return_button_fail}"
         bt_connected = bt.connect(mac_address)
         if bt_connected:
             opt_dict["BLUETOOTH_DEVICE"] = BLUETOOTH_DEVICE
@@ -403,9 +403,9 @@ class OptionsServer(object):
 
         form_strings = [F'<label>{x[0]}:{x[1]}</label> <p>' for x in kwargs.items()]
         form_string = '\n'.join(form_strings)
-        page_string = """<html>
+        page_string = f"""<html>
          <head></head>
-             <body> Options set to <p> """ + form_string + """
+             <body> Options set to <p> {form_string}
                <form method="get" action="index">
                  <button type="submit">Return</button>
                </form>
@@ -421,9 +421,9 @@ class OptionsServer(object):
     @cherrypy.expose
     def update_timemachine(self, *args, **kwargs):
         cmd = "sudo service update start"
-        page_string = """<html>
+        page_string = f"""<html>
          <head></head>
-         <body> Updating Time Machine <p> Command: """ + cmd + """
+         <body> Updating Time Machine <p> Command: {cmd} 
            <form method="get" action="index">
 #             <button type="submit">Return</button>
              <input class="btn btn-primary" type="submit" name="submit"
@@ -440,9 +440,9 @@ class OptionsServer(object):
     @cherrypy.expose
     def restart_service(self, *args, **kwargs):
         cmd = "sudo service timemachine restart"
-        page_string = """<html>
+        page_string = f"""<html>
          <head></head>
-         <body> Restarting Service <p> Command: """ + cmd + """
+         <body> Restarting Service <p> Command: {cmd}
            <form method="get" action="index">
              <button type="submit">Return</button>
            </form>
@@ -469,10 +469,10 @@ class OptionsServer(object):
             logger.exception(F"Exception in scanning for bluetooth {e}")
             pass
 
-        page_string = """<html>
+        page_string = f"""<html>
          <head></head>
          <body> Rescanned for bluetooth devices <p>
-           <p> Found: """ + device_string + """ </p>
+           <p> Found: {device_string} </p>
            <form method="get" action="bluetooth_settings">
              <button type="submit">Return</button>
            </form>
