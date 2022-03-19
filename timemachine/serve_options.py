@@ -291,6 +291,7 @@ class OptionsServer(object):
         notes_string = """<h2> Note: Connecting to bluetooth is NOT intended to be possible while tripping!!! </h2>
             <h3> After connecting a bluetooth device, you will need to set the AUDIO SINK on the main page to send the audio to the connected bluetooth device </h3>
             <h3> After pointing the AUDIO SINK, you may need to SAVE VALUES and refresh the web browser for the change to take effect </h3>
+            <h3> Make sure that nothing is ALREADY connected to the Bluetooth device you are trying to connect to. </h3> 
             <h3> Every Bluetooth device may behave differently. Your device may refuse to connect, and we probably cannot help solve it!  </h3>
             <h3> See <a href=https://www.spertilo.net/compatible-bluetooth-devices> https://www.spertilo.net/compatible-bluetooth-devices </a> for a list of known compatible devices </h3> """
         page_string = f"""
