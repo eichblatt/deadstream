@@ -8,7 +8,7 @@ from timemachine import GD
 
 track_event = Event()
 
-config.optd = {'COLLECTIONS': ['GratefulDead', 'Phish', 'PhilLeshandFriends'], 'FAVORED_TAPER': 'miller'}
+config.optd = {'COLLECTIONS': ['GratefulDead', 'Phish', 'PhilLeshandFriends'], 'FAVORED_TAPER': 'miller', 'PLAY_LOSSLESS': 'false'}
 aa = Archivary.Archivary(collection_list=config.optd['COLLECTIONS'])
 
 print(F"tape dates on 1995-07-02 are {aa.tape_dates['1995-07-02']}")
