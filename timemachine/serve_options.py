@@ -288,11 +288,18 @@ class OptionsServer(object):
 
         return_button = """ <form method="get" action="index"> <button type="submit">Return</button> </form> """
 
+        notes_string = """<h2> Note: Connecting to bluetooth is NOT intended to be possible while tripping!!! </h2>
+            <h3> After connecting a bluetooth device, you will need to set the AUDIO SINK on the main page to send the audio to the connected bluetooth device </h3>
+            <h3> After pointing the AUDIO SINK, you may need to SAVE VALUES and refresh the web browser for the change to take effect </h3>
+            <h3> Every Bluetooth device may behave differently. Your device may refuse to connect, and we probably cannot help solve it!  </h3>
+            <h3> See <a href=https://www.spertilo.net/compatible-bluetooth-devices> https://www.spertilo.net/compatible-bluetooth-devices </a> for a list of known compatible devices </h3> """
         page_string = f"""
            <html>
                <head></head>
                <body>
-                     <h1> Time Machine Bluetooth Settings {hostname}</h1> {connected_string} {bluetooth_device_string} {rescan_bluetooth_string} {return_button}
+                     <h1> Time Machine Bluetooth Settings {hostname}</h1> 
+                     {notes_string} {connected_string} 
+                     {bluetooth_device_string} {rescan_bluetooth_string} {return_button}
                </body>
            <html> """
         return page_string
