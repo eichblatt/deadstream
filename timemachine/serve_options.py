@@ -78,7 +78,7 @@ def default_options():
     d['COLLECTIONS'] = 'GratefulDead'
     d['SCROLL_VENUE'] = 'true'
     d['FAVORED_TAPER'] = 'miller'
-    d['AUTO_UPDATE_ARCHIVE'] = 'false'
+    d['AUTO_UPDATE_ARCHIVE'] = 'true'
     d['ON_TOUR_ALLOWED'] = 'false'
     d['PLAY_LOSSLESS'] = 'false'
     d['PULSEAUDIO_ENABLE'] = 'false'
