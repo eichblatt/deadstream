@@ -186,19 +186,19 @@ def save_state(state):
 
 
 def default_options():
-    d = {}
-    d['COLLECTIONS'] = ['GratefulDead']
-    d['SCROLL_VENUE'] = True
-    d['FAVORED_TAPER'] = []
-    d['AUTO_UPDATE_ARCHIVE'] = False
-    d['ON_TOUR_ALLOWED'] = False
-    d['PLAY_LOSSLESS'] = False
-    d['PULSEAUDIO_ENABLE'] = False
+    default = {}
+    default['COLLECTIONS'] = ['GratefulDead']
+    default['SCROLL_VENUE'] = True
+    default['FAVORED_TAPER'] = []
+    default['AUTO_UPDATE_ARCHIVE'] = True
+    default['ON_TOUR_ALLOWED'] = False
+    default['PLAY_LOSSLESS'] = False
+    default['PULSEAUDIO_ENABLE'] = False
     if controls.get_os_version() > 10:
-        d['PULSEAUDIO_ENABLE'] = True
-    d['DEFAULT_START_TIME'] = datetime.time(15, 0)
-    d['TIMEZONE'] = 'America/New_York'
-    return d
+        default['PULSEAUDIO_ENABLE'] = True
+    default['DEFAULT_START_TIME'] = datetime.time(15, 0)
+    default['TIMEZONE'] = 'America/New_York'
+    return default
 
 
 def load_options(parms):

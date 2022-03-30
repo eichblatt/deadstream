@@ -138,20 +138,20 @@ def test_buttons(event, label):
 
 
 def default_options():
-    d = {}
-    d['COLLECTIONS'] = 'GratefulDead'
-    d['SCROLL_VENUE'] = 'true'
-    d['FAVORED_TAPER'] = 'miller'
-    d['AUTO_UPDATE_ARCHIVE'] = 'false'
-    d['ON_TOUR_ALLOWED'] = 'false'
-    d['PLAY_LOSSLESS'] = 'false'
-    d['PULSEAUDIO_ENABLE'] = 'false'
+    default = {}
+    default['COLLECTIONS'] = 'GratefulDead'
+    default['SCROLL_VENUE'] = 'true'
+    default['FAVORED_TAPER'] = 'miller'
+    default['AUTO_UPDATE_ARCHIVE'] = 'true'
+    default['ON_TOUR_ALLOWED'] = 'false'
+    default['PLAY_LOSSLESS'] = 'false'
+    default['PULSEAUDIO_ENABLE'] = 'false'
     if controls.get_os_version() > 10:
-        d['PULSEAUDIO_ENABLE'] = 'true'
-        d['BLUETOOTH_ENABLE'] = 'true'
-    d['DEFAULT_START_TIME'] = '15:00:00'
-    d['TIMEZONE'] = 'America/New_York'
-    return d
+        default['PULSEAUDIO_ENABLE'] = 'true'
+        default['BLUETOOTH_ENABLE'] = 'true'
+    default['DEFAULT_START_TIME'] = '15:00:00'
+    default['TIMEZONE'] = 'America/New_York'
+    return default
 
 
 def configure_collections(parms):
