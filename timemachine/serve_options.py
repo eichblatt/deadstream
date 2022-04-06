@@ -344,6 +344,8 @@ class OptionsServer(object):
         if type(v) == bool:
             outstring += ' pattern="true|false" title="true or false"> <p>'
         else:
+            if k == 'COLLECTIONS':
+                outstring += '> see the <a href=https://archive.org/browse.php?collection=etree&field=creator target="_blank"> list of valid collection names </a'
             outstring += '> <p>'
         outstring += '</label>'
         return outstring
