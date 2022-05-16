@@ -719,6 +719,7 @@ def event_loop(state, lock):
     global venue_counter
     key_error_count = 0
     date_reader = state.date_reader
+    artist_counter = state.artist_counter
     last_sdevent = datetime.datetime.now()
     q_counter = False
     n_timer = 0
@@ -789,10 +790,6 @@ def event_loop(state, lock):
                     last_idle_day = now.day
                     last_idle_hour = now.hour
                     last_idle_minute = now.minute
-                    # try:
-                    # date_reader.archive.load_archive(with_latest=config.optd['AUTO_UPDATE_ARCHIVE'])
-                    # except:
-                    # logger.warning("Unable to refresh archive")
                 track_event.set()
                 playstate_event.set()
                 save_state(state)
@@ -907,10 +904,6 @@ except Exception:
 year_list = archive.year_list()
 num_years = max(year_list) - min(year_list)
 
-TMB.m.steps = 1
-TMB.d.steps = 1
-TMB.y.steps = 0
-
 # get lenght of list of artists. Should I get max for a single year, or just total. Currently getting total.
 artists = [list(archive.year_artists(y).keys()) for y in year_list]
 artists = [item for sublist in artists for item in sublist]
@@ -923,6 +916,10 @@ artist_counter = controls.decade_counter(TMB.d, TMB.y, bounds=(0, len(artists)))
 
 date_reader = controls.artist_knob_reader(TMB.y, TMB.m, TMB.d, archive)
 date_reader.set_date(*date_reader.next_show())
+
+TMB.m.steps = 1
+TMB.d.steps = 1
+TMB.y.steps = 0
 
 state = controls.state((date_reader, artist_counter), player)
 TMB.m.when_rotated = lambda x: TMB.decade_knob(TMB.m, "artist", counter)
