@@ -832,6 +832,8 @@ class state:
         if type(date_reader) == tuple:
             self.date_reader = date_reader[0]
             self.artist_counter = date_reader[1]
+        else:
+            self.date_reader = date_reader
         self.player = player
         self.dict = self.get_current()
 
