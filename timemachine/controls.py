@@ -102,6 +102,95 @@ def get_os_version():
     return OS_VERSION
 
 
+class artist_knob_reader:
+    """ A set of knobs to read the year, and the artist """
+
+    def __init__(self, y: RotaryEncoder, m: RotaryEncoder, d: RotaryEncoder, archive=None):
+        self.date = None
+        self.shownum = 0
+        self.archive = archive
+        self.y = y
+        self.m = m
+        self.d = d
+        self.year_baseline = 1910 if archive is None else min(archive.year_list())
+        self._update()
+
+    def __str__(self):
+        return self.__repr__()
+
+    def __repr__(self):
+        avail = ''
+        shows = self.shows_available()
+        if len(shows) > 0:
+            avail = f'{shows} shows Available. Now at {shows[self.shownum]}'
+        return F'Date Knob Says: {self.date.strftime("%Y-%m-%d")}. {avail}'
+
+    def update(self):
+        self.shownum = 0
+        self._update()
+
+    def _update(self):
+        m_val = self.m.steps
+        d_val = self.d.steps
+        y_val = self.y.steps + self.year_baseline
+        logger.debug(F"updating date reader. m:{m_val},d:{d_val},y:{y_val}")
+        self.date = datetime.date(y_val, 1, 1)
+        logger.debug(F"date reader date {self.date}")
+
+    def set_date(self, date, shownum=0):
+        new_month, new_day, new_year = (date.month, date.day, date.year)
+        self.m.steps = new_month
+        self.d.steps = new_day
+        self.y.steps = new_year - min((self.archive).year_list())
+        self.shownum = divmod(shownum, max(1, len(self.shows_available())))[1]
+        self._update()
+
+    def fmtdate(self):
+        if self.date is None:
+            return None
+        return self.date.strftime('%Y-%m-%d')
+
+    def venue(self):
+        if self.tape_available():
+            try:
+                t = self.archive.best_tape(self.fmtdate(), resort=False)
+                return t.venue()
+            except Exception:
+                return ""
+        return ""
+
+    def shows_available(self):
+        if self.archive is None:
+            return []
+        self._update()
+        if self.fmtdate() in self.archive.tape_dates.keys():
+            shows = [t.artist for t in self.archive.tape_dates[self.fmtdate()]]
+            return list(dict.fromkeys(shows))
+        else:
+            return []
+
+    def tape_available(self):
+        return len(self.shows_available()) > 0
+
+    def next_show(self):
+        if self.archive is None:
+            return None
+        self._update()
+        if self.shownum < len(self.shows_available()) - 1:
+            return (self.date, self.shownum + 1)
+        else:
+            return (self.next_date(), 0)
+
+    def next_date(self):
+        if self.archive is None:
+            return None
+        self._update()
+        for d in self.archive.dates:
+            if d > self.fmtdate():
+                return datetime.datetime.strptime(d, '%Y-%m-%d').date()
+        return self.date
+
+
 class date_knob_reader:
     def __init__(self, y: RotaryEncoder, m: RotaryEncoder, d: RotaryEncoder, archive=None):
         self.date = None
@@ -301,7 +390,7 @@ class Time_Machine_Board():
                     knob.steps = knob.threshold_steps[1]
             print(f"Knob {label} is inactive")
         counter.set_value(self.d.steps, self.y.steps)
-        if label == "month":
+        if label in ["month", "artist"]:
             self.m_knob_event.set()
         if label == "day":
             self.d_knob_event.set()
@@ -740,7 +829,9 @@ class screen:
 class state:
     def __init__(self, date_reader, player=None):
         self.module_name = 'config'
-        self.date_reader = date_reader
+        if type(date_reader) == tuple:
+            self.date_reader = date_reader[0]
+            self.artist_counter = date_reader[1]
         self.player = player
         self.dict = self.get_current()
 

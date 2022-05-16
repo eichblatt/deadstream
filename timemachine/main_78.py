@@ -43,11 +43,11 @@ parser.add_option('--dbpath',
                   help="path to database [default %default]")
 parser.add_option('--state_path',
                   dest='state_path',
-                  default=os.path.join(GD.ROOT_DIR, 'metadata/etree_state.json'),
+                  default=os.path.join(GD.ROOT_DIR, 'metadata/georgeblood_state.json'),
                   help="path to state [default %default]")
 parser.add_option('--options_path',
                   dest='options_path',
-                  default=os.path.join(os.getenv('HOME'), '.timemachine_options.txt'),
+                  default=os.path.join(os.getenv('HOME'), '.vinyl78_options.txt'),
                   help="path to options file [default %default]")
 parser.add_option('--test_update',
                   dest='test_update',
@@ -169,12 +169,12 @@ def save_state(state):
     with open(parms.state_path, 'w') as statefile:
         json.dump(current, statefile, indent=1, default=str)
 
+
 def default_options():
     d = {}
     d['COLLECTIONS'] = ['georgeblood']
     d['FAVORED_TAPER'] = []
     d['AUTO_UPDATE_ARCHIVE'] = True
-    d['ON_TOUR_ALLOWED'] = False
     d['PLAY_LOSSLESS'] = False
     d['PULSEAUDIO_ENABLE'] = False
     if controls.get_os_version() > 10:
@@ -218,7 +218,7 @@ def load_options(parms):
     os.system(led_cmd)
 
 
-def twist_knob(knob: RotaryEncoder, label, date_reader: controls.date_knob_reader):
+def twist_knob(knob: RotaryEncoder, label, date_reader: controls.artist_knob_reader):
     TMB.twist_knob(knob, label, date_reader)
     TMB.knob_event.set()
     stagedate_event.set()
@@ -298,8 +298,6 @@ def select_button(button, state):
         autoplay = False
         current['PLAY_STATE'] = config.READY
         state.set(current)
-    if current['ON_TOUR'] and current['TOUR_STATE'] in [config.READY, config.PLAYING]:
-        return
     select_current_date(state, autoplay=autoplay)
     TMB.scr.wake_up()
     logger.debug(F"current state after select button {state}")
@@ -568,37 +566,6 @@ def to_date(d):
 
 
 @sequential
-def play_on_tour(tape, state, seek_to=0):
-    global venue_counter
-    logger.debug("play_on_tour")
-    current = state.get_current()
-    if tape.identifier == current['TAPE_ID']:
-        return                           # already playing.
-    current['PLAY_STATE'] = config.READY  # eject current tape, insert new one in player
-    current['TAPE_ID'] = tape.identifier
-    logger.info(F"Set TAPE_ID to {current['TAPE_ID']}")
-    current['TRACK_NUM'] = -1
-    current['DATE'] = to_date(tape.date)
-    current['VENUE'] = tape.venue()
-    current['ARTIST'] = tape.artist
-    venue_counter = (0, 0)
-    state.player.insert_tape(tape)
-    state.player._set_property('volume', current['VOLUME'])
-    state.player.pause()
-    state.player.play()
-    state.player.seek_in_tape_to(seek_to, ticking=True)
-    current['PLAY_STATE'] = config.PLAYING
-    playlist_pos = state.player.get_prop('playlist-pos')
-    if playlist_pos is None:
-        current['PLAY_STATE'] = config.ENDED
-    else:
-        state.player.play()
-    state.set(current)
-    TMB.select_event.set()
-    return
-
-
-@sequential
 def refresh_venue(state):
     global venue_counter
 
@@ -723,7 +690,7 @@ def get_current(state):
 
 
 def show_venue_text(arg, color=(0, 255, 255), show_id=False, offset=0, force=False):
-    if isinstance(arg, controls.date_knob_reader):
+    if isinstance(arg, controls.artist_knob_reader):
         date_reader = arg
         archive = date_reader.archive
         tapes = archive.tape_dates[date_reader.fmtdate()] if date_reader.fmtdate() in archive.tape_dates.keys() else []
@@ -939,19 +906,33 @@ except Exception:
 
 year_list = archive.year_list()
 num_years = max(year_list) - min(year_list)
-TMB.setup_knobs(mdy_bounds=[(1, 12), (1, 31), (0, num_years)])
 
 TMB.m.steps = 1
 TMB.d.steps = 1
 TMB.y.steps = 0
 
-date_reader = controls.date_knob_reader(TMB.y, TMB.m, TMB.d, archive)
+# get lenght of list of artists. Should I get max for a single year, or just total. Currently getting total.
+artists = [list(archive.year_artists(y).keys()) for y in year_list]
+artists = [item for sublist in artists for item in sublist]
+artists = sorted(list(set(artists)))
+
+TMB.setup_knobs(mdy_bounds=[(0, len(artists)), (1, 1000), (0, num_years)])
+artist_counter = controls.decade_counter(TMB.d, TMB.y, bounds=(0, len(artists)))
+
+#controls.select_option(TMB,artist_counter,"Choose artist",sorted(list(archive.year_artists(date_reader.date.year).keys())))
+
+date_reader = controls.artist_knob_reader(TMB.y, TMB.m, TMB.d, archive)
 date_reader.set_date(*date_reader.next_show())
 
-state = controls.state(date_reader, player)
-TMB.m.when_rotated = lambda x: twist_knob(TMB.m, "month", date_reader)
-TMB.d.when_rotated = lambda x: twist_knob(TMB.d, "day", date_reader)
+state = controls.state((date_reader, artist_counter), player)
+TMB.m.when_rotated = lambda x: TMB.decade_knob(TMB.m, "artist", counter)
+TMB.d.when_rotated = lambda x: TMB.decade_knob(TMB.d, "day", counter)
+#TMB.y.when_rotated = lambda x: TMB.decade_knob(TMB.y, "year", counter)
+
+# TMB.m.when_rotated = lambda x: twist_knob(TMB.m, "artist", date_reader)
+# TMB.d.when_rotated = lambda x: twist_knob(TMB.d, "day", date_reader)
 TMB.y.when_rotated = lambda x: twist_knob(TMB.y, "year", date_reader)
+
 
 TMB.play_pause.when_pressed = lambda button: play_pause_button(button, state)
 TMB.play_pause.when_held = lambda button: play_pause_button_longpress(button, state)
@@ -977,7 +958,7 @@ TMB.d_button.when_held = lambda button: day_button_longpress(button, state)
 TMB.y_button.when_held = lambda button: year_button_longpress(button, state)
 
 TMB.scr.clear_area(controls.Bbox(0, 0, 160, 100))
-TMB.scr.show_text("Powered by\n archive.org\n & phish.in", color=(0, 255, 255), force=True)
+TMB.scr.show_text("Powered by\n archive.org", color=(0, 255, 255), force=True)
 TMB.scr.show_text(str(len(archive.collection_list)).rjust(3), font=TMB.scr.boldsmall, loc=(120, 100), color=(255, 100, 0), force=True)
 
 if RELOAD_STATE_ON_START:
