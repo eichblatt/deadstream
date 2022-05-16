@@ -218,7 +218,9 @@ def load_options(parms):
     os.system(led_cmd)
 
 
-def twist_knob(knob: RotaryEncoder, label, date_reader: controls.artist_knob_reader):
+def twist_knob(knob: RotaryEncoder, label, date_reader: controls.date_knob_reader):
+    if label != 'year':
+        return
     TMB.twist_knob(knob, label, date_reader)
     TMB.knob_event.set()
     stagedate_event.set()
@@ -752,9 +754,16 @@ def event_loop(state, lock):
                 TMB.scr.refresh()
                 TMB.screen_event.clear()
             if stagedate_event.is_set():
+                logger.debug(F"year is now {date_reader.date.year}")
+                artist_list = ['RETURN'] + sorted(list(archive.year_artists(date_reader.date.year).keys()))
+                artist = controls.select_option(TMB, artist_counter, "Choose artist", artist_list)
+                logger.debug(F"artist is now {artist}")
+                if artist == 'RETURN':
+                    # don't change anything
+                    pass
                 last_sdevent = now
                 q_counter = True
-                TMB.scr.show_staged_date(date_reader.date)
+                TMB.scr.show_staged_year(date_reader.date)
                 show_venue_text(date_reader)
                 # if clear_stagedate: stagedate_event.clear()
                 # clear_stagedate = not clear_stagedate   # only clear stagedate event after updating twice
@@ -922,8 +931,8 @@ TMB.d.steps = 1
 TMB.y.steps = 0
 
 state = controls.state((date_reader, artist_counter), player)
-TMB.m.when_rotated = lambda x: TMB.decade_knob(TMB.m, "artist", counter)
-TMB.d.when_rotated = lambda x: TMB.decade_knob(TMB.d, "day", counter)
+TMB.m.when_rotated = lambda x: TMB.decade_knob(TMB.m, "artist", artist_counter)
+TMB.d.when_rotated = lambda x: TMB.decade_knob(TMB.d, "day", artist_counter)
 #TMB.y.when_rotated = lambda x: TMB.decade_knob(TMB.y, "year", counter)
 
 # TMB.m.when_rotated = lambda x: twist_knob(TMB.m, "artist", date_reader)

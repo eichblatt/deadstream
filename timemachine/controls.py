@@ -668,6 +668,7 @@ class screen:
         self.selected_date = None
 
         self.staged_date_bbox = Bbox(0, 0, 160, 31)
+        self.staged_year_bbox = Bbox(0, 0, 80, 31)
         # self.selected_date_bbox = Bbox(0,100,130,128)
         self.selected_date_bbox = Bbox(0, 100, 160, 128)
         self.venue_bbox = Bbox(0, 31, 160, 56)
@@ -763,6 +764,15 @@ class screen:
     def show_venue(self, arg, color=(0, 255, 255), force=False):
         self.clear_area(self.venue_bbox)
         self.show_text(arg, self.venue_bbox.origin(), font=self.boldsmall, color=color, force=force)
+
+    def show_staged_year(self, date, color=(0, 255, 255), force=False):
+        if date == self.staged_date:
+            return
+        self.clear_area(self.staged_year_bbox)
+        text = f'{date.year}'
+        logger.debug(F"staged date string {text}")
+        self.show_text(text, self.staged_year_bbox.origin(), self.boldfont, color=color, force=force)
+        self.staged_date = date
 
     def show_staged_date(self, date, color=(0, 255, 255), force=False):
         if date == self.staged_date:
