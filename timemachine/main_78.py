@@ -269,8 +269,24 @@ def select_tape(tape, state, autoplay=True):
     return state
 
 
+def select_current_artist(state, autoplay=True):
+    artist_counter = state.artist_counter
+    tapes = date_reader.archive.resort_tape_date(date_reader.fmtdate())
+    if len(tapes) == 0:
+        TMB.scr.show_venue('No Audio', color=(255, 255, 255), force=True)
+        sleep(2)
+        return
+    tape = tapes[date_reader.shownum]
+    TMB.scr.show_playstate(staged_play=True, force=True)
+    state = select_tape(tape, state, autoplay=autoplay)
+
+    logger.debug(F"current state after selecting tape {state}")
+    TMB.select_event.set()
+    return state
+
+
 def select_current_date(state, autoplay=True):
-    date_reader = state.date_reader
+    artist_counter = state.artist_counter
     if not date_reader.tape_available():
         return
     tapes = date_reader.archive.resort_tape_date(date_reader.fmtdate())
@@ -289,6 +305,10 @@ def select_current_date(state, autoplay=True):
 
 @sequential
 def select_button(button, state):
+    logger.info("pressing select")
+    TMB.select_event.set()
+    logger.info("pressing select")
+
     autoplay = AUTO_PLAY
     sleep(button._hold_time * 1.01)
     if button.is_pressed or button.is_held:
@@ -300,7 +320,7 @@ def select_button(button, state):
         autoplay = False
         current['PLAY_STATE'] = config.READY
         state.set(current)
-    select_current_date(state, autoplay=autoplay)
+    #select_current_artist(state, autoplay=autoplay)
     TMB.scr.wake_up()
     logger.debug(F"current state after select button {state}")
     return
@@ -510,28 +530,27 @@ def year_button(button, state):
     sleep(button._hold_time)
     if button.is_pressed:
         return     # the button is being "held"
-    today = datetime.date.today()
-    now_m = today.month
-    now_d = today.day
-    m = state.date_reader.date.month
-    d = state.date_reader.date.day
-    y = state.date_reader.date.year
-
-    if m == now_m and d == now_d:  # move to the next year where there is a tape available
-        tihstring = F"{m:0>2d}-{d:0>2d}"
-        tih_tapedates = [to_date(d) for d in state.date_reader.archive.dates if d.endswith(tihstring)]
-        if len(tih_tapedates) > 0:
-            cut = 0
-            for i, dt in enumerate(tih_tapedates):
-                if dt.year > y:
-                    cut = i
-                    break
-            tapedate = (tih_tapedates[cut:] + tih_tapedates[:cut])[0]
-            logger.debug(F"tapedate is {tapedate}")
-            state.date_reader.set_date(datetime.date(tapedate.year, now_m, now_d))
-    else:
-        state.date_reader.set_date(datetime.date(y, now_m, now_d))
+    tapes = choose_tape(state)
     stagedate_event.set()
+
+
+def choose_tape(state):
+    # this is blocking the main thread and never returns...I don't understand it.
+    date_reader = state.date_reader
+    artist_counter = state.artist_counter
+    archive = date_reader.archive
+    artist_dict = archive.year_artists(date_reader.date.year)
+    artist_list = ['RETURN', 'Random'] + sorted(list(artist_dict.keys()))
+    artist_key = controls.select_option(TMB, artist_counter, "Choose artist", artist_list)
+    tapes = artist_dict[artist_key]
+    logger.info(F"tapes are {tapes}")
+    select_tape(tapes[0], state)
+    logger.info(F"tracks are {tapes[0].tracks()}")
+    logger.debug(F"artist is now {artist_key}")
+    if artist_key == 'RETURN':
+        # don't change anything
+        return None
+    return tapes
 
 
 @sequential
@@ -755,18 +774,10 @@ def event_loop(state, lock):
                 TMB.screen_event.clear()
             if stagedate_event.is_set():
                 logger.debug(F"year is now {date_reader.date.year}")
-                artist_list = ['RETURN'] + sorted(list(archive.year_artists(date_reader.date.year).keys()))
-                artist = controls.select_option(TMB, artist_counter, "Choose artist", artist_list)
-                logger.debug(F"artist is now {artist}")
-                if artist == 'RETURN':
-                    # don't change anything
-                    pass
                 last_sdevent = now
                 q_counter = True
                 TMB.scr.show_staged_year(date_reader.date)
                 show_venue_text(date_reader)
-                # if clear_stagedate: stagedate_event.clear()
-                # clear_stagedate = not clear_stagedate   # only clear stagedate event after updating twice
                 stagedate_event.clear()
                 TMB.scr.wake_up()
                 TMB.screen_event.set()
