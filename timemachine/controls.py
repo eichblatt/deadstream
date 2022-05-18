@@ -377,20 +377,20 @@ class Time_Machine_Board():
             print(f"Knob {label} steps={knob.steps} value={knob.value}")
         else:
             if knob.steps < knob.threshold_steps[0]:
-                if label == "year" and self.d.steps > self.d.threshold_steps[0]:
+                if label in ["year", "ones"] and counter.tens.steps > counter.tens.threshold_steps[0]:
                     knob.steps = knob.threshold_steps[1]
-                    self.d.steps = max(self.d.threshold_steps[0], self.d.steps - 1)
+                    counter.tens.steps = max(counter.tens.threshold_steps[0], counter.tens.steps - 1)
                 else:
                     knob.steps = knob.threshold_steps[0]
             if knob.steps > knob.threshold_steps[1]:
-                if label == "year" and self.d.steps < self.d.threshold_steps[1]:
+                if label in ["year", "ones"] and counter.tens.steps < counter.tens.threshold_steps[1]:
                     knob.steps = knob.threshold_steps[0]
-                    self.d.steps = min(self.d.threshold_steps[1], self.d.steps + 1)
+                    counter.tens.steps = min(counter.tens.threshold_steps[1], counter.tens.steps + 1)
                 else:
                     knob.steps = knob.threshold_steps[1]
             print(f"Knob {label} is inactive")
-        counter.set_value(self.d.steps, self.y.steps)
-        if label in ["month", "artist"]:
+        counter.set_value(counter.tens.steps, counter.ones.steps)
+        if label == "month":
             self.m_knob_event.set()
         if label == "day":
             self.d_knob_event.set()

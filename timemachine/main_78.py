@@ -530,11 +530,12 @@ def year_button(button, state):
     sleep(button._hold_time)
     if button.is_pressed:
         return     # the button is being "held"
-    tapes = choose_tape(state)
     stagedate_event.set()
 
 
-def choose_tape(state):
+# tapes = choose_artist(state) # this should happen when the month knob is turned?
+
+def choose_artist(state):
     # this is blocking the main thread and never returns...I don't understand it.
     date_reader = state.date_reader
     artist_counter = state.artist_counter
@@ -930,7 +931,7 @@ artists = [item for sublist in artists for item in sublist]
 artists = sorted(list(set(artists)))
 
 TMB.setup_knobs(mdy_bounds=[(0, len(artists)), (1, 1000), (0, num_years)])
-artist_counter = controls.decade_counter(TMB.d, TMB.y, bounds=(0, len(artists)))
+artist_counter = controls.decade_counter(TMB.m, TMB.d, bounds=(0, len(artists)))
 
 #controls.select_option(TMB,artist_counter,"Choose artist",sorted(list(archive.year_artists(date_reader.date.year).keys())))
 
@@ -942,11 +943,11 @@ TMB.d.steps = 1
 TMB.y.steps = 0
 
 state = controls.state((date_reader, artist_counter), player)
-TMB.m.when_rotated = lambda x: TMB.decade_knob(TMB.m, "artist", artist_counter)
+TMB.m.when_rotated = lambda x: TMB.decade_knob(TMB.m, "month", artist_counter)
 TMB.d.when_rotated = lambda x: TMB.decade_knob(TMB.d, "day", artist_counter)
 #TMB.y.when_rotated = lambda x: TMB.decade_knob(TMB.y, "year", counter)
 
-# TMB.m.when_rotated = lambda x: twist_knob(TMB.m, "artist", date_reader)
+# TMB.m.when_rotated = lambda x: twist_knob(TMB.m, "month", date_reader)
 # TMB.d.when_rotated = lambda x: twist_knob(TMB.d, "day", date_reader)
 TMB.y.when_rotated = lambda x: twist_knob(TMB.y, "year", date_reader)
 
