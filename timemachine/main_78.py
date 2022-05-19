@@ -232,6 +232,31 @@ if parms.verbose or parms.debug:
     GDLogger.setLevel(logging.DEBUG)
     controlsLogger.setLevel(logging.INFO)
 
+# tapes = choose_artist(state) # this should happen when the month knob is turned?
+
+
+def choose_artist(state):
+    # this is blocking the main thread and never returns...I don't understand it.
+    date_reader = state.date_reader
+    artist_counter = state.artist_counter
+    archive = date_reader.archive
+    artist_dict = archive.year_artists(date_reader.date.year)
+    artist_list = ['RETURN', 'Random'] + sorted(list(artist_dict.keys()))
+    artist_key = controls.select_option(TMB, artist_counter, "Choose artist", artist_list)
+    tapes = artist_dict[artist_key]
+    logger.info(F"tapes are {tapes}")
+    if artist_key == 'RETURN':
+        # don't change anything
+        return None
+    elif artist_key == 'Random':
+        return None
+    else:
+        pass
+    select_tape(tapes[0], state)
+    logger.info(F"tracks are {tapes[0].tracks()}")
+    logger.debug(F"artist is now {artist_key}")
+    return tapes
+
 
 def select_tape(tape, state, autoplay=True):
     global venue_counter
@@ -531,27 +556,6 @@ def year_button(button, state):
     if button.is_pressed:
         return     # the button is being "held"
     stagedate_event.set()
-
-
-# tapes = choose_artist(state) # this should happen when the month knob is turned?
-
-def choose_artist(state):
-    # this is blocking the main thread and never returns...I don't understand it.
-    date_reader = state.date_reader
-    artist_counter = state.artist_counter
-    archive = date_reader.archive
-    artist_dict = archive.year_artists(date_reader.date.year)
-    artist_list = ['RETURN', 'Random'] + sorted(list(artist_dict.keys()))
-    artist_key = controls.select_option(TMB, artist_counter, "Choose artist", artist_list)
-    tapes = artist_dict[artist_key]
-    logger.info(F"tapes are {tapes}")
-    select_tape(tapes[0], state)
-    logger.info(F"tracks are {tapes[0].tracks()}")
-    logger.debug(F"artist is now {artist_key}")
-    if artist_key == 'RETURN':
-        # don't change anything
-        return None
-    return tapes
 
 
 @sequential
