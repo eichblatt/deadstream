@@ -1126,7 +1126,7 @@ class GDTape(BaseTape):
             self.venue_name = page_meta['metadata']['venue']
             self.coverage = page_meta['metadata']['coverage']
         except Exception:
-            logger.warn(f"Failed to read venue, city, state from metadata. {self.meta_path}")
+            # logger.warn(f"Failed to read venue, city, state from metadata. {self.meta_path}")
             pass
 
         self.write_metadata(page_meta)
@@ -1145,15 +1145,16 @@ class GDTape(BaseTape):
     def append_track(self, tdict, orig_titles={}):
         if not 'original' in tdict.keys():  # This is not a valid track
             return
+        name = tdict.get('name', 'unknown')
+        if name.startswith('_78'):          # in the georgeblood collections, these are auxilliary tracks, to be ignored.
+            return
         source = tdict['source']
         if source == 'original':
             orig = tdict['name']
             # orig = re.sub(r'(.flac)|(.mp3)|(.ogg)$','', orig)
         else:
             orig = tdict['original']
-            if 'title' not in tdict.keys():
-                tdict['title'] = 'unknown'
-        if tdict['title'] == 'unknown':
+        if tdict.get('title', 'unknown') == 'unknown':
             if orig in orig_titles.keys():
                 tdict['title'] = orig_titles[orig]
         for i, t in enumerate(self._tracks):  # loop over the _tracks we already have

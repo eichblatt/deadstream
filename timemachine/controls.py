@@ -713,6 +713,8 @@ class screen:
             self.refresh(force=False)
 
     def show_text(self, text, loc=(0, 0), font=None, color=(255, 255, 255), stroke_width=0, force=False, clear=False):
+        if text is None:
+            text = " "
         if font is None:
             font = self.font
         (text_width, text_height) = font.getsize(text)
@@ -766,7 +768,7 @@ class screen:
         self.show_text(arg, self.venue_bbox.origin(), font=self.boldsmall, color=color, force=force)
 
     def show_staged_year(self, date, color=(0, 255, 255), force=False):
-        if date == self.staged_date:
+        if (date == self.staged_date) and not force:
             return
         self.clear_area(self.staged_year_bbox)
         text = f'{date.year}'

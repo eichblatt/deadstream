@@ -83,6 +83,7 @@ logger.setLevel(logging.INFO)
 GDLogger.setLevel(logging.INFO)
 controlsLogger.setLevel(logging.WARN)
 
+choose_artist_event = Event()
 stagedate_event = Event()
 track_event = Event()
 playstate_event = Event()
@@ -218,6 +219,15 @@ def load_options(parms):
     os.system(led_cmd)
 
 
+def decade_knob(knob: RotaryEncoder, label, artist_counter: controls.artist_knob_reader):
+    if label == "day":
+        TMB.decade_knob(TMB.d, "day", artist_counter)
+    elif label == "month":
+        TMB.decade_knob(TMB.m, "month", artist_counter)
+    TMB.knob_event.set()
+    choose_artist_event.set()
+
+
 def twist_knob(knob: RotaryEncoder, label, date_reader: controls.date_knob_reader):
     if label != 'year':
         return
@@ -237,22 +247,27 @@ if parms.verbose or parms.debug:
 
 def choose_artist(state):
     # this is blocking the main thread and never returns...I don't understand it.
+    choose_artist_event.clear()
+    TMB.knob_event.clear()
     date_reader = state.date_reader
     artist_counter = state.artist_counter
     archive = date_reader.archive
-    artist_dict = archive.year_artists(date_reader.date.year)
-    artist_list = ['RETURN', 'Random'] + sorted(list(artist_dict.keys()))
+    date = date_reader.date
+    artist_dict = archive.year_artists(date.year)
+    artist_list = ['RETURN', 'Shuffle'] + sorted(list(artist_dict.keys()))
     artist_key = controls.select_option(TMB, artist_counter, "Choose artist", artist_list)
-    tapes = artist_dict[artist_key]
-    logger.info(F"tapes are {tapes}")
     if artist_key == 'RETURN':
-        # don't change anything
+        # don't select or change anything
         return None
-    elif artist_key == 'Random':
+    elif artist_key == 'Shuffle':
         return None
     else:
         pass
+    tapes = artist_dict[artist_key]
+    logger.info(F"tapes are {tapes}")
     select_tape(tapes[0], state)
+    TMB.scr.clear()
+    TMB.scr.show_staged_year(date, force=True)
     logger.info(F"tracks are {tapes[0].tracks()}")
     logger.debug(F"artist is now {artist_key}")
     return tapes
@@ -288,6 +303,8 @@ def select_tape(tape, state, autoplay=True):
             current['PLAY_STATE'] = config.PLAYING
             playstate_event.set()
             state.set(current)
+            track_event.set()
+            TMB.select_event.set()
     except Exception as e:
         logger.exception(e)
         pass
@@ -786,6 +803,9 @@ def event_loop(state, lock):
                 stagedate_event.clear()
                 TMB.scr.wake_up()
                 TMB.screen_event.set()
+            if choose_artist_event.is_set():
+                tapes = choose_artist(state)
+                choose_artist_event.clear()
             if track_event.is_set():
                 update_tracks(state)
                 track_event.clear()
@@ -803,7 +823,7 @@ def event_loop(state, lock):
                 TMB.screen_event.set()
             if q_counter and config.DATE and idle_seconds > QUIESCENT_TIME:
                 logger.debug(F"Reverting staged date back to selected date {idle_seconds}> {QUIESCENT_TIME}")
-                TMB.scr.show_staged_date(config.DATE)
+                TMB.scr.show_staged_year(config.DATE)
                 TMB.scr.show_venue(config.VENUE)
                 q_counter = False
                 TMB.screen_event.set()
@@ -830,7 +850,7 @@ def event_loop(state, lock):
                         TMB.scr.sleep()
                 if idle_seconds > QUIESCENT_TIME:
                     if config.DATE:
-                        TMB.scr.show_staged_date(config.DATE)
+                        TMB.scr.show_staged_year(config.DATE)
                     try:
                         if current['PLAY_STATE'] > config.INIT:
                             refresh_venue(state)
@@ -838,7 +858,7 @@ def event_loop(state, lock):
                         raise e
                         logger.warning(f'event_loop, error refreshing venue {e}')
                 else:
-                    TMB.scr.show_staged_date(date_reader.date)
+                    TMB.scr.show_staged_year(date_reader.date)
                     show_venue_text(date_reader)
                 TMB.screen_event.set()
             lock.release()
@@ -947,8 +967,8 @@ TMB.d.steps = 1
 TMB.y.steps = 0
 
 state = controls.state((date_reader, artist_counter), player)
-TMB.m.when_rotated = lambda x: TMB.decade_knob(TMB.m, "month", artist_counter)
-TMB.d.when_rotated = lambda x: TMB.decade_knob(TMB.d, "day", artist_counter)
+TMB.m.when_rotated = lambda x: decade_knob(TMB.m, "month", artist_counter)
+TMB.d.when_rotated = lambda x: decade_knob(TMB.d, "day", artist_counter)
 #TMB.y.when_rotated = lambda x: TMB.decade_knob(TMB.y, "year", counter)
 
 # TMB.m.when_rotated = lambda x: twist_knob(TMB.m, "month", date_reader)
