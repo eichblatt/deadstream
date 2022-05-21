@@ -464,6 +464,9 @@ def rewind_button(button, state):
     sleep(button._hold_time)
     if button.is_pressed:
         return     # the button is being "held"
+    if current['TRACK_NUM'] == 0:
+        state.player.stop()
+        state.player.play()
     if current['TRACK_NUM'] < len(state.player.playlist):
         state.player.prev()
 
@@ -486,8 +489,11 @@ def ffwd_button(button, state):
     sleep(button._hold_time)
     if button.is_pressed:
         return     # the button is being "held"
-    if current['TRACK_NUM'] < len(state.player.playlist):
+    if current['TRACK_NUM'] < len(state.player.playlist) - 1:  # before the last track
         state.player.next()
+    else:
+        state.player.stop()
+        config.PLAY_STATE = config.ENDED
     return
 
 
