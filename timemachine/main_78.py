@@ -97,6 +97,8 @@ PWR_LED_ON = False
 AUTO_PLAY = True
 RELOAD_STATE_ON_START = True
 
+artist_year_dict = {}   # this needs to be either in state or somewhere.
+
 random.seed(datetime.datetime.now().strftime('%Y-%m-%d'))  # to ensure that random show will be new each time.
 
 
@@ -242,35 +244,32 @@ if parms.verbose or parms.debug:
     GDLogger.setLevel(logging.DEBUG)
     controlsLogger.setLevel(logging.INFO)
 
-# tapes = choose_artist(state) # this should happen when the month knob is turned?
-
 
 def choose_artist(state):
-    # this is blocking the main thread and never returns...I don't understand it.
     choose_artist_event.clear()
     TMB.knob_event.clear()
     date_reader = state.date_reader
     artist_counter = state.artist_counter
     archive = date_reader.archive
     date = date_reader.date
-    artist_dict = archive.year_artists(date.year)
-    artist_list = ['RETURN', 'Shuffle'] + sorted(list(artist_dict.keys()))
-    artist_key = controls.select_option(TMB, artist_counter, "Choose artist", artist_list)
-    if artist_key == 'RETURN':
+    artist_year_dict = archive.year_artists(date.year)  # This needs to be availabe outside this function.
+    artist_list = ['RETURN', 'Shuffle'] + sorted(list(artist_year_dict.keys()))
+    chosen_artists = controls.select_option(TMB, artist_counter, "Choose artist", artist_list)
+    if chosen_artists == 'RETURN':
         # don't select or change anything
         return None
-    elif artist_key == 'Shuffle':
-        return None
+    elif chosen_artists == 'Shuffle':
+        chosen_artists = random.sample(artist_list[2:], len(artist_list[2:]))
     else:
         pass
-    tapes = artist_dict[artist_key]
-    logger.info(F"tapes are {tapes}")
-    select_tape(tapes[0], state)
-    TMB.scr.clear()
-    TMB.scr.show_staged_year(date, force=True)
-    logger.info(F"tracks are {tapes[0].tracks()}")
-    logger.debug(F"artist is now {artist_key}")
-    return tapes
+    if not isinstance(chosen_artists, list):
+        chosen_artists = [chosen_artists]
+    logger.debug(F"artist is now {chosen_artists}")
+    return (artist_year_dict, chosen_artists)
+    # tapes = artist_year_dict[chosen_artists]
+    # logger.info(F"tapes are {tapes}")
+    # logger.info(F"tracks are {tapes[0].tracks()}")
+    # return tapes
 
 
 def select_tape(tape, state, autoplay=True):
@@ -778,6 +777,9 @@ def event_loop(state, lock):
     free_event.set()
     stagedate_event.set()
     TMB.scr.clear()
+    i_artist = 0
+    i_tape = -1
+    chosen_artists = None
 
     try:
         while not stop_loop_event.wait(timeout=0.001):
@@ -804,8 +806,25 @@ def event_loop(state, lock):
                 TMB.scr.wake_up()
                 TMB.screen_event.set()
             if choose_artist_event.is_set():
-                tapes = choose_artist(state)
+                artist_year_dict, chosen_artists = choose_artist(state)
+                i_artist = 0
+                logger.debug(F"Number of chosen_artsts {len(chosen_artists)}")
+                TMB.scr.clear()
+                TMB.scr.show_staged_year(date_reader.date, force=True)
                 choose_artist_event.clear()
+            if (current['PLAY_STATE'] in [config.ENDED, config.INIT, config.READY]) and chosen_artists:
+                tapes = artist_year_dict[chosen_artists[i_artist]]
+                if i_tape > len(tapes):
+                    i_tape = 0
+                    i_artist = i_artist + 1
+                else:
+                    i_tape = i_tape + 1
+                if i_artist > len(chosen_artists):
+                    continue
+                logger.debug(F"artist {i_artist}/{len(chosen_artists)}")
+                logger.debug(F"tape number {i_tape}/{len(tapes)}. tapes are {tapes}")
+                logger.debug(F"tracks are {tapes[0].tracks()}")
+                select_tape(tapes[i_tape], state)
             if track_event.is_set():
                 update_tracks(state)
                 track_event.clear()
@@ -954,7 +973,7 @@ artists = [list(archive.year_artists(y).keys()) for y in year_list]
 artists = [item for sublist in artists for item in sublist]
 artists = sorted(list(set(artists)))
 
-TMB.setup_knobs(mdy_bounds=[(0, len(artists)), (1, 1000), (0, num_years)])
+TMB.setup_knobs(mdy_bounds=[(0, len(artists) // 10), (0, len(artists)), (0, num_years)])
 artist_counter = controls.decade_counter(TMB.m, TMB.d, bounds=(0, len(artists)))
 
 #controls.select_option(TMB,artist_counter,"Choose artist",sorted(list(archive.year_artists(date_reader.date.year).keys())))
