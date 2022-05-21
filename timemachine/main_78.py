@@ -256,7 +256,6 @@ def choose_artist(state):
     artist_list = ['RETURN', 'Shuffle'] + sorted(list(artist_year_dict.keys()))
     chosen_artists = controls.select_option(TMB, artist_counter, "Choose artist", artist_list)
     if chosen_artists == 'RETURN':
-        # don't select or change anything
         return None
     elif chosen_artists == 'Shuffle':
         chosen_artists = random.sample(artist_list[2:], len(artist_list[2:]))
@@ -812,10 +811,15 @@ def event_loop(state, lock):
                 TMB.scr.wake_up()
                 TMB.screen_event.set()
             if choose_artist_event.is_set():
-                artist_year_dict, chosen_artists = choose_artist(state)
-                i_artist = 0
-                logger.debug(F"Number of chosen_artsts {len(chosen_artists)}")
+                choice = choose_artist(state)
                 TMB.scr.clear()
+                if choice:
+                    artist_year_dict, chosen_artists = choice
+                    i_artist = 0
+                    logger.debug(F"Number of chosen_artsts {len(chosen_artists)}")
+                else:
+                    current = state.get_current()
+                    TMB.scr.show_selected_date(current['DATE'], force=True)
                 TMB.scr.show_staged_year(date_reader.date, force=True)
                 choose_artist_event.clear()
             if (current['PLAY_STATE'] in [config.ENDED, config.INIT, config.READY]) and chosen_artists:
