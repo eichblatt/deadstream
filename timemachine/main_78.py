@@ -286,8 +286,8 @@ def select_tape(tape, state, autoplay=True):
     logger.info(F"Set TAPE_ID to {current['TAPE_ID']}")
     current['TRACK_NUM'] = -1
     current['DATE'] = state.date_reader.date
-    current['VENUE'] = tape.identifier.split('_')[2]
-    current['ARTIST'] = tape.identifier.split('_')[2]
+    current['VENUE'] = tape.identifier.replace('-', ' ').split('_')[2]
+    current['ARTIST'] = current['VENUE']  # for now at least
     venue_counter = (0, 0)
 
     try:
@@ -432,7 +432,7 @@ def play_pause_button_longpress(button, state):
     tape = state.date_reader.archive.best_tape(new_date)
     current['DATE'] = to_date(new_date)
     state.date_reader.set_date(current['DATE'])
-    current['VENUE'] = tape.identifier.split('_')[2]
+    current['VENUE'] = tape.identifier.replace('-', ' ').split('_')[2]
     current['ARTIST'] = tape.artist
     venue_counter = (0, 0)
     current_volume = state.player.get_prop('volume')
@@ -749,7 +749,7 @@ def show_venue_text(arg, color=(0, 255, 255), show_id=False, offset=0, force=Fal
             artist_name = tapes[date_reader.shownum].artist
     elif isinstance(arg, Archivary.BaseTape):
         tape = arg
-        tape_info = tape.identifier.split('_')
+        tape_info = tape.identifier.replace('-', ' ').split('_')
         venue_name = tape.info[3]
         venue_name = venue_name[offset:]
         tape.artist = tape_info[2]
