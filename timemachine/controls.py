@@ -789,7 +789,7 @@ class screen:
         self.staged_date = date
 
     def show_selected_date(self, date, color=(255, 255, 255), force=False):
-        if date == self.selected_date:
+        if (date == self.selected_date) and not force:
             return
         self.clear_area(self.selected_date_bbox)
         month = str(date.month).rjust(2)
