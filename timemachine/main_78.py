@@ -99,7 +99,7 @@ RELOAD_STATE_ON_START = True
 
 artist_year_dict = {}   # this needs to be either in state or somewhere.
 
-random.seed(datetime.datetime.now().strftime('%Y-%m-%d'))  # to ensure that random show will be new each time.
+random.seed(datetime.datetime.now().timestamp())  # to ensure that random show will be new each time.
 
 
 @retry(stop=stop_after_delay(10))
@@ -502,7 +502,10 @@ def rewind_button(button, state):
     sleep(button._hold_time)
     if button.is_pressed:
         return     # the button is being "held"
-    if current['TRACK_NUM'] < len(state.player.playlist):
+    if current['TRACK_NUM'] == 0:
+        state.player.stop()
+        state.player.play()
+    elif current['TRACK_NUM'] < len(state.player.playlist):
         state.player.prev()
 
 
@@ -524,8 +527,11 @@ def ffwd_button(button, state):
     sleep(button._hold_time)
     if button.is_pressed:
         return     # the button is being "held"
-    if current['TRACK_NUM'] < len(state.player.playlist):
+    if current['TRACK_NUM'] < len(state.player.playlist) - 1:  # before the last track
         state.player.next()
+    else:
+        state.player.stop()
+        config.PLAY_STATE = config.ENDED
     return
 
 
@@ -778,7 +784,7 @@ def event_loop(state, lock):
     stagedate_event.set()
     TMB.scr.clear()
     i_artist = 0
-    i_tape = -1
+    i_tape = 0
     chosen_artists = None
 
     try:
@@ -814,17 +820,18 @@ def event_loop(state, lock):
                 choose_artist_event.clear()
             if (current['PLAY_STATE'] in [config.ENDED, config.INIT, config.READY]) and chosen_artists:
                 tapes = artist_year_dict[chosen_artists[i_artist]]
-                if i_tape > len(tapes):
-                    i_tape = 0
+                if i_tape >= len(tapes):
+                    i_tape = 1
                     i_artist = i_artist + 1
+                    tapes = artist_year_dict[chosen_artists[i_artist]]
                 else:
                     i_tape = i_tape + 1
-                if i_artist > len(chosen_artists):
+                if i_artist >= len(chosen_artists):
                     continue
                 logger.debug(F"artist {i_artist}/{len(chosen_artists)}")
                 logger.debug(F"tape number {i_tape}/{len(tapes)}. tapes are {tapes}")
-                logger.debug(F"tracks are {tapes[0].tracks()}")
-                select_tape(tapes[i_tape], state)
+                logger.debug(F"tracks are {tapes[i_tape-1].tracks()}")
+                select_tape(tapes[i_tape - 1], state)
             if track_event.is_set():
                 update_tracks(state)
                 track_event.clear()
