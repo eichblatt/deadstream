@@ -6,7 +6,6 @@ SCRIPT_NAME=$(basename "${BASH_SOURCE[0]}")
 echo "running $SCRIPT_NAME"
 echo "Copying service scripts from $SCRIPT_DIR to /etc/systemd/system"
 sudo cp $SCRIPT_DIR/timemachine.service /etc/systemd/system/.
-sudo cp $SCRIPT_DIR/78rpm.service /etc/systemd/system/.
 sudo cp $SCRIPT_DIR/connect_network.service /etc/systemd/system/.
 sudo cp $SCRIPT_DIR/serve_options.service /etc/systemd/system/.
 sudo cp $SCRIPT_DIR/update.service /etc/systemd/system/.
@@ -23,7 +22,6 @@ sudo systemctl daemon-reload
 sudo systemctl enable calibrate.service
 sudo systemctl enable connect_network.service
 sudo systemctl enable timemachine.service
-sudo systemctl disable 78rpm.service
 sudo systemctl enable serve_options.service
 sudo systemctl disable update.service
 sudo systemctl enable pulseaudio.service
