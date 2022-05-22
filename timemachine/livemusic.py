@@ -1045,7 +1045,6 @@ def main(parms_arg):
 
 
 def main_test_update(parms_arg):
-    global config
     global parms
     parms = parms_arg
     config.optd = default_options()  # no weirdness during update testing
