@@ -75,6 +75,7 @@ PULSE_ENABLED = get_os_version() > 10
 
 def default_options():
     d = {}
+    d['MODULE'] = 'livemusic'
     d['COLLECTIONS'] = 'GratefulDead'
     d['SCROLL_VENUE'] = 'true'
     d['FAVORED_TAPER'] = 'miller'
@@ -167,13 +168,17 @@ class OptionsServer(object):
     def index(self):
         opt_dict = read_optd()
         logger.debug(F"opt dict {opt_dict}")
-        form_strings = [self.get_form_item(x) for x in opt_dict.items() if x[0] not in ['TIMEZONE', 'BLUETOOTH_DEVICE']]
+        form_strings = [self.get_form_item(x) for x in opt_dict.items() if x[0] not in ['TIMEZONE', 'BLUETOOTH_DEVICE', 'MODULE']]
         form_string = '\n'.join(form_strings)
         logger.debug(F"form_string {form_string}")
         tz_list = ["America/New_York", "America/Chicago", "America/Phoenix", "America/Los_Angeles", "America/Mexico_City", "America/Anchorage", "Pacific/Honolulu"]
         tz_strings = [F'<option value="{x}" {self.current_choice(opt_dict,"TIMEZONE",x)}>{x}</option>' for x in tz_list]
         tz_string = '\n'.join(tz_strings)
         logger.debug(f'tz string {tz_string}')
+        module_list = ["livemusic", "78rpm"]
+        module_strings = [F'<option value="{x}" {self.current_choice(opt_dict,"MODULE",x)}>{x}</option>' for x in module_list]
+        module_string = '\n'.join(module_strings)
+        logger.debug(f'tz string {module_string}')
 
         audio_string = self.get_audio_string()
 
@@ -204,17 +209,18 @@ class OptionsServer(object):
            <!-- <meta http-equiv="refresh" content="30"> -->
            <h1> Time Machine Options </h1>
            <h2> host: {hostname} -- Raspbian version {get_os_version()} </h2>
-           <form method="get" action="save_values"> {form_string}
+           <form method="get" action="save_values"> 
+             <label for="module"> Module:</label>
+             <select id="module" name="MODULE"> {module_string} </select><p> 
+             {form_string}
              <label for="timezone"> Choose a Time Zone:</label>
-             <select id="timezone" name="TIMEZONE"> {tz_string} </select><p> {pulse_string}
+             <select id="timezone" name="TIMEZONE"> {tz_string} </select><p> 
+             {pulse_string}
              <button type="submit">Save Values</button>
              <button type="reset">Restore</button>
            </form> {bluetooth_button}
            <form method="get" action="restart_tm_service">
-             <button type="submit">Start/Restart Timemachine Service</button>
-           </form>
-           <form method="get" action="restart_78_service">
-             <button type="submit">Start/Restart 78 RPM Service</button>
+             <button type="submit">Restart Timemachine Service</button>
            </form>
            <form method="get" action="restart_options_service">
              <button type="submit">Restart Options Service</button>
@@ -401,6 +407,10 @@ class OptionsServer(object):
 
         self.save_options(kwargs)
 
+        if opt_dict["MODULE"] == kwargs['MODULE']:
+            logger.info(f"Current choice of module is unchanged")
+        else:
+            self.restart_tm_service()
         if kwargs['PULSEAUDIO_ENABLE'] == 'true':
             logger.info(f"kwargs['PULSEAUDIO_ENABLE'] is {kwargs}")
             enable_pulse()
@@ -427,9 +437,6 @@ class OptionsServer(object):
                </form>
                <form method="get" action="restart_tm_service">
                  <button type="submit">Start/Restart Timemachine Service</button>
-               </form>
-               <form method="get" action="restart_78_service">
-                 <button type="submit">Start/Restart 78 RPM Service</button>
                </form>
                <form method="get" action="restart_options_service">
                  <button type="submit">Restart Options Service</button>
@@ -460,13 +467,7 @@ class OptionsServer(object):
         return page_string
 
     @cherrypy.expose
-    def restart_78_service(self, *args, **kwargs):
-        return self.restart_service(service_name='timemachine', action='stop')
-        return self.restart_service(service_name='78rpm')
-
-    @cherrypy.expose
     def restart_tm_service(self, *args, **kwargs):
-        return self.restart_service(service_name='78rpm', action='stop')
         return self.restart_service(service_name='timemachine')
 
     @cherrypy.expose
@@ -483,9 +484,9 @@ class OptionsServer(object):
            <form method="get" action="index">
              <button type="submit">Return</button>
            </form>
-          </body>
-       </html>"""
-        logger.debug(F'Restart_service command {cmd}')
+         </body>
+         </html>"""
+        logger.info(F'Restart_service command {cmd}')
         sleep(parms.sleep_time)
         os.system(cmd)
         return page_string
