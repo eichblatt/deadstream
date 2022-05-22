@@ -126,15 +126,18 @@ except Exception:
     logger.warning("Failed in loading options")
 
 
+def main_test_update():
+    from timemachine import livemusic
+    parms.test_update = True
+    livemusic.main_test_update(parms)
+
+
 def main():
     # archive = Archivary.Archivary(parms.dbpath, reload_ids=reload_ids, with_latest=False, collection_list=config.optd['COLLECTIONS'])
     # player = GD.GDPlayer()
     if config.optd['MODULE'] == 'livemusic':
         from timemachine import livemusic
-        if parms.test_update:
-            livemusic.main_test_update(parms)
-        else:
-            livemusic.main(parms)
+        livemusic.main(parms)
     elif config.optd['MODULE'] == '78rpm':
         from timemachine import m78rpm
         m78rpm.main(parms)
@@ -148,3 +151,6 @@ for k in parms.__dict__.keys():
 
 if __name__ == "__main__" and parms.debug == 0:
     main()
+
+if __name__ == "__main__" and parms.test_update:
+    main_test_update()
