@@ -43,11 +43,11 @@ parser.add_option('--dbpath',
                   help="path to database [default %default]")
 parser.add_option('--state_path',
                   dest='state_path',
-                  default=os.path.join(GD.ROOT_DIR, 'metadata/etree_state.json'),
+                  default=os.path.join(GD.ROOT_DIR, 'metadata/georgeblood_state.json'),
                   help="path to state [default %default]")
 parser.add_option('--options_path',
                   dest='options_path',
-                  default=os.path.join(os.getenv('HOME'), '.timemachine_options.txt'),
+                  default=os.path.join(os.getenv('HOME'), '.vinyl78_options.txt'),
                   help="path to options file [default %default]")
 parser.add_option('--test_update',
                   dest='test_update',
@@ -83,6 +83,7 @@ logger.setLevel(logging.INFO)
 GDLogger.setLevel(logging.INFO)
 controlsLogger.setLevel(logging.WARN)
 
+choose_artist_event = Event()
 stagedate_event = Event()
 track_event = Event()
 playstate_event = Event()
@@ -96,7 +97,9 @@ PWR_LED_ON = False
 AUTO_PLAY = True
 RELOAD_STATE_ON_START = True
 
-random.seed(datetime.datetime.now().strftime('%Y-%m-%d'))  # to ensure that random show will be new each time.
+artist_year_dict = {}   # this needs to be either in state or somewhere.
+
+random.seed(datetime.datetime.now().timestamp())  # to ensure that random show will be new each time.
 
 
 @retry(stop=stop_after_delay(10))
@@ -131,8 +134,7 @@ def load_saved_state(state):
         f = open(parms.state_path, 'r')
         loaded_state = json.loads(f.read())
         fields_to_load = [
-            'DATE', 'VENUE', 'STAGED_DATE', 'ON_TOUR', 'TOUR_YEAR', 'TOUR_STATE', 'EXPERIENCE', 'TRACK_NUM', 'TAPE_ID',
-            'TRACK_TITLE', 'NEXT_TRACK_TITLE', 'TRACK_ID', 'DATE_READER', 'VOLUME']
+            'DATE', 'STAGED_DATE', 'TRACK_NUM', 'TAPE_ID', 'TRACK_TITLE', 'NEXT_TRACK_TITLE', 'TRACK_ID', 'DATE_READER', 'VOLUME']
         for field in fields_to_load:
             if field in ['DATE', 'STAGED_DATE', 'DATE_READER']:
                 current[field] = to_date(loaded_state[field])
@@ -151,9 +153,6 @@ def load_saved_state(state):
 
         current['DATE_READER'] = state.date_reader
         state.player._set_property('volume', current['VOLUME'])
-        if not config.optd['ON_TOUR_ALLOWED']:
-            current['ON_TOUR'] = False
-        current['TOUR_STATE'] = config.INIT
         state.set(current)
         stagedate_event.set()
     except BaseException:
@@ -173,25 +172,12 @@ def save_state(state):
     with open(parms.state_path, 'w') as statefile:
         json.dump(current, statefile, indent=1, default=str)
 
-# def save_pid():
-#    try:
-#        pid_file = os.path.join(os.getenv('HOME'),'tm.pid')
-#        if os.path.exists(pid_file):
-#            os.remove(pid_file)
-#        f = open(pid_file,'w')
-#        f.write(str(os.getpid()))
-#    except Exception as e:
-#        logger.exception(f'{e} while trying to write pid file')
-#        raise e
-
 
 def default_options():
     d = {}
-    d['COLLECTIONS'] = ['GratefulDead']
-    d['SCROLL_VENUE'] = True
+    d['COLLECTIONS'] = ['georgeblood']
     d['FAVORED_TAPER'] = []
     d['AUTO_UPDATE_ARCHIVE'] = True
-    d['ON_TOUR_ALLOWED'] = False
     d['PLAY_LOSSLESS'] = False
     d['PULSEAUDIO_ENABLE'] = False
     if controls.get_os_version() > 10:
@@ -209,7 +195,7 @@ def load_options(parms):
         tmpd = json.loads(f.read())
         for k in config.optd.keys():
             try:
-                if k in ['SCROLL_VENUE', 'AUTO_UPDATE_ARCHIVE', 'ON_TOUR_ALLOWED', 'PLAY_LOSSLESS', 'PULSEAUDIO_ENABLE']:  # make booleans.
+                if k in ['AUTO_UPDATE_ARCHIVE', 'PLAY_LOSSLESS', 'PULSEAUDIO_ENABLE']:  # make booleans.
                     tmpd[k] = tmpd[k].lower() == 'true'
                 if k in ['COLLECTIONS', 'FAVORED_TAPER']:   # make lists from comma-separated strings.
                     c = [x.strip() for x in tmpd[k].split(',') if x != '']
@@ -235,7 +221,18 @@ def load_options(parms):
     os.system(led_cmd)
 
 
+def decade_knob(knob: RotaryEncoder, label, artist_counter: controls.artist_knob_reader):
+    if label == "day":
+        TMB.decade_knob(TMB.d, "day", artist_counter)
+    elif label == "month":
+        TMB.decade_knob(TMB.m, "month", artist_counter)
+    TMB.knob_event.set()
+    choose_artist_event.set()
+
+
 def twist_knob(knob: RotaryEncoder, label, date_reader: controls.date_knob_reader):
+    if label != 'year':
+        return
     TMB.twist_knob(knob, label, date_reader)
     TMB.knob_event.set()
     stagedate_event.set()
@@ -246,6 +243,32 @@ if parms.verbose or parms.debug:
     logger.setLevel(logging.DEBUG)
     GDLogger.setLevel(logging.DEBUG)
     controlsLogger.setLevel(logging.INFO)
+
+
+def choose_artist(state):
+    choose_artist_event.clear()
+    TMB.knob_event.clear()
+    date_reader = state.date_reader
+    artist_counter = state.artist_counter
+    archive = date_reader.archive
+    date = date_reader.date
+    artist_year_dict = archive.year_artists(date.year)  # This needs to be availabe outside this function.
+    artist_list = ['RETURN', 'Shuffle'] + sorted(list(artist_year_dict.keys()))
+    chosen_artists = controls.select_option(TMB, artist_counter, "Choose artist", artist_list)
+    if chosen_artists == 'RETURN':
+        return None
+    elif chosen_artists == 'Shuffle':
+        chosen_artists = random.sample(artist_list[2:], len(artist_list[2:]))
+    else:
+        pass
+    if not isinstance(chosen_artists, list):
+        chosen_artists = [chosen_artists]
+    logger.debug(F"artist is now {chosen_artists}")
+    return (artist_year_dict, chosen_artists)
+    # tapes = artist_year_dict[chosen_artists]
+    # logger.info(F"tapes are {tapes}")
+    # logger.info(F"tracks are {tapes[0].tracks()}")
+    # return tapes
 
 
 def select_tape(tape, state, autoplay=True):
@@ -263,8 +286,8 @@ def select_tape(tape, state, autoplay=True):
     logger.info(F"Set TAPE_ID to {current['TAPE_ID']}")
     current['TRACK_NUM'] = -1
     current['DATE'] = state.date_reader.date
-    current['VENUE'] = tape.venue()
-    current['ARTIST'] = tape.artist
+    current['VENUE'] = tape.identifier.replace('-', ' ').split('_')[2]
+    current['ARTIST'] = current['VENUE']  # for now at least
     venue_counter = (0, 0)
 
     try:
@@ -278,14 +301,32 @@ def select_tape(tape, state, autoplay=True):
             current['PLAY_STATE'] = config.PLAYING
             playstate_event.set()
             state.set(current)
+            track_event.set()
+            TMB.select_event.set()
     except Exception as e:
         logger.exception(e)
         pass
     return state
 
 
+def select_current_artist(state, autoplay=True):
+    artist_counter = state.artist_counter
+    tapes = date_reader.archive.resort_tape_date(date_reader.fmtdate())
+    if len(tapes) == 0:
+        TMB.scr.show_venue('No Audio', color=(255, 255, 255), force=True)
+        sleep(2)
+        return
+    tape = tapes[date_reader.shownum]
+    TMB.scr.show_playstate(staged_play=True, force=True)
+    state = select_tape(tape, state, autoplay=autoplay)
+
+    logger.debug(F"current state after selecting tape {state}")
+    TMB.select_event.set()
+    return state
+
+
 def select_current_date(state, autoplay=True):
-    date_reader = state.date_reader
+    artist_counter = state.artist_counter
     if not date_reader.tape_available():
         return
     tapes = date_reader.archive.resort_tape_date(date_reader.fmtdate())
@@ -304,6 +345,10 @@ def select_current_date(state, autoplay=True):
 
 @sequential
 def select_button(button, state):
+    logger.info("pressing select")
+    TMB.select_event.set()
+    logger.info("pressing select")
+
     autoplay = AUTO_PLAY
     sleep(button._hold_time * 1.01)
     if button.is_pressed or button.is_held:
@@ -315,9 +360,7 @@ def select_button(button, state):
         autoplay = False
         current['PLAY_STATE'] = config.READY
         state.set(current)
-    if current['ON_TOUR'] and current['TOUR_STATE'] in [config.READY, config.PLAYING]:
-        return
-    select_current_date(state, autoplay=autoplay)
+    #select_current_artist(state, autoplay=autoplay)
     TMB.scr.wake_up()
     logger.debug(F"current state after select button {state}")
     return
@@ -357,8 +400,6 @@ def play_pause_button(button, state):
     current = state.get_current()
     if current['EXPERIENCE'] and current['PLAY_STATE'] in [config.PLAYING, config.PAUSED]:
         return
-    if current['ON_TOUR'] and current['TOUR_STATE'] in [config.READY, config.PLAYING]:
-        return
     logger.debug("pressing play_pause")
     if current['PLAY_STATE'] in [config.INIT]:
         logger.info("Selecting current date, and play")
@@ -391,7 +432,7 @@ def play_pause_button_longpress(button, state):
     tape = state.date_reader.archive.best_tape(new_date)
     current['DATE'] = to_date(new_date)
     state.date_reader.set_date(current['DATE'])
-    current['VENUE'] = tape.venue()
+    current['VENUE'] = tape.identifier.replace('-', ' ').split('_')[2]
     current['ARTIST'] = tape.artist
     venue_counter = (0, 0)
     current_volume = state.player.get_prop('volume')
@@ -414,10 +455,6 @@ def play_pause_button_longpress(button, state):
 def stop_button(button, state):
     current = state.get_current()
     if current['EXPERIENCE']:
-        return
-    if current['ON_TOUR'] and current['TOUR_STATE'] in [config.READY, config.PLAYING]:
-        return
-    if current['PLAY_STATE'] in [config.READY, config.INIT, config.STOPPED]:
         return
     if current['PLAY_STATE'] == config.ENDED:
         current['PLAY_STATE'] = config.STOPPED
@@ -457,7 +494,7 @@ def stop_button_longpress(button, state):
 def rewind_button(button, state):
     logger.debug("press of rewind")
     current = state.get_current()
-    if current['EXPERIENCE'] or (current['ON_TOUR'] and current['TOUR_STATE'] in [config.READY, config.PLAYING]):
+    if current['EXPERIENCE']:
         current_volume = state.player.get_prop('volume')
         state.player._set_property('volume', max(current_volume * 0.9, 40))
         return
@@ -467,7 +504,7 @@ def rewind_button(button, state):
     if current['TRACK_NUM'] == 0:
         state.player.stop()
         state.player.play()
-    if current['TRACK_NUM'] < len(state.player.playlist):
+    elif current['TRACK_NUM'] < len(state.player.playlist):
         state.player.prev()
 
 
@@ -482,7 +519,7 @@ def rewind_button_longpress(button, state):
 def ffwd_button(button, state):
     logger.debug("press of ffwd")
     current = state.get_current()
-    if current['EXPERIENCE'] or (current['ON_TOUR'] and current['TOUR_STATE'] in [config.READY, config.PLAYING]):
+    if current['EXPERIENCE']:
         current_volume = state.player.get_prop('volume')
         state.player._set_property('volume', min(current_volume * 1.1, 130))
         return
@@ -539,27 +576,6 @@ def year_button(button, state):
     sleep(button._hold_time)
     if button.is_pressed:
         return     # the button is being "held"
-    today = datetime.date.today()
-    now_m = today.month
-    now_d = today.day
-    m = state.date_reader.date.month
-    d = state.date_reader.date.day
-    y = state.date_reader.date.year
-
-    if m == now_m and d == now_d:  # move to the next year where there is a tape available
-        tihstring = F"{m:0>2d}-{d:0>2d}"
-        tih_tapedates = [to_date(d) for d in state.date_reader.archive.dates if d.endswith(tihstring)]
-        if len(tih_tapedates) > 0:
-            cut = 0
-            for i, dt in enumerate(tih_tapedates):
-                if dt.year > y:
-                    cut = i
-                    break
-            tapedate = (tih_tapedates[cut:] + tih_tapedates[:cut])[0]
-            logger.debug(F"tapedate is {tapedate}")
-            state.date_reader.set_date(datetime.date(tapedate.year, now_m, now_d))
-    else:
-        state.date_reader.set_date(datetime.date(y, now_m, now_d))
     stagedate_event.set()
 
 
@@ -576,21 +592,6 @@ def year_button_longpress(button, state):
         return
     logger.debug(" longpress of year button")
     current = state.get_current()
-    if current['ON_TOUR']:
-        TMB.scr.show_experience(text=F"ON_TOUR:{current['TOUR_YEAR']}\nHold 3s to exit", force=True)
-        sleep(3)
-        if button.is_held:
-            logger.info("   EXITING ON_TOUR mode")
-            current['ON_TOUR'] = False
-            current['TOUR_YEAR'] = None
-            current['TOUR_STATE'] = config.INIT
-            TMB.scr.show_experience(text=F"ON_TOUR: Finished\n{ip_address}", force=True)
-    elif config.optd['ON_TOUR_ALLOWED']:
-        current['ON_TOUR'] = True
-        current['TOUR_YEAR'] = state.date_reader.date.year
-        current['TOUR_STATE'] = config.INIT
-        logger.info(F" ---> ON_TOUR:{current['TOUR_YEAR']}")
-        TMB.scr.show_experience(text=F"ON_TOUR:{current['TOUR_YEAR']}\n{ip_address}", force=True)
     sleep(3)
     track_event.set()
     state.set(current)
@@ -600,8 +601,6 @@ def update_tracks(state):
     current = state.get_current()
     if current['EXPERIENCE']:
         TMB.scr.show_experience()
-    elif current['ON_TOUR'] and current['TOUR_STATE'] in [config.READY, config.PLAYING]:
-        TMB.scr.show_experience(text=F"Hold Year to\nExit TOUR {current['TOUR_YEAR']}")
     else:
         TMB.scr.show_track(current['TRACK_TITLE'], 0)
         TMB.scr.show_track(current['NEXT_TRACK_TITLE'], 1)
@@ -611,38 +610,6 @@ def to_date(d):
     if not d:
         return d
     return datetime.datetime.strptime(d, '%Y-%m-%d').date()
-
-
-@sequential
-def play_on_tour(tape, state, seek_to=0):
-    global venue_counter
-    logger.debug("play_on_tour")
-    current = state.get_current()
-    if tape.identifier == current['TAPE_ID']:
-        return                           # already playing.
-    current['PLAY_STATE'] = config.READY  # eject current tape, insert new one in player
-    current['TAPE_ID'] = tape.identifier
-    logger.info(F"Set TAPE_ID to {current['TAPE_ID']}")
-    current['TRACK_NUM'] = -1
-    current['DATE'] = to_date(tape.date)
-    current['VENUE'] = tape.venue()
-    current['ARTIST'] = tape.artist
-    venue_counter = (0, 0)
-    state.player.insert_tape(tape)
-    state.player._set_property('volume', current['VOLUME'])
-    state.player.pause()
-    state.player.play()
-    state.player.seek_in_tape_to(seek_to, ticking=True)
-    current['PLAY_STATE'] = config.PLAYING
-    current['TOUR_STATE'] = config.PLAYING
-    playlist_pos = state.player.get_prop('playlist-pos')
-    if playlist_pos is None:
-        current['PLAY_STATE'] = config.ENDED
-    else:
-        state.player.play()
-    state.set(current)
-    TMB.select_event.set()
-    return
 
 
 @sequential
@@ -730,7 +697,6 @@ def test_update(state):
 
     current = state.get_current()
     current['EXPERIENCE'] = False
-    current['ON_TOUR'] = False
     current['PLAY_STATE'] = config.PLAYING
     state.set(current)
     date_reader = state.date_reader
@@ -771,7 +737,7 @@ def get_current(state):
 
 
 def show_venue_text(arg, color=(0, 255, 255), show_id=False, offset=0, force=False):
-    if isinstance(arg, controls.date_knob_reader):
+    if isinstance(arg, controls.artist_knob_reader):
         date_reader = arg
         archive = date_reader.archive
         tapes = archive.tape_dates[date_reader.fmtdate()] if date_reader.fmtdate() in archive.tape_dates.keys() else []
@@ -783,8 +749,10 @@ def show_venue_text(arg, color=(0, 255, 255), show_id=False, offset=0, force=Fal
             artist_name = tapes[date_reader.shownum].artist
     elif isinstance(arg, Archivary.BaseTape):
         tape = arg
-        venue_name = tape.identifier if show_id else tape.venue()
+        tape_info = tape.identifier.replace('-', ' ').split('_')
+        venue_name = tape.info[3]
         venue_name = venue_name[offset:]
+        tape.artist = tape_info[2]
         artist_name = tape.artist
         num_events = 1
     TMB.scr.clear_area(TMB.scr.venue_bbox)
@@ -800,6 +768,7 @@ def event_loop(state, lock):
     global venue_counter
     key_error_count = 0
     date_reader = state.date_reader
+    artist_counter = state.artist_counter
     last_sdevent = datetime.datetime.now()
     q_counter = False
     n_timer = 0
@@ -815,6 +784,9 @@ def event_loop(state, lock):
     free_event.set()
     stagedate_event.set()
     TMB.scr.clear()
+    i_artist = 0
+    i_tape = 0
+    chosen_artists = None
 
     try:
         while not stop_loop_event.wait(timeout=0.001):
@@ -828,51 +800,44 @@ def event_loop(state, lock):
             current = retry_call(get_current, state)   # if this fails, try again
             default_start = config.optd['DEFAULT_START_TIME']
 
-            if current['ON_TOUR']:
-                if current['TOUR_STATE'] == config.ENDED and now.hour < 1:  # reset ENDED to INIT after midnight.
-                    current['TOUR_STATE'] = config.INIT
-                if current['TOUR_STATE'] not in [config.PLAYING, config.ENDED]:
-                    then_time = now.replace(year=current['TOUR_YEAR'])
-                    # At the "scheduled time", stop whatever is playing and wait.
-                    tape = state.date_reader.archive.tape_at_time(then_time, default_start=default_start)
-                    if not tape:
-                        current['TOUR_STATE'] = config.INIT
-                    else:
-                        current['TOUR_STATE'] = config.READY
-                        state.player.stop()
-                        current['TAPE_ID'] = None
-                        start_time = state.date_reader.archive.tape_start_time(then_time, default_start=default_start)
-                        TMB.scr.show_experience(text=F"ON_TOUR:{current['TOUR_YEAR']}\nWaiting for show", force=True)
-                        then_date = then_time.date()
-                        random.seed(then_date.year + then_date.month + then_date.day)
-                        wait_time = random.randrange(60, 600)
-                        logger.info(
-                            F"On Tour Tape Found on {then_time}. Sleeping 10 seconds. Waiting for {(start_time + datetime.timedelta(seconds=wait_time)).time()}"
-                        )
-                        sleep(10)
-                        if now.time() >= (start_time + datetime.timedelta(seconds=wait_time)).time():
-                            point_in_show = (then_time - (start_time + datetime.timedelta(seconds=wait_time))).seconds
-                            play_on_tour(tape, state, seek_to=point_in_show)
-                if current['TOUR_STATE'] == config.PLAYING:
-                    if current['PLAY_STATE'] == config.ENDED:
-                        current['TOUR_STATE'] = config.ENDED
-                        state.set(current)
-                        track_event.set()
-                        logger.debug(F" ENDED!! TOUR_STATE is {current['TOUR_STATE']}, default_start: {default_start}")
-
             if TMB.screen_event.is_set():
                 TMB.scr.refresh()
                 TMB.screen_event.clear()
             if stagedate_event.is_set():
+                logger.debug(F"year is now {date_reader.date.year}")
                 last_sdevent = now
                 q_counter = True
-                TMB.scr.show_staged_date(date_reader.date)
+                TMB.scr.show_staged_year(date_reader.date)
                 show_venue_text(date_reader)
-                # if clear_stagedate: stagedate_event.clear()
-                # clear_stagedate = not clear_stagedate   # only clear stagedate event after updating twice
                 stagedate_event.clear()
                 TMB.scr.wake_up()
                 TMB.screen_event.set()
+            if choose_artist_event.is_set():
+                choice = choose_artist(state)
+                TMB.scr.clear()
+                if choice:
+                    artist_year_dict, chosen_artists = choice
+                    i_artist = 0
+                    logger.debug(F"Number of chosen_artsts {len(chosen_artists)}")
+                else:
+                    current = state.get_current()
+                    TMB.scr.show_selected_date(current['DATE'], force=True)
+                TMB.scr.show_staged_year(date_reader.date, force=True)
+                choose_artist_event.clear()
+            if (current['PLAY_STATE'] in [config.ENDED, config.INIT, config.READY]) and chosen_artists:
+                tapes = artist_year_dict[chosen_artists[i_artist]]
+                if i_tape >= len(tapes):
+                    i_tape = 1
+                    i_artist = i_artist + 1
+                    tapes = artist_year_dict[chosen_artists[i_artist]]
+                else:
+                    i_tape = i_tape + 1
+                if i_artist >= len(chosen_artists):
+                    continue
+                logger.debug(F"artist {i_artist}/{len(chosen_artists)}")
+                logger.debug(F"tape number {i_tape}/{len(tapes)}. tapes are {tapes}")
+                logger.debug(F"tracks are {tapes[i_tape-1].tracks()}")
+                select_tape(tapes[i_tape - 1], state)
             if track_event.is_set():
                 update_tracks(state)
                 track_event.clear()
@@ -890,7 +855,7 @@ def event_loop(state, lock):
                 TMB.screen_event.set()
             if q_counter and config.DATE and idle_seconds > QUIESCENT_TIME:
                 logger.debug(F"Reverting staged date back to selected date {idle_seconds}> {QUIESCENT_TIME}")
-                TMB.scr.show_staged_date(config.DATE)
+                TMB.scr.show_staged_year(config.DATE)
                 TMB.scr.show_venue(config.VENUE)
                 q_counter = False
                 TMB.screen_event.set()
@@ -902,10 +867,6 @@ def event_loop(state, lock):
                     last_idle_day = now.day
                     last_idle_hour = now.hour
                     last_idle_minute = now.minute
-                    # try:
-                    # date_reader.archive.load_archive(with_latest=config.optd['AUTO_UPDATE_ARCHIVE'])
-                    # except:
-                    # logger.warning("Unable to refresh archive")
                 track_event.set()
                 playstate_event.set()
                 save_state(state)
@@ -921,7 +882,7 @@ def event_loop(state, lock):
                         TMB.scr.sleep()
                 if idle_seconds > QUIESCENT_TIME:
                     if config.DATE:
-                        TMB.scr.show_staged_date(config.DATE)
+                        TMB.scr.show_staged_year(config.DATE)
                     try:
                         if current['PLAY_STATE'] > config.INIT:
                             refresh_venue(state)
@@ -929,7 +890,7 @@ def event_loop(state, lock):
                         raise e
                         logger.warning(f'event_loop, error refreshing venue {e}')
                 else:
-                    TMB.scr.show_staged_date(date_reader.date)
+                    TMB.scr.show_staged_year(date_reader.date)
                     show_venue_text(date_reader)
                 TMB.screen_event.set()
             lock.release()
@@ -1019,25 +980,33 @@ except Exception:
 
 year_list = archive.year_list()
 num_years = max(year_list) - min(year_list)
-TMB.setup_knobs(mdy_bounds=[(1, 12), (1, 31), (0, num_years)])
 
-if 'GratefulDead' in archive.collection_list:
-    TMB.m.steps = 8
-    TMB.d.steps = 13
-    TMB.y.steps = min(max(0, 1975 - min(year_list)), num_years)
-else:
-    TMB.m.steps = 1
-    TMB.d.steps = 1
-    TMB.y.steps = 0
+# get lenght of list of artists. Should I get max for a single year, or just total. Currently getting total.
+artists = [list(archive.year_artists(y).keys()) for y in year_list]
+artists = [item for sublist in artists for item in sublist]
+artists = sorted(list(set(artists)))
 
-date_reader = controls.date_knob_reader(TMB.y, TMB.m, TMB.d, archive)
-if 'GratefulDead' not in archive.collection_list:
-    date_reader.set_date(*date_reader.next_show())
+TMB.setup_knobs(mdy_bounds=[(0, len(artists) // 10), (0, len(artists)), (0, num_years)])
+artist_counter = controls.decade_counter(TMB.m, TMB.d, bounds=(0, len(artists)))
 
-state = controls.state(date_reader, player)
-TMB.m.when_rotated = lambda x: twist_knob(TMB.m, "month", date_reader)
-TMB.d.when_rotated = lambda x: twist_knob(TMB.d, "day", date_reader)
+#controls.select_option(TMB,artist_counter,"Choose artist",sorted(list(archive.year_artists(date_reader.date.year).keys())))
+
+date_reader = controls.artist_knob_reader(TMB.y, TMB.m, TMB.d, archive)
+date_reader.set_date(*date_reader.next_show())
+
+TMB.m.steps = 1
+TMB.d.steps = 1
+TMB.y.steps = 0
+
+state = controls.state((date_reader, artist_counter), player)
+TMB.m.when_rotated = lambda x: decade_knob(TMB.m, "month", artist_counter)
+TMB.d.when_rotated = lambda x: decade_knob(TMB.d, "day", artist_counter)
+#TMB.y.when_rotated = lambda x: TMB.decade_knob(TMB.y, "year", counter)
+
+# TMB.m.when_rotated = lambda x: twist_knob(TMB.m, "month", date_reader)
+# TMB.d.when_rotated = lambda x: twist_knob(TMB.d, "day", date_reader)
 TMB.y.when_rotated = lambda x: twist_knob(TMB.y, "year", date_reader)
+
 
 TMB.play_pause.when_pressed = lambda button: play_pause_button(button, state)
 TMB.play_pause.when_held = lambda button: play_pause_button_longpress(button, state)
@@ -1063,7 +1032,7 @@ TMB.d_button.when_held = lambda button: day_button_longpress(button, state)
 TMB.y_button.when_held = lambda button: year_button_longpress(button, state)
 
 TMB.scr.clear_area(controls.Bbox(0, 0, 160, 100))
-TMB.scr.show_text("Powered by\n archive.org\n & phish.in", color=(0, 255, 255), force=True)
+TMB.scr.show_text("Powered by\n archive.org", color=(0, 255, 255), force=True)
 TMB.scr.show_text(str(len(archive.collection_list)).rjust(3), font=TMB.scr.boldsmall, loc=(120, 100), color=(255, 100, 0), force=True)
 
 if RELOAD_STATE_ON_START:

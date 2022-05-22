@@ -211,7 +211,10 @@ class OptionsServer(object):
              <button type="reset">Restore</button>
            </form> {bluetooth_button}
            <form method="get" action="restart_tm_service">
-             <button type="submit">Restart Timemachine Service</button>
+             <button type="submit">Start/Restart Timemachine Service</button>
+           </form>
+           <form method="get" action="restart_78_service">
+             <button type="submit">Start/Restart 78 RPM Service</button>
            </form>
            <form method="get" action="restart_options_service">
              <button type="submit">Restart Options Service</button>
@@ -423,7 +426,10 @@ class OptionsServer(object):
                  <button type="submit">Return</button>
                </form>
                <form method="get" action="restart_tm_service">
-                 <button type="submit">Restart Timemachine Service</button>
+                 <button type="submit">Start/Restart Timemachine Service</button>
+               </form>
+               <form method="get" action="restart_78_service">
+                 <button type="submit">Start/Restart 78 RPM Service</button>
                </form>
                <form method="get" action="restart_options_service">
                  <button type="submit">Restart Options Service</button>
@@ -454,7 +460,13 @@ class OptionsServer(object):
         return page_string
 
     @cherrypy.expose
+    def restart_78_service(self, *args, **kwargs):
+        return self.restart_service(service_name='timemachine', action='stop')
+        return self.restart_service(service_name='78rpm')
+
+    @cherrypy.expose
     def restart_tm_service(self, *args, **kwargs):
+        return self.restart_service(service_name='78rpm', action='stop')
         return self.restart_service(service_name='timemachine')
 
     @cherrypy.expose
@@ -463,7 +475,8 @@ class OptionsServer(object):
 
     @cherrypy.expose
     def restart_service(self, *args, **kwargs):
-        cmd = f"sudo service {kwargs['service_name']} restart"
+        action = kwargs.get('action', 'restart')
+        cmd = f"sudo service {kwargs['service_name']} {action}"
         page_string = f"""<html>
          <head></head>
          <body> Restarting Service <p> Command: {cmd}
