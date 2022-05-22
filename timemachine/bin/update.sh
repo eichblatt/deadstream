@@ -89,7 +89,6 @@ fi
 
 # Stop the timemachine service.
 system "sudo service timemachine stop"
-system "sudo service 78rpm stop"
 
 # Start the music
 echo "[ ! -f $HOME/helpontheway.ogg ] && wget -O $HOME/helpontheway.ogg https://archive.org/download/gd75-08-13.fm.vernon.23661.sbeok.shnf/gd75-08-13d1t02.ogg "
@@ -118,7 +117,6 @@ fi
 
 # Stop the running services
 system "sudo service timemachine stop"
-system "sudo service 78rpm stop"
 system "sudo service serve_options stop"
 
 # Test the update
