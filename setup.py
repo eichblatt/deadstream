@@ -48,6 +48,7 @@ setup(
                    'calibrate=timemachine.calibrate:main',
                    'serve_options=timemachine.serve_options:main',
                    'timemachine=timemachine.main:main',
+                   '78rpm=timemachine.main_78:main',
                    'timemachine_test_update=timemachine.main:main_test_update']},
     scripts=['timemachine/bin/services.sh', 'timemachine/bin/update.sh', 'timemachine/bin/board_version.sh',
              'timemachine/bin/calibrate.sh', 'timemachine/bin/timemachine.service', 'timemachine/bin/update.service',
