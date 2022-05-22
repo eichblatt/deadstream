@@ -19,7 +19,7 @@ import logging
 import os
 import time
 
-from mpv import MPV
+from timemachine.mpv import MPV
 from tenacity import retry
 from tenacity.stop import stop_after_delay, stop_after_attempt
 from tenacity.wait import wait_random
@@ -74,7 +74,7 @@ def to_year(datestring):
 def to_decade(datestring):
     if type(datestring) == list:      # handle one bad case on 2009.01.10
         datestring = datestring[0]
-    return 10*divmod(to_date(datestring[:10]).year, 10)[0]
+    return 10 * divmod(to_date(datestring[:10]).year, 10)[0]
 
 
 class GDPlayer(MPV):
@@ -308,11 +308,11 @@ class GDPlayer(MPV):
             logger.debug(F'destination {destination} time_pos {time_pos} duration {duration}')
 
             if destination < 0:
-                if abs(destination) < abs(sleeptime*5):
-                    destination = destination - sleeptime*5
-                self.seek_to(current_track-1, destination)
+                if abs(destination) < abs(sleeptime * 5):
+                    destination = destination - sleeptime * 5
+                self.seek_to(current_track - 1, destination)
             if destination > duration:
-                self.seek_to(current_track+1, destination-duration)
+                self.seek_to(current_track + 1, destination - duration)
             else:
                 self.seek_to(current_track, destination)
         except Exception as e:
