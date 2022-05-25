@@ -33,6 +33,7 @@ setup(
         'pexpect',
         'pickle5',
         'Pillow',
+        'python-mpv==0.5.2',
         'pre-commit',
         'pulsectl',
         'requests',
