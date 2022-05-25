@@ -146,6 +146,13 @@ def main():
     exit()
 
 
+"""
+from timemachine import m78rpm
+m78rpm.parms = parms
+m78rpm.load_saved_state(m78rpm.state)
+m78rpm.eloop.start()
+"""
+
 for k in parms.__dict__.keys():
     logger.info(F"{k:20s} : {parms.__dict__[k]}")
 

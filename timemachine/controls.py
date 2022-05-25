@@ -664,6 +664,7 @@ class screen:
         self.image = Image.new("RGB", (width, height))
         self.draw = ImageDraw.Draw(self.image)       # draw using this object. Display image when complete.
 
+        self.staged_years = (None, None)
         self.staged_date = None
         self.selected_date = None
 
@@ -767,6 +768,20 @@ class screen:
         self.clear_area(self.venue_bbox)
         self.show_text(arg, self.venue_bbox.origin(), font=self.boldsmall, color=color, force=force)
 
+    def show_staged_years(self, years, color=(0, 255, 255), force=False):
+        if (years == self.staged_years) and not force:
+            return
+        self.clear_area(self.staged_year_bbox)
+        start_year = years[0]
+        end_year = str(years[1] % 100).rjust(2, '0')
+        if start_year and end_year:
+            text = f'{start_year}-{end_year}'
+        elif not end_year:
+            text = f'{start_year}'
+        logger.debug(F"staged date string {text}")
+        self.show_text(text, self.staged_year_bbox.origin(), self.boldfont, color=color, force=force)
+        self.staged_years = years
+
     def show_staged_year(self, date, color=(0, 255, 255), force=False):
         if (date == self.staged_date) and not force:
             return
@@ -782,7 +797,7 @@ class screen:
         self.clear_area(self.staged_date_bbox)
         month = str(date.month).rjust(2)
         day = str(date.day).rjust(2)
-        year = str(divmod(date.year, 100)[1]).rjust(2, '0')
+        year = str(date.year % 100).rjust(2, '0')
         text = month + '-' + day + '-' + year
         logger.debug(F"staged date string {text}")
         self.show_text(text, self.staged_date_bbox.origin(), self.boldfont, color=color, force=force)

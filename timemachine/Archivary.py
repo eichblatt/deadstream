@@ -1222,18 +1222,20 @@ class GDTape(BaseTape):
         # for now, return the location indices.
         return {'long': lb_locations, 'short': sb_locations, 'location': locb_locations}
 
-    def insert_breaks(self):
+    def insert_breaks(self, breaks=None, force=False):
         if not self.meta_loaded:
             self.get_metadata()
-        if self._breaks_added:
+        if self._breaks_added and not force:
             return
-        breaks = self._compute_breaks()
+        if not breaks:
+            breaks = self._compute_breaks()
         longbreak_path = pkg_resources.resource_filename('timemachine.metadata', 'silence600.ogg')
         breakd = {'track': -1, 'original': 'setbreak', 'title': 'Set Break', 'format': 'Ogg Vorbis', 'size': 1, 'source': 'original', 'path': os.path.dirname(longbreak_path)}
         lbreakd = dict(list(breakd.items()) + [('title', 'Set Break'), ('name', 'silence600.ogg')])
         # sbreakd = dict(list(breakd.items()) + [('title', 'Encore Break'), ('name', 'silence300.ogg')])
         sbreakd = dict(list(breakd.items()) + [('title', 'Encore Break'), ('name', 'silence0.ogg')])
         locbreakd = dict(list(breakd.items()) + [('title', 'Location Break'), ('name', 'silence600.ogg')])
+        flipbreakd = dict(list(breakd.items()) + [('title', 'Flip Break'), ('name', 'silence300.ogg')])
 
         # make the tracks
         newtracks = []
@@ -1242,15 +1244,22 @@ class GDTape(BaseTape):
         set_breaks_already_locs = [tlist.index(x) for x in set_breaks_already_in_tape]
         for i, t in enumerate(self._tracks):
             if i not in set_breaks_already_locs:
-                for j in breaks['long']:
-                    if i == j:
-                        newtracks.append(GDTrack(lbreakd, '', True))
-                for j in breaks['short']:
-                    if i == j:
-                        newtracks.append(GDTrack(sbreakd, '', True))
-                for j in breaks['location']:
-                    if i == j:
-                        newtracks.append(GDTrack(locbreakd, '', True))
+                if 'long' in breaks.keys():
+                    for j in breaks['long']:
+                        if i == j:
+                            newtracks.append(GDTrack(lbreakd, '', True))
+                if 'short' in breaks.keys():
+                    for j in breaks['short']:
+                        if i == j:
+                            newtracks.append(GDTrack(sbreakd, '', True))
+                if 'location' in breaks.keys():
+                    for j in breaks['location']:
+                        if i == j:
+                            newtracks.append(GDTrack(locbreakd, '', True))
+                if 'flip' in breaks.keys():
+                    for j in breaks['flip']:
+                        if i == j:
+                            newtracks.append(GDTrack(flipbreakd, '', True))
             newtracks.append(t)
         self._breaks_added = True
         self._tracks = newtracks.copy()

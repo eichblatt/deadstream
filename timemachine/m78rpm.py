@@ -43,7 +43,7 @@ logging.basicConfig(format='%(asctime)s.%(msecs)03d %(levelname)s: %(name)s %(me
 logger = logging.getLogger(__name__)
 GDLogger = logging.getLogger('timemachine.GD')
 controlsLogger = logging.getLogger('timemachine.controls')
-logger.setLevel(logging.INFO)
+logger.setLevel(logging.DEBUG)
 GDLogger.setLevel(logging.INFO)
 controlsLogger.setLevel(logging.WARN)
 
@@ -176,7 +176,7 @@ def choose_artist(state):
     if chosen_artists == 'RETURN':
         return None
     elif chosen_artists == 'Shuffle':
-        chosen_artists = random.sample(artist_list[2:], len(artist_list[2:]))
+        chosen_artists = random.sample(artist_list[2:], min(50, len(artist_list[2:])))
     else:
         pass
     if not isinstance(chosen_artists, list):
@@ -494,6 +494,10 @@ def year_button(button, state):
     sleep(button._hold_time)
     if button.is_pressed:
         return     # the button is being "held"
+    # Add code here to set a start and end year
+    # start_year = state.date_reader.date.year
+    # end_year = start_year + 1
+    # TMB.scr.show_staged_years((start_year,end_year),force=True)
     stagedate_event.set()
 
 
@@ -748,6 +752,9 @@ def event_loop(state, lock):
                     i_tape = i_tape + 1
                 if i_artist >= len(chosen_artists):
                     continue
+                if (i_artist % random.randint(4, 8)) == 0:
+                    logger.debug("inserting silence here")
+                    tapes[i_tape - 1].insert_breaks(breaks={'flip': [0]}, force=True)
                 logger.debug(F"artist {i_artist}/{len(chosen_artists)}")
                 logger.debug(F"tape number {i_tape}/{len(tapes)}. tapes are {tapes}")
                 logger.debug(F"tracks are {tapes[i_tape-1].tracks()}")
