@@ -163,7 +163,26 @@ def set_logger_debug():
     controlsLogger.setLevel(logging.INFO)
 
 
+def shuffle_artist(state):
+    global artist_year_dict
+    date_reader = state.date_reader
+    artist_counter = state.artist_counter
+    archive = date_reader.archive
+    date = date_reader.date
+    artist_year_dict = archive.year_artists(date.year)
+    artist_list = sorted(list(artist_year_dict.keys()))
+    chosen_artists = random.sample(artist_list, min(50, len(artist_list)))
+    if not isinstance(chosen_artists, list):
+        chosen_artists = [chosen_artists]
+    current = state.get_current()
+    current['CHOSEN_ARTISTS'] = chosen_artists
+    state.set(current)
+    logger.debug(F"artist is now {chosen_artists}")
+    return chosen_artists
+
+
 def choose_artist(state):
+    global artist_year_dict
     choose_artist_event.clear()
     TMB.knob_event.clear()
     date_reader = state.date_reader
@@ -176,13 +195,14 @@ def choose_artist(state):
     if chosen_artists == 'RETURN':
         return None
     elif chosen_artists == 'Shuffle':
-        chosen_artists = random.sample(artist_list[2:], min(50, len(artist_list[2:])))
-    else:
-        pass
+        return shuffle_artist(state)
     if not isinstance(chosen_artists, list):
         chosen_artists = [chosen_artists]
+    current = state.get_current()
+    current['CHOSEN_ARTISTS'] = chosen_artists
+    state.set(current)
     logger.debug(F"artist is now {chosen_artists}")
-    return (artist_year_dict, chosen_artists)
+    return chosen_artists
     # tapes = artist_year_dict[chosen_artists]
     # logger.info(F"tapes are {tapes}")
     # logger.info(F"tracks are {tapes[0].tracks()}")
@@ -265,14 +285,14 @@ def select_current_date(state, autoplay=True):
 def select_button(button, state):
     logger.info("pressing select")
     TMB.select_event.set()
-    logger.info("pressing select")
 
     autoplay = AUTO_PLAY
     sleep(button._hold_time * 1.01)
     if button.is_pressed or button.is_held:
         return
-    logger.debug("pressing select")
     current = state.get_current()
+    if current['PLAY_STATE'] in [config.INIT, config.READY]:
+        shuffle_artist(state)
     if current['PLAY_STATE'] == config.ENDED:
         logger.debug("setting PLAY_STATE to READY, autoplay to False")
         autoplay = False
@@ -321,7 +341,8 @@ def play_pause_button(button, state):
     logger.debug("pressing play_pause")
     if current['PLAY_STATE'] in [config.INIT]:
         logger.info("Selecting current date, and play")
-        state = select_current_date(state, autoplay=True)
+        state = shuffle_artist(state)
+        #state = select_current_date(state, autoplay=True)
         current = state.get_current()
     elif current['PLAY_STATE'] == config.PLAYING:
         logger.info("Pausing on player")
@@ -704,7 +725,6 @@ def event_loop(state, lock):
     TMB.scr.clear()
     i_artist = 0
     i_tape = 0
-    chosen_artists = None
 
     try:
         while not stop_loop_event.wait(timeout=0.001):
@@ -732,30 +752,30 @@ def event_loop(state, lock):
                 TMB.screen_event.set()
             if choose_artist_event.is_set():
                 choice = choose_artist(state)
+                current = state.get_current()
                 TMB.scr.clear()
                 if choice:
-                    artist_year_dict, chosen_artists = choice
+                    chosen_artists = choice
                     i_artist = 0
                     logger.debug(F"Number of chosen_artsts {len(chosen_artists)}")
                 else:
-                    current = state.get_current()
                     TMB.scr.show_selected_date(current['DATE'], force=True)
                 TMB.scr.show_staged_year(date_reader.date, force=True)
                 choose_artist_event.clear()
-            if (current['PLAY_STATE'] in [config.ENDED, config.INIT, config.READY]) and chosen_artists:
-                tapes = artist_year_dict[chosen_artists[i_artist]]
+            if (current['PLAY_STATE'] in [config.ENDED, config.INIT, config.READY]) and current.get('CHOSEN_ARTISTS', None):
+                tapes = artist_year_dict[current['CHOSEN_ARTISTS'][i_artist]]
                 if i_tape >= len(tapes):
                     i_tape = 1
                     i_artist = i_artist + 1
-                    tapes = artist_year_dict[chosen_artists[i_artist]]
+                    tapes = artist_year_dict[current['CHOSEN_ARTISTS'][i_artist]]
                 else:
                     i_tape = i_tape + 1
-                if i_artist >= len(chosen_artists):
+                if i_artist >= len(current['CHOSEN_ARTISTS']):
                     continue
-                if (i_artist % random.randint(4, 8)) == 0:
+                if (i_artist > 0) & ((i_artist % random.randint(4, 8)) == 0):
                     logger.debug("inserting silence here")
                     tapes[i_tape - 1].insert_breaks(breaks={'flip': [0]}, force=True)
-                logger.debug(F"artist {i_artist}/{len(chosen_artists)}")
+                logger.debug(F"artist {i_artist}/{len(current['CHOSEN_ARTISTS'])}")
                 logger.debug(F"tape number {i_tape}/{len(tapes)}. tapes are {tapes}")
                 logger.debug(F"tracks are {tapes[i_tape-1].tracks()}")
                 select_tape(tapes[i_tape - 1], state)
