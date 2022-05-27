@@ -267,24 +267,6 @@ def select_current_artist(state, autoplay=True):
     return state
 
 
-def select_current_date(state, autoplay=True):
-    artist_counter = state.artist_counter
-    if not date_reader.tape_available():
-        return
-    tapes = date_reader.archive.resort_tape_date(date_reader.fmtdate())
-    if len(tapes) == 0:
-        TMB.scr.show_venue('No Audio', color=(255, 255, 255), force=True)
-        sleep(2)
-        return
-    tape = tapes[date_reader.shownum]
-    TMB.scr.show_playstate(staged_play=True, force=True)
-    state = select_tape(tape, state, autoplay=autoplay)
-
-    logger.debug(F"current state after selecting tape {state}")
-    TMB.select_event.set()
-    return state
-
-
 @sequential
 def select_button(button, state):
     logger.info("pressing select")
@@ -350,7 +332,6 @@ def play_pause_button(button, state):
     if current['PLAY_STATE'] in [config.INIT]:
         logger.info("Selecting current date, and play")
         state = shuffle_artist(state)
-        #state = select_current_date(state, autoplay=True)
         current = state.get_current()
     elif current['PLAY_STATE'] == config.PLAYING:
         logger.info("Pausing on player")
@@ -515,7 +496,7 @@ def day_button(button, state):
     if button.is_pressed or button.is_held:
         return
     logger.debug("pressing day button")
-    # toggle the element in the list.
+    # Move to the next Artist in the current playlist
     stagedate_event.set()
 
 
@@ -759,7 +740,7 @@ def event_loop(state, lock):
                 logger.debug(F"year is now {date_reader.date.year}")
                 last_sdevent = now
                 q_counter = True
-                TMB.scr.show_staged_year(date_reader.date)
+                TMB.scr.show_staged_years(date_reader.date)
                 show_venue_text(date_reader)
                 stagedate_event.clear()
                 TMB.scr.wake_up()
@@ -770,7 +751,7 @@ def event_loop(state, lock):
                 if choice is not None:
                     i_artist = 0
                     logger.debug(F"Number of chosen_artsts {len(current['CHOSEN_ARTISTS'])}")
-                TMB.scr.show_staged_year(date_reader.date, force=True)
+                TMB.scr.show_staged_years(date_reader.date, force=True)
                 choose_artist_event.clear()
             if (current['PLAY_STATE'] in [config.ENDED, config.INIT, config.READY]) and current.get('CHOSEN_ARTISTS', None):
                 tapes = artist_year_dict[current['CHOSEN_ARTISTS'][i_artist]]
@@ -780,6 +761,8 @@ def event_loop(state, lock):
                     tapes = artist_year_dict[current['CHOSEN_ARTISTS'][i_artist]]
                 else:
                     i_tape = i_tape + 1
+                    if ((i_tape + 1) % 5) == 0:  # flip every 5th song
+                        tapes[i_tape - 1].insert_breaks(breaks={'flip': [0]}, force=True)
                 if i_artist >= len(current['CHOSEN_ARTISTS']):
                     continue
                 if ((i_artist + 1) % 4) == 0:  # flip every 4th record
@@ -806,7 +789,7 @@ def event_loop(state, lock):
                 TMB.screen_event.set()
             if q_counter and config.DATE and idle_seconds > QUIESCENT_TIME:
                 logger.debug(F"Reverting staged date back to selected date {idle_seconds}> {QUIESCENT_TIME}")
-                TMB.scr.show_staged_year(config.DATE)
+                TMB.scr.show_staged_years(config.DATE)
                 TMB.scr.show_venue(config.VENUE)
                 q_counter = False
                 TMB.screen_event.set()
@@ -833,7 +816,7 @@ def event_loop(state, lock):
                         TMB.scr.sleep()
                 if idle_seconds > QUIESCENT_TIME:
                     if config.DATE:
-                        TMB.scr.show_staged_year(config.DATE)
+                        TMB.scr.show_staged_years(config.DATE)
                     try:
                         if current['PLAY_STATE'] > config.INIT:
                             refresh_venue(state)
@@ -841,7 +824,7 @@ def event_loop(state, lock):
                         raise e
                         logger.warning(f'event_loop, error refreshing venue {e}')
                 else:
-                    TMB.scr.show_staged_year(date_reader.date)
+                    TMB.scr.show_staged_years(date_reader.date)
                     show_venue_text(date_reader)
                 TMB.screen_event.set()
             lock.release()
