@@ -295,11 +295,11 @@ def select_button(button, state):
     if button.is_pressed or button.is_held:
         return
     current = state.get_current()
-    if current['PLAY_STATE'] in [config.PAUSED, config.PLAYING, config.STOPPED]:
+    if current['PLAY_STATE'] in [config.PAUSED, config.PLAYING]:
         if current['DATE'].year == state.date_reader.date.year:  # no change if current year already selected.
             return
         shuffle_artist(state)
-    elif current['PLAY_STATE'] in [config.INIT, config.READY]:
+    elif current['PLAY_STATE'] in [config.INIT, config.READY, config.STOPPED]:
         shuffle_artist(state)
     elif current['PLAY_STATE'] == config.ENDED:  # I'm not sure what this does yet.
         logger.debug("setting PLAY_STATE to READY, autoplay to False")
