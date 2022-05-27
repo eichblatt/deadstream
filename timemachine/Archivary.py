@@ -228,9 +228,9 @@ class Archivary():
         for a in self.archives:
             a.load_archive(reload_ids=reload_ids, with_latest=with_latest)
 
-    def year_artists(self, year):
+    def year_artists(self, start_year, end_year=None):
         for a in self.archives:
-            tmp = a.year_artists(year)
+            tmp = a.year_artists(start_year, end_year)
             if tmp:
                 return tmp
 
@@ -987,10 +987,11 @@ class GDArchive(BaseArchive):
         self.tapes = [GDTape(self.dbpath, tape, self.set_data) for tape in loaded_tapes]
         return self.tapes
 
-    def year_artists(self, year):
+    def year_artists(self, start_year, end_year=None):
         """ NOTE: should use some caching here """
         id_dict = {}
-        year_tapes = {k: v for k, v in self.tape_dates.items() if k.startswith(f'{year}')}
+        end_year = start_year if end_year is None else end_year
+        year_tapes = {k: v for k, v in self.tape_dates.items() if start_year <= int(k[:4]) <= end_year}
 
         tapes = [item for sublist in year_tapes.values() for item in sublist]
         kvlist = [(' '.join(x.identifier.split('_')[2].split('-')[:2]), x) for x in tapes]
@@ -1235,7 +1236,7 @@ class GDTape(BaseTape):
         # sbreakd = dict(list(breakd.items()) + [('title', 'Encore Break'), ('name', 'silence300.ogg')])
         sbreakd = dict(list(breakd.items()) + [('title', 'Encore Break'), ('name', 'silence0.ogg')])
         locbreakd = dict(list(breakd.items()) + [('title', 'Location Break'), ('name', 'silence600.ogg')])
-        flipbreakd = dict(list(breakd.items()) + [('title', 'Flip Break'), ('name', 'silence300.ogg')])
+        flipbreakd = dict(list(breakd.items()) + [('title', 'Record Flip'), ('name', 'silence30.ogg')])
 
         # make the tracks
         newtracks = []
