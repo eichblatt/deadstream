@@ -664,7 +664,7 @@ class screen:
         self.image = Image.new("RGB", (width, height))
         self.draw = ImageDraw.Draw(self.image)       # draw using this object. Display image when complete.
 
-        self.staged_years = (None, None)
+        self.staged_years = (-1, -1)
         self.staged_date = None
         self.selected_date = None
 
@@ -769,14 +769,24 @@ class screen:
         self.show_text(arg, self.venue_bbox.origin(), font=self.boldsmall, color=color, force=force)
 
     def show_staged_years(self, years, color=(0, 255, 255), force=False):
+        if isinstance(years, datetime.date):
+            self.staged_date = years
+            years = [years.year, years.year]
+        if len(years) != 2:
+            logger.warning("show_staged_years: Cannot pass years list longer than 2")
+            return
+        if min(years) < 1900:
+            logger.warning("show_staged_years: min year less than 1900")
+            return
+        years = sorted(years)
         if (years == self.staged_years) and not force:
             return
         self.clear_area(self.staged_year_bbox)
-        start_year = years[0]
+        start_year = str(years[0])
         end_year = str(years[1] % 100).rjust(2, '0')
-        if start_year and end_year:
+        if years[0] < years[1]:
             text = f'{start_year}-{end_year}'
-        elif not end_year:
+        else:
             text = f'{start_year}'
         logger.debug(F"staged date string {text}")
         self.show_text(text, self.staged_year_bbox.origin(), self.boldfont, color=color, force=force)
