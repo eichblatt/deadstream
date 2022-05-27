@@ -291,7 +291,7 @@ def select_button(button, state):
     if button.is_pressed or button.is_held:
         return
     current = state.get_current()
-    if current['PLAY_STATE'] in [config.INIT, config.READY]:
+    if current['PLAY_STATE'] in [config.INIT, config.READY, config.STOPPED]:
         shuffle_artist(state)
     if current['PLAY_STATE'] == config.ENDED:
         logger.debug("setting PLAY_STATE to READY, autoplay to False")
@@ -501,7 +501,7 @@ def day_button(button, state):
     if button.is_pressed or button.is_held:
         return
     logger.debug("pressing day button")
-    state.date_reader.set_date(*state.date_reader.next_show())
+    # toggle the element in the list.
     stagedate_event.set()
 
 
