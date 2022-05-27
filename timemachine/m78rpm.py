@@ -782,8 +782,8 @@ def event_loop(state, lock):
                     i_tape = i_tape + 1
                 if i_artist >= len(current['CHOSEN_ARTISTS']):
                     continue
-                if (i_artist > 0) & ((i_artist % random.randint(4, 8)) == 0):
-                    logger.debug("inserting silence here")
+                if ((i_artist + 1) % 4) == 0:  # flip every 4th record
+                    logger.debug("flipping record")
                     tapes[i_tape - 1].insert_breaks(breaks={'flip': [0]}, force=True)
                 logger.debug(F"artist {i_artist}/{len(current['CHOSEN_ARTISTS'])}")
                 logger.debug(F"tape number {i_tape}/{len(tapes)}. tapes are {tapes}")
