@@ -165,6 +165,8 @@ def set_logger_debug():
 
 def shuffle_artist(state):
     global artist_year_dict
+    current = state.get_current()
+    current['CHOSEN_ARTISTS'] = []
     date_reader = state.date_reader
     artist_counter = state.artist_counter
     archive = date_reader.archive
@@ -174,8 +176,9 @@ def shuffle_artist(state):
     chosen_artists = random.sample(artist_list, min(50, len(artist_list)))
     if not isinstance(chosen_artists, list):
         chosen_artists = [chosen_artists]
-    current = state.get_current()
+    current = stop_player(state).get_current()
     current['CHOSEN_ARTISTS'] = chosen_artists
+    current['PLAY_STATE'] = config.READY
     state.set(current)
     logger.debug(F"artist is now {chosen_artists}")
     return chosen_artists
@@ -192,6 +195,7 @@ def choose_artist(state):
     artist_year_dict = archive.year_artists(date.year)  # This needs to be availabe outside this function.
     artist_list = ['RETURN', 'Shuffle'] + sorted(list(artist_year_dict.keys()))
     chosen_artists = controls.select_option(TMB, artist_counter, "Choose artist", artist_list)
+    TMB.scr.clear()
     if chosen_artists == 'RETURN':
         return None
     elif chosen_artists == 'Shuffle':
@@ -200,8 +204,8 @@ def choose_artist(state):
         chosen_artists = [chosen_artists]
     current = state.get_current()
     current['CHOSEN_ARTISTS'] = chosen_artists
-    state.set(current)
     logger.debug(F"artist is now {chosen_artists}")
+    state.set(current)
     return chosen_artists
     # tapes = artist_year_dict[chosen_artists]
     # logger.info(F"tapes are {tapes}")
@@ -291,9 +295,13 @@ def select_button(button, state):
     if button.is_pressed or button.is_held:
         return
     current = state.get_current()
-    if current['PLAY_STATE'] in [config.INIT, config.READY, config.STOPPED]:
+    if current['PLAY_STATE'] in [config.PAUSED, config.PLAYING, config.STOPPED]:
+        if current['DATE'].year == state.date_reader.date.year:  # no change if current year already selected.
+            return
         shuffle_artist(state)
-    if current['PLAY_STATE'] == config.ENDED:
+    elif current['PLAY_STATE'] in [config.INIT, config.READY]:
+        shuffle_artist(state)
+    elif current['PLAY_STATE'] == config.ENDED:  # I'm not sure what this does yet.
         logger.debug("setting PLAY_STATE to READY, autoplay to False")
         autoplay = False
         current['PLAY_STATE'] = config.READY
@@ -390,21 +398,27 @@ def play_pause_button_longpress(button, state):
     playstate_event.set()
 
 
+def stop_player(state):
+    current = state.get_current()
+    if current['PLAY_STATE'] == config.ENDED:
+        current['PLAY_STATE'] = config.STOPPED
+        state.set(current)
+
+    state.player.stop()
+    current['PLAY_STATE'] = config.STOPPED
+    current['CHOSEN_ARTISTS'] = []
+    current['PAUSED_AT'] = datetime.datetime.now()
+    state.set(current)
+    playstate_event.set()
+    return state
+
+
 @sequential
 def stop_button(button, state):
     current = state.get_current()
     if current['EXPERIENCE']:
         return
-    if current['PLAY_STATE'] == config.ENDED:
-        current['PLAY_STATE'] = config.STOPPED
-        state.set(current)
-
-    TMB.button_event.set()
-    state.player.stop()
-    current['PLAY_STATE'] = config.STOPPED
-    current['PAUSED_AT'] = datetime.datetime.now()
-    state.set(current)
-    playstate_event.set()
+    stop_player(state)
 
 
 @sequential
@@ -753,13 +767,9 @@ def event_loop(state, lock):
             if choose_artist_event.is_set():
                 choice = choose_artist(state)
                 current = state.get_current()
-                TMB.scr.clear()
-                if choice:
-                    chosen_artists = choice
+                if choice is not None:
                     i_artist = 0
-                    logger.debug(F"Number of chosen_artsts {len(chosen_artists)}")
-                else:
-                    TMB.scr.show_selected_date(current['DATE'], force=True)
+                    logger.debug(F"Number of chosen_artsts {len(current['CHOSEN_ARTISTS'])}")
                 TMB.scr.show_staged_year(date_reader.date, force=True)
                 choose_artist_event.clear()
             if (current['PLAY_STATE'] in [config.ENDED, config.INIT, config.READY]) and current.get('CHOSEN_ARTISTS', None):
