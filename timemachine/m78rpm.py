@@ -227,9 +227,13 @@ def select_tape(tape, state, autoplay=True):
     current['TAPE_ID'] = tape.identifier
     logger.info(F"Set TAPE_ID to {current['TAPE_ID']}")
     current['TRACK_NUM'] = -1
-    current['DATE'] = state.date_reader.date
-    current['VENUE'] = tape.identifier.replace('-', ' ').split('_')[2]
-    current['ARTIST'] = current['VENUE']  # for now at least
+    #current['DATE'] = state.date_reader.date
+    current['DATE'] = to_date(tape.date)
+    id_fields = tape.identifier.replace('-', ' ').split('_')
+    artist = ' '.join(x.capitalize() for x in id_fields[2].split())
+    track = ' '.join(x.capitalize() for x in id_fields[1].split())
+    current['VENUE'] = track.replace(' ', '')  # strip out the spaces
+    current['ARTIST'] = artist.replace(' ', '')
     venue_counter = (0, 0)
 
     try:
@@ -559,60 +563,33 @@ def refresh_venue(state):
     tape_color = (0, 255, 255)
     tape = state.player.tape
     if tape is not None:
-        tape_id = tape.identifier
+        tape_id = tape.identifier.split('_')[-1]
         stream_only = tape.stream_only()
         tape_color = (255, 255, 255) if stream_only else (0, 0, 255)
     else:
         tape_id = None
 
-    try:
-        vcs = [x.strip() for x in config.VENUE.split(',')]
-    except Exception:
-        vcs = tape_id if tape_id is not None else ''
-
     artist = config.ARTIST if config.ARTIST is not None else ''
-    venue = ''
-    city_state = ''
+    venue = config.VENUE if config.VENUE is not None else artist
     display_string = ''
     screen_width = 13
-    n_fields = 4
-    n_subfields = 4
-
-    if len(vcs) == 3:
-        venue = vcs[0]
-        city_state = f'{vcs[1]},{vcs[2]}'
-    elif len(vcs) > 3:
-        venue = ','.join(vcs[:-2])
-        city_state = f'{vcs[-2]},{vcs[-1]}'
-    elif len(vcs) == 1:
-        venue = vcs[0]
-        city_state = venue
-    elif len(vcs) == 2:
-        venue = vcs[0]
-        city_state = vcs[1]
-    else:
-        venue = city_state = vcs
+    n_fields = 3
+    n_subfields = 5
 
     if tape_id is None:
-        tape_id = venue
+        tape_id = config.ARTIST
 
-    # logger.debug(f'venue {venue}, city_state {city_state}')
-
-    tape_id == venue  # This is an arbitrary condition...fix!
     id_color = (0, 255, 255)
 
     if venue_counter[0] == 0:
-        display_string = venue
-    elif venue_counter[0] == 1:
-        display_string = city_state
-    elif venue_counter[0] == 2:
         display_string = artist
-    elif venue_counter[0] == 3:
+    elif venue_counter[0] == 1:
+        display_string = venue
+    elif venue_counter[0] == 2:
         id_color = tape_color
         display_string = tape_id
 
-    display_string = re.sub(r'\d{2,4}-\d\d-\d\d\.*', '~', display_string)
-    # logger.debug(F"display_string is {display_string}")
+    display_string = display_string.replace('78_', '')
 
     display_offset = min(max(0, len(display_string) - (screen_width - 1)), screen_width * venue_counter[1])
     if venue_counter[1] < n_subfields - 1:
@@ -701,6 +678,7 @@ def show_venue_text(arg, color=(0, 255, 255), show_id=False, offset=0, force=Fal
 
 def event_loop(state, lock):
     global venue_counter
+    config.OTHER_YEAR = None
     key_error_count = 0
     date_reader = state.date_reader
     artist_counter = state.artist_counter
@@ -742,7 +720,9 @@ def event_loop(state, lock):
                 last_sdevent = now
                 q_counter = True
                 year = date_reader.date.year
-                TMB.scr.show_staged_years([year, config.OTHER_YEAR if config.OTHER_YEAR else year])
+                # TMB.scr.show_staged_years([year, config.OTHER_YEAR if config.OTHER_YEAR else year])
+                config.STAGED_DATE = sorted([year, config.OTHER_YEAR if config.OTHER_YEAR else year])
+                TMB.scr.show_staged_years(config.STAGED_DATE)
                 show_venue_text(date_reader)
                 stagedate_event.clear()
                 TMB.scr.wake_up()
@@ -754,10 +734,13 @@ def event_loop(state, lock):
                     i_artist = 0
                     logger.debug(F"Number of chosen_artsts {len(current['CHOSEN_ARTISTS'])}")
                 year = date_reader.date.year
-                TMB.scr.show_staged_years([year, config.OTHER_YEAR if config.OTHER_YEAR else year], force=True)
+                # TMB.scr.show_staged_years([year, config.OTHER_YEAR if config.OTHER_YEAR else year], force=True)
+                TMB.scr.show_staged_years(config.STAGED_DATE, force=True)
                 choose_artist_event.clear()
             if (current['PLAY_STATE'] in [config.ENDED, config.INIT, config.READY]) and current.get('CHOSEN_ARTISTS', None):
                 tapes = artist_year_dict[current['CHOSEN_ARTISTS'][i_artist]]
+                titles = [x.identifier.split('_')[1] for x in tapes]
+                tapes = [tapes[i] for i in sorted([titles.index(x) for x in set(titles)])]  # remove duplicate songs
                 max_tapes_per_artist = 10
                 if len(tapes) > max_tapes_per_artist:
                     indices = sorted(random.sample(range(len(tapes)), max_tapes_per_artist))
@@ -785,6 +768,8 @@ def event_loop(state, lock):
                 track_event.clear()
                 TMB.screen_event.set()
             if TMB.select_event.is_set():
+                year = date_reader.date.year
+                # config.STAGED_DATE = sorted([year, config.OTHER_YEAR if config.OTHER_YEAR else year])
                 config.OTHER_YEAR = None
                 current = state.get_current()
                 TMB.scr.show_selected_date(current['DATE'])
@@ -799,7 +784,8 @@ def event_loop(state, lock):
             if q_counter and config.DATE and idle_seconds > QUIESCENT_TIME:
                 logger.debug(F"Reverting staged date back to selected date {idle_seconds}> {QUIESCENT_TIME}")
                 year = config.DATE.year
-                TMB.scr.show_staged_years([year, config.OTHER_YEAR if config.OTHER_YEAR else year])
+                # TMB.scr.show_staged_years([year, config.OTHER_YEAR if config.OTHER_YEAR else year])
+                TMB.scr.show_staged_years(config.STAGED_DATE)
                 TMB.scr.show_venue(config.VENUE)
                 q_counter = False
                 TMB.screen_event.set()
@@ -827,7 +813,8 @@ def event_loop(state, lock):
                 if idle_seconds > QUIESCENT_TIME:
                     if config.DATE:
                         year = config.DATE.year
-                        TMB.scr.show_staged_years([year, config.OTHER_YEAR if config.OTHER_YEAR else year])
+                        # TMB.scr.show_staged_years([year, config.OTHER_YEAR if config.OTHER_YEAR else year])
+                        TMB.scr.show_staged_years(config.STAGED_DATE)
                     try:
                         if current['PLAY_STATE'] > config.INIT:
                             refresh_venue(state)
@@ -836,7 +823,8 @@ def event_loop(state, lock):
                         logger.warning(f'event_loop, error refreshing venue {e}')
                 else:
                     year = date_reader.date.year
-                    TMB.scr.show_staged_years([year, config.OTHER_YEAR if config.OTHER_YEAR else year])
+                    # TMB.scr.show_staged_years([year, config.OTHER_YEAR if config.OTHER_YEAR else year])
+                    TMB.scr.show_staged_years(config.STAGED_DATE)
                     show_venue_text(date_reader)
                 TMB.screen_event.set()
             lock.release()
@@ -941,10 +929,7 @@ TMB.y.steps = 0
 state = controls.state((date_reader, artist_counter), player)
 TMB.m.when_rotated = lambda x: decade_knob(TMB.m, "month", artist_counter)
 TMB.d.when_rotated = lambda x: decade_knob(TMB.d, "day", artist_counter)
-#TMB.y.when_rotated = lambda x: TMB.decade_knob(TMB.y, "year", counter)
 
-# TMB.m.when_rotated = lambda x: twist_knob(TMB.m, "month", date_reader)
-# TMB.d.when_rotated = lambda x: twist_knob(TMB.d, "day", date_reader)
 TMB.y.when_rotated = lambda x: twist_knob(TMB.y, "year", date_reader)
 
 TMB.play_pause.when_pressed = lambda button: play_pause_button(button, state)
