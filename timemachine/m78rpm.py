@@ -185,14 +185,13 @@ def shuffle_artist(state):
 
 
 def choose_artist(state):
-    global artist_year_dict
-    choose_artist_event.clear()
+    # global artist_year_dict
     TMB.knob_event.clear()
     date_reader = state.date_reader
     artist_counter = state.artist_counter
     archive = date_reader.archive
     date = date_reader.date
-    artist_year_dict = archive.year_artists(date.year, config.OTHER_YEAR)
+    # ayd = archive.year_artists(date.year, config.OTHER_YEAR)
     artist_list = ['RETURN', 'Shuffle'] + sorted(list(artist_year_dict.keys()))
     chosen_artists = controls.select_option(TMB, artist_counter, "Choose artist", artist_list)
     TMB.scr.clear()
@@ -202,15 +201,12 @@ def choose_artist(state):
         return shuffle_artist(state)
     if not isinstance(chosen_artists, list):
         chosen_artists = [chosen_artists]
-    current = state.get_current()
-    current['CHOSEN_ARTISTS'] = chosen_artists
-    logger.debug(F"artist is now {chosen_artists}")
-    state.set(current)
+    # current = state.get_current()
+    # current['CHOSEN_ARTISTS'] = chosen_artists
+    # logger.debug(F"artist is now {chosen_artists}")
+    # state.set(current)
+    # artist_year_dict = ayd
     return chosen_artists
-    # tapes = artist_year_dict[chosen_artists]
-    # logger.info(F"tapes are {tapes}")
-    # logger.info(F"tracks are {tapes[0].tracks()}")
-    # return tapes
 
 
 def select_tape(tape, state, autoplay=True):
@@ -301,30 +297,7 @@ def select_button(button, state):
 @sequential
 def select_button_longpress(button, state):
     logger.debug("long pressing select")
-    if not state.date_reader.tape_available():
-        return
-    date_reader = state.date_reader
-    tapes = date_reader.archive.resort_tape_date(date_reader.fmtdate())
-    itape = -1
-    while button.is_held:
-        itape = divmod(itape + 1, len(tapes))[1]
-        tape_id = tapes[itape].identifier
-        sbd = tapes[itape].stream_only()
-        id_color = (0, 255, 255) if sbd else (0, 0, 255)
-        logger.info(F"Selecting Tape: {tape_id}, the {itape}th of {len(tapes)} choices. SBD:{sbd}")
-        if len(tape_id) < 16:
-            show_venue_text(tapes[itape], color=id_color, show_id=True, force=True)
-            sleep(4)
-        else:
-            for i in range(0, max(1, len(tape_id)), 2):
-                show_venue_text(tapes[itape], color=id_color, show_id=True, offset=i, force=True)
-                # TMB.scr.show_venue(tape_id[i:], color=id_color, force=True)
-                if not button.is_held:
-                    break
-    TMB.scr.show_venue(tape_id, color=id_color)
-    tape = tapes[itape]
-    state = select_tape(tape, state, autoplay=AUTO_PLAY)
-    TMB.select_event.set()
+    return
 
 
 @sequential
@@ -648,32 +621,26 @@ def get_current(state):
     return current
 
 
-def show_venue_text(arg, color=(0, 255, 255), show_id=False, offset=0, force=False):
-    if isinstance(arg, controls.artist_knob_reader):
-        date_reader = arg
-        archive = date_reader.archive
-        tapes = archive.tape_dates[date_reader.fmtdate()] if date_reader.fmtdate() in archive.tape_dates.keys() else []
-        num_events = len(date_reader.shows_available())
-        venue_name = ''
-        artist_name = ''
-        if num_events > 0:
-            venue_name = tapes[date_reader.shownum].venue()
-            artist_name = tapes[date_reader.shownum].artist
-    elif isinstance(arg, Archivary.BaseTape):
-        tape = arg
-        tape_info = tape.identifier.replace('-', ' ').split('_')
-        venue_name = tape.info[3]
-        venue_name = venue_name[offset:]
-        tape.artist = tape_info[2]
-        artist_name = tape.artist
-        num_events = 1
-    TMB.scr.clear_area(TMB.scr.venue_bbox)
-    TMB.scr.show_text(venue_name, TMB.scr.venue_bbox.origin(), font=TMB.scr.boldsmall, color=color, force=force)
-    if len(config.optd['COLLECTIONS']) > 1:
-        TMB.scr.clear_area(TMB.scr.track1_bbox)
-        TMB.scr.show_text(artist_name, TMB.scr.track1_bbox.origin(), font=TMB.scr.boldsmall, color=color, force=True)
-    if num_events > 1:
-        TMB.scr.show_nevents(str(num_events), force=force)
+def handle_artist_knobs(state, i_artist):
+    logger.debug(F"handle_artist_knobs: i_artist is {i_artist}")
+    choice = choose_artist(state)   # blocking.
+    current = state.get_current()
+
+    if choice is None:
+        TMB.select_event.clear()
+        TMB.scr.show_selected_date(current['DATE'], force=True)
+        TMB.scr.show_staged_years(config.STAGED_DATE, force=True)
+        return i_artist
+
+    current = state.get_current()
+    current['CHOSEN_ARTISTS'] = choice
+    state.set(current)
+
+    logger.debug(F"artist is now {chosen_artists}")
+    i_artist = 0
+    logger.debug(F"Number of chosen_artsts {len(current['CHOSEN_ARTISTS'])}")
+    TMB.scr.show_staged_years(config.STAGED_DATE, force=True)
+    return i_artist
 
 
 def event_loop(state, lock):
@@ -720,22 +687,13 @@ def event_loop(state, lock):
                 last_sdevent = now
                 q_counter = True
                 year = date_reader.date.year
-                # TMB.scr.show_staged_years([year, config.OTHER_YEAR if config.OTHER_YEAR else year])
                 config.STAGED_DATE = sorted([year, config.OTHER_YEAR if config.OTHER_YEAR else year])
                 TMB.scr.show_staged_years(config.STAGED_DATE)
-                show_venue_text(date_reader)
                 stagedate_event.clear()
                 TMB.scr.wake_up()
                 TMB.screen_event.set()
             if choose_artist_event.is_set():
-                choice = choose_artist(state)
-                current = state.get_current()
-                if choice is not None:
-                    i_artist = 0
-                    logger.debug(F"Number of chosen_artsts {len(current['CHOSEN_ARTISTS'])}")
-                year = date_reader.date.year
-                # TMB.scr.show_staged_years([year, config.OTHER_YEAR if config.OTHER_YEAR else year], force=True)
-                TMB.scr.show_staged_years(config.STAGED_DATE, force=True)
+                # i_artist = handle_artist_knobs(state,i_artist)
                 choose_artist_event.clear()
             if (current['PLAY_STATE'] in [config.ENDED, config.INIT, config.READY]) and current.get('CHOSEN_ARTISTS', None):
                 tapes = artist_year_dict[current['CHOSEN_ARTISTS'][i_artist]]
@@ -755,6 +713,7 @@ def event_loop(state, lock):
                         tapes[i_tape - 1].insert_breaks(breaks={'flip': [0]}, force=True)
                 if i_artist >= len(current['CHOSEN_ARTISTS']):
                     i_tape = 0
+                    i_artist = 0
                     continue
                 if ((i_artist + 1) % 4) == 0:  # flip every 4th record
                     logger.debug("flipping record")
@@ -823,9 +782,9 @@ def event_loop(state, lock):
                         logger.warning(f'event_loop, error refreshing venue {e}')
                 else:
                     year = date_reader.date.year
-                    # TMB.scr.show_staged_years([year, config.OTHER_YEAR if config.OTHER_YEAR else year])
                     TMB.scr.show_staged_years(config.STAGED_DATE)
-                    show_venue_text(date_reader)
+                    if current['PLAY_STATE'] > config.INIT:
+                        refresh_venue(state)
                 TMB.screen_event.set()
             lock.release()
 
