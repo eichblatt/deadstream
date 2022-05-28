@@ -171,7 +171,7 @@ def shuffle_artist(state):
     artist_counter = state.artist_counter
     archive = date_reader.archive
     date = date_reader.date
-    artist_year_dict = archive.year_artists(date.year)
+    artist_year_dict = archive.year_artists(date.year, config.OTHER_YEAR)
     artist_list = sorted(list(artist_year_dict.keys()))
     chosen_artists = random.sample(artist_list, min(50, len(artist_list)))
     if not isinstance(chosen_artists, list):
@@ -192,7 +192,7 @@ def choose_artist(state):
     artist_counter = state.artist_counter
     archive = date_reader.archive
     date = date_reader.date
-    artist_year_dict = archive.year_artists(date.year)  # This needs to be availabe outside this function.
+    artist_year_dict = archive.year_artists(date.year, config.OTHER_YEAR)
     artist_list = ['RETURN', 'Shuffle'] + sorted(list(artist_year_dict.keys()))
     chosen_artists = controls.select_option(TMB, artist_counter, "Choose artist", artist_list)
     TMB.scr.clear()
@@ -511,6 +511,7 @@ def year_button(button, state):
     if button.is_pressed:
         return     # the button is being "held"
     # Add code here to set a start and end year
+    config.OTHER_YEAR = state.date_reader.date.year
     # start_year = state.date_reader.date.year
     # end_year = start_year + 1
     # TMB.scr.show_staged_years((start_year,end_year),force=True)
@@ -740,7 +741,8 @@ def event_loop(state, lock):
                 logger.debug(F"year is now {date_reader.date.year}")
                 last_sdevent = now
                 q_counter = True
-                TMB.scr.show_staged_years(date_reader.date)
+                year = date_reader.date.year
+                TMB.scr.show_staged_years([year, config.OTHER_YEAR if config.OTHER_YEAR else year])
                 show_venue_text(date_reader)
                 stagedate_event.clear()
                 TMB.scr.wake_up()
@@ -751,10 +753,15 @@ def event_loop(state, lock):
                 if choice is not None:
                     i_artist = 0
                     logger.debug(F"Number of chosen_artsts {len(current['CHOSEN_ARTISTS'])}")
-                TMB.scr.show_staged_years(date_reader.date, force=True)
+                year = date_reader.date.year
+                TMB.scr.show_staged_years([year, config.OTHER_YEAR if config.OTHER_YEAR else year], force=True)
                 choose_artist_event.clear()
             if (current['PLAY_STATE'] in [config.ENDED, config.INIT, config.READY]) and current.get('CHOSEN_ARTISTS', None):
                 tapes = artist_year_dict[current['CHOSEN_ARTISTS'][i_artist]]
+                max_tapes_per_artist = 10
+                if len(tapes) > max_tapes_per_artist:
+                    indices = sorted(random.sample(range(len(tapes)), max_tapes_per_artist))
+                    tapes = [tapes[i] for i in indices]
                 if i_tape >= len(tapes):
                     i_tape = 1
                     i_artist = i_artist + 1
@@ -764,6 +771,7 @@ def event_loop(state, lock):
                     if ((i_tape + 1) % 5) == 0:  # flip every 5th song
                         tapes[i_tape - 1].insert_breaks(breaks={'flip': [0]}, force=True)
                 if i_artist >= len(current['CHOSEN_ARTISTS']):
+                    i_tape = 0
                     continue
                 if ((i_artist + 1) % 4) == 0:  # flip every 4th record
                     logger.debug("flipping record")
@@ -777,6 +785,7 @@ def event_loop(state, lock):
                 track_event.clear()
                 TMB.screen_event.set()
             if TMB.select_event.is_set():
+                config.OTHER_YEAR = None
                 current = state.get_current()
                 TMB.scr.show_selected_date(current['DATE'])
                 update_tracks(state)
@@ -789,7 +798,8 @@ def event_loop(state, lock):
                 TMB.screen_event.set()
             if q_counter and config.DATE and idle_seconds > QUIESCENT_TIME:
                 logger.debug(F"Reverting staged date back to selected date {idle_seconds}> {QUIESCENT_TIME}")
-                TMB.scr.show_staged_years(config.DATE)
+                year = config.DATE.year
+                TMB.scr.show_staged_years([year, config.OTHER_YEAR if config.OTHER_YEAR else year])
                 TMB.scr.show_venue(config.VENUE)
                 q_counter = False
                 TMB.screen_event.set()
@@ -816,7 +826,8 @@ def event_loop(state, lock):
                         TMB.scr.sleep()
                 if idle_seconds > QUIESCENT_TIME:
                     if config.DATE:
-                        TMB.scr.show_staged_years(config.DATE)
+                        year = config.DATE.year
+                        TMB.scr.show_staged_years([year, config.OTHER_YEAR if config.OTHER_YEAR else year])
                     try:
                         if current['PLAY_STATE'] > config.INIT:
                             refresh_venue(state)
@@ -824,7 +835,8 @@ def event_loop(state, lock):
                         raise e
                         logger.warning(f'event_loop, error refreshing venue {e}')
                 else:
-                    TMB.scr.show_staged_years(date_reader.date)
+                    year = date_reader.date.year
+                    TMB.scr.show_staged_years([year, config.OTHER_YEAR if config.OTHER_YEAR else year])
                     show_venue_text(date_reader)
                 TMB.screen_event.set()
             lock.release()
@@ -910,7 +922,7 @@ year_list = archive.year_list()
 num_years = max(year_list) - min(year_list)
 
 # get lenght of list of artists. Should I get max for a single year, or just total. Currently getting total.
-artists = [list(archive.year_artists(y).keys()) for y in year_list]
+artists = archive.year_artists(min(year_list), max(year_list)).keys()
 artists = [item for sublist in artists for item in sublist]
 artists = sorted(list(set(artists)))
 

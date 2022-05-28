@@ -669,8 +669,6 @@ class screen:
         self.selected_date = None
 
         self.staged_date_bbox = Bbox(0, 0, 160, 31)
-        self.staged_year_bbox = Bbox(0, 0, 80, 31)
-        # self.selected_date_bbox = Bbox(0,100,130,128)
         self.selected_date_bbox = Bbox(0, 100, 160, 128)
         self.venue_bbox = Bbox(0, 31, 160, 56)
         self.nevents_bbox = Bbox(148, 31, 160, 56)
@@ -781,7 +779,7 @@ class screen:
         years = sorted(years)
         if (years == self.staged_years) and not force:
             return
-        self.clear_area(self.staged_year_bbox)
+        self.clear_area(self.staged_date_bbox)
         start_year = str(years[0])
         end_year = str(years[1] % 100).rjust(2, '0')
         if years[0] < years[1]:
@@ -789,16 +787,16 @@ class screen:
         else:
             text = f'{start_year}'
         logger.debug(F"staged date string {text}")
-        self.show_text(text, self.staged_year_bbox.origin(), self.boldfont, color=color, force=force)
+        self.show_text(text, self.staged_date_bbox.origin(), self.boldfont, color=color, force=force)
         self.staged_years = years
 
     def show_staged_year(self, date, color=(0, 255, 255), force=False):
         if (date == self.staged_date) and not force:
             return
-        self.clear_area(self.staged_year_bbox)
+        self.clear_area(self.staged_date_bbox)
         text = f'{date.year}'
         logger.debug(F"staged date string {text}")
-        self.show_text(text, self.staged_year_bbox.origin(), self.boldfont, color=color, force=force)
+        self.show_text(text, self.staged_date_bbox.origin(), self.boldfont, color=color, force=force)
         self.staged_date = date
 
     def show_staged_date(self, date, color=(0, 255, 255), force=False):
@@ -825,7 +823,7 @@ class screen:
         self.selected_date = date
 
     def show_track(self, text, trackpos, color=(120, 0, 255), force=False):
-        text = text.title()
+        text = ' '.join(x.capitalize() for x in text.split())
         bbox = self.track1_bbox if trackpos == 0 else self.track2_bbox
         self.clear_area(bbox)
         self.draw.text(bbox.origin(), text, font=self.smallfont, fill=color, stroke_width=1)

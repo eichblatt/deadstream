@@ -987,11 +987,13 @@ class GDArchive(BaseArchive):
         self.tapes = [GDTape(self.dbpath, tape, self.set_data) for tape in loaded_tapes]
         return self.tapes
 
-    def year_artists(self, start_year, end_year=None):
+    def year_artists(self, year, other_year=None):
         """ NOTE: should use some caching here """
         id_dict = {}
-        end_year = start_year if end_year is None else end_year
+        other_year = other_year if other_year else year
+        start_year, end_year = sorted([year, other_year])
         year_tapes = {k: v for k, v in self.tape_dates.items() if start_year <= int(k[:4]) <= end_year}
+        logger.info(f"Select artists between {start_year} and {end_year}. There are {len(year_tapes)} tapes")
 
         tapes = [item for sublist in year_tapes.values() for item in sublist]
         kvlist = [(' '.join(x.identifier.split('_')[2].split('-')[:2]), x) for x in tapes]
