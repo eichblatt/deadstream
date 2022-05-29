@@ -484,14 +484,12 @@ def day_button_longpress(button, state):
 
 @sequential
 def year_button(button, state):
+    # Set a start and end year
     sleep(button._hold_time)
     if button.is_pressed:
         return     # the button is being "held"
-    # Add code here to set a start and end year
+    TMB.y_event.set()
     config.OTHER_YEAR = state.date_reader.date.year
-    # start_year = state.date_reader.date.year
-    # end_year = start_year + 1
-    # TMB.scr.show_staged_years((start_year,end_year),force=True)
     stagedate_event.set()
 
 
@@ -688,7 +686,9 @@ def event_loop(state, lock):
                 q_counter = True
                 year = date_reader.date.year
                 config.STAGED_DATE = sorted([year, config.OTHER_YEAR if config.OTHER_YEAR else year])
-                TMB.scr.show_staged_years(config.STAGED_DATE)
+                TMB.scr.show_staged_years(config.STAGED_DATE, show_dash=TMB.y_event.is_set(), force=True)
+                TMB.y_event.clear()
+                # TMB.scr.show_staged_years(config.STAGED_DATE, show_dash=True)
                 stagedate_event.clear()
                 TMB.scr.wake_up()
                 TMB.screen_event.set()
