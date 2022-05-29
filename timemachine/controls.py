@@ -773,6 +773,8 @@ class screen:
         if len(years) != 2:
             logger.warning("show_staged_years: Cannot pass years list longer than 2")
             return
+        if years[0] is None:
+            return
         if min(years) < 1800:
             logger.warning("show_staged_years: min year less than 1800")
             return
@@ -783,9 +785,12 @@ class screen:
         start_year = str(years[0])
         end_year = str(years[1] % 100).rjust(2, '0')
         if years[0] < years[1]:
-            text = f'{start_year}-{end_year}'
+            if years[1] // 100 > years[0] // 100:   # different century
+                text = f"{start_year}-'{end_year}"
+            else:
+                text = f'{start_year}-{end_year}'
         else:
-            if show_dash:
+            if show_dash:   # waiting for input
                 text = f'{start_year}-'
             else:
                 text = f'{start_year}'
