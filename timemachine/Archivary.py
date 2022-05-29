@@ -69,8 +69,8 @@ def flatten(lis):
     return lis_flat
 
 
-@memoize
-def to_date(datestring): return datetime.datetime.strptime(datestring, '%Y-%m-%d')
+# @memoize -- not needed with fromisoformat
+def to_date(datestring): return datetime.datetime.fromisoformat(datestring)
 
 
 def to_year(datestring):
@@ -201,7 +201,7 @@ class Archivary():
                     result.append(cdict[k][i])
         return result
 
-    def get_tape_dates(self):   # Archivary
+    def get_tape_dates(self, sort_across=True):   # Archivary
         td = self.archives[0].tape_dates
         for a in self.archives[1:]:
             for date, tapes in a.tape_dates.items():
@@ -210,6 +210,8 @@ class Archivary():
                         td[date].append(t)
                 else:
                     td[date] = tapes
+        if (not sort_across) or (len(self.archives) == 1):
+            return td
         td = {date: self.sort_across_collection(tapes) for date, tapes in td.items()}
         return td
 
@@ -306,7 +308,7 @@ class BaseArchive(abc.ABC):
         tape_start = datetime.datetime.combine(dt.date(), tape_start_time)  # date + time
         return tape_start
 
-    def get_tape_dates(self):   # BaseArchive
+    def get_tape_dates(self, sort_within=True):   # BaseArchive
         tape_dates = {}
         for tape in self.tapes:
             k = tape.date
@@ -315,9 +317,13 @@ class BaseArchive(abc.ABC):
             else:
                 tape_dates[k].append(tape)
         # Now that we have all tape for a date, put them in the right order
-        self.tape_dates = {}
-        for k, v in tape_dates.items():
-            self.tape_dates[k] = sorted(v, key=methodcaller('compute_score'), reverse=True)
+        if not sort_within:
+            self.tape_dates = tape_dates
+        else:
+            self.tape_dates = {}
+            for k, v in tape_dates.items():
+                self.tape_dates[k] = sorted(v, key=methodcaller('compute_score'), reverse=True)
+
         return self.tape_dates
 
     @abc.abstractmethod
@@ -543,7 +549,7 @@ class IATapeDownloader(BaseTapeDownloader):
         n_tapes_total = 0
         tapes = []
 
-        min_date = '1900-01-01'
+        min_date = '1800-01-01'
         max_date = datetime.datetime.now().date().strftime('%Y-%m-%d')
 
         r = self._get_piece(min_date, max_date, min_addeddate)
@@ -691,7 +697,7 @@ class PhishinArchive(BaseArchive):
 
     def load_archive(self, reload_ids=False, with_latest=False):
         self.tapes = self.load_tapes(reload_ids, with_latest)
-        self.tape_dates = self.get_tape_dates()
+        self.tape_dates = self.get_tape_dates(sort_within=False)
         self.dates = sorted(self.tape_dates.keys())
 
     def load_tapes(self, reload_ids=False, with_latest=False):
@@ -904,7 +910,10 @@ class GDArchive(BaseArchive):
 
     def load_archive(self, reload_ids=False, with_latest=False):
         self.tapes = self.load_tapes(reload_ids, with_latest)
-        self.tape_dates = self.get_tape_dates()
+        sort_within = True
+        if 'georgeblood' in self.collection_list:
+            sort_within = False
+        self.tape_dates = self.get_tape_dates(sort_within=sort_within)
         self.dates = sorted(self.tape_dates.keys())
 
     def resort_tape_date(self, date):        # IA
@@ -966,6 +975,7 @@ class GDArchive(BaseArchive):
 
     def load_tapes(self, reload_ids=False, with_latest=False):
         """ Load the tapes, then add anything which has been added since the tapes were saved """
+        logger.info('begin loading tapes')
         n_tapes = 0
         loaded_tapes, max_addeddate = self.load_current_tapes(reload_ids)
         logger.debug(f'max addeddate {max_addeddate}')
@@ -984,7 +994,9 @@ class GDArchive(BaseArchive):
         else:
             if len(self.tapes) > 0:  # The tapes have already been written, and nothing was added
                 return self.tapes
+        logger.info('begin building GDTape objects')
         self.tapes = [GDTape(self.dbpath, tape, self.set_data) for tape in loaded_tapes]
+        logger.info(f'finished loading {len(self.tapes)} tapes')
         return self.tapes
 
     def year_artists(self, year, other_year=None):
@@ -1011,35 +1023,30 @@ class GDTape(BaseTape):
         self.venue_name = None
         self.coverage = None
         attribs = ['date', 'identifier', 'avg_rating', 'format', 'collection', 'num_reviews', 'downloads', 'addeddate']
-        for k, v in raw_json.items():
-            if k in attribs:
-                setattr(self, k, v)
+        for k in attribs:
+            if k in raw_json.keys():
+                setattr(self, k, raw_json[k])
+
+        # for k, v in raw_json.items():
+        #     if k in attribs:
+        #         setattr(self, k, v)
         self.url_metadata = 'https://archive.org/metadata/' + self.identifier
         self.url_details = 'https://archive.org/details/' + self.identifier
         if self.addeddate.startswith('0000'):
             self.addeddate = '1990-01-01T00:00:00Z'
-        self.addeddate = (datetime.datetime.strptime(self.addeddate, '%Y-%m-%dT%H:%M:%SZ'))
-        if type(self.date) == list:
+        self.addeddate = datetime.datetime.fromisoformat(self.addeddate[:-1])
+        if isinstance(self.date, list):
             self.date = self.date[0]
-        self.date = str((datetime.datetime.strptime(self.date, '%Y-%m-%dT%H:%M:%SZ')).date())
+        self.date = self.date[:10]
         self.set_data = set_data.get(self.date)
         colls = config.optd['COLLECTIONS']
-        self.artist = colls[min([colls.index(c) if c in colls else 100 for c in self.collection])]
+        self.artist = colls[min([colls.index(c) if c in colls else 100 for c in self.collection])] if len(colls) > 1 else colls[0]
         date = to_date(self.date).date()
         self.meta_path = os.path.join(self.dbpath, str(date.year), str(date.month), self.identifier + '.json')
 
-        if 'avg_rating' in raw_json.keys():
-            self.avg_rating = float(self.avg_rating)
-        else:
-            self.avg_rating = 2.0
-        if 'num_reviews' in raw_json.keys():
-            self.num_reviews = int(self.num_reviews)
-        else:
-            self.num_reviews = 1
-        if 'downloads' in raw_json.keys():
-            self.downloads = int(self.num_reviews)
-        else:
-            self.downloads = 1
+        self.avg_rating = float(raw_json.get('avg_rating', 2))
+        self.num_reviews = int(raw_json.get('num_reviews', 1))
+        self.downloads = int(raw_json.get('downloads', 1))
 
     def stream_only(self):
         return 'stream_only' in self.collection

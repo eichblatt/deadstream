@@ -821,6 +821,7 @@ config.WOKE_AT = datetime.datetime.now()
 
 TMB = controls.Time_Machine_Board(mdy_bounds=None)
 ip_address = get_ip()
+
 TMB.scr.show_text("Time\n  Machine\n   Loading...", color=(0, 255, 255), force=False, clear=True)
 TMB.scr.show_text(F"{ip_address}", loc=(0, 100), font=TMB.scr.smallfont, color=(255, 255, 255))
 
@@ -835,6 +836,7 @@ if TMB.stop.is_pressed:
 dbpath = os.path.join(GD.ROOT_DIR, 'metadata')
 archive = Archivary.Archivary(dbpath, reload_ids=reload_ids, with_latest=False, collection_list=config.optd['COLLECTIONS'])
 player = GD.GDPlayer()
+
 if config.optd['PULSEAUDIO_ENABLE']:
     logger.debug('Setting Audio device to pulse')
     player.set_audio_device('pulse')
@@ -875,9 +877,6 @@ artists = sorted(list(set(artists)))
 
 TMB.setup_knobs(mdy_bounds=[(0, len(artists) // 10), (0, len(artists)), (0, num_years)])
 artist_counter = controls.decade_counter(TMB.m, TMB.d, bounds=(0, len(artists)))
-
-#controls.select_option(TMB,artist_counter,"Choose artist",sorted(list(archive.year_artists(date_reader.date.year).keys())))
-
 date_reader = controls.artist_knob_reader(TMB.y, TMB.m, TMB.d, archive)
 date_reader.set_date(*date_reader.next_show())
 
@@ -886,37 +885,44 @@ TMB.d.steps = 1
 TMB.y.steps = 0
 
 state = controls.state((date_reader, artist_counter), player)
-TMB.m.when_rotated = lambda x: decade_knob(TMB.m, "month", artist_counter)
-TMB.d.when_rotated = lambda x: decade_knob(TMB.d, "day", artist_counter)
 
-TMB.y.when_rotated = lambda x: twist_knob(TMB.y, "year", date_reader)
 
-TMB.play_pause.when_pressed = lambda button: play_pause_button(button, state)
-TMB.play_pause.when_held = lambda button: play_pause_button_longpress(button, state)
+def board_callbacks():
+    global TMB
+    TMB.m.when_rotated = lambda x: decade_knob(TMB.m, "month", artist_counter)
+    TMB.d.when_rotated = lambda x: decade_knob(TMB.d, "day", artist_counter)
 
-TMB.select.when_pressed = lambda button: select_button(button, state)
-TMB.select.when_held = lambda button: select_button_longpress(button, state)
+    TMB.y.when_rotated = lambda x: twist_knob(TMB.y, "year", date_reader)
 
-TMB.ffwd.when_pressed = lambda button: ffwd_button(button, state)
-TMB.ffwd.when_held = lambda button: ffwd_button_longpress(button, state)
+    TMB.play_pause.when_pressed = lambda button: play_pause_button(button, state)
+    TMB.play_pause.when_held = lambda button: play_pause_button_longpress(button, state)
 
-TMB.rewind.when_pressed = lambda button: rewind_button(button, state)
-TMB.rewind.when_held = lambda button: rewind_button_longpress(button, state)
+    TMB.select.when_pressed = lambda button: select_button(button, state)
+    TMB.select.when_held = lambda button: select_button_longpress(button, state)
 
-TMB.stop.when_pressed = lambda button: stop_button(button, state)
-TMB.stop.when_held = lambda button: stop_button_longpress(button, state)
+    TMB.ffwd.when_pressed = lambda button: ffwd_button(button, state)
+    TMB.ffwd.when_held = lambda button: ffwd_button_longpress(button, state)
 
-TMB.m_button.when_pressed = lambda button: month_button(button, state)
-TMB.d_button.when_pressed = lambda button: day_button(button, state)
-TMB.y_button.when_pressed = lambda button: year_button(button, state)
+    TMB.rewind.when_pressed = lambda button: rewind_button(button, state)
+    TMB.rewind.when_held = lambda button: rewind_button_longpress(button, state)
 
-TMB.d_button.when_held = lambda button: day_button_longpress(button, state)
-# TMB.m_button.when_held = lambda button: month_button_longpress(button,state)
-TMB.y_button.when_held = lambda button: year_button_longpress(button, state)
+    TMB.stop.when_pressed = lambda button: stop_button(button, state)
+    TMB.stop.when_held = lambda button: stop_button_longpress(button, state)
 
-TMB.scr.clear_area(controls.Bbox(0, 0, 160, 100))
-TMB.scr.show_text("Powered by\n archive.org", color=(0, 255, 255), force=True)
-TMB.scr.show_text(str(len(archive.collection_list)).rjust(3), font=TMB.scr.boldsmall, loc=(120, 100), color=(255, 100, 0), force=True)
+    TMB.m_button.when_pressed = lambda button: month_button(button, state)
+    TMB.d_button.when_pressed = lambda button: day_button(button, state)
+    TMB.y_button.when_pressed = lambda button: year_button(button, state)
+
+    TMB.d_button.when_held = lambda button: day_button_longpress(button, state)
+    # TMB.m_button.when_held = lambda button: month_button_longpress(button,state)
+    TMB.y_button.when_held = lambda button: year_button_longpress(button, state)
+
+    TMB.scr.clear_area(controls.Bbox(0, 0, 160, 100))
+    TMB.scr.show_text("Powered by\n archive.org", color=(0, 255, 255), force=True)
+    TMB.scr.show_text(str(len(archive.collection_list)).rjust(3), font=TMB.scr.boldsmall, loc=(120, 100), color=(255, 100, 0), force=True)
+
+
+board_callbacks()
 
 # save_pid()
 lock = Lock()
