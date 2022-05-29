@@ -994,9 +994,7 @@ class GDArchive(BaseArchive):
         else:
             if len(self.tapes) > 0:  # The tapes have already been written, and nothing was added
                 return self.tapes
-        logger.info('begin building GDTape objects')
         self.tapes = [GDTape(self.dbpath, tape, self.set_data) for tape in loaded_tapes]
-        logger.info(f'finished loading {len(self.tapes)} tapes')
         return self.tapes
 
     def year_artists(self, year, other_year=None):
