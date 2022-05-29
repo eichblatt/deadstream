@@ -766,15 +766,15 @@ class screen:
         self.clear_area(self.venue_bbox)
         self.show_text(arg, self.venue_bbox.origin(), font=self.boldsmall, color=color, force=force)
 
-    def show_staged_years(self, years, color=(0, 255, 255), force=False):
+    def show_staged_years(self, years, color=(0, 255, 255), show_dash=False, force=False):
         if isinstance(years, datetime.date):
             self.staged_date = years
             years = [years.year, years.year]
         if len(years) != 2:
             logger.warning("show_staged_years: Cannot pass years list longer than 2")
             return
-        if min(years) < 1900:
-            logger.warning("show_staged_years: min year less than 1900")
+        if min(years) < 1800:
+            logger.warning("show_staged_years: min year less than 1800")
             return
         years = sorted(years)
         if (years == self.staged_years) and not force:
@@ -785,7 +785,10 @@ class screen:
         if years[0] < years[1]:
             text = f'{start_year}-{end_year}'
         else:
-            text = f'{start_year}'
+            if show_dash:
+                text = f'{start_year}-'
+            else:
+                text = f'{start_year}'
         logger.debug(F"staged date string {text}")
         self.show_text(text, self.staged_date_bbox.origin(), self.boldfont, color=color, force=force)
         self.staged_years = years

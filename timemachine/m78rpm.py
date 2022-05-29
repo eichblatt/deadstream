@@ -644,6 +644,7 @@ def handle_artist_knobs(state, i_artist):
 def event_loop(state, lock):
     global venue_counter
     config.OTHER_YEAR = None
+    config.DATE_RANGE = [None, None]
     key_error_count = 0
     date_reader = state.date_reader
     artist_counter = state.artist_counter
@@ -688,7 +689,6 @@ def event_loop(state, lock):
                 config.STAGED_DATE = sorted([year, config.OTHER_YEAR if config.OTHER_YEAR else year])
                 TMB.scr.show_staged_years(config.STAGED_DATE, show_dash=TMB.y_event.is_set(), force=True)
                 TMB.y_event.clear()
-                # TMB.scr.show_staged_years(config.STAGED_DATE, show_dash=True)
                 stagedate_event.clear()
                 TMB.scr.wake_up()
                 TMB.screen_event.set()
@@ -728,6 +728,7 @@ def event_loop(state, lock):
                 TMB.screen_event.set()
             if TMB.select_event.is_set():
                 year = date_reader.date.year
+                config.DATE_RANGE = sorted([year, config.OTHER_YEAR if config.OTHER_YEAR else year])
                 # config.STAGED_DATE = sorted([year, config.OTHER_YEAR if config.OTHER_YEAR else year])
                 config.OTHER_YEAR = None
                 current = state.get_current()
@@ -742,9 +743,7 @@ def event_loop(state, lock):
                 TMB.screen_event.set()
             if q_counter and config.DATE and idle_seconds > QUIESCENT_TIME:
                 logger.debug(F"Reverting staged date back to selected date {idle_seconds}> {QUIESCENT_TIME}")
-                year = config.DATE.year
-                # TMB.scr.show_staged_years([year, config.OTHER_YEAR if config.OTHER_YEAR else year])
-                TMB.scr.show_staged_years(config.STAGED_DATE)
+                TMB.scr.show_staged_years(config.DATE_RANGE)
                 TMB.scr.show_venue(config.VENUE)
                 q_counter = False
                 TMB.screen_event.set()
