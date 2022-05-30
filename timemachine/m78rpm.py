@@ -253,12 +253,12 @@ def select_tape(tape, state, autoplay=True):
 
 def select_current_artist(state, autoplay=True):
     artist_counter = state.artist_counter
-    tapes = date_reader.archive.resort_tape_date(date_reader.fmtdate())
-    if len(tapes) == 0:
+    artist_tapes = date_reader.archive.resort_tape_date(date_reader.fmtdate())
+    if len(artist_tapes) == 0:
         TMB.scr.show_venue('No Audio', color=(255, 255, 255), force=True)
         sleep(2)
         return
-    tape = tapes[date_reader.shownum]
+    tape = artist_tapes[date_reader.shownum]
     TMB.scr.show_playstate(staged_play=True, force=True)
     state = select_tape(tape, state, autoplay=autoplay)
 
@@ -696,32 +696,32 @@ def event_loop(state, lock):
                 # i_artist = handle_artist_knobs(state,i_artist)
                 choose_artist_event.clear()
             if (current['PLAY_STATE'] in [config.ENDED, config.INIT, config.READY]) and current.get('CHOSEN_ARTISTS', None):
-                tapes = artist_year_dict[current['CHOSEN_ARTISTS'][i_artist]]
-                titles = [x.identifier.split('_')[1] for x in tapes]
-                tapes = [tapes[i] for i in sorted([titles.index(x) for x in set(titles)])]  # remove duplicate songs
+                artist_tapes = artist_year_dict[current['CHOSEN_ARTISTS'][i_artist]]
+                titles = [x.identifier.split('_')[1] for x in artist_tapes]
+                artist_tapes = [artist_tapes[i] for i in sorted([titles.index(x) for x in set(titles)])]  # remove duplicate songs
                 max_tapes_per_artist = 10
-                if len(tapes) > max_tapes_per_artist:
-                    indices = sorted(random.sample(range(len(tapes)), max_tapes_per_artist))
-                    tapes = [tapes[i] for i in indices]
-                if i_tape >= len(tapes):
+                if len(artist_tapes) > max_tapes_per_artist:
+                    indices = sorted(random.sample(range(len(artist_tapes)), max_tapes_per_artist))
+                    artist_tapes = [artist_tapes[i] for i in indices]
+                if i_tape >= len(artist_tapes):
                     i_tape = 1
                     i_artist = i_artist + 1
-                    tapes = artist_year_dict[current['CHOSEN_ARTISTS'][i_artist]]
+                    if i_artist >= len(current['CHOSEN_ARTISTS']):
+                        i_tape = 0
+                        i_artist = 0
+                        continue
+                    artist_tapes = artist_year_dict[current['CHOSEN_ARTISTS'][i_artist]]
                 else:
                     i_tape = i_tape + 1
                     if ((i_tape + 1) % 5) == 0:  # flip every 5th song
-                        tapes[i_tape - 1].insert_breaks(breaks={'flip': [0]}, force=True)
-                if i_artist >= len(current['CHOSEN_ARTISTS']):
-                    i_tape = 0
-                    i_artist = 0
-                    continue
+                        artist_tapes[i_tape - 1].insert_breaks(breaks={'flip': [0]}, force=True)
                 if ((i_artist + 1) % 4) == 0:  # flip every 4th record
                     logger.debug("flipping record")
-                    tapes[i_tape - 1].insert_breaks(breaks={'flip': [0]}, force=True)
+                    artist_tapes[i_tape - 1].insert_breaks(breaks={'flip': [0]}, force=True)
                 logger.debug(F"artist {i_artist}/{len(current['CHOSEN_ARTISTS'])}")
-                logger.debug(F"tape number {i_tape}/{len(tapes)}. tapes are {tapes}")
-                logger.debug(F"tracks are {tapes[i_tape-1].tracks()}")
-                select_tape(tapes[i_tape - 1], state)
+                logger.debug(F"tape number {i_tape}/{len(artist_tapes)}. tapes are {artist_tapes}")
+                logger.debug(F"tracks are {artist_tapes[i_tape-1].tracks()}")
+                select_tape(artist_tapes[i_tape - 1], state)
             if track_event.is_set():
                 update_tracks(state)
                 track_event.clear()
@@ -771,8 +771,7 @@ def event_loop(state, lock):
                 if idle_seconds > QUIESCENT_TIME:
                     if config.DATE:
                         year = config.DATE.year
-                        # TMB.scr.show_staged_years([year, config.OTHER_YEAR if config.OTHER_YEAR else year])
-                        TMB.scr.show_staged_years(config.STAGED_DATE)
+                        TMB.scr.show_staged_years(config.DATE_RANGE)
                     try:
                         if current['PLAY_STATE'] > config.INIT:
                             refresh_venue(state)
