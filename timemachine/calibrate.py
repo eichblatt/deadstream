@@ -119,6 +119,7 @@ def save_knob_sense(save_calibration=True):
     for i in range(len(knob_senses)):
         knob_sense += 1 << i if knob_senses[i] else 0
     new_knob_sense = 7 & ~(knob_sense ^ knob_sense_orig)
+    logger.info(F"Knobs calibrated {new_knob_sense}")
     TMB.scr.show_text("Knobs\nCalibrated", font=TMB.scr.boldsmall, color=(0, 255, 255), force=False, clear=True)
     TMB.scr.show_text(F"      {new_knob_sense}", font=TMB.scr.boldsmall, loc=(0, 60), force=True)
     if save_calibration:
@@ -290,8 +291,6 @@ def welcome_alternatives():
     if TMB.button_event.is_set():
         TMB.clear_events()
         TMB.scr.show_text("recalibrating ", font=TMB.scr.font, force=True, clear=True)
-        if os.path.exists(knob_sense_path):
-            os.remove(knob_sense_path)
         return True
     return False
 
