@@ -42,7 +42,8 @@ setup(
         'wheel'],
     package_data={
         'timemachine': ['fonts/ariallgt.ttf', 'fonts/DejaVuSansMono-Bold.ttf', 'fonts/FreeMono.ttf', 'metadata/set_breaks.csv',
-                        'metadata/silence600.ogg', 'metadata/silence300.ogg', 'options.txt', '.latest_tag']},
+                        'metadata/silence600.ogg', 'metadata/silence120.ogg', 'metadata/silence30.ogg',
+                        'options.txt', '.latest_tag']},
     entry_points={'console_scripts':
                   ['connect_network=timemachine.connect_network:main',
                    'calibrate=timemachine.calibrate:main',
