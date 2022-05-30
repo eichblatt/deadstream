@@ -717,7 +717,7 @@ def event_loop(state, lock):
                         artist_tapes[i_tape - 1].insert_breaks(breaks={'flip': [0]}, force=True)
                 if ((i_artist + 1) % 4) == 0:  # flip every 4th record
                     logger.debug("flipping record")
-                    artist_tapes[i_tape - 1].insert_breaks(breaks={'flip': [0]}, force=True)
+                    artist_tapes[i_tape - 1].insert_breaks(breaks={'record': [0]}, force=True)
                 logger.debug(F"artist {i_artist}/{len(current['CHOSEN_ARTISTS'])}")
                 logger.debug(F"tape number {i_tape}/{len(artist_tapes)}. tapes are {artist_tapes}")
                 logger.debug(F"tracks are {artist_tapes[i_tape-1].tracks()}")

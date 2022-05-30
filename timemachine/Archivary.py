@@ -1240,10 +1240,10 @@ class GDTape(BaseTape):
         longbreak_path = pkg_resources.resource_filename('timemachine.metadata', 'silence600.ogg')
         breakd = {'track': -1, 'original': 'setbreak', 'title': 'Set Break', 'format': 'Ogg Vorbis', 'size': 1, 'source': 'original', 'path': os.path.dirname(longbreak_path)}
         lbreakd = dict(list(breakd.items()) + [('title', 'Set Break'), ('name', 'silence600.ogg')])
-        # sbreakd = dict(list(breakd.items()) + [('title', 'Encore Break'), ('name', 'silence300.ogg')])
         sbreakd = dict(list(breakd.items()) + [('title', 'Encore Break'), ('name', 'silence0.ogg')])
         locbreakd = dict(list(breakd.items()) + [('title', 'Location Break'), ('name', 'silence600.ogg')])
         flipbreakd = dict(list(breakd.items()) + [('title', 'Record Flip'), ('name', 'silence30.ogg')])
+        recordbreakd = dict(list(breakd.items()) + [('title', 'Record Change'), ('name', 'silence120.ogg')])
 
         # make the tracks
         newtracks = []
@@ -1268,7 +1268,11 @@ class GDTape(BaseTape):
                     for j in breaks['flip']:
                         if i == j:
                             newtracks.append(GDTrack(flipbreakd, '', True))
-            newtracks.append(t)
+                if 'record' in breaks.keys():
+                    for j in breaks['record']:
+                        if i == j:
+                            newtracks.append(GDTrack(recordbreakd, '', True))
+             newtracks.append(t)
         self._breaks_added = True
         self._tracks = newtracks.copy()
 
