@@ -187,7 +187,7 @@ class artist_knob_reader:
         self._update()
         for d in self.archive.dates:
             if d > self.fmtdate():
-                return datetime.datetime.strptime(d, '%Y-%m-%d').date()
+                return datetime.datetime.fromisoformat(d).date()
         return self.date
 
 
@@ -283,7 +283,7 @@ class date_knob_reader:
         self._update()
         for d in self.archive.dates:
             if d > self.fmtdate():
-                return datetime.datetime.strptime(d, '%Y-%m-%d').date()
+                return datetime.datetime.fromisoformat(d).date()
         return self.date
 
 

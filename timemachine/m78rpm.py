@@ -43,7 +43,7 @@ logging.basicConfig(format='%(asctime)s.%(msecs)03d %(levelname)s: %(name)s %(me
 logger = logging.getLogger(__name__)
 GDLogger = logging.getLogger('timemachine.GD')
 controlsLogger = logging.getLogger('timemachine.controls')
-logger.setLevel(logging.DEBUG)
+logger.setLevel(logging.INFO)
 GDLogger.setLevel(logging.INFO)
 controlsLogger.setLevel(logging.WARN)
 
@@ -523,7 +523,7 @@ def update_tracks(state):
 def to_date(d):
     if not d:
         return d
-    return datetime.datetime.strptime(d, '%Y-%m-%d').date()
+    return datetime.datetime.fromisoformat(d)
 
 
 @sequential

@@ -62,8 +62,8 @@ def memoize(f):
     return helper
 
 
-@memoize
-def to_date(datestring): return datetime.datetime.strptime(datestring, '%Y-%m-%d')
+# @memoize
+def to_date(datestring): return datetime.datetime.fromisoformat(datestring)
 
 
 def to_year(datestring):

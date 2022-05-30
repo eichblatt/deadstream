@@ -980,7 +980,7 @@ class GDArchive(BaseArchive):
         loaded_tapes, max_addeddate = self.load_current_tapes(reload_ids)
         logger.debug(f'max addeddate {max_addeddate}')
 
-        min_download_addeddate = (datetime.datetime.strptime(max_addeddate, '%Y-%m-%dT%H:%M:%SZ')) - datetime.timedelta(hours=1)
+        min_download_addeddate = (datetime.datetime.fromisoformat(max_addeddate[:-1])) - datetime.timedelta(hours=1)
         min_download_addeddate = datetime.datetime.strftime(min_download_addeddate, '%Y-%m-%dT%H:%M:%SZ')
         logger.debug(f'min_download_addeddate {min_download_addeddate}')
 
@@ -1339,7 +1339,7 @@ class GDSet:
             song = d['song']
             if date not in set_data.keys():
                 set_data[date] = {}
-            set_data[date]['start_time'] = datetime.datetime.strptime(time, '%H:%M:%S.%f').time() if len(time) > 0 else None
+            set_data[date]['start_time'] = datetime.time.fromisoformat(time) if len(time) > 0 else None
             if int(d['ievent']) == 1:
                 set_data[date]['location'] = (d['venue'], d['city'], d['state'])
                 prevsong = song

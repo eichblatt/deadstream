@@ -182,7 +182,7 @@ def load_options(parms):
                         c = ['Phish' if x.lower() == 'phish' else x for x in c]
                     tmpd[k] = c
                 if k in ['DEFAULT_START_TIME']:            # make datetime
-                    tmpd[k] = datetime.datetime.strptime(tmpd[k], "%H:%M:%S").time()
+                    tmpd[k] = datetime.time.fromisoformat(tmpd[k])
             except Exception:
                 logger.warning(F"Failed to set option {k}. Using {config.optd[k]}")
         optd = tmpd
@@ -575,7 +575,7 @@ def update_tracks(state):
 def to_date(d):
     if not d:
         return d
-    return datetime.datetime.strptime(d, '%Y-%m-%d').date()
+    return datetime.datetime.fromisoformat(d).date()
 
 
 @sequential
