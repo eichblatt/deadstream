@@ -1272,7 +1272,7 @@ class GDTape(BaseTape):
                     for j in breaks['record']:
                         if i == j:
                             newtracks.append(GDTrack(recordbreakd, '', True))
-             newtracks.append(t)
+            newtracks.append(t)
         self._breaks_added = True
         self._tracks = newtracks.copy()
 
