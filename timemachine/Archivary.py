@@ -134,7 +134,7 @@ def remove_none(lis):
 class Archivary():
     """ A collection of Archive objects """
 
-    def __init__(self, dbpath=os.path.join(ROOT_DIR, 'metadata'), reload_ids=False, with_latest=False, collection_list=['GratefulDead']):
+    def __init__(self, dbpath=os.path.join(ROOT_DIR, 'metadata'), reload_ids=False, with_latest=False, collection_list=['GratefulDead'], date_range=None):
         # if 'rElOaD' in collection_list:
         #     self.reload_ids = True
         #     collection_list.remove('rElOaD')
@@ -149,7 +149,7 @@ class Archivary():
             except Exception:
                 pass
         if len(ia_collections) > 0:
-            ia_archive = GDArchive(dbpath=dbpath, reload_ids=reload_ids, with_latest=with_latest, collection_list=ia_collections)
+            ia_archive = GDArchive(dbpath=dbpath, reload_ids=reload_ids, with_latest=with_latest, collection_list=ia_collections, date_range)
         self.archives = remove_none([ia_archive, phishin_archive])
         self.tape_dates = self.get_tape_dates()
         self.dates = sorted(self.tape_dates.keys())
@@ -250,12 +250,13 @@ class BaseArchive(abc.ABC):
         collection_list: A list of collections from archive.org
     """
 
-    def __init__(self, url, dbpath=os.path.join(ROOT_DIR, 'metadata'), reload_ids=False, with_latest=False, collection_list=['GratefulDead']):
+    def __init__(self, url, dbpath=os.path.join(ROOT_DIR, 'metadata'), reload_ids=False, with_latest=False, collection_list=['GratefulDead'], date_range=None):
         self.archive_type = 'Base Archive'
         self.url = url
         self.dbpath = dbpath
         self.collection_list = collection_list
         self.tapes = []
+        self.date_range = date_range
         self.collection_list = collection_list if type(collection_list) == list else [collection_list]
         if len(self.collection_list) == 1:
             self.idpath = os.path.join(self.dbpath, F'{collection_list[0]}_ids')
@@ -892,7 +893,7 @@ class PhishinTrack(BaseTrack):
 class GDArchive(BaseArchive):
     """ The Grateful Dead Collection on Archive.org """
 
-    def __init__(self, url='https://archive.org', dbpath=os.path.join(ROOT_DIR, 'metadata'), reload_ids=False, with_latest=False, collection_list=['GratefulDead']):
+    def __init__(self, url='https://archive.org', dbpath=os.path.join(ROOT_DIR, 'metadata'), reload_ids=False, with_latest=False, collection_list=['GratefulDead'], date_range=None):
         """Create a new GDArchive.
 
         Parameters:
@@ -903,13 +904,13 @@ class GDArchive(BaseArchive):
           with_latest: If True, query archive for recently added tapes, and append them.
           collection_list: A list of collections from archive.org
         """
-        super().__init__(url, dbpath, reload_ids, with_latest, collection_list)
+        super().__init__(url, dbpath, reload_ids, with_latest, collection_list, date_range)
         self.archive_type = 'Internet Archive'
         self.set_data = GDSet(self.collection_list)
-        self.load_archive(reload_ids, with_latest)
+        self.load_archive(reload_ids, with_latest, date_range)
 
-    def load_archive(self, reload_ids=False, with_latest=False):
-        self.tapes = self.load_tapes(reload_ids, with_latest)
+    def load_archive(self, reload_ids=False, with_latest=False, date_range=None):
+        self.tapes = self.load_tapes(reload_ids, with_latest, date_range)
         sort_within = True
         if 'georgeblood' in self.collection_list:
             sort_within = False
