@@ -562,9 +562,6 @@ class IATapeDownloader(BaseTapeDownloader):
             min_date = '1800-01-01'
             max_date = datetime.datetime.now().date().strftime('%Y-%m-%d')
 
-        import pdb
-        pdb.set_trace()
-
         r = self._get_piece(min_date, max_date, min_addeddate)
         j = r.json()
         total = j['total']
