@@ -109,10 +109,15 @@ class artist_knob_reader:
         self.date = None
         self.shownum = 0
         self.archive = archive
+        if isinstance(archive, int):
+            self.year_baseline = archive
+        elif archive is None:
+            self.year_baseline = 1898
+        else:
+            self.year_baseline = min(archive.year_list())
         self.y = y
         self.m = m
         self.d = d
-        self.year_baseline = 1910 if archive is None else min(archive.year_list())
         self._update()
 
     def __str__(self):

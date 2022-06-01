@@ -60,6 +60,7 @@ SLEEP_AFTER_SECONDS = 3600
 PWR_LED_ON = False
 AUTO_PLAY = True
 
+config.optd['COLLECTIONS'] = ['georgeblood']
 artist_year_dict = {}   # this needs to be either in state or somewhere.
 
 random.seed(datetime.datetime.now().timestamp())  # to ensure that random show will be new each time.
@@ -644,7 +645,7 @@ def handle_artist_knobs(state, i_artist):
 def event_loop(state, lock):
     global venue_counter
     config.OTHER_YEAR = None
-    config.DATE_RANGE = [None, None]
+    config.DATE_RANGE = None
     key_error_count = 0
     date_reader = state.date_reader
     artist_counter = state.artist_counter
@@ -832,7 +833,8 @@ if TMB.stop.is_pressed:
     logger.info('Resetting to factory archive -- nyi')
 
 dbpath = os.path.join(GD.ROOT_DIR, 'metadata')
-archive = Archivary.Archivary(dbpath, reload_ids=reload_ids, with_latest=False, collection_list=config.optd['COLLECTIONS'])
+config.DATE_RANGE = [1939, 1945]
+archive = Archivary.Archivary(dbpath, reload_ids=reload_ids, with_latest=False, collection_list=config.optd['COLLECTIONS'], date_range=config.DATE_RANGE)
 player = GD.GDPlayer()
 
 if config.optd['PULSEAUDIO_ENABLE']:
@@ -865,18 +867,20 @@ try:
 except Exception:
     knob_sense = 7
 
-year_list = archive.year_list()
+#year_list = archive.year_list()
+year_list = range(1898, datetime.datetime.now().year)
 num_years = max(year_list) - min(year_list)
 
 # get lenght of list of artists. Should I get max for a single year, or just total. Currently getting total.
-artists = archive.year_artists(min(year_list), max(year_list)).keys()
-artists = [item for sublist in artists for item in sublist]
-artists = sorted(list(set(artists)))
+# artists = archive.year_artists(min(year_list), max(year_list)).keys()
+# artists = [item for sublist in artists for item in sublist]
+# artists = sorted(list(set(artists)))
 
-TMB.setup_knobs(mdy_bounds=[(0, len(artists) // 10), (0, len(artists)), (0, num_years)])
-artist_counter = controls.decade_counter(TMB.m, TMB.d, bounds=(0, len(artists)))
-date_reader = controls.artist_knob_reader(TMB.y, TMB.m, TMB.d, archive)
-date_reader.set_date(*date_reader.next_show())
+# TMB.setup_knobs(mdy_bounds=[(0, len(artists) // 10), (0, len(artists)), (0, num_years)])
+TMB.setup_knobs(mdy_bounds=[(0, 1000), (0, 20000), (0, num_years)])
+artist_counter = controls.decade_counter(TMB.m, TMB.d, bounds=(0, 20000))
+date_reader = controls.artist_knob_reader(TMB.y, TMB.m, TMB.d)
+# date_reader.set_date(*date_reader.next_show())
 
 TMB.m.steps = 1
 TMB.d.steps = 1
