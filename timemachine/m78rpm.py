@@ -169,10 +169,12 @@ def shuffle_artist(state):
     current = state.get_current()
     current['CHOSEN_ARTISTS'] = []
     date_reader = state.date_reader
+    config.DATE_RANGE = sorted([config.OTHER_YEAR, date_reader.date.year])
     artist_counter = state.artist_counter
-    archive = date_reader.archive
     date = date_reader.date
-    artist_year_dict = archive.year_artists(date.year, config.OTHER_YEAR)
+    date_reader.archive = Archivary.Archivary(dbpath, reload_ids=reload_ids, with_latest=False, collection_list=config.optd['COLLECTIONS'], date_range=config.DATE_RANGE)
+    artist_year_dict = date_reader.archive.year_artists(*config.DATE_RANGE)
+    #artist_year_dict = archive.year_artists(date.year, config.OTHER_YEAR)
     artist_list = sorted(list(artist_year_dict.keys()))
     chosen_artists = random.sample(artist_list, min(50, len(artist_list)))
     if not isinstance(chosen_artists, list):
@@ -833,7 +835,7 @@ if TMB.stop.is_pressed:
     logger.info('Resetting to factory archive -- nyi')
 
 dbpath = os.path.join(GD.ROOT_DIR, 'metadata')
-config.DATE_RANGE = [1939, 1945]
+config.DATE_RANGE = [1900, 1900]  # Should read this from current state
 archive = Archivary.Archivary(dbpath, reload_ids=reload_ids, with_latest=False, collection_list=config.optd['COLLECTIONS'], date_range=config.DATE_RANGE)
 player = GD.GDPlayer()
 
