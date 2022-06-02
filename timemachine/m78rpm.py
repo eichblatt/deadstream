@@ -95,6 +95,8 @@ def load_saved_state(state):
     logger.info(F"Loading Saved State from {state_path}")
     state_orig = state
     try:
+        import pdb
+        pdb.set_trace()
         current = state.get_current()
         # if not os.path.exists(state_path):
         f = open(state_path, 'r')
@@ -102,19 +104,19 @@ def load_saved_state(state):
         fields_to_load = [
             'DATE', 'STAGED_DATE', 'TRACK_NUM', 'TAPE_ID', 'TRACK_TITLE', 'NEXT_TRACK_TITLE', 'TRACK_ID', 'DATE_READER', 'VOLUME']
         for field in fields_to_load:
-            if field in ['DATE', 'STAGED_DATE', 'DATE_READER']:
+            if field in ['DATE', 'DATE_READER']:
                 current[field] = to_date(loaded_state[field])
             else:
                 current[field] = loaded_state[field]
         if current['DATE']:
             state.date_reader.m.steps = current['DATE'].month
             state.date_reader.d.steps = current['DATE'].day
-            state.date_reader.y.steps = current['DATE'].year - min(state.date_reader.archive.year_list())
+            state.date_reader.y.steps = current['DATE'].year - min(year_list)
             state.date_reader.update()
         elif current['DATE_READER']:
             state.date_reader.m.steps = current['DATE_READER'].month
             state.date_reader.d.steps = current['DATE_READER'].day
-            state.date_reader.y.steps = current['DATE_READER'].year - min(state.date_reader.archive.year_list())
+            state.date_reader.y.steps = current['DATE_READER'].year - min(year_list)
             state.date_reader.update()
 
         current['DATE_READER'] = state.date_reader
