@@ -693,7 +693,7 @@ def event_loop(state, lock):
                 TMB.scr.refresh()
                 TMB.screen_event.clear()
             if stagedate_event.is_set():
-                logger.debug(F"year is now {date_reader.date.year}")
+                logger.info(F"year is now {date_reader.date.year}")
                 last_sdevent = now
                 q_counter = True
                 year = date_reader.date.year
@@ -752,7 +752,7 @@ def event_loop(state, lock):
                 TMB.scr.show_playstate()
                 playstate_event.clear()
                 TMB.screen_event.set()
-            if q_counter and config.DATE and idle_seconds > QUIESCENT_TIME:
+            if q_counter and config.DATE_RANGE and idle_seconds > QUIESCENT_TIME:
                 logger.debug(F"Reverting staged date back to selected date {idle_seconds}> {QUIESCENT_TIME}")
                 TMB.scr.show_staged_years(config.DATE_RANGE)
                 TMB.scr.show_venue(config.VENUE)
@@ -782,7 +782,7 @@ def event_loop(state, lock):
                 if idle_seconds > QUIESCENT_TIME:
                     if config.DATE:
                         year = config.DATE.year
-                        TMB.scr.show_staged_years(config.DATE_RANGE)
+                        TMB.scr.show_staged_years(config.DATE_RANGE if config.DATE_RANGE else config.STAGED_DATE)
                     try:
                         if current['PLAY_STATE'] > config.INIT:
                             refresh_venue(state)
@@ -790,8 +790,8 @@ def event_loop(state, lock):
                         raise e
                         logger.warning(f'event_loop, error refreshing venue {e}')
                 else:
-                    year = date_reader.date.year
-                    TMB.scr.show_staged_years(config.STAGED_DATE)
+                    # year = date_reader.date.year
+                    # TMB.scr.show_staged_years(config.STAGED_DATE)
                     if current['PLAY_STATE'] > config.INIT:
                         refresh_venue(state)
                 TMB.screen_event.set()
