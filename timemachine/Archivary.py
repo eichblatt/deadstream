@@ -562,6 +562,9 @@ class IATapeDownloader(BaseTapeDownloader):
         elif len(date_range) == 2:
             min_date = f'{date_range[0]}-01-01'
             max_date = f'{date_range[1]}-12-31'
+        elif len(date_range) > 2:
+            result_list = [self.get_all_tapes(iddir, min_addeddate, x) for x in date_range]
+            return sum(result_list)
         elif len(date_range) == 1:
             min_date = f'{date_range[0]}-01-01'
             max_date = f'{date_range[0]}-12-31'
@@ -960,21 +963,14 @@ class GDArchive(BaseArchive):
         yearly_collections = ['etree', 'georgeblood']  # should this be in config?
 
         if not self.date_range:
-            min_year = 1800
-            max_year = datetime.datetime.now().year
-        elif len(self.date_range) == 2:
-            min_year = min(self.date_range)
-            max_year = max(self.date_range)
-        elif len(self.date_range) == 1:
-            min_year = self.date_range[0]
-            max_year = min_year
+            self.date_range = [1800, datetime.datetime.now().year]
+        elif isinstance(self.date_range, int):
+            self.date_range = [self.date_range]
+        years_to_load = range(min(self.date_range), max(self.date_range) + 1) if len(self.date_range) <= 2 else self.date_range
 
-        #
-        # THIS NEEDS WORK
-        #
         meta_files = os.listdir(self.idpath) if os.path.exists(self.idpath) else []
         meta_files = [x for x in meta_files if x.endswith('.json')]
-        meta_files = [x for x in meta_files if min_year <= int(os.path.splitext(x)[0].split('_')[-1]) <= max_year]
+        meta_files = [x for x in meta_files if int(os.path.splitext(x)[0].split('_')[-1]) in years_to_load]
 
         if reload_ids or len(meta_files) == 0:
             if reload_ids:
@@ -983,13 +979,10 @@ class GDArchive(BaseArchive):
             n_tapes = self.downloader.get_all_tapes(self.idpath, date_range=self.date_range)  # this will write chunks to folder
             logger.info(f'Loaded {n_tapes} tapes from archive')
 
-        elif (len(meta_files) < (max_year - min_year + 1)) and os.path.basename(self.idpath).replace('_ids', '') in yearly_collections:
-            for year in range(min_year, max_year + 1):
+        elif (len(meta_files) < len(years_to_load)) and os.path.basename(self.idpath).replace('_ids', '') in yearly_collections:
+            for year in years_to_load:
                 if len([x for x in meta_files if f'{year}' in x]) == 0:
                     n_tapes = self.downloader.get_all_tapes(self.idpath, date_range=[year])
-        ##
-        # TO HERE
-        ##
 
         if reload_ids or not os.path.exists(collection_path) and self.idpath.endswith('etree_ids'):
             logger.info('Loading collection names from archive.org')
@@ -1002,7 +995,8 @@ class GDArchive(BaseArchive):
             for filename in os.listdir(self.idpath):
                 if filename.endswith('.json'):
                     time_period = int(filename.split('_')[-1].replace('.json', ''))
-                    if min_year <= time_period <= max_year:
+                    # if min_year <= time_period <= max_year:
+                    if time_period in years_to_load:
                         logger.info(f"loading time period {time_period}")
                         chunk = json.load(open(os.path.join(self.idpath, filename), 'r'))
                         addeddates.append(max([x['addeddate'] for x in chunk]))
