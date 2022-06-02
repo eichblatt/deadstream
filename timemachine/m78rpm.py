@@ -59,6 +59,7 @@ QUIESCENT_TIME = 20
 SLEEP_AFTER_SECONDS = 3600
 PWR_LED_ON = False
 AUTO_PLAY = True
+MAX_LOADABLE_YEARS = 10   # NOTE: this should depend on psutil.virtual_memory()
 
 config.optd['COLLECTIONS'] = ['georgeblood']
 artist_year_dict = {}   # this needs to be either in state or somewhere.
@@ -95,8 +96,6 @@ def load_saved_state(state):
     logger.info(F"Loading Saved State from {state_path}")
     state_orig = state
     try:
-        import pdb
-        pdb.set_trace()
         current = state.get_current()
         # if not os.path.exists(state_path):
         f = open(state_path, 'r')
@@ -170,16 +169,22 @@ def shuffle_artist(state):
     global artist_year_dict
     current = state.get_current()
     current['CHOSEN_ARTISTS'] = []
+    # it would be good to indicate on the screen that we are shuffling, because this can take a while.
     date_reader = state.date_reader
     year = date_reader.date.year
     config.DATE_RANGE = sorted([year, config.OTHER_YEAR if config.OTHER_YEAR else year])
     artist_counter = state.artist_counter
     date = date_reader.date
-    date_reader.archive = Archivary.Archivary(dbpath, reload_ids=reload_ids, with_latest=False, collection_list=config.optd['COLLECTIONS'], date_range=config.DATE_RANGE)
+    if (max(config.DATE_RANGE) - min(config.DATE_RANGE)) > MAX_LOADABLE_YEARS:   # Do I really need the check?
+        date_range = sorted(random.sample(range(*config.DATE_RANGE), MAX_LOADABLE_YEARS))
+        logger.info(f"Loading a reduced set of years: {date_range}")
+    else:
+        date_range = config.DATE_RANGE
+    date_reader.archive = Archivary.Archivary(dbpath, reload_ids=reload_ids, with_latest=False, collection_list=config.optd['COLLECTIONS'], date_range=date_range)
     artist_year_dict = date_reader.archive.year_artists(*config.DATE_RANGE)
     #artist_year_dict = archive.year_artists(date.year, config.OTHER_YEAR)
     artist_list = sorted(list(artist_year_dict.keys()))
-    chosen_artists = random.sample(artist_list, min(50, len(artist_list)))
+    chosen_artists = random.sample(artist_list, min(15, len(artist_list)))
     if not isinstance(chosen_artists, list):
         chosen_artists = [chosen_artists]
     current = stop_player(state).get_current()
