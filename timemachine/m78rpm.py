@@ -169,7 +169,8 @@ def shuffle_artist(state):
     current = state.get_current()
     current['CHOSEN_ARTISTS'] = []
     date_reader = state.date_reader
-    config.DATE_RANGE = sorted([config.OTHER_YEAR, date_reader.date.year])
+    year = date_reader.date.year
+    config.DATE_RANGE = sorted([year, config.OTHER_YEAR if config.OTHER_YEAR else year])
     artist_counter = state.artist_counter
     date = date_reader.date
     date_reader.archive = Archivary.Archivary(dbpath, reload_ids=reload_ids, with_latest=False, collection_list=config.optd['COLLECTIONS'], date_range=config.DATE_RANGE)

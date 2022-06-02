@@ -554,13 +554,17 @@ class IATapeDownloader(BaseTapeDownloader):
         n_tapes_added = 0
         n_tapes_total = 0
         tapes = []
+        yearly_collections = ['etree', 'georgeblood']  # should this be in config?
 
-        if date_range:
-            min_date = f'{date_range[0]}-01-01'
-            max_date = f'{date_range[1]}-12-31'
-        else:
+        if not date_range:
             min_date = '1800-01-01'
             max_date = datetime.datetime.now().date().strftime('%Y-%m-%d')
+        elif len(date_range) == 2:
+            min_date = f'{date_range[0]}-01-01'
+            max_date = f'{date_range[1]}-12-31'
+        elif len(date_range) == 1:
+            min_date = f'{date_range[0]}-01-01'
+            max_date = f'{date_range[0]}-12-31'
 
         r = self._get_piece(min_date, max_date, min_addeddate)
         j = r.json()
@@ -569,11 +573,9 @@ class IATapeDownloader(BaseTapeDownloader):
         current_rows += j['count']
         tapes = j['items']
 
-        if iddir.endswith('etree_ids') or iddir.endswith('georgeblood_ids'):
-            logger.debug("Loading tapes for a year")
-            n_tapes_added = self.store_metadata(iddir, tapes, period_func=to_year)
-        else:
-            n_tapes_added = self.store_metadata(iddir, tapes, period_func=to_decade)
+        period_func = to_year if os.path.basename(iddir).replace('_ids', '') in yearly_collections else to_decade
+        logger.debug("Loading tapes")
+        n_tapes_added = self.store_metadata(iddir, tapes, period_func=period_func)
         n_tapes_total = n_tapes_added
 
         while (current_rows < 1.25 * total) and n_tapes_added > 0:
@@ -584,10 +586,7 @@ class IATapeDownloader(BaseTapeDownloader):
             j = r.json()
             current_rows += j['count']
             tapes = j['items']
-            if iddir.endswith('etree_ids') or iddir.endswith('georgeblood_ids'):
-                n_tapes_added = self.store_metadata(iddir, tapes, period_func=to_year)
-            else:
-                n_tapes_added = self.store_metadata(iddir, tapes, period_func=to_decade)
+            n_tapes_added = self.store_metadata(iddir, tapes, period_func=period_func)
             n_tapes_total = n_tapes_total + n_tapes_added
         return n_tapes_total
 
@@ -958,23 +957,40 @@ class GDArchive(BaseArchive):
         tapes = []
         addeddates = []
         collection_path = os.path.join(os.getenv('HOME'), '.etree_collection_names.json')
+        yearly_collections = ['etree', 'georgeblood']  # should this be in config?
 
-        if self.date_range:
-            min_year = min(self.date_range)
-            max_year = max(self.date_range)
-        else:
+        if not self.date_range:
             min_year = 1800
             max_year = datetime.datetime.now().year
+        elif len(self.date_range) == 2:
+            min_year = min(self.date_range)
+            max_year = max(self.date_range)
+        elif len(self.date_range) == 1:
+            min_year = self.date_range[0]
+            max_year = min_year
 
+        #
+        # THIS NEEDS WORK
+        #
         meta_files = os.listdir(self.idpath) if os.path.exists(self.idpath) else []
         meta_files = [x for x in meta_files if x.endswith('.json')]
         meta_files = [x for x in meta_files if min_year <= int(os.path.splitext(x)[0].split('_')[-1]) <= max_year]
 
         if reload_ids or len(meta_files) == 0:
-            os.system(f'rm -rf {self.idpath}')
+            if reload_ids:
+                os.system(f'rm -rf {self.idpath}')
             logger.info('Loading Tapes from the Archive...this will take a few minutes')
             n_tapes = self.downloader.get_all_tapes(self.idpath, date_range=self.date_range)  # this will write chunks to folder
             logger.info(f'Loaded {n_tapes} tapes from archive')
+
+        elif (len(meta_files) < (max_year - min_year + 1)) and os.path.basename(self.idpath).replace('_ids', '') in yearly_collections:
+            for year in range(min_year, max_year + 1):
+                if len([x for x in meta_files if f'{year}' in x]) == 0:
+                    n_tapes = self.downloader.get_all_tapes(self.idpath, date_range=[year])
+        ##
+        # TO HERE
+        ##
+
         if reload_ids or not os.path.exists(collection_path) and self.idpath.endswith('etree_ids'):
             logger.info('Loading collection names from archive.org')
             try:
