@@ -533,7 +533,7 @@ def update_tracks(state):
             TMB.scr.show_track(current['NEXT_TRACK_TITLE'], 1)
         else:
             track_text = current['ARTIST'] if current['ARTIST'] else ' archive.org 78rpm'
-            TMB.scr.show_track(track_text, 1, color=(200, 100, 255), raw_text=True)
+            TMB.scr.show_track(track_text, 1, color=(250, 128, 0), raw_text=True)
 
 
 def to_date(d):
