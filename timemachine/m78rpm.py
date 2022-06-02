@@ -289,7 +289,8 @@ def select_button(button, state):
         return
     current = state.get_current()
     if current['PLAY_STATE'] in [config.PAUSED, config.PLAYING]:
-        if current['DATE'].year == state.date_reader.date.year:  # no change if current year already selected.
+        if state.date_reader.date.year in config.DATE_RANGE:  # no change if current year already selected.
+            TMB.select_event.clear()
             return
         shuffle_artist(state)
     elif current['PLAY_STATE'] in [config.INIT, config.READY, config.STOPPED]:
@@ -528,7 +529,11 @@ def update_tracks(state):
         TMB.scr.show_experience()
     else:
         TMB.scr.show_track(current['TRACK_TITLE'], 0)
-        TMB.scr.show_track(current['NEXT_TRACK_TITLE'], 1)
+        if len(current['NEXT_TRACK_TITLE']) > 0:
+            TMB.scr.show_track(current['NEXT_TRACK_TITLE'], 1)
+        else:
+            track_text = current['ARTIST'] if current['ARTIST'] else ' archive.org 78rpm'
+            TMB.scr.show_track(track_text, 1, color=(200, 100, 255), raw_text=True)
 
 
 def to_date(d):
@@ -738,8 +743,8 @@ def event_loop(state, lock):
                 track_event.clear()
                 TMB.screen_event.set()
             if TMB.select_event.is_set():
-                year = date_reader.date.year
-                config.DATE_RANGE = sorted([year, config.OTHER_YEAR if config.OTHER_YEAR else year])
+                # year = date_reader.date.year
+                # config.DATE_RANGE = sorted([year, config.OTHER_YEAR if config.OTHER_YEAR else year])
                 # config.STAGED_DATE = sorted([year, config.OTHER_YEAR if config.OTHER_YEAR else year])
                 config.OTHER_YEAR = None
                 current = state.get_current()
@@ -834,6 +839,8 @@ ip_address = get_ip()
 TMB.scr.show_text("Time\n  Machine\n   Loading...", color=(0, 255, 255), force=False, clear=True)
 TMB.scr.show_text(F"{ip_address}", loc=(0, 100), font=TMB.scr.smallfont, color=(255, 255, 255))
 
+player = GD.GDPlayer()
+
 reload_ids = False
 if TMB.rewind.is_pressed:
     TMB.scr.show_text("Reloading\nfrom\narchive.org...", color=(0, 255, 255), force=True, clear=True)
@@ -841,11 +848,6 @@ if TMB.rewind.is_pressed:
     # reload_ids = True
 if TMB.stop.is_pressed:
     logger.info('Resetting to factory archive -- nyi')
-
-dbpath = os.path.join(GD.ROOT_DIR, 'metadata')
-config.DATE_RANGE = [1900, 1900]  # Should read this from current state
-archive = Archivary.Archivary(dbpath, reload_ids=reload_ids, with_latest=False, collection_list=config.optd['COLLECTIONS'], date_range=config.DATE_RANGE)
-player = GD.GDPlayer()
 
 if config.optd['PULSEAUDIO_ENABLE']:
     logger.debug('Setting Audio device to pulse')
@@ -868,35 +870,6 @@ def on_track_event(_name, value):
 @player.event_callback('file-loaded')
 def my_handler(event):
     logger.debug('file-loaded')
-
-
-try:
-    kfile = open(knob_sense_path, 'r')
-    knob_sense = int(kfile.read())
-    kfile.close()
-except Exception:
-    knob_sense = 7
-
-#year_list = archive.year_list()
-year_list = range(1898, datetime.datetime.now().year)
-num_years = max(year_list) - min(year_list)
-
-# get lenght of list of artists. Should I get max for a single year, or just total. Currently getting total.
-# artists = archive.year_artists(min(year_list), max(year_list)).keys()
-# artists = [item for sublist in artists for item in sublist]
-# artists = sorted(list(set(artists)))
-
-# TMB.setup_knobs(mdy_bounds=[(0, len(artists) // 10), (0, len(artists)), (0, num_years)])
-TMB.setup_knobs(mdy_bounds=[(0, 1000), (0, 20000), (0, num_years)])
-artist_counter = controls.decade_counter(TMB.m, TMB.d, bounds=(0, 20000))
-date_reader = controls.artist_knob_reader(TMB.y, TMB.m, TMB.d)
-# date_reader.set_date(*date_reader.next_show())
-
-TMB.m.steps = 1
-TMB.d.steps = 1
-TMB.y.steps = 0
-
-state = controls.state((date_reader, artist_counter), player)
 
 
 def board_callbacks():
@@ -930,9 +903,37 @@ def board_callbacks():
     TMB.y_button.when_held = lambda button: year_button_longpress(button, state)
 
     TMB.scr.clear_area(controls.Bbox(0, 0, 160, 100))
-    TMB.scr.show_text("Powered by\n archive.org", color=(0, 255, 255), force=True)
-    TMB.scr.show_text(str(len(archive.collection_list)).rjust(3), font=TMB.scr.boldsmall, loc=(120, 100), color=(255, 100, 0), force=True)
+    TMB.scr.show_text("Powered by\n archive.org\n 78 RPM", color=(0, 255, 255), force=True)
 
+
+try:
+    kfile = open(knob_sense_path, 'r')
+    knob_sense = int(kfile.read())
+    kfile.close()
+except Exception:
+    knob_sense = 7
+
+#year_list = archive.year_list()
+year_list = range(1898, datetime.datetime.now().year)
+num_years = max(year_list) - min(year_list)
+
+# get lenght of list of artists. Should I get max for a single year, or just total. Currently getting total.
+# artists = archive.year_artists(min(year_list), max(year_list)).keys()
+# artists = [item for sublist in artists for item in sublist]
+# artists = sorted(list(set(artists)))
+
+# TMB.setup_knobs(mdy_bounds=[(0, len(artists) // 10), (0, len(artists)), (0, num_years)])
+TMB.setup_knobs(mdy_bounds=[(0, 1000), (0, 20000), (0, num_years)])
+artist_counter = controls.decade_counter(TMB.m, TMB.d, bounds=(0, 20000))
+date_reader = controls.artist_knob_reader(TMB.y, TMB.m, TMB.d)
+# date_reader.set_date(*date_reader.next_show())
+
+TMB.m.steps = 1
+TMB.d.steps = 1
+TMB.y.steps = 0
+
+state = controls.state((date_reader, artist_counter), player)
+dbpath = os.path.join(GD.ROOT_DIR, 'metadata')
 
 board_callbacks()
 
@@ -947,8 +948,8 @@ def main(parms_arg):
     if parms.verbose or parms.debug:
         set_logger_debug()
     load_saved_state(state)
-    if config.optd['AUTO_UPDATE_ARCHIVE']:
-        archive_updater = Archivary.Archivary_Updater(state, 3600, stop_update_event, scr=TMB.scr, lock=lock)
-        archive_updater.start()
+    # if config.optd['AUTO_UPDATE_ARCHIVE']:
+    #    archive_updater = Archivary.Archivary_Updater(state, 3600, stop_update_event, scr=TMB.scr, lock=lock)
+    #    archive_updater.start()
     eloop.run()
     exit()

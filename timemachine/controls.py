@@ -835,8 +835,8 @@ class screen:
         self.show_text(text, self.selected_date_bbox.origin(), self.boldsmall, color=color, force=force)
         self.selected_date = date
 
-    def show_track(self, text, trackpos, color=(120, 0, 255), force=False):
-        text = ' '.join(x.capitalize() for x in text.split())
+    def show_track(self, text, trackpos, color=(120, 0, 255), raw_text=False, force=False):
+        text = text if raw_text else ' '.join(x.capitalize() for x in text.split())
         bbox = self.track1_bbox if trackpos == 0 else self.track2_bbox
         self.clear_area(bbox)
         self.draw.text(bbox.origin(), text, font=self.smallfont, fill=color, stroke_width=1)
