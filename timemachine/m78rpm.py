@@ -560,7 +560,7 @@ def refresh_venue(state):
     venue = config.VENUE if config.VENUE is not None else artist
     display_string = ''
     screen_width = 13
-    n_fields = 3
+    n_fields = 2
     n_subfields = 5
 
     if tape_id is None:
@@ -572,9 +572,11 @@ def refresh_venue(state):
         display_string = artist
     elif venue_counter[0] == 1:
         display_string = venue
+    """
     elif venue_counter[0] == 2:
         id_color = tape_color
         display_string = tape_id
+    """
 
     display_string = display_string.replace('78_', '')
 
