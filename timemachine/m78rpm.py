@@ -364,7 +364,7 @@ def play_pause_button_longpress(button, state):
 
     state.set(current)
     TMB.select_event.set()
-    stagedate_event.set()
+    # stagedate_event.set()
     playstate_event.set()
 
 
@@ -635,6 +635,7 @@ def get_current(state):
     return current
 
 
+"""
 def handle_artist_knobs(state, i_artist):
     logger.debug(F"handle_artist_knobs: i_artist is {i_artist}")
     choice = choose_artist(state)   # blocking.
@@ -655,6 +656,7 @@ def handle_artist_knobs(state, i_artist):
     logger.debug(F"Number of chosen_artsts {len(current['CHOSEN_ARTISTS'])}")
     TMB.scr.show_staged_years(config.STAGED_DATE, force=True)
     return i_artist
+"""
 
 
 def event_loop(state, lock):
