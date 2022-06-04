@@ -60,6 +60,7 @@ SLEEP_AFTER_SECONDS = 3600
 PWR_LED_ON = False
 AUTO_PLAY = True
 MAX_LOADABLE_YEARS = 10   # NOTE: this should depend on psutil.virtual_memory()
+SHUFFLE_SIZE = 10
 
 config.optd['COLLECTIONS'] = ['georgeblood']
 artist_year_dict = {}   # this needs to be either in state or somewhere.
@@ -184,7 +185,7 @@ def shuffle_artist(state):
     artist_year_dict = date_reader.archive.year_artists(*config.DATE_RANGE)
     #artist_year_dict = archive.year_artists(date.year, config.OTHER_YEAR)
     artist_list = sorted(list(artist_year_dict.keys()))
-    chosen_artists = random.sample(artist_list, min(15, len(artist_list)))
+    chosen_artists = random.sample(artist_list, min(SHUFFLE_SIZE, len(artist_list)))
     if not isinstance(chosen_artists, list):
         chosen_artists = [chosen_artists]
     current = stop_player(state).get_current()
@@ -527,13 +528,13 @@ def update_tracks(state):
     current = state.get_current()
     if current['EXPERIENCE']:
         TMB.scr.show_experience()
+        return
+    TMB.scr.show_track(current['TRACK_TITLE'], 0)
+    if len(current['NEXT_TRACK_TITLE']) > 0:
+        TMB.scr.show_track(current['NEXT_TRACK_TITLE'], 1)
     else:
-        TMB.scr.show_track(current['TRACK_TITLE'], 0)
-        if len(current['NEXT_TRACK_TITLE']) > 0:
-            TMB.scr.show_track(current['NEXT_TRACK_TITLE'], 1)
-        else:
-            track_text = current['ARTIST'] if current['ARTIST'] else ' archive.org 78rpm'
-            TMB.scr.show_track(track_text, 1, color=(250, 128, 0), raw_text=True)
+        track_text = current['ARTIST'] if current['ARTIST'] else ' archive.org 78rpm'
+        TMB.scr.show_track(track_text, 1, color=(250, 128, 0), raw_text=True)
 
 
 def to_date(d):
@@ -689,6 +690,7 @@ def event_loop(state, lock):
     try:
         while not stop_loop_event.wait(timeout=0.001):
             if not free_event.wait(timeout=0.01):
+                lock.release()
                 continue
             lock.acquire()
             now = datetime.datetime.now()
@@ -716,6 +718,7 @@ def event_loop(state, lock):
                 # i_artist = handle_artist_knobs(state,i_artist)
                 choose_artist_event.clear()
             if (current['PLAY_STATE'] in [config.ENDED, config.INIT, config.READY]) and current.get('CHOSEN_ARTISTS', None):
+                logger.debug("\n\n\n *************************     Dealing with playlist  ************************** \n\n")
                 artist_tapes = artist_year_dict[current['CHOSEN_ARTISTS'][i_artist]]
                 titles = [x.identifier.split('_')[1] for x in artist_tapes]
                 artist_tapes = [artist_tapes[i] for i in sorted([titles.index(x) for x in set(titles)])]  # remove duplicate songs
@@ -726,21 +729,31 @@ def event_loop(state, lock):
                 if i_tape >= len(artist_tapes):
                     i_tape = 1
                     i_artist = i_artist + 1
-                    if i_artist >= len(current['CHOSEN_ARTISTS']):
+                    logger.debug(F"artist change to {i_artist} after i_tape is {i_tape}")
+                    if i_artist >= len(current['CHOSEN_ARTISTS']):  # we have reached the end of the playlist
+                        logger.debug(F"artist {i_artist+1}/{len(current['CHOSEN_ARTISTS'])}")
                         i_tape = 0
                         i_artist = 0
+                        logger.debug("\n\n\n *************** Playlist finished ************************* \n\n")
+                        current['CHOSEN_ARTISTS'] = None
+                        state.set(current)
+                        lock.release()
                         continue
                     artist_tapes = artist_year_dict[current['CHOSEN_ARTISTS'][i_artist]]
+                    logger.debug(F"artist tapes are now {artist_tapes}")
                 else:
                     i_tape = i_tape + 1
+                    logger.debug(F"next tape {i_tape}")
                     if ((i_tape + 1) % 5) == 0:  # flip every 5th song
+                        logger.debug("inserting record break")
                         artist_tapes[i_tape - 1].insert_breaks(breaks={'flip': [0]}, force=True)
                 if ((i_artist + 1) % 4) == 0:  # flip every 4th record
                     logger.debug("flipping record")
                     artist_tapes[i_tape - 1].insert_breaks(breaks={'record': [0]}, force=True)
-                logger.debug(F"artist {i_artist}/{len(current['CHOSEN_ARTISTS'])}")
-                logger.debug(F"tape number {i_tape}/{len(artist_tapes)}. tapes are {artist_tapes}")
+                logger.debug(F"artist {i_artist+1}/{len(current['CHOSEN_ARTISTS'])}")
+                logger.debug(F"tape number {i_tape+1}/{len(artist_tapes)}. tapes are {artist_tapes}")
                 logger.debug(F"tracks are {artist_tapes[i_tape-1].tracks()}")
+                logger.debug("\n\n\n *************************   Finished Dealing with playlist  ************************** \n\n")
                 select_tape(artist_tapes[i_tape - 1], state)
             if track_event.is_set():
                 update_tracks(state)
@@ -806,15 +819,20 @@ def event_loop(state, lock):
                 TMB.screen_event.set()
             lock.release()
 
-    except KeyError as e:
-        logger.warning(e)
-        key_error_count = key_error_count + 1
-        logger.warning(f'{key_error_count} key errors')
-        if key_error_count > 100:
-            return
     except KeyboardInterrupt as e:
         logger.warning(e)
         exit(0)
+#    except KeyError as e:
+    except Exception as e:
+        logger.warning(e)
+        key_error_count = key_error_count + 1
+        logger.warning(f'{key_error_count} key errors')
+        if key_error_count > 3:
+            return
+        else:
+            logger.warning('event_loop restarting')
+            lock.release()
+            event_loop(state, lock)
     finally:
         pass
         # lock.release()
@@ -942,8 +960,6 @@ dbpath = os.path.join(GD.ROOT_DIR, 'metadata')
 board_callbacks()
 
 # save_pid()
-lock = Lock()
-eloop = threading.Thread(target=event_loop, args=[state, lock])
 
 
 def main(parms_arg):
@@ -951,7 +967,11 @@ def main(parms_arg):
     parms = parms_arg
     if parms.verbose or parms.debug:
         set_logger_debug()
+
+    lock = Lock()
     load_saved_state(state)
+
+    eloop = threading.Thread(target=event_loop, args=[state, lock])
     # if config.optd['AUTO_UPDATE_ARCHIVE']:
     #    archive_updater = Archivary.Archivary_Updater(state, 3600, stop_update_event, scr=TMB.scr, lock=lock)
     #    archive_updater.start()
