@@ -477,7 +477,25 @@ def month_button(button, state):
 
 
 def month_button_longpress(button, state):
-    logger.debug(F"long pressing {button.name} -- nyi")
+    logger.debug(F"long pressing month_button")
+    pixels = TMB.scr.image.tobytes()
+    TMB.scr.show_experience(text="Hold 5s to Switch\nto Live Music", color=(0, 255, 0), force=True)
+    sleep(5)
+    if button.is_held:
+        TMB.scr.clear()
+        config.optd['MODULE'] = 'livemusic'
+        save_options(config.optd)
+        cmd = "sudo service timemachine restart"
+        os.system(cmd)
+        TMB.stop_event.set()
+        TMB.scr.wake_up()
+        TMB.scr.show_text("Switching\nStand By...", force=True)
+        sleep(25)
+        # if this program hasn't been killed after 25 seconds, then the code was already the latest version
+        TMB.scr.show_text("Failed to Switch\nOoops!", clear=True, force=True)
+        sleep(5)
+        TMB.scr.image.frombytes(pixels)
+        TMB.scr.refresh(force=True)
 
 
 @sequential
@@ -690,7 +708,8 @@ def event_loop(state, lock):
     try:
         while not stop_loop_event.wait(timeout=0.001):
             if not free_event.wait(timeout=0.01):
-                lock.release()
+                if lock.locked():
+                    lock.release()
                 continue
             lock.acquire()
             now = datetime.datetime.now()
@@ -737,7 +756,8 @@ def event_loop(state, lock):
                         logger.debug("\n\n\n *************** Playlist finished ************************* \n\n")
                         current['CHOSEN_ARTISTS'] = None
                         state.set(current)
-                        lock.release()
+                        if lock.locked():
+                            lock.release()
                         continue
                     artist_tapes = artist_year_dict[current['CHOSEN_ARTISTS'][i_artist]]
                     logger.debug(F"artist tapes are now {artist_tapes}")
@@ -817,7 +837,8 @@ def event_loop(state, lock):
                     if current['PLAY_STATE'] > config.INIT:
                         refresh_venue(state)
                 TMB.screen_event.set()
-            lock.release()
+            if lock.locked():
+                lock.release()
 
     except KeyboardInterrupt as e:
         logger.warning(e)
@@ -921,7 +942,7 @@ def board_callbacks():
     TMB.y_button.when_pressed = lambda button: year_button(button, state)
 
     TMB.d_button.when_held = lambda button: day_button_longpress(button, state)
-    # TMB.m_button.when_held = lambda button: month_button_longpress(button,state)
+    TMB.m_button.when_held = lambda button: month_button_longpress(button, state)
     TMB.y_button.when_held = lambda button: year_button_longpress(button, state)
 
     TMB.scr.clear_area(controls.Bbox(0, 0, 160, 100))

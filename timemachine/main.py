@@ -120,6 +120,18 @@ def load_options(parms):
     os.system(led_cmd)
 
 
+def save_options(optd):
+    logger.debug(F"in save_options. optd {optd}")
+    options = {}
+    for arg in optd.keys():
+        if arg == arg.upper():
+            if arg == 'DEFAULT_START_TIME':
+                optd[arg] = datetime.time.strftime(optd[arg], '%H:%M:%S')
+            options[arg] = optd[arg]
+    with open(parms.options_path, 'w') as outfile:
+        json.dump(options, outfile, indent=1)
+
+
 try:
     load_options(parms)
 except Exception:
@@ -136,13 +148,15 @@ def main():
     # archive = Archivary.Archivary(parms.dbpath, reload_ids=reload_ids, with_latest=False, collection_list=config.optd['COLLECTIONS'])
     # player = GD.GDPlayer()
     if config.optd['MODULE'] == 'livemusic':
-        from timemachine import livemusic
-        livemusic.main(parms)
+        from timemachine import livemusic as tm
     elif config.optd['MODULE'] == '78rpm':
-        from timemachine import m78rpm
-        m78rpm.main(parms)
+        from timemachine import m78rpm as tm
     else:
-        pass
+        logger.error(f"MODULE {config.optd['MODULE']} not in valid set of modules (['livemusic','78rpm'])")
+        exit()
+
+    tm.save_options = save_options  # All modules share this function.
+    tm.main(parms)
     exit()
 
 

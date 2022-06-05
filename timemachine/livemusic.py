@@ -480,8 +480,27 @@ def month_button(button, state):
     track_event.set()
 
 
+@sequential
 def month_button_longpress(button, state):
-    logger.debug(F"long pressing {button.name} -- nyi")
+    logger.debug(F"long pressing month_button")
+    pixels = TMB.scr.image.tobytes()
+    TMB.scr.show_experience(text="Hold 5s to Switch\nto 78 RMP", color=(50, 255, 100), force=True)
+    sleep(5)
+    if button.is_held:
+        TMB.scr.clear()
+        config.optd['MODULE'] = '78rpm'
+        save_options(config.optd)
+        cmd = "sudo service timemachine restart"
+        os.system(cmd)
+        TMB.stop_event.set()
+        TMB.scr.wake_up()
+        TMB.scr.show_text("Switching\nStand By...", force=True)
+        sleep(25)
+        # if this program hasn't been killed after 25 seconds, then the code was already the latest version
+        TMB.scr.show_text("Failed to Switch\nOoops!", clear=True, force=True)
+        sleep(5)
+        TMB.scr.image.frombytes(pixels)
+        TMB.scr.refresh(force=True)
 
 
 @sequential
@@ -1019,7 +1038,7 @@ TMB.d_button.when_pressed = lambda button: day_button(button, state)
 TMB.y_button.when_pressed = lambda button: year_button(button, state)
 
 TMB.d_button.when_held = lambda button: day_button_longpress(button, state)
-# TMB.m_button.when_held = lambda button: month_button_longpress(button,state)
+TMB.m_button.when_held = lambda button: month_button_longpress(button, state)
 TMB.y_button.when_held = lambda button: year_button_longpress(button, state)
 
 TMB.scr.clear_area(controls.Bbox(0, 0, 160, 100))
