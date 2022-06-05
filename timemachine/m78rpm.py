@@ -181,6 +181,7 @@ def shuffle_artist(state):
         logger.info(f"Loading a reduced set of years: {date_range}")
     else:
         date_range = config.DATE_RANGE
+    TMB.scr.show_experience(text="Loading\n Please be patient", color=(255, 100, 0), force=True)
     date_reader.archive = Archivary.Archivary(dbpath, reload_ids=reload_ids, with_latest=False, collection_list=config.optd['COLLECTIONS'], date_range=date_range)
     artist_year_dict = date_reader.archive.year_artists(*config.DATE_RANGE)
     #artist_year_dict = archive.year_artists(date.year, config.OTHER_YEAR)
