@@ -19,6 +19,8 @@ import logging
 import os
 import time
 
+
+import timeout_decorator
 #from timemachine.mpv import MPV
 from mpv import MPV
 from tenacity import retry
@@ -188,17 +190,19 @@ class GDPlayer(MPV):
             # self.pause()
         return True
 
-    def play(self):
+    def play(self, wait=True):
         if not retry_until_true(self.reset_audio_device, None):
             logger.warning("Failed to reset audio device when playing")
         logger.info("playing")
         self._set_property('pause', False)
-        self.wait_until_playing()
+        if wait:
+            self.wait_until_playing()   # blocking occasionally here.
 
-    def pause(self):
+    def pause(self, wait=True):
         logger.info("pausing")
         self._set_property('pause', True)
-        self.wait_until_paused()
+        if wait:
+            self.wait_until_paused()
 
     def stop(self):
         self.playlist_pos = 0

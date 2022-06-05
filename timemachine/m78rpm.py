@@ -251,7 +251,7 @@ def select_tape(tape, state, autoplay=True):
         if autoplay:
             logger.debug("Autoplaying tape")
             TMB.scr.show_playstate(staged_play=True, force=True)
-            state.player.play()
+            state.player.play(wait=False)
             current['PLAY_STATE'] = config.PLAYING
             playstate_event.set()
             state.set(current)
@@ -333,7 +333,7 @@ def play_pause_button(button, state):
         TMB.scr.wake_up()
         TMB.screen_event.set()
         TMB.scr.show_playstate(staged_play=True, force=True)  # show that we've registered the button-press before blocking call.
-        state.player.play()                              # this is a blocking call. I could move the "wait_until_playing" to the event handler.
+        state.player.play(wait=False)                              # this is a blocking call. I could move the "wait_until_playing" to the event handler.
     state.set(current)
     playstate_event.set()
 
@@ -361,7 +361,7 @@ def play_pause_button_longpress(button, state):
         state.player.stop()
     state.player.insert_tape(tape)
     current['PLAY_STATE'] = config.PLAYING
-    state.player.play()  # this is a blocking call. I could move the "wait_until_playing" to the event handler.
+    state.player.play(wait=False)  # this is a blocking call. I could move the "wait_until_playing" to the event handler.
 
     state.set(current)
     TMB.select_event.set()
@@ -427,7 +427,7 @@ def rewind_button(button, state):
         return     # the button is being "held"
     if current['TRACK_NUM'] == 0:
         state.player.stop()
-        state.player.play()
+        state.player.play(wait=False)
     elif current['TRACK_NUM'] < len(state.player.playlist):
         state.player.prev()
 
