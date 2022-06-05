@@ -181,7 +181,7 @@ def shuffle_artist(state):
         logger.info(f"Loading a reduced set of years: {date_range}")
     else:
         date_range = config.DATE_RANGE
-    TMB.scr.show_experience(text="Loading\n Please be patient", color=(255, 100, 0), force=True)
+    TMB.scr.show_experience(text="Loading. May \n Require 5 Minutes", color=(255, 100, 0), force=True)
     date_reader.archive = Archivary.Archivary(dbpath, reload_ids=reload_ids, with_latest=False, collection_list=config.optd['COLLECTIONS'], date_range=date_range)
     artist_year_dict = date_reader.archive.year_artists(*config.DATE_RANGE)
     #artist_year_dict = archive.year_artists(date.year, config.OTHER_YEAR)
@@ -747,7 +747,7 @@ def event_loop(state, lock):
                     indices = sorted(random.sample(range(len(artist_tapes)), max_tapes_per_artist))
                     artist_tapes = [artist_tapes[i] for i in indices]
                 if i_tape >= len(artist_tapes):
-                    i_tape = 1
+                    i_tape = 0
                     i_artist = i_artist + 1
                     logger.debug(F"artist change to {i_artist} after i_tape is {i_tape}")
                     if i_artist >= len(current['CHOSEN_ARTISTS']):  # we have reached the end of the playlist
@@ -766,13 +766,13 @@ def event_loop(state, lock):
                     i_tape = i_tape + 1
                     logger.debug(F"next tape {i_tape}")
                     if ((i_tape + 1) % 5) == 0:  # flip every 5th song
-                        logger.debug("inserting record break")
+                        logger.debug("inserting record flip")
                         artist_tapes[i_tape - 1].insert_breaks(breaks={'flip': [0]}, force=True)
-                if ((i_artist + 1) % 4) == 0:  # flip every 4th record
-                    logger.debug("flipping record")
+                if (((i_artist + 1) % 4) == 0) & (i_tape == 0):  # flip every 4th record
+                    logger.debug("changing record")
                     artist_tapes[i_tape - 1].insert_breaks(breaks={'record': [0]}, force=True)
                 logger.debug(F"artist {i_artist+1}/{len(current['CHOSEN_ARTISTS'])}")
-                logger.debug(F"tape number {i_tape+1}/{len(artist_tapes)}. tapes are {artist_tapes}")
+                logger.debug(F"tape number {i_tape}/{len(artist_tapes)}. tapes are {artist_tapes}")
                 logger.debug(F"tracks are {artist_tapes[i_tape-1].tracks()}")
                 logger.debug("\n\n\n *************************   Finished Dealing with playlist  ************************** \n\n")
                 select_tape(artist_tapes[i_tape - 1], state)
