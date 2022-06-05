@@ -987,7 +987,7 @@ board_callbacks()
 def main(parms_arg):
     global parms
     parms = parms_arg
-    if parms.verbose or parms.debug:
+    if parms.verbose or parms.debug or os.uname().nodename.startswith('deadstream'):
         set_logger_debug()
 
     lock = Lock()
