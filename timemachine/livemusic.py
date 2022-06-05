@@ -484,7 +484,7 @@ def month_button(button, state):
 def month_button_longpress(button, state):
     logger.debug(F"long pressing month_button")
     pixels = TMB.scr.image.tobytes()
-    TMB.scr.show_experience(text="Hold 5s to Switch\nto 78 RMP", color=(50, 255, 100), force=True)
+    TMB.scr.show_experience(text="Hold 5s to Switch\nto 78 RPM", color=(50, 255, 100), force=True)
     sleep(5)
     if button.is_held:
         TMB.scr.clear()
