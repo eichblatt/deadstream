@@ -102,6 +102,100 @@ def get_os_version():
     return OS_VERSION
 
 
+class artist_knob_reader:
+    """ A set of knobs to read the year, and the artist """
+
+    def __init__(self, y: RotaryEncoder, m: RotaryEncoder, d: RotaryEncoder, archive=None):
+        self.date = None
+        self.shownum = 0
+        self.archive = archive
+        if isinstance(archive, int):
+            self.year_baseline = archive
+        elif archive is None:
+            self.year_baseline = 1898
+        else:
+            self.year_baseline = min(archive.year_list())
+        self.y = y
+        self.m = m
+        self.d = d
+        self._update()
+
+    def __str__(self):
+        return self.__repr__()
+
+    def __repr__(self):
+        avail = ''
+        shows = self.shows_available()
+        if len(shows) > 0:
+            avail = f'{shows} shows Available. Now at {shows[self.shownum]}'
+        return F'Date Knob Says: {self.date.strftime("%Y-%m-%d")}. {avail}'
+
+    def update(self):
+        self.shownum = 0
+        self._update()
+
+    def _update(self):
+        m_val = self.m.steps
+        d_val = self.d.steps
+        y_val = self.y.steps + self.year_baseline
+        logger.debug(F"updating date reader. m:{m_val},d:{d_val},y:{y_val}")
+        self.date = datetime.date(y_val, 1, 1)
+        logger.debug(F"date reader date {self.date}")
+
+    def set_date(self, date, shownum=0):
+        new_month, new_day, new_year = (date.month, date.day, date.year)
+        self.m.steps = new_month
+        self.d.steps = new_day
+        self.y.steps = new_year - min((self.archive).year_list())
+        self.shownum = divmod(shownum, max(1, len(self.shows_available())))[1]
+        self._update()
+
+    def fmtdate(self):
+        if self.date is None:
+            return None
+        return self.date.strftime('%Y-%m-%d')
+
+    def venue(self):
+        if self.tape_available():
+            try:
+                t = self.archive.best_tape(self.fmtdate(), resort=False)
+                return t.venue()
+            except Exception:
+                return ""
+        return ""
+
+    def shows_available(self):
+        if self.archive is None:
+            return []
+        self._update()
+        if self.fmtdate() in self.archive.tape_dates.keys():
+            shows = [t.artist for t in self.archive.tape_dates[self.fmtdate()]]
+            return list(dict.fromkeys(shows))
+        else:
+            return []
+
+    def tape_available(self):
+        return len(self.shows_available()) > 0
+
+    def next_show(self):
+        if self.archive is None:
+            return None
+        self._update()
+        if self.shownum < len(self.shows_available()) - 1:
+            return (self.date, self.shownum + 1)
+        else:
+            return (self.next_date(), 0)
+
+    def next_date(self):
+        if self.archive is None:
+            return None
+        self._update()
+        for d in self.archive.dates:
+            if d > self.fmtdate():
+                return datetime.datetime.fromisoformat(d).date()
+        return self.date
+
+
 class date_knob_reader:
     def __init__(self, y: RotaryEncoder, m: RotaryEncoder, d: RotaryEncoder, archive=None):
         self.date = None
@@ -194,7 +288,7 @@ class date_knob_reader:
         self._update()
         for d in self.archive.dates:
             if d > self.fmtdate():
-                return datetime.datetime.strptime(d, '%Y-%m-%d').date()
+                return datetime.datetime.fromisoformat(d).date()
         return self.date
 
 
@@ -288,19 +382,19 @@ class Time_Machine_Board():
             print(f"Knob {label} steps={knob.steps} value={knob.value}")
         else:
             if knob.steps < knob.threshold_steps[0]:
-                if label == "year" and self.d.steps > self.d.threshold_steps[0]:
+                if label in ["year", "ones"] and counter.tens.steps > counter.tens.threshold_steps[0]:
                     knob.steps = knob.threshold_steps[1]
-                    self.d.steps = max(self.d.threshold_steps[0], self.d.steps - 1)
+                    counter.tens.steps = max(counter.tens.threshold_steps[0], counter.tens.steps - 1)
                 else:
                     knob.steps = knob.threshold_steps[0]
             if knob.steps > knob.threshold_steps[1]:
-                if label == "year" and self.d.steps < self.d.threshold_steps[1]:
+                if label in ["year", "ones"] and counter.tens.steps < counter.tens.threshold_steps[1]:
                     knob.steps = knob.threshold_steps[0]
-                    self.d.steps = min(self.d.threshold_steps[1], self.d.steps + 1)
+                    counter.tens.steps = min(counter.tens.threshold_steps[1], counter.tens.steps + 1)
                 else:
                     knob.steps = knob.threshold_steps[1]
             print(f"Knob {label} is inactive")
-        counter.set_value(self.d.steps, self.y.steps)
+        counter.set_value(counter.tens.steps, counter.ones.steps)
         if label == "month":
             self.m_knob_event.set()
         if label == "day":
@@ -575,11 +669,11 @@ class screen:
         self.image = Image.new("RGB", (width, height))
         self.draw = ImageDraw.Draw(self.image)       # draw using this object. Display image when complete.
 
+        self.staged_years = (-1, -1)
         self.staged_date = None
         self.selected_date = None
 
         self.staged_date_bbox = Bbox(0, 0, 160, 31)
-        # self.selected_date_bbox = Bbox(0,100,130,128)
         self.selected_date_bbox = Bbox(0, 100, 160, 128)
         self.venue_bbox = Bbox(0, 31, 160, 56)
         self.nevents_bbox = Bbox(148, 31, 160, 56)
@@ -623,6 +717,8 @@ class screen:
             self.refresh(force=False)
 
     def show_text(self, text, loc=(0, 0), font=None, color=(255, 255, 255), stroke_width=0, force=False, clear=False):
+        if text is None:
+            text = " "
         if font is None:
             font = self.font
         (text_width, text_height) = font.getsize(text)
@@ -675,20 +771,61 @@ class screen:
         self.clear_area(self.venue_bbox)
         self.show_text(arg, self.venue_bbox.origin(), font=self.boldsmall, color=color, force=force)
 
+    def show_staged_years(self, years, color=(0, 255, 255), show_dash=False, force=False):
+        if isinstance(years, datetime.date):
+            self.staged_date = years
+            years = [years.year, years.year]
+        if len(years) != 2:
+            logger.warning("show_staged_years: Cannot pass years list longer than 2")
+            return
+        if years[0] is None:
+            return
+        if min(years) < 1800:
+            logger.warning("show_staged_years: min year less than 1800")
+            return
+        years = sorted(years)
+        if (years == self.staged_years) and not force:
+            return
+        self.clear_area(self.staged_date_bbox)
+        start_year = str(years[0])
+        end_year = str(years[1] % 100).rjust(2, '0')
+        if years[0] < years[1]:
+            if years[1] // 100 > years[0] // 100:   # different century
+                text = f"{start_year}-'{end_year}"
+            else:
+                text = f'{start_year}-{end_year}'
+        else:
+            if show_dash:   # waiting for input
+                text = f'{start_year}-'
+            else:
+                text = f'{start_year}'
+        logger.debug(F"staged date string {text}")
+        self.show_text(text, self.staged_date_bbox.origin(), self.boldfont, color=color, force=force)
+        self.staged_years = years
+
+    def show_staged_year(self, date, color=(0, 255, 255), force=False):
+        if (date == self.staged_date) and not force:
+            return
+        self.clear_area(self.staged_date_bbox)
+        text = f'{date.year}'
+        logger.debug(F"staged date string {text}")
+        self.show_text(text, self.staged_date_bbox.origin(), self.boldfont, color=color, force=force)
+        self.staged_date = date
+
     def show_staged_date(self, date, color=(0, 255, 255), force=False):
         if date == self.staged_date:
             return
         self.clear_area(self.staged_date_bbox)
         month = str(date.month).rjust(2)
         day = str(date.day).rjust(2)
-        year = str(divmod(date.year, 100)[1]).rjust(2, '0')
+        year = str(date.year % 100).rjust(2, '0')
         text = month + '-' + day + '-' + year
         logger.debug(F"staged date string {text}")
         self.show_text(text, self.staged_date_bbox.origin(), self.boldfont, color=color, force=force)
         self.staged_date = date
 
     def show_selected_date(self, date, color=(255, 255, 255), force=False):
-        if date == self.selected_date:
+        if (date == self.selected_date) and not force:
             return
         self.clear_area(self.selected_date_bbox)
         month = str(date.month).rjust(2)
@@ -698,7 +835,8 @@ class screen:
         self.show_text(text, self.selected_date_bbox.origin(), self.boldsmall, color=color, force=force)
         self.selected_date = date
 
-    def show_track(self, text, trackpos, color=(120, 0, 255), force=False):
+    def show_track(self, text, trackpos, color=(120, 0, 255), raw_text=False, force=False):
+        text = text if raw_text else ' '.join(x.capitalize() for x in text.split())
         bbox = self.track1_bbox if trackpos == 0 else self.track2_bbox
         self.clear_area(bbox)
         self.draw.text(bbox.origin(), text, font=self.smallfont, fill=color, stroke_width=1)
@@ -740,7 +878,11 @@ class screen:
 class state:
     def __init__(self, date_reader, player=None):
         self.module_name = 'config'
-        self.date_reader = date_reader
+        if type(date_reader) == tuple:
+            self.date_reader = date_reader[0]
+            self.artist_counter = date_reader[1]
+        else:
+            self.date_reader = date_reader
         self.player = player
         self.dict = self.get_current()
 

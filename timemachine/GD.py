@@ -19,6 +19,8 @@ import logging
 import os
 import time
 
+
+#from timemachine.mpv import MPV
 from mpv import MPV
 from tenacity import retry
 from tenacity.stop import stop_after_delay, stop_after_attempt
@@ -61,8 +63,8 @@ def memoize(f):
     return helper
 
 
-@memoize
-def to_date(datestring): return datetime.datetime.strptime(datestring, '%Y-%m-%d')
+# @memoize
+def to_date(datestring): return datetime.datetime.fromisoformat(datestring)
 
 
 def to_year(datestring):
@@ -74,7 +76,7 @@ def to_year(datestring):
 def to_decade(datestring):
     if type(datestring) == list:      # handle one bad case on 2009.01.10
         datestring = datestring[0]
-    return 10*divmod(to_date(datestring[:10]).year, 10)[0]
+    return 10 * divmod(to_date(datestring[:10]).year, 10)[0]
 
 
 class GDPlayer(MPV):
@@ -187,17 +189,19 @@ class GDPlayer(MPV):
             # self.pause()
         return True
 
-    def play(self):
+    def play(self, wait=True):
         if not retry_until_true(self.reset_audio_device, None):
             logger.warning("Failed to reset audio device when playing")
         logger.info("playing")
         self._set_property('pause', False)
-        self.wait_until_playing()
+        if wait:
+            self.wait_until_playing()   # blocking occasionally here.
 
-    def pause(self):
+    def pause(self, wait=True):
         logger.info("pausing")
         self._set_property('pause', True)
-        self.wait_until_paused()
+        if wait:
+            self.wait_until_paused()
 
     def stop(self):
         self.playlist_pos = 0
@@ -308,11 +312,11 @@ class GDPlayer(MPV):
             logger.debug(F'destination {destination} time_pos {time_pos} duration {duration}')
 
             if destination < 0:
-                if abs(destination) < abs(sleeptime*5):
-                    destination = destination - sleeptime*5
-                self.seek_to(current_track-1, destination)
+                if abs(destination) < abs(sleeptime * 5):
+                    destination = destination - sleeptime * 5
+                self.seek_to(current_track - 1, destination)
             if destination > duration:
-                self.seek_to(current_track+1, destination-duration)
+                self.seek_to(current_track + 1, destination - duration)
             else:
                 self.seek_to(current_track, destination)
         except Exception as e:

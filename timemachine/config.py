@@ -29,6 +29,8 @@ ARTIST = None
 STAGED_DATE = None
 PAUSED_AT = None
 WOKE_AT = None
+OTHER_YEAR = None
+DATE_RANGE = None
 
 ON_TOUR = False
 EXPERIENCE = False
