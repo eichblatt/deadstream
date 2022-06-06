@@ -60,7 +60,8 @@ SLEEP_AFTER_SECONDS = 3600
 PWR_LED_ON = False
 AUTO_PLAY = True
 MAX_LOADABLE_YEARS = 10   # NOTE: this should depend on psutil.virtual_memory()
-SHUFFLE_SIZE = 10
+SHUFFLE_SIZE = 12
+MAX_TAPES_PER_ARTIST = 10
 
 config.optd['COLLECTIONS'] = ['georgeblood']
 artist_year_dict = {}   # this needs to be either in state or somewhere.
@@ -548,6 +549,11 @@ def update_tracks(state):
     if current['EXPERIENCE']:
         TMB.scr.show_experience()
         return
+    if current.get('CHOSEN_ARTISTS', None) is None:
+        logger.debug("Not updating tracks because chosen artists is None")
+        track_text = ' archive.org 78rpm'
+        TMB.scr.show_track(track_text, 1, color=(250, 128, 0), raw_text=True)
+        return
     TMB.scr.show_track(current['TRACK_TITLE'], 0)
     if len(current['NEXT_TRACK_TITLE']) > 0:
         TMB.scr.show_track(current['NEXT_TRACK_TITLE'], 1)
@@ -742,9 +748,8 @@ def event_loop(state, lock):
                 artist_tapes = artist_year_dict[current['CHOSEN_ARTISTS'][i_artist]]
                 titles = [x.identifier.split('_')[1] for x in artist_tapes]
                 artist_tapes = [artist_tapes[i] for i in sorted([titles.index(x) for x in set(titles)])]  # remove duplicate songs
-                max_tapes_per_artist = 10
-                if len(artist_tapes) > max_tapes_per_artist:
-                    indices = sorted(random.sample(range(len(artist_tapes)), max_tapes_per_artist))
+                if len(artist_tapes) > MAX_TAPES_PER_ARTIST:
+                    indices = sorted(random.sample(range(len(artist_tapes)), MAX_TAPES_PER_ARTIST))
                     artist_tapes = [artist_tapes[i] for i in indices]
                 if i_tape >= len(artist_tapes):
                     i_tape = 0
@@ -757,6 +762,7 @@ def event_loop(state, lock):
                         logger.debug("\n\n\n *************** Playlist finished ************************* \n\n")
                         current['CHOSEN_ARTISTS'] = None
                         state.set(current)
+                        TMB.scr.show_experience(text="\n archive.org 78rpm", color=(255, 100, 0), force=True)
                         if lock.locked():
                             lock.release()
                         continue
