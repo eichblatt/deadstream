@@ -76,9 +76,11 @@ def default_options():
     d['FAVORED_TAPER'] = ['miller']
     d['AUTO_UPDATE_ARCHIVE'] = True
     d['PLAY_LOSSLESS'] = False
+    d['ON_TOUR_ALLOWED'] = False
     d['PULSEAUDIO_ENABLE'] = False
     if controls.get_os_version() > 10:
         d['PULSEAUDIO_ENABLE'] = True
+        d['BLUETOOTH_ENABLE'] = True
     d['DEFAULT_START_TIME'] = datetime.time(15, 0)
     d['TIMEZONE'] = 'America/New_York'
     return d
@@ -91,15 +93,19 @@ def load_options(parms):
         f = open(parms.options_path, 'r')
         tmpd = json.loads(f.read())
         for k in config.optd.keys():
+            logger.debug(f"Loading options key is {k}")
             try:
-                if k in ['AUTO_UPDATE_ARCHIVE', 'PLAY_LOSSLESS', 'PULSEAUDIO_ENABLE']:  # make booleans.
+                if k in ['AUTO_UPDATE_ARCHIVE', 'PLAY_LOSSLESS', 'PULSEAUDIO_ENABLE', 'ON_TOUR_ALLOWED', 'BLUETOOTH_ENABLE']:  # make booleans.
                     tmpd[k] = tmpd[k].lower() == 'true'
+                    logger.debug(f"Booleans k is {k}")
                 if k in ['COLLECTIONS', 'FAVORED_TAPER']:   # make lists from comma-separated strings.
+                    logger.debug(f"lists k is {k}")
                     c = [x.strip() for x in tmpd[k].split(',') if x != '']
                     if k == 'COLLECTIONS':
                         c = ['Phish' if x.lower() == 'phish' else x for x in c]
                     tmpd[k] = c
                 if k in ['DEFAULT_START_TIME']:            # make datetime
+                    logger.debug(f"time k is {k}")
                     tmpd[k] = datetime.time.fromisoformat(tmpd[k])
             except Exception:
                 logger.warning(F"Failed to set option {k}. Using {config.optd[k]}")
