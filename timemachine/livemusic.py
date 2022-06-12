@@ -910,7 +910,11 @@ if TMB.stop.is_pressed:
     logger.info('Resetting to factory archive -- nyi')
 
 dbpath = os.path.join(GD.ROOT_DIR, 'metadata')
-archive = Archivary.Archivary(dbpath, reload_ids=reload_ids, with_latest=False, collection_list=config.optd['COLLECTIONS'])
+if 'cylindertransfer' in config.optd['COLLECTIONS']:
+    date_range = (1880, 1930)
+else:
+    date_range = (1960, datetime.datetime.now().year)
+archive = Archivary.Archivary(dbpath, reload_ids=reload_ids, with_latest=False, collection_list=config.optd['COLLECTIONS'], date_range=date_range)
 player = GD.GDPlayer()
 if config.optd['PULSEAUDIO_ENABLE']:
     logger.debug('Setting Audio device to pulse')
