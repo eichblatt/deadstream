@@ -82,7 +82,7 @@ echo "Replacing wpa_supplicant and knob_sense files"
 system "sudo mv $HOME/wpa_supplicant.conf $media_folder/rootfs/etc/wpa_supplicant/wpa_supplicant.conf"
 system "sudo mv $HOME/.knob_sense $media_folder/rootfs/home/deadhead/."
 system "sudo mv $HOME/.timemachine_options.txt $media_folder/rootfs/home/deadhead/."
-system "sudo mv $HOME/timemachine_dot_ssh $media_folder/rootfs/home/deadhead/."
+system "sudo mv $HOME/timemachine_dot_ssh $media_folder/rootfs/home/deadhead/.ssh"
 
 # NOTE: to burn an image use the command (or similar):
 # sudo sh -c "pv v2_20210625.img > /dev/sdb"

@@ -151,55 +151,6 @@ def save_state(state):
 #        raise e
 
 
-def default_options():
-    d = {}
-    d['COLLECTIONS'] = ['GratefulDead']
-    d['FAVORED_TAPER'] = []
-    d['AUTO_UPDATE_ARCHIVE'] = True
-    d['ON_TOUR_ALLOWED'] = False
-    d['PLAY_LOSSLESS'] = False
-    d['PULSEAUDIO_ENABLE'] = False
-    if controls.get_os_version() > 10:
-        d['PULSEAUDIO_ENABLE'] = True
-    d['DEFAULT_START_TIME'] = datetime.time(15, 0)
-    d['TIMEZONE'] = 'America/New_York'
-    return d
-
-
-def load_options(parms):
-    config.optd = default_options()
-    optd = {}
-    try:
-        f = open(parms.options_path, 'r')
-        tmpd = json.loads(f.read())
-        for k in config.optd.keys():
-            try:
-                if k in ['AUTO_UPDATE_ARCHIVE', 'ON_TOUR_ALLOWED', 'PLAY_LOSSLESS', 'PULSEAUDIO_ENABLE']:  # make booleans.
-                    tmpd[k] = tmpd[k].lower() == 'true'
-                if k in ['COLLECTIONS', 'FAVORED_TAPER']:   # make lists from comma-separated strings.
-                    c = [x.strip() for x in tmpd[k].split(',') if x != '']
-                    if k == 'COLLECTIONS':
-                        c = ['Phish' if x.lower() == 'phish' else x for x in c]
-                    tmpd[k] = c
-                if k in ['DEFAULT_START_TIME']:            # make datetime
-                    tmpd[k] = datetime.time.fromisoformat(tmpd[k])
-            except Exception:
-                logger.warning(F"Failed to set option {k}. Using {config.optd[k]}")
-        optd = tmpd
-    except Exception:
-        logger.warning(F"Failed to read options from {parms.options_path}. Using defaults")
-    config.optd.update(optd)  # update defaults with those read from the file.
-    logger.info(F"in load_options, optd {optd}")
-    os.environ['TZ'] = config.optd['TIMEZONE']
-    time.tzset()
-    led_cmd = 'sudo bash -c "echo default-on > /sys/class/leds/led1/trigger"'
-    os.system(led_cmd)
-    if not PWR_LED_ON:
-        led_cmd = 'sudo bash -c "echo none > /sys/class/leds/led1/trigger"'
-    logger.info(F"in load_options, running {led_cmd}")
-    os.system(led_cmd)
-
-
 def twist_knob(knob: RotaryEncoder, label, date_reader: controls.date_knob_reader):
     TMB.twist_knob(knob, label, date_reader)
     TMB.knob_event.set()
@@ -941,11 +892,6 @@ while len(get_ip())==0:
     sleep(2)
 """
 
-try:
-    load_options(parms)
-except Exception:
-    logger.warning("Failed in loading options")
-# parms.state_path = os.path.join(os.path.dirname(parms.state_path), F'{config.optd["COLLECTIONS"]}_{os.path.basename(parms.state_path)}')
 config.PAUSED_AT = datetime.datetime.now()
 config.WOKE_AT = datetime.datetime.now()
 
@@ -964,7 +910,11 @@ if TMB.stop.is_pressed:
     logger.info('Resetting to factory archive -- nyi')
 
 dbpath = os.path.join(GD.ROOT_DIR, 'metadata')
-archive = Archivary.Archivary(dbpath, reload_ids=reload_ids, with_latest=False, collection_list=config.optd['COLLECTIONS'])
+if 'cylindertransfer' in config.optd['COLLECTIONS']:
+    date_range = (1880, 1930)
+else:
+    date_range = (1960, datetime.datetime.now().year)
+archive = Archivary.Archivary(dbpath, reload_ids=reload_ids, with_latest=False, collection_list=config.optd['COLLECTIONS'], date_range=date_range)
 player = GD.GDPlayer()
 if config.optd['PULSEAUDIO_ENABLE']:
     logger.debug('Setting Audio device to pulse')

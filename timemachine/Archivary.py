@@ -963,7 +963,7 @@ class GDArchive(BaseArchive):
         yearly_collections = ['etree', 'georgeblood']  # should this be in config?
 
         if not self.date_range:
-            self.date_range = [1800, datetime.datetime.now().year]
+            self.date_range = [1880, datetime.datetime.now().year]
         elif isinstance(self.date_range, int):
             self.date_range = [self.date_range]
         years_to_load = range(min(self.date_range), max(self.date_range) + 1) if len(self.date_range) <= 2 else self.date_range

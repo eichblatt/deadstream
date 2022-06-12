@@ -66,6 +66,9 @@ logging.basicConfig(format='%(asctime)s.%(msecs)03d %(levelname)s: %(name)s %(me
                     datefmt='%Y-%m-%d %H:%M:%S')
 logger = logging.getLogger(__name__)
 
+if parms.debug > 0:
+    logger.setLevel(logging.DEBUG)
+
 PWR_LED_ON = False
 
 
@@ -76,9 +79,11 @@ def default_options():
     d['FAVORED_TAPER'] = ['miller']
     d['AUTO_UPDATE_ARCHIVE'] = True
     d['PLAY_LOSSLESS'] = False
+    d['ON_TOUR_ALLOWED'] = False
     d['PULSEAUDIO_ENABLE'] = False
     if controls.get_os_version() > 10:
         d['PULSEAUDIO_ENABLE'] = True
+        d['BLUETOOTH_ENABLE'] = True
     d['DEFAULT_START_TIME'] = datetime.time(15, 0)
     d['TIMEZONE'] = 'America/New_York'
     return d
@@ -91,23 +96,25 @@ def load_options(parms):
         f = open(parms.options_path, 'r')
         tmpd = json.loads(f.read())
         for k in config.optd.keys():
+            logger.debug(f"Loading options key is {k}")
             try:
-                if k in ['AUTO_UPDATE_ARCHIVE', 'PLAY_LOSSLESS', 'PULSEAUDIO_ENABLE']:  # make booleans.
+                if k in ['AUTO_UPDATE_ARCHIVE', 'PLAY_LOSSLESS', 'PULSEAUDIO_ENABLE', 'ON_TOUR_ALLOWED', 'BLUETOOTH_ENABLE']:  # make booleans.
                     tmpd[k] = tmpd[k].lower() == 'true'
+                    logger.debug(f"Booleans k is {k}")
                 if k in ['COLLECTIONS', 'FAVORED_TAPER']:   # make lists from comma-separated strings.
+                    logger.debug(f"lists k is {k}")
                     c = [x.strip() for x in tmpd[k].split(',') if x != '']
                     if k == 'COLLECTIONS':
                         c = ['Phish' if x.lower() == 'phish' else x for x in c]
                     tmpd[k] = c
                 if k in ['DEFAULT_START_TIME']:            # make datetime
+                    logger.debug(f"time k is {k}")
                     tmpd[k] = datetime.time.fromisoformat(tmpd[k])
             except Exception:
                 logger.warning(F"Failed to set option {k}. Using {config.optd[k]}")
         optd = tmpd
     except Exception:
         logger.warning(F"Failed to read options from {parms.options_path}. Using defaults")
-    if optd['MODULE'] == '78rpm':
-        optd['COLLECTIONS'] = ['georgeblood']
     config.optd.update(optd)  # update defaults with those read from the file.
     logger.info(F"in load_options, optd {optd}")
     os.environ['TZ'] = config.optd['TIMEZONE']
@@ -123,10 +130,19 @@ def load_options(parms):
 def save_options(optd):
     logger.debug(F"in save_options. optd {optd}")
     options = {}
+    f = open(parms.options_path, 'r')
+    tmpd = json.loads(f.read())
+    if optd['COLLECTIONS'] == None:
+        optd['COLLECTIONS'] = tmpd['COLLECTIONS']
     for arg in optd.keys():
         if arg == arg.upper():
             if arg == 'DEFAULT_START_TIME':
-                optd[arg] = datetime.time.strftime(optd[arg], '%H:%M:%S')
+                if isinstance(optd[arg], datetime.time):
+                    optd[arg] = datetime.time.strftime(optd[arg], '%H:%M:%S')
+            elif isinstance(optd[arg], (list, tuple)):
+                optd[arg] = ','.join(optd[arg])
+            elif isinstance(optd[arg], (bool)):
+                optd[arg] = str(optd[arg]).lower()
             options[arg] = optd[arg]
     with open(parms.options_path, 'w') as outfile:
         json.dump(options, outfile, indent=1)
@@ -139,9 +155,11 @@ except Exception:
 
 
 def main_test_update():
-    from timemachine import livemusic
+    from timemachine import livemusic as tm
     parms.test_update = True
-    livemusic.main_test_update(parms)
+    tm.default_options = default_options  # All modules share this function.
+    tm.save_options = save_options
+    tm.main_test_update(parms)
 
 
 def main():
@@ -155,7 +173,8 @@ def main():
         logger.error(f"MODULE {config.optd['MODULE']} not in valid set of modules (['livemusic','78rpm'])")
         exit()
 
-    tm.save_options = save_options  # All modules share this function.
+    tm.default_options = default_options  # All modules share this function.
+    tm.save_options = save_options
     tm.main(parms)
     exit()
 
