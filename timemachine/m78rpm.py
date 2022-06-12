@@ -161,6 +161,9 @@ def twist_knob(knob: RotaryEncoder, label, date_reader: controls.date_knob_reade
 
 
 def set_logger_debug():
+    global logger
+    global GDLogger
+    global controlsLogger
     logger.debug(F"Setting logger levels to {logging.DEBUG}")
     logger.setLevel(logging.DEBUG)
     GDLogger.setLevel(logging.DEBUG)
@@ -486,6 +489,7 @@ def month_button_longpress(button, state):
     if button.is_held:
         TMB.scr.clear()
         config.optd['MODULE'] = 'livemusic'
+        config.optd['COLLECTIONS'] = None
         save_options(config.optd)
         cmd = "sudo service timemachine restart"
         os.system(cmd)

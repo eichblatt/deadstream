@@ -66,6 +66,9 @@ logging.basicConfig(format='%(asctime)s.%(msecs)03d %(levelname)s: %(name)s %(me
                     datefmt='%Y-%m-%d %H:%M:%S')
 logger = logging.getLogger(__name__)
 
+if parms.debug > 0:
+    logger.setLevel(logging.DEBUG)
+
 PWR_LED_ON = False
 
 
@@ -112,8 +115,6 @@ def load_options(parms):
         optd = tmpd
     except Exception:
         logger.warning(F"Failed to read options from {parms.options_path}. Using defaults")
-    if optd['MODULE'] == '78rpm':
-        optd['COLLECTIONS'] = ['georgeblood']
     config.optd.update(optd)  # update defaults with those read from the file.
     logger.info(F"in load_options, optd {optd}")
     os.environ['TZ'] = config.optd['TIMEZONE']
@@ -129,10 +130,19 @@ def load_options(parms):
 def save_options(optd):
     logger.debug(F"in save_options. optd {optd}")
     options = {}
+    f = open(parms.options_path, 'r')
+    tmpd = json.loads(f.read())
+    if optd['COLLECTIONS'] == None:
+        optd['COLLECTIONS'] = tmpd['COLLECTIONS']
     for arg in optd.keys():
         if arg == arg.upper():
             if arg == 'DEFAULT_START_TIME':
-                optd[arg] = datetime.time.strftime(optd[arg], '%H:%M:%S')
+                if isinstance(optd[arg], datetime.time):
+                    optd[arg] = datetime.time.strftime(optd[arg], '%H:%M:%S')
+            elif isinstance(optd[arg], (list, tuple)):
+                optd[arg] = ','.join(optd[arg])
+            elif isinstance(optd[arg], (bool)):
+                optd[arg] = str(optd[arg]).lower()
             options[arg] = optd[arg]
     with open(parms.options_path, 'w') as outfile:
         json.dump(options, outfile, indent=1)
