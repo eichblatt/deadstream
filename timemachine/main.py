@@ -171,6 +171,7 @@ def main():
         logger.error(f"MODULE {config.optd['MODULE']} not in valid set of modules (['livemusic','78rpm'])")
         exit()
 
+    tm.default_options = default_options  # All modules share this function.
     tm.save_options = save_options  # All modules share this function.
     tm.main(parms)
     exit()
