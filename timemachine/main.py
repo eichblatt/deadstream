@@ -155,9 +155,11 @@ except Exception:
 
 
 def main_test_update():
-    from timemachine import livemusic
+    from timemachine import livemusic as tm
     parms.test_update = True
-    livemusic.main_test_update(parms)
+    tm.default_options = default_options  # All modules share this function.
+    tm.save_options = save_options
+    tm.main_test_update(parms)
 
 
 def main():
@@ -172,7 +174,7 @@ def main():
         exit()
 
     tm.default_options = default_options  # All modules share this function.
-    tm.save_options = save_options  # All modules share this function.
+    tm.save_options = save_options
     tm.main(parms)
     exit()
 
