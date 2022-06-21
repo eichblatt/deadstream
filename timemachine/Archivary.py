@@ -542,7 +542,7 @@ class IATapeDownloader(BaseTapeDownloader):
             os.remove(tmpfile)
         logger.info(f'saved {current_rows} collection names to {collection_path}')
 
-    def get_all_tapes(self, iddir, min_addeddate=None, date_range=None):
+    def get_all_tapes(self, iddir, min_addeddate=None, date_range=None, collection=None):
         """Get a list of all tapes.  Write all tapes to a folder by time period
         Args:
             iddir (str) : path where id's metadata will be written
@@ -556,6 +556,7 @@ class IATapeDownloader(BaseTapeDownloader):
         n_tapes_total = 0
         tapes = []
         yearly_collections = ['etree', 'georgeblood']  # should this be in config?
+        collection = collection if collection is not None else os.path.basename(iddir).replace('_ids', '')
 
         if not date_range:
             min_date = '1880-01-01'
@@ -570,7 +571,7 @@ class IATapeDownloader(BaseTapeDownloader):
             min_date = f'{date_range[0]}-01-01'
             max_date = f'{date_range[0]}-12-31'
 
-        r = self._get_piece(min_date, max_date, min_addeddate)
+        r = self._get_piece(min_date, max_date, min_addeddate, collection=collection)
         j = r.json()
         total = j['total']
         logger.debug(f"total rows {total}")
@@ -586,7 +587,7 @@ class IATapeDownloader(BaseTapeDownloader):
             logger.debug("in while loop")
             min_date_field = tapes[-1]['date']
             min_date = min_date_field[:10]  # Should we subtract some days for overlap?
-            r = self._get_piece(min_date, max_date, min_addeddate)
+            r = self._get_piece(min_date, max_date, min_addeddate, collection=collection)
             j = r.json()
             current_rows += j['count']
             tapes = j['items']
@@ -741,7 +742,7 @@ class PhishinArchive(BaseArchive):
         tapes = []
         if reload_ids or not os.path.exists(self.idpath):
             os.system(f'rm -rf {self.idpath}')
-            logger.info('Loading Tapes from the Archive...this will take a few minutes')
+            logger.info(f'Loading Tapes from the Archive...this will take a few minutes. Writing to {self.idpath}')
             n_tapes = self.downloader.get_all_tapes(self.idpath)  # this will write chunks to folder
             logger.info(f'Loaded {n_tapes} tapes from archive')
         # loop over chunks -- get max addeddate before filtering collections.
@@ -778,6 +779,10 @@ class PhishinArchive(BaseArchive):
         else:
             tapes = self.tape_dates[date]
         return tapes[0]
+
+    def year_artists(self, year, other_year=None):
+        id_dict = {1983: 'Phish'}
+        return id_dict
 
 
 class PhishinTape(BaseTape):
