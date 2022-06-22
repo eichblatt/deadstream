@@ -186,7 +186,7 @@ def shuffle_artist(state):
     else:
         date_range = config.DATE_RANGE
     TMB.scr.show_experience(text="Loading. May \n Require 5 Minutes", color=(255, 100, 0), force=True)
-    date_reader.archive = Archivary.Archivary(dbpath, reload_ids=reload_ids, with_latest=False, collection_list=config.optd['COLLECTIONS'], date_range=date_range)
+    date_reader.archive = Archivary.Archivary(reload_ids=reload_ids, with_latest=False, collection_list=config.optd['COLLECTIONS'], date_range=date_range)
     artist_year_dict = date_reader.archive.year_artists(*config.DATE_RANGE)
     #artist_year_dict = archive.year_artists(date.year, config.OTHER_YEAR)
     artist_list = sorted(list(artist_year_dict.keys()))
