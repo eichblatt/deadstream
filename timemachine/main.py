@@ -153,14 +153,15 @@ try:
 except Exception:
     logger.warning("Failed in loading options")
 try:
-    config.RELOAD_ALL_COLLECTIONS = '__reload__' in config.optd['COLLECTIONS']
-    config.optd['COLLECTIONS'] = [x for x in config.optd['COLLECTIONS'] if x != '__reload__']
+    config.RELOAD_COLLECTIONS = '__reload__' in config.optd['COLLECTIONS']
+    config.UPDATE_COLLECTIONS = '__update__' in config.optd['COLLECTIONS']
+    config.optd['COLLECTIONS'] = [x for x in config.optd['COLLECTIONS'] if not x in ['__reload__', '__update__']]
     optd = config.optd.copy()
     save_options(optd)
 except Exception:
     logger.warning("Failed in saving options")
 finally:
-    config.optd['COLLECTIONS'] = [x for x in config.optd['COLLECTIONS'] if x != '__reload__']
+    config.optd['COLLECTIONS'] = [x for x in config.optd['COLLECTIONS'] if not x in ['__reload__', '__update__']]
 
 
 def main_test_update():
@@ -174,10 +175,6 @@ def main_test_update():
 def main():
     # archive = Archivary.Archivary(parms.dbpath, reload_ids=reload_ids, with_latest=False, collection_list=config.optd['COLLECTIONS'])
     # player = GD.GDPlayer()
-    parms.__update__ = False
-    if '__update__' in config.optd['COLLECTIONS']:
-        config.optd['COLLECTIONS'] = [x for x in config.optd['COLLECTIONS'] if x != '__update__']
-        parms.__update__ = True if not config.RELOAD_ALL_COLLECTIONS else False
     if config.optd['MODULE'] == 'livemusic':
         from timemachine import livemusic as tm
     elif config.optd['MODULE'] == '78rpm':
