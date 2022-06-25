@@ -257,15 +257,17 @@ class BaseArchive(abc.ABC):
         self.collection_list = collection_list
         self.tapes = []
         self.date_range = date_range
-        self.collection_list = collection_list if type(collection_list) == list else [collection_list]
+        self.collection_list = collection_list if isinstance(collection_list, (list, tuple)) else [collection_list]
         if len(self.collection_list) == 1:
-            self.idpath = os.path.join(self.dbpath, F'{collection_list[0]}_ids')
+            self.idpath = [os.path.join(self.dbpath, F'{collection_list[0]}_ids')]
             if self.collection_list[0] == 'Phish':
+                self.idpath = self.idpath[0]
                 self.downloader = PhishinTapeDownloader(url, collection_list=collection_list[0])
             else:
                 self.downloader = IATapeDownloader(url, collection_list=collection_list[0])
         else:
-            self.idpath = os.path.join(self.dbpath, 'etree_ids')
+            self.idpath = [os.path.join(self.dbpath, f'{x}_ids') for x in self.collection_list]
+            # self.idpath = os.path.join(self.dbpath, 'etree_ids')
             self.downloader = IATapeDownloader(url)
         self.set_data = None
 
@@ -541,7 +543,7 @@ class IATapeDownloader(BaseTapeDownloader):
             os.remove(tmpfile)
         logger.info(f'saved {current_rows} collection names to {collection_path}')
 
-    def get_all_tapes(self, iddir, min_addeddate=None, date_range=None):
+    def get_all_tapes(self, iddir, min_addeddate=None, date_range=None, collection=None):
         """Get a list of all tapes.  Write all tapes to a folder by time period
         Args:
             iddir (str) : path where id's metadata will be written
@@ -555,9 +557,10 @@ class IATapeDownloader(BaseTapeDownloader):
         n_tapes_total = 0
         tapes = []
         yearly_collections = ['etree', 'georgeblood']  # should this be in config?
+        collection = collection if collection is not None else os.path.basename(iddir).replace('_ids', '')
 
         if not date_range:
-            min_date = '1800-01-01'
+            min_date = '1880-01-01'
             max_date = datetime.datetime.now().date().strftime('%Y-%m-%d')
         elif len(date_range) == 2:
             min_date = f'{date_range[0]}-01-01'
@@ -569,7 +572,7 @@ class IATapeDownloader(BaseTapeDownloader):
             min_date = f'{date_range[0]}-01-01'
             max_date = f'{date_range[0]}-12-31'
 
-        r = self._get_piece(min_date, max_date, min_addeddate)
+        r = self._get_piece(min_date, max_date, min_addeddate, collection=collection)
         j = r.json()
         total = j['total']
         logger.debug(f"total rows {total}")
@@ -585,7 +588,7 @@ class IATapeDownloader(BaseTapeDownloader):
             logger.debug("in while loop")
             min_date_field = tapes[-1]['date']
             min_date = min_date_field[:10]  # Should we subtract some days for overlap?
-            r = self._get_piece(min_date, max_date, min_addeddate)
+            r = self._get_piece(min_date, max_date, min_addeddate, collection=collection)
             j = r.json()
             current_rows += j['count']
             tapes = j['items']
@@ -630,18 +633,19 @@ class IATapeDownloader(BaseTapeDownloader):
             tapes.extend(j['items'])
         return tapes
 
-    def _get_piece(self, min_date, max_date, min_addeddate=None):
+    def _get_piece(self, min_date, max_date, min_addeddate=None, collection=None):
         """Get one chunk of a year's tape information.
         Returns a list of dictionaries of tape information
         """
         parms = self.parms.copy()
         n_tries = 0
         need_retry = False
+        collection = self.collection_list if collection is None else collection
         if min_addeddate is None:
-            query = F'collection:{self.collection_list} AND date:[{min_date} TO {max_date}]'
+            query = F'collection:{collection} AND date:[{min_date} TO {max_date}]'
         else:
             # max_addeddate = datetime.datetime.now().strftime('%Y-%m-%dT%H:%M:%SZ')
-            query = F'collection:{self.collection_list} AND date:[{min_date} TO {max_date}] AND addeddate:[{min_addeddate} TO {max_date}]'
+            query = F'collection:{collection} AND date:[{min_date} TO {max_date}] AND addeddate:[{min_addeddate} TO {max_date}]'
         parms['q'] = query
         try:
             r = requests.get(self.api, params=parms)
@@ -734,12 +738,12 @@ class PhishinArchive(BaseArchive):
         self.tapes = [PhishinTape(self.dbpath, tape, self.set_data) for tape in loaded_tapes]
         return self.tapes
 
-    def load_current_tapes(self, reload_ids=False):
+    def load_current_tapes(self, reload_ids=False):   # Phishin
         logger.debug("Loading current tapes")
         tapes = []
         if reload_ids or not os.path.exists(self.idpath):
             os.system(f'rm -rf {self.idpath}')
-            logger.info('Loading Tapes from the Archive...this will take a few minutes')
+            logger.info(f'Loading Tapes from the Archive...this will take a few minutes. Writing to {self.idpath}')
             n_tapes = self.downloader.get_all_tapes(self.idpath)  # this will write chunks to folder
             logger.info(f'Loaded {n_tapes} tapes from archive')
         # loop over chunks -- get max addeddate before filtering collections.
@@ -776,6 +780,10 @@ class PhishinArchive(BaseArchive):
         else:
             tapes = self.tape_dates[date]
         return tapes[0]
+
+    def year_artists(self, year, other_year=None):
+        id_dict = {1983: 'Phish'}
+        return id_dict
 
 
 class PhishinTape(BaseTape):
@@ -954,9 +962,10 @@ class GDArchive(BaseArchive):
             tapes = self.tape_dates[date]
         return tapes[0]
 
-    def load_current_tapes(self, reload_ids=False):   # IA
+    def load_current_tapes(self, reload_ids=False, meta_path=None):   # IA
         """ Load current tapes or download them from archive.org if they are not already loaded """
         logger.debug("Loading current tapes")
+        meta_path = self.idpath if meta_path is None else meta_path
         tapes = []
         addeddates = []
         collection_path = os.path.join(os.getenv('HOME'), '.etree_collection_names.json')
@@ -968,69 +977,70 @@ class GDArchive(BaseArchive):
             self.date_range = [self.date_range]
         years_to_load = range(min(self.date_range), max(self.date_range) + 1) if len(self.date_range) <= 2 else self.date_range
 
-        meta_files = os.listdir(self.idpath) if os.path.exists(self.idpath) else []
+        meta_files = os.listdir(meta_path) if os.path.exists(meta_path) else []
         meta_files = [x for x in meta_files if x.endswith('.json')]
         meta_files = [x for x in meta_files if int(os.path.splitext(x)[0].split('_')[-1]) in years_to_load]
 
         if reload_ids or len(meta_files) == 0:
             if reload_ids:
-                os.system(f'rm -rf {self.idpath}')
+                os.system(f'rm -rf {meta_path}')
             logger.info('Loading Tapes from the Archive...this will take a few minutes')
-            n_tapes = self.downloader.get_all_tapes(self.idpath, date_range=self.date_range)  # this will write chunks to folder
+            n_tapes = self.downloader.get_all_tapes(meta_path, date_range=self.date_range)  # this will write chunks to folder
             logger.info(f'Loaded {n_tapes} tapes from archive')
 
-        elif (len(meta_files) < len(years_to_load)) and os.path.basename(self.idpath).replace('_ids', '') in yearly_collections:
+        elif (len(meta_files) < len(years_to_load)) and os.path.basename(meta_path).replace('_ids', '') in yearly_collections:
             for year in years_to_load:
                 if len([x for x in meta_files if f'{year}' in x]) == 0:
-                    n_tapes = self.downloader.get_all_tapes(self.idpath, date_range=[year])
+                    n_tapes = self.downloader.get_all_tapes(meta_path, date_range=[year])
 
-        if reload_ids or not os.path.exists(collection_path) and self.idpath.endswith('etree_ids'):
+        if reload_ids or not os.path.exists(collection_path) and meta_path.endswith('etree_ids'):
             logger.info('Loading collection names from archive.org')
             try:
                 self.downloader.save_all_collection_names()
             except Exception as e:
                 logger.warning(f'Error saving all collection_names {e}')
         # loop over chunks -- get max addeddate before filtering collections.
-        if os.path.isdir(self.idpath):
-            for filename in os.listdir(self.idpath):
+        if os.path.isdir(meta_path):
+            for filename in os.listdir(meta_path):
                 if filename.endswith('.json'):
                     time_period = int(filename.split('_')[-1].replace('.json', ''))
                     # if min_year <= time_period <= max_year:
                     if time_period in years_to_load:
                         logger.info(f"loading time period {time_period}")
-                        chunk = json.load(open(os.path.join(self.idpath, filename), 'r'))
+                        chunk = json.load(open(os.path.join(meta_path, filename), 'r'))
                         addeddates.append(max([x['addeddate'] for x in chunk]))
                         chunk = [t for t in chunk if any(x in self.collection_list for x in t['collection'])]
                         tapes.extend(chunk)
         else:
-            tapes = json.load(open(self.idpath, 'r'))
+            tapes = json.load(open(meta_path, 'r'))
             addeddates.append(max([x['addeddate'] for x in tapes]))
             tapes = [t for t in tapes if any(x in self.collection_list for x in t['collection'])]
         max_addeddate = max(addeddates)
         return (tapes, max_addeddate)
 
-    def load_tapes(self, reload_ids=False, with_latest=False):
+    def load_tapes(self, reload_ids=False, with_latest=False):    # IA
         """ Load the tapes, then add anything which has been added since the tapes were saved """
         logger.info('begin loading tapes')
-        n_tapes = 0
-        loaded_tapes, max_addeddate = self.load_current_tapes(reload_ids)
-        logger.debug(f'max addeddate {max_addeddate}')
-
-        min_download_addeddate = (datetime.datetime.fromisoformat(max_addeddate[:-1])) - datetime.timedelta(hours=1)
-        min_download_addeddate = datetime.datetime.strftime(min_download_addeddate, '%Y-%m-%dT%H:%M:%SZ')
-        logger.debug(f'min_download_addeddate {min_download_addeddate}')
-
-        if with_latest:
-            logger.debug(f'Refreshing Tapes\nmax addeddate {max_addeddate}\nmin_download_addeddate {min_download_addeddate}')
-            n_tapes = self.downloader.get_all_tapes(self.idpath, min_download_addeddate)
-            logger.info(f'Loaded {n_tapes} new tapes from archive')
-        if n_tapes > 0:
-            logger.info(f'Adding {n_tapes} tapes')
-            loaded_tapes, _ = self.load_current_tapes()
-        else:
-            if len(self.tapes) > 0:  # The tapes have already been written, and nothing was added
-                return self.tapes
-        self.tapes = [GDTape(self.dbpath, tape, self.set_data) for tape in loaded_tapes]
+        all_tapes_count = 0
+        all_loaded_tapes = []
+        for meta_path in self.idpath:
+            n_tapes = 0
+            loaded_tapes, max_addeddate = self.load_current_tapes(reload_ids, meta_path=meta_path)
+            logger.debug(f'max addeddate {max_addeddate}')
+            if with_latest:
+                min_download_addeddate = (datetime.datetime.fromisoformat(max_addeddate[:-1])) - datetime.timedelta(hours=1)
+                min_download_addeddate = datetime.datetime.strftime(min_download_addeddate, '%Y-%m-%dT%H:%M:%SZ')
+                logger.debug(f'Refreshing Tapes\nmax addeddate {max_addeddate}\nmin_download_addeddate {min_download_addeddate}')
+                n_tapes = self.downloader.get_all_tapes(meta_path, min_download_addeddate)
+                logger.info(f'Loaded {n_tapes} new tapes from archive')
+            if n_tapes > 0:
+                logger.info(f'Adding {n_tapes} tapes')
+                loaded_tapes, _ = self.load_current_tapes(meta_path=meta_path)
+            all_loaded_tapes.extend(loaded_tapes)
+            all_tapes_count = all_tapes_count + n_tapes
+        if (all_tapes_count == 0) and (len(self.tapes) > 0):  # The tapes have already been written, and nothing was added
+            return self.tapes
+        self.tapes = [GDTape(self.dbpath, tape, self.set_data) for tape in all_loaded_tapes]
         return self.tapes
 
     def year_artists(self, year, other_year=None):
