@@ -154,6 +154,7 @@ except Exception:
     logger.warning("Failed in loading options")
 try:
     config.RELOAD_ALL_COLLECTIONS = '__reload__' in config.optd['COLLECTIONS']
+    optd['COLLECTIONS'] = [x for x in optd['COLLECTIONS'] if x != '__reload__']
     optd = config.optd.copy()
     save_options(optd)
 except Exception:
