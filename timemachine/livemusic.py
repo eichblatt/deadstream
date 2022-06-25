@@ -915,6 +915,7 @@ else:
 
 if config.RELOAD_ALL_COLLECTIONS:
     logger.info('Reloading ids')
+logger.info(f"config.optd is now {config.optd}")
 archive = Archivary.Archivary(dbpath, reload_ids=config.RELOAD_ALL_COLLECTIONS, with_latest=False, collection_list=config.optd['COLLECTIONS'], date_range=date_range)
 player = GD.GDPlayer()
 if config.optd['PULSEAUDIO_ENABLE']:
