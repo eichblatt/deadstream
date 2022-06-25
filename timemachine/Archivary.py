@@ -259,8 +259,9 @@ class BaseArchive(abc.ABC):
         self.date_range = date_range
         self.collection_list = collection_list if isinstance(collection_list, (list, tuple)) else [collection_list]
         if len(self.collection_list) == 1:
-            self.idpath = os.path.join(self.dbpath, F'{collection_list[0]}_ids')
+            self.idpath = [os.path.join(self.dbpath, F'{collection_list[0]}_ids')]
             if self.collection_list[0] == 'Phish':
+                self.idpath = self.idpath[0]
                 self.downloader = PhishinTapeDownloader(url, collection_list=collection_list[0])
             else:
                 self.downloader = IATapeDownloader(url, collection_list=collection_list[0])
@@ -718,6 +719,8 @@ class PhishinArchive(BaseArchive):
     def load_tapes(self, reload_ids=False, with_latest=False):
         """ Load the tapes, then add anything which has been added since the tapes were saved """
         n_tapes = 0
+        import pdb
+        pdb.set_trace()
 
         if reload_ids or not os.path.exists(self.idpath):
             os.system(f'rm -rf {self.idpath}')
@@ -737,7 +740,7 @@ class PhishinArchive(BaseArchive):
         self.tapes = [PhishinTape(self.dbpath, tape, self.set_data) for tape in loaded_tapes]
         return self.tapes
 
-    def load_current_tapes(self, reload_ids=False):
+    def load_current_tapes(self, reload_ids=False):   # Phishin
         logger.debug("Loading current tapes")
         tapes = []
         if reload_ids or not os.path.exists(self.idpath):
@@ -1017,7 +1020,7 @@ class GDArchive(BaseArchive):
         max_addeddate = max(addeddates)
         return (tapes, max_addeddate)
 
-    def load_tapes(self, reload_ids=False, with_latest=False):
+    def load_tapes(self, reload_ids=False, with_latest=False):    # IA
         """ Load the tapes, then add anything which has been added since the tapes were saved """
         logger.info('begin loading tapes')
         all_tapes_count = 0

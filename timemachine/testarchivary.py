@@ -11,6 +11,12 @@ track_event = Event()
 config.optd = {'COLLECTIONS': ['GratefulDead', 'Phish', 'PhilLeshandFriends', 'TedeschiTrucksBand'], 'FAVORED_TAPER': 'miller', 'PLAY_LOSSLESS': 'false'}
 aa = Archivary.Archivary(collection_list=config.optd['COLLECTIONS'])
 
+config.optd = {'COLLECTIONS': ['georgeblood'], 'FAVORED_TAPER': 'miller', 'PLAY_LOSSLESS': 'false'}
+aa = Archivary.Archivary(collection_list=config.optd['COLLECTIONS'], date_range=[1930, 1935])
+
+config.optd = {'COLLECTIONS': ['Phish'], 'FAVORED_TAPER': 'miller', 'PLAY_LOSSLESS': 'false'}
+aa = Archivary.Archivary(collection_list=config.optd['COLLECTIONS'])
+
 print(F"tape dates on 1995-07-02 are {aa.tape_dates['1995-07-02']}")
 
 tape = aa.best_tape('1992-05-05')
