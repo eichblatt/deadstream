@@ -1006,9 +1006,11 @@ def main(parms_arg):
     if parms.verbose or parms.debug:
         set_logger_debug()
     load_saved_state(state)
-    if config.optd['AUTO_UPDATE_ARCHIVE']:
+    if config.optd['AUTO_UPDATE_ARCHIVE'] or parms.__update__:
         archive_updater = Archivary.Archivary_Updater(state, 3600, stop_update_event, scr=TMB.scr, lock=lock)
         archive_updater.start()
+        if parms.__update__:
+            archive_updater.update()  # Do it now
     eloop.run()
     exit()
 

@@ -165,6 +165,11 @@ def main_test_update():
 def main():
     # archive = Archivary.Archivary(parms.dbpath, reload_ids=reload_ids, with_latest=False, collection_list=config.optd['COLLECTIONS'])
     # player = GD.GDPlayer()
+    if '__update__' in config.optd['COLLECTIONS']:
+        config.optd['COLLECTIONS'] = [x for x in config.optd['COLLECTIONS'] if x != '__update__']
+        parms.__update__ = True
+    else:
+        parms.__update__ = False
     if config.optd['MODULE'] == 'livemusic':
         from timemachine import livemusic as tm
     elif config.optd['MODULE'] == '78rpm':
