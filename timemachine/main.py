@@ -160,7 +160,7 @@ try:
 except Exception:
     logger.warning("Failed in saving options")
 finally:
-    config.optd['COLLECTIONS'] = [x for x in optd['COLLECTIONS'] if x != '__reload__']
+    config.optd['COLLECTIONS'] = [x for x in config.optd['COLLECTIONS'] if x != '__reload__']
 
 
 def main_test_update():
