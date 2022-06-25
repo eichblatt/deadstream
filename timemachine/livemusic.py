@@ -901,11 +901,9 @@ TMB.scr.show_text("Time\n  Machine\n   Loading...", color=(0, 255, 255), force=F
 TMB.scr.show_text(F"{ip_address}", loc=(0, 100), font=TMB.scr.smallfont, color=(255, 255, 255))
 
 
-reload_ids = False
 if TMB.rewind.is_pressed:
     TMB.scr.show_text("Reloading\nfrom\narchive.org...", color=(0, 255, 255), force=True, clear=True)
     logger.info('Reloading from archive.org')
-    # reload_ids = True
 if TMB.stop.is_pressed:
     logger.info('Resetting to factory archive -- nyi')
 
@@ -914,7 +912,10 @@ if 'cylindertransfer' in config.optd['COLLECTIONS']:
     date_range = (1880, 1930)
 else:
     date_range = (1960, datetime.datetime.now().year)
-archive = Archivary.Archivary(dbpath, reload_ids=reload_ids, with_latest=False, collection_list=config.optd['COLLECTIONS'], date_range=date_range)
+
+if config.RELOAD_ALL_COLLECTIONS:
+    logger.info('Reloading ids')
+archive = Archivary.Archivary(dbpath, reload_ids=config.RELOAD_ALL_COLLECTIONS, with_latest=False, collection_list=config.optd['COLLECTIONS'], date_range=date_range)
 player = GD.GDPlayer()
 if config.optd['PULSEAUDIO_ENABLE']:
     logger.debug('Setting Audio device to pulse')
