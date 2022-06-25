@@ -719,8 +719,6 @@ class PhishinArchive(BaseArchive):
     def load_tapes(self, reload_ids=False, with_latest=False):
         """ Load the tapes, then add anything which has been added since the tapes were saved """
         n_tapes = 0
-        import pdb
-        pdb.set_trace()
 
         if reload_ids or not os.path.exists(self.idpath):
             os.system(f'rm -rf {self.idpath}')
