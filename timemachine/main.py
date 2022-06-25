@@ -155,12 +155,13 @@ except Exception:
 try:
     config.RELOAD_COLLECTIONS = '__reload__' in config.optd['COLLECTIONS']
     config.UPDATE_COLLECTIONS = '__update__' in config.optd['COLLECTIONS']
-    config.optd['COLLECTIONS'] = [x for x in config.optd['COLLECTIONS'] if not x in ['__reload__', '__update__']]
+    config.optd['COLLECTIONS'] = [x for x in config.optd['COLLECTIONS'] if not x in ['__reload__']]
     optd = config.optd.copy()
     save_options(optd)
 except Exception:
     logger.warning("Failed in saving options")
 finally:
+    # Although we allow __update__ to remain in the config file, we can't send it to the main program, so remove it here.
     config.optd['COLLECTIONS'] = [x for x in config.optd['COLLECTIONS'] if not x in ['__reload__', '__update__']]
 
 
