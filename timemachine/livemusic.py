@@ -913,10 +913,10 @@ if 'cylindertransfer' in config.optd['COLLECTIONS']:
 else:
     date_range = (1960, datetime.datetime.now().year)
 
-if config.RELOAD_ALL_COLLECTIONS:
+if config.RELOAD_COLLECTIONS:
     logger.info('Reloading ids')
 logger.info(f"config.optd is now {config.optd}")
-archive = Archivary.Archivary(dbpath, reload_ids=config.RELOAD_ALL_COLLECTIONS, with_latest=False, collection_list=config.optd['COLLECTIONS'], date_range=date_range)
+archive = Archivary.Archivary(dbpath, reload_ids=config.RELOAD_COLLECTIONS, with_latest=False, collection_list=config.optd['COLLECTIONS'], date_range=date_range)
 player = GD.GDPlayer()
 if config.optd['PULSEAUDIO_ENABLE']:
     logger.debug('Setting Audio device to pulse')
@@ -1008,10 +1008,10 @@ def main(parms_arg):
     if parms.verbose or parms.debug:
         set_logger_debug()
     load_saved_state(state)
-    if config.optd['AUTO_UPDATE_ARCHIVE'] or parms.__update__:
+    if config.optd['AUTO_UPDATE_ARCHIVE'] or config.UPDATE_COLLECTIONS:
         archive_updater = Archivary.Archivary_Updater(state, 3600, stop_update_event, scr=TMB.scr, lock=lock)
         archive_updater.start()
-        if parms.__update__:
+        if config.UPDATE_COLLECTIONS:
             archive_updater.update()  # Do it now
     eloop.run()
     exit()
