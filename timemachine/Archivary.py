@@ -1015,7 +1015,7 @@ class GDArchive(BaseArchive):
             tapes = json.load(open(meta_path, 'r'))
             addeddates.append(max([x['addeddate'] for x in tapes]))
             tapes = [t for t in tapes if any(x in self.collection_list for x in t['collection'])]
-        max_addeddate = max(addeddates)
+        max_addeddate = max(addeddates) if len(tapes) > 0 else None
         return (tapes, max_addeddate)
 
     def load_tapes(self, reload_ids=False, with_latest=False):    # IA
@@ -1026,6 +1026,8 @@ class GDArchive(BaseArchive):
         for meta_path in self.idpath:
             n_tapes = 0
             loaded_tapes, max_addeddate = self.load_current_tapes(reload_ids, meta_path=meta_path)
+            if len(loaded_tapes) == 0:  # e.g. in case of an invalid collection
+                continue
             logger.debug(f'max addeddate {max_addeddate}')
             if with_latest:
                 min_download_addeddate = (datetime.datetime.fromisoformat(max_addeddate[:-1])) - datetime.timedelta(hours=1)
