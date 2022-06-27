@@ -908,10 +908,25 @@ if TMB.stop.is_pressed:
     logger.info('Resetting to factory archive -- nyi')
 
 dbpath = os.path.join(GD.ROOT_DIR, 'metadata')
-if 'cylindertransfer' in config.optd['COLLECTIONS']:
-    date_range = (1880, 1930)
-else:
-    date_range = (1960, datetime.datetime.now().year)
+
+
+def set_date_range():
+    start_year = 1880
+    collection_path = os.path.join(os.getenv('HOME'), '.etree_collection_names.json')
+    d = json.load(open(collection_path, 'r'))
+    etree_collections = [x['identifier'].lower() for x in d['items']]
+    my_collections = [x.lower() for x in config.optd['COLLECTIONS']]
+    if set(my_collections).issubset(etree_collections):
+        start_year = 1960
+    date_range = (start_year, datetime.datetime.now().year)
+    return date_range
+
+
+try:
+    date_range = set_date_range()
+except Exception as e:
+    logger.warning("Error setting date range. Using 1880 as start year")
+    date_range = (1880, datetime.datetime.now().year)
 
 if config.RELOAD_COLLECTIONS:
     logger.info('Reloading ids')

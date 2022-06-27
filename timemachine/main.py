@@ -78,6 +78,7 @@ def default_options():
     d['COLLECTIONS'] = ['GratefulDead']
     d['FAVORED_TAPER'] = ['miller']
     d['AUTO_UPDATE_ARCHIVE'] = True
+    d['UPDATE_ARCHIVE_ON_STARTUP'] = False
     d['PLAY_LOSSLESS'] = False
     d['ON_TOUR_ALLOWED'] = False
     d['PULSEAUDIO_ENABLE'] = False
@@ -98,7 +99,7 @@ def load_options(parms):
         for k in config.optd.keys():
             logger.debug(f"Loading options key is {k}")
             try:
-                if k in ['AUTO_UPDATE_ARCHIVE', 'PLAY_LOSSLESS', 'PULSEAUDIO_ENABLE', 'ON_TOUR_ALLOWED', 'BLUETOOTH_ENABLE']:  # make booleans.
+                if k in ['AUTO_UPDATE_ARCHIVE', 'PLAY_LOSSLESS', 'PULSEAUDIO_ENABLE', 'ON_TOUR_ALLOWED', 'BLUETOOTH_ENABLE', 'UPDATE_ARCHIVE_ON_STARTUP']:  # make booleans.
                     tmpd[k] = tmpd[k].lower() == 'true'
                     logger.debug(f"Booleans k is {k}")
                 if k in ['COLLECTIONS', 'FAVORED_TAPER']:   # make lists from comma-separated strings.
@@ -154,7 +155,7 @@ except Exception:
     logger.warning("Failed in loading options")
 try:
     config.RELOAD_COLLECTIONS = '__reload__' in [x.lower() for x in config.optd['COLLECTIONS']]
-    config.UPDATE_COLLECTIONS = '__update__' in [x.lower() for x in config.optd['COLLECTIONS']]
+    config.UPDATE_COLLECTIONS = ('__update__' in [x.lower() for x in config.optd['COLLECTIONS']]) or config.optd['UPDATE_ARCHIVE_ON_STARTUP']
     config.optd['COLLECTIONS'] = [x for x in config.optd['COLLECTIONS'] if not x.lower() in ['__reload__']]
     optd = config.optd.copy()
     save_options(optd)

@@ -77,9 +77,9 @@ def default_options():
     d = {}
     d['MODULE'] = 'livemusic'
     d['COLLECTIONS'] = 'GratefulDead'
-    d['SCROLL_VENUE'] = 'true'
     d['FAVORED_TAPER'] = 'miller'
     d['AUTO_UPDATE_ARCHIVE'] = 'true'
+    d['UPDATE_ARCHIVE_ON_STARTUP'] = 'false'
     d['ON_TOUR_ALLOWED'] = 'false'
     d['PLAY_LOSSLESS'] = 'false'
     d['PULSEAUDIO_ENABLE'] = 'false'
@@ -354,7 +354,8 @@ class OptionsServer(object):
             outstring += ' pattern="true|false" title="true or false"> <p>'
         else:
             if k == 'COLLECTIONS':
-                outstring += '> see the <a href=https://archive.org/browse.php?collection=etree&field=creator target="_blank"> list of valid collection names </a'
+                outstring += '> see the <a href=https://archive.org/browse.php?collection=etree&field=creator target="_blank"> list of live music collection names </a>'
+                outstring += f'Current Selection: {v} <p'
             outstring += '> <p>'
         outstring += '</label>'
         return outstring

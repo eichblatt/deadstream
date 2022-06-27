@@ -141,9 +141,9 @@ def test_buttons(event, label):
 def default_options():
     d = {}
     d['COLLECTIONS'] = 'GratefulDead'
-    d['SCROLL_VENUE'] = 'true'
     d['FAVORED_TAPER'] = 'miller'
     d['AUTO_UPDATE_ARCHIVE'] = 'true'
+    d['UPDATE_ARCHIVE_ON_STARTUP'] = 'false'
     d['ON_TOUR_ALLOWED'] = 'false'
     d['PLAY_LOSSLESS'] = 'false'
     d['PULSEAUDIO_ENABLE'] = 'false'
