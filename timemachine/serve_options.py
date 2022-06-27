@@ -404,7 +404,6 @@ class OptionsServer(object):
                 else:
                     proper_collections.append(artist)
         kwargs['COLLECTIONS'] = str.join(',', proper_collections)
-        logger.debug(F'proper collections {proper_collections}')
         logger.debug(F'args: {args},kwargs:{kwargs},\nType: {type(kwargs)}')
 
         self.save_options(kwargs)
