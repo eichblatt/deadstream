@@ -908,10 +908,14 @@ if TMB.stop.is_pressed:
     logger.info('Resetting to factory archive -- nyi')
 
 dbpath = os.path.join(GD.ROOT_DIR, 'metadata')
-if 'cylindertransfer' in config.optd['COLLECTIONS']:
-    date_range = (1880, 1930)
-else:
-    date_range = (1960, datetime.datetime.now().year)
+
+if 'cylindertransfer' in [x.lower() for x in config.optd['COLLECTIONS']]:
+    start_year = 1880
+elif 'oldtimeradio' in [x.lower() for x in config.optd['COLLECTIONS']]:
+    start_year = 1920
+else:  # If all of the collections are in the live_music collection, which we _should_ have downloaded.
+    start_year = 1960
+date_range = (start_year, datetime.datetime.now().year)
 
 if config.RELOAD_COLLECTIONS:
     logger.info('Reloading ids')
