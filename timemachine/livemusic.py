@@ -909,13 +909,24 @@ if TMB.stop.is_pressed:
 
 dbpath = os.path.join(GD.ROOT_DIR, 'metadata')
 
-if 'cylindertransfer' in [x.lower() for x in config.optd['COLLECTIONS']]:
+
+def set_date_range():
     start_year = 1880
-elif 'oldtimeradio' in [x.lower() for x in config.optd['COLLECTIONS']]:
-    start_year = 1920
-else:  # If all of the collections are in the live_music collection, which we _should_ have downloaded.
-    start_year = 1960
-date_range = (start_year, datetime.datetime.now().year)
+    collection_path = os.path.join(os.getenv('HOME'), '.etree_collection_names.json')
+    d = json.load(open(collection_path, 'r'))
+    etree_collections = [x['identifier'].lower() for x in d['items']]
+    my_collections = [x.lower() for x in config.optd['COLLECTIONS']]
+    if set(my_collections).issubset(etree_collections):
+        start_year = 1960
+    date_range = (start_year, datetime.datetime.now().year)
+    return date_range
+
+
+try:
+    date_range = set_date_range()
+except Exception as e:
+    logger.warning("Error setting date range. Using 1880 as start year")
+    date_range = (1880, datetime.datetime.now().year)
 
 if config.RELOAD_COLLECTIONS:
     logger.info('Reloading ids')
