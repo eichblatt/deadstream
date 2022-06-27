@@ -398,7 +398,7 @@ class OptionsServer(object):
             elif artist.lower().strip() == 'phish':
                 proper_collections.append('Phish')
             else:
-                candidates = difflib.get_close_matches(artist, valid_collection_names, cutoff=0.85)
+                candidates = difflib.get_close_matches(artist, valid_collection_names, cutoff=0.7)
                 if len(candidates) > 0:
                     proper_collections.append(candidates[0])
                 else:
