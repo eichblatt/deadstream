@@ -141,7 +141,6 @@ def test_buttons(event, label):
 def default_options():
     d = {}
     d['COLLECTIONS'] = 'GratefulDead'
-    d['SCROLL_VENUE'] = 'true'
     d['FAVORED_TAPER'] = 'miller'
     d['AUTO_UPDATE_ARCHIVE'] = 'true'
     d['ON_TOUR_ALLOWED'] = 'false'

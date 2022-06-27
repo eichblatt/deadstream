@@ -77,7 +77,6 @@ def default_options():
     d = {}
     d['MODULE'] = 'livemusic'
     d['COLLECTIONS'] = 'GratefulDead'
-    d['SCROLL_VENUE'] = 'true'
     d['FAVORED_TAPER'] = 'miller'
     d['AUTO_UPDATE_ARCHIVE'] = 'true'
     d['ON_TOUR_ALLOWED'] = 'false'
