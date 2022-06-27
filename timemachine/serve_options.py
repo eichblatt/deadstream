@@ -355,7 +355,7 @@ class OptionsServer(object):
         else:
             if k == 'COLLECTIONS':
                 outstring += '> see the <a href=https://archive.org/browse.php?collection=etree&field=creator target="_blank"> list of live music collection names </a>'
-                outstring += f'Current Selection: {v} <p'
+                outstring += f'<p>Current Selection: {v} <p'
             outstring += '> <p>'
         outstring += '</label>'
         return outstring
