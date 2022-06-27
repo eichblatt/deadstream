@@ -354,7 +354,8 @@ class OptionsServer(object):
             outstring += ' pattern="true|false" title="true or false"> <p>'
         else:
             if k == 'COLLECTIONS':
-                outstring += '> see the <a href=https://archive.org/browse.php?collection=etree&field=creator target="_blank"> list of valid collection names </a'
+                outstring += '> see the <a href=https://archive.org/browse.php?collection=etree&field=creator target="_blank"> list of live music collection names </a>'
+                outstring += f'Current Selection: {v} <p'
             outstring += '> <p>'
         outstring += '</label>'
         return outstring
