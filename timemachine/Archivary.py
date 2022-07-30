@@ -227,8 +227,11 @@ class Archivary():
         return bt
 
     def load_archive(self, reload_ids, with_latest):
+        logger.info("Loading Archivary")
         for a in self.archives:
+            logger.info(f"Archivary loading {a.archive_type}")
             a.load_archive(reload_ids=reload_ids, with_latest=with_latest)
+        logger.info(f"Archivary now contains {len(self.tape_dates)} tapes")
 
     def year_artists(self, start_year, end_year=None):
         for a in self.archives:
@@ -1490,7 +1493,7 @@ class Archivary_Updater(Thread):
         self.scr = scr
         self.stop_on_exception = stop_on_exception
         self.last_update_time = datetime.datetime.now()
-        self.min_time_between_updates = 6 * 3600
+        self.min_time_between_updates = 5 * 3600
 
     def check_for_updates(self, playstate) -> bool:
         """Check for updates.
