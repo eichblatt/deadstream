@@ -1028,8 +1028,11 @@ def main(parms_arg):
         archive_updater.start()
         if config.UPDATE_COLLECTIONS:
             archive_updater.update()  # Do it now
-    eloop.run()
-    exit()
+    if parms.debug:
+        eloop.start()
+    else:
+        eloop.run()
+        sys.exit()
 
 
 def main_test_update(parms_arg):
