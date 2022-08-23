@@ -260,8 +260,12 @@ def select_button_longpress(button, state):
             for i in range(0, max(1, len(tape_id)), 2):
                 show_venue_text(tapes[itape], color=id_color, show_id=True, offset=i, force=True)
                 # TMB.scr.show_venue(tape_id[i:], color=id_color, force=True)
+                sleep(0.25)
                 if not button.is_held:
                     break
+    tape_id = tapes[itape].identifier
+    sbd = tapes[itape].stream_only()
+    id_color = (0, 255, 255) if sbd else (0, 0, 255)
     TMB.scr.show_venue(tape_id, color=id_color)
     tape = tapes[itape]
     state = select_tape(tape, state, autoplay=AUTO_PLAY)
@@ -1028,8 +1032,11 @@ def main(parms_arg):
         archive_updater.start()
         if config.UPDATE_COLLECTIONS:
             archive_updater.update()  # Do it now
-    eloop.run()
-    exit()
+    if parms.debug:
+        eloop.start()
+    else:
+        eloop.run()
+        sys.exit()
 
 
 def main_test_update(parms_arg):

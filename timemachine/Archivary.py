@@ -227,8 +227,14 @@ class Archivary():
         return bt
 
     def load_archive(self, reload_ids, with_latest):
+        logger.info("Loading Archivary")
         for a in self.archives:
+            logger.info(f"Archivary loading {a.archive_type}")
             a.load_archive(reload_ids=reload_ids, with_latest=with_latest)
+        logger.info(f"Archivary now contains {len(self.tape_dates)} tapes")
+        # reload the tape dates, so that the Time Machine knows about the new stuff.
+        self.tape_dates = self.get_tape_dates()
+        self.dates = sorted(self.tape_dates.keys())
 
     def year_artists(self, start_year, end_year=None):
         for a in self.archives:
@@ -280,6 +286,10 @@ class BaseArchive(abc.ABC):
 
     def year_list(self):
         return sorted(set([to_date(x).year for x in self.dates]))
+
+    def build_idpath(self):  # This may be needed for dynamic update of COLLECTIONS
+        self.idpath = [os.path.join(self.dbpath, f'{x}_ids') for x in self.collection_list]
+        return self.idpath
 
     def tape_at_date(self, dt, which_tape=0):
         then_date = dt.date()
@@ -1490,7 +1500,7 @@ class Archivary_Updater(Thread):
         self.scr = scr
         self.stop_on_exception = stop_on_exception
         self.last_update_time = datetime.datetime.now()
-        self.min_time_between_updates = 6 * 3600
+        self.min_time_between_updates = 5 * 3600
 
     def check_for_updates(self, playstate) -> bool:
         """Check for updates.
