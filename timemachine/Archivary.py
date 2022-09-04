@@ -1141,6 +1141,16 @@ class GDTape(BaseTape):
     def remove_from_archive(self, page_meta):
         self._remove_from_archive = True
 
+    def reorder_tracks(self, orig_tracknums):
+        try:
+            pre_sort_order = [x.track for x in self._tracks]
+            if pre_sort_order == sorted(pre_sort_order):
+                return
+            new_tracklist = [self._tracks[i] for i in sorted(range(len(pre_sort_order)), key=pre_sort_order.__getitem__)]
+            self._tracks = new_tracklist
+        except:
+            pass
+
     def get_metadata(self, only_if_cached=False):
         if self.meta_loaded:
             return
@@ -1166,6 +1176,7 @@ class GDTape(BaseTape):
 
         # self.reviews = page_meta['reviews'] if 'reviews' in page_meta.keys() else []
         orig_titles = {}
+        orig_tracknums = {}
         if 'files' not in page_meta.keys():
             # This tape can not be played, and should be removed from the data.
             self.remove_from_archive(page_meta)
@@ -1175,18 +1186,21 @@ class GDTape(BaseTape):
                 if ifile['source'] == 'original':
                     try:
                         orig_titles[ifile['name']] = ifile['title'] if ('title' in ifile.keys() and ifile['title'] != 'unknown') else ifile['name']
+                        if ifile.get('track', None):
+                            orig_tracknums[ifile['name']] = ifile['track']
                         # orig_titles[ifile['name']] = re.sub(r'(.flac)|(.mp3)|(.ogg)$','', orig_titles[ifile['name']])
                     except Exception as e:
                         logger.exception(e)
                         pass
                 if ifile['format'] in (self._lossy_formats if self.stream_only() else self._playable_formats):
-                    self.append_track(ifile, orig_titles)
+                    self.append_track(ifile, orig_titles, orig_tracknums)
             except KeyError as e:
                 logger.warning("Error in parsing metadata")
                 raise(e)
                 pass
             except Exception as e:   # TODO handle this!!!
                 raise (e)
+        self.reorder_tracks(orig_tracknums)
 
         try:
             self.venue_name = page_meta['metadata']['venue']
@@ -1208,7 +1222,7 @@ class GDTape(BaseTape):
         json.dump(page_meta, open(self.meta_path, 'w'))
         self.meta_loaded = True
 
-    def append_track(self, tdict, orig_titles={}):
+    def append_track(self, tdict, orig_titles={}, orig_tracks={}):
         if not 'original' in tdict.keys():  # This is not a valid track
             return
         name = tdict.get('name', 'unknown')
@@ -1221,8 +1235,8 @@ class GDTape(BaseTape):
         else:
             orig = tdict['original']
         if tdict.get('title', 'unknown') == 'unknown':
-            if orig in orig_titles.keys():
-                tdict['title'] = orig_titles[orig]
+            tdict['title'] = orig_titles.get(orig, None)
+        tdict['track'] = orig_tracks.get(orig, None)
         for i, t in enumerate(self._tracks):  # loop over the _tracks we already have
             if orig == t.original:  # add in alternate formats.
                 # make sure that this isn't a duplicate!!!
