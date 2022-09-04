@@ -1372,7 +1372,7 @@ class GDTrack(BaseTrack):
         if tdict['source'] == 'original':
             self.original = tdict['name']
         try:
-            self.track = int(self.track) if 'track' in dir(self) else None
+            self.track = int(self.track) if 'track' in dir(self) and self.track is not None else None
         except ValueError:
             self.track = None
         self.files = []
