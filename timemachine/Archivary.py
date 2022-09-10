@@ -40,6 +40,8 @@ import pkg_resources
 from timemachine import config
 
 logging.basicConfig(format='%(asctime)s.%(msecs)03d %(levelname)s: %(name)s %(message)s', level=logging.INFO, datefmt='%Y-%m-%d %H:%M:%S')
+VERBOSE = 5
+logging.addLevelName(VERBOSE, "VERBOSE")
 logger = logging.getLogger(__name__)
 ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
 BIN_DIR = os.path.join(os.path.dirname(ROOT_DIR), 'bin')
@@ -51,16 +53,6 @@ def retry_call(callable: Callable, *args, **kwargs):
     return callable(*args, **kwargs)
 
 
-def memoize(f):
-    memo = {}
-
-    def helper(x):
-        if x not in memo:
-            memo[x] = f(x)
-        return memo[x]
-    return helper
-
-
 def flatten(lis):
     lis_flat = []
     for elem in lis:
@@ -69,7 +61,6 @@ def flatten(lis):
     return lis_flat
 
 
-# @memoize -- not needed with fromisoformat
 def to_date(datestring): return datetime.datetime.fromisoformat(datestring)
 
 
@@ -846,7 +837,7 @@ class PhishinTape(BaseTape):
             parms = self.parms.copy()
             parms['page'] = 1
             r = requests.get(self.url_metadata, headers=self.headers)
-            logger.info(f"url is {r.url}")
+            logger.debug(f"url is {r.url}")
             if r.status_code != 200:
                 logger.warning(f"error pulling data for {self.identifier}")
                 raise Exception('Download', f'Error {r.status_code} url {self.url_metadata}')
@@ -906,14 +897,14 @@ class PhishinTrack(BaseTrack):
             d['path'] = ''
             d['url'] = self.mp3
         else:
-            logger.info("adding break track in Phishin")
+            logger.debug("adding break track in Phishin")
             d['name'] = ''
             if self.set == 'E':
                 d['path'] = pkg_resources.resource_filename('timemachine.metadata', 'silence0.ogg')
                 self.title = 'Encore Break'
             else:
                 d['path'] = pkg_resources.resource_filename('timemachine.metadata', 'silence600.ogg')
-                logger.info(f"path is {d['path']}")
+                logger.debug(f"path is {d['path']}")
                 self.title = 'Set Break'
             d['format'] = 'Ogg Vorbis'
             # d['url'] = 'file://'+os.path.join(d['path'], d['name'])
@@ -1018,7 +1009,7 @@ class GDArchive(BaseArchive):
                     time_period = int(filename.split('_')[-1].replace('.json', ''))
                     # if min_year <= time_period <= max_year:
                     if time_period in years_to_load:
-                        logger.info(f"loading time period {time_period}")
+                        logger.debug(f"loading time period {time_period}")
                         chunk = json.load(open(os.path.join(meta_path, filename), 'r'))
                         addeddates.append(max([x['addeddate'] for x in chunk]))
                         chunk = [t for t in chunk if any(x in self.collection_list for x in t['collection'])]
@@ -1163,7 +1154,7 @@ class GDTape(BaseTape):
             page_meta = json.load(open(self.meta_path, 'r'))
         except Exception:
             r = requests.get(self.url_metadata)
-            logger.info("url is {}".format(r.url))
+            logger.debug("url is {}".format(r.url))
             if r.status_code != 200:
                 logger.warning("error pulling data for {}".format(self.identifier))
                 raise Exception('Download', 'Error {} url {}'.format(r.status_code, self.url_metadata))

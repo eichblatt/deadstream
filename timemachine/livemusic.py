@@ -40,6 +40,8 @@ knob_sense_path = os.path.join(os.getenv('HOME'), ".knob_sense")
 logging.basicConfig(format='%(asctime)s.%(msecs)03d %(levelname)s: %(name)s %(message)s',
                     level=logging.INFO,
                     datefmt='%Y-%m-%d %H:%M:%S')
+VERBOSE = 5
+logging.addLevelName(VERBOSE, "VERBOSE")
 logger = logging.getLogger(__name__)
 GDLogger = logging.getLogger('timemachine.GD')
 controlsLogger = logging.getLogger('timemachine.controls')

@@ -37,6 +37,8 @@ from timemachine import config
 
 
 logging.basicConfig(format='%(asctime)s.%(msecs)03d %(levelname)s: %(name)s %(message)s', level=logging.DEBUG, datefmt='%Y-%m-%d %H:%M:%S')
+VERBOSE = 5
+logging.addLevelName(VERBOSE, "VERBOSE")
 logger = logging.getLogger(__name__)
 
 ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
