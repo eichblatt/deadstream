@@ -215,7 +215,6 @@ class Archivary():
         td = {date: self.sort_across_collection(tapes) for date, tapes in td.items()}
         return td
 
-    # @memoize  # -- failed...maybe try this manually?
     def resort_tape_date(self, date):
         if date not in self.dates:
             logger.info(f"No Tape for date {date}")
@@ -335,8 +334,11 @@ class BaseArchive(abc.ABC):
         else:
             self.tape_dates = {}
             for k, v in tape_dates.items():
-                self.tape_dates[k] = sorted(v, key=methodcaller('compute_score'), reverse=True)
-
+                try:
+                    self.tape_dates[k] = sorted(v, key=methodcaller('compute_score'), reverse=True)
+                except:
+                    self.tape_dates[k] = v
+                    logger.warning(f"Failed to sort tapes on {k}")
         return self.tape_dates
 
     @abc.abstractmethod
@@ -1135,7 +1137,7 @@ class GDTape(BaseTape):
     def title_fraction(self):
         n_tracks = len(self._tracks)
         lc = string.ascii_lowercase
-        n_known = len([t for t in self._tracks if t.title != 'unknown' and sum([x in lc for x in t.title.lower()]) > 4])
+        n_known = len([t for t in self._tracks if t.title is not None and t.title != 'unknown' and sum([x in lc for x in t.title.lower()]) > 4])
         return (1 + n_known) / (1 + n_tracks)
 
     def remove_from_archive(self, page_meta):
