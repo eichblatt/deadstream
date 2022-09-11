@@ -40,6 +40,8 @@ import pkg_resources
 from timemachine import config
 
 logging.basicConfig(format='%(asctime)s.%(msecs)03d %(levelname)s: %(name)s %(message)s', level=logging.INFO, datefmt='%Y-%m-%d %H:%M:%S')
+VERBOSE = 5
+logging.addLevelName(VERBOSE, "VERBOSE")
 logger = logging.getLogger(__name__)
 ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
 BIN_DIR = os.path.join(os.path.dirname(ROOT_DIR), 'bin')
@@ -51,16 +53,6 @@ def retry_call(callable: Callable, *args, **kwargs):
     return callable(*args, **kwargs)
 
 
-def memoize(f):
-    memo = {}
-
-    def helper(x):
-        if x not in memo:
-            memo[x] = f(x)
-        return memo[x]
-    return helper
-
-
 def flatten(lis):
     lis_flat = []
     for elem in lis:
@@ -69,7 +61,6 @@ def flatten(lis):
     return lis_flat
 
 
-# @memoize -- not needed with fromisoformat
 def to_date(datestring): return datetime.datetime.fromisoformat(datestring)
 
 
@@ -215,7 +206,6 @@ class Archivary():
         td = {date: self.sort_across_collection(tapes) for date, tapes in td.items()}
         return td
 
-    # @memoize  # -- failed...maybe try this manually?
     def resort_tape_date(self, date):
         if date not in self.dates:
             logger.info(f"No Tape for date {date}")
@@ -335,8 +325,11 @@ class BaseArchive(abc.ABC):
         else:
             self.tape_dates = {}
             for k, v in tape_dates.items():
-                self.tape_dates[k] = sorted(v, key=methodcaller('compute_score'), reverse=True)
-
+                try:
+                    self.tape_dates[k] = sorted(v, key=methodcaller('compute_score'), reverse=True)
+                except:
+                    self.tape_dates[k] = v
+                    logger.warning(f"Failed to sort tapes on {k}")
         return self.tape_dates
 
     @abc.abstractmethod
@@ -844,7 +837,7 @@ class PhishinTape(BaseTape):
             parms = self.parms.copy()
             parms['page'] = 1
             r = requests.get(self.url_metadata, headers=self.headers)
-            logger.info(f"url is {r.url}")
+            logger.debug(f"url is {r.url}")
             if r.status_code != 200:
                 logger.warning(f"error pulling data for {self.identifier}")
                 raise Exception('Download', f'Error {r.status_code} url {self.url_metadata}')
@@ -904,14 +897,14 @@ class PhishinTrack(BaseTrack):
             d['path'] = ''
             d['url'] = self.mp3
         else:
-            logger.info("adding break track in Phishin")
+            logger.debug("adding break track in Phishin")
             d['name'] = ''
             if self.set == 'E':
                 d['path'] = pkg_resources.resource_filename('timemachine.metadata', 'silence0.ogg')
                 self.title = 'Encore Break'
             else:
                 d['path'] = pkg_resources.resource_filename('timemachine.metadata', 'silence600.ogg')
-                logger.info(f"path is {d['path']}")
+                logger.debug(f"path is {d['path']}")
                 self.title = 'Set Break'
             d['format'] = 'Ogg Vorbis'
             # d['url'] = 'file://'+os.path.join(d['path'], d['name'])
@@ -1016,7 +1009,7 @@ class GDArchive(BaseArchive):
                     time_period = int(filename.split('_')[-1].replace('.json', ''))
                     # if min_year <= time_period <= max_year:
                     if time_period in years_to_load:
-                        logger.info(f"loading time period {time_period}")
+                        logger.debug(f"loading time period {time_period}")
                         chunk = json.load(open(os.path.join(meta_path, filename), 'r'))
                         addeddates.append(max([x['addeddate'] for x in chunk]))
                         chunk = [t for t in chunk if any(x in self.collection_list for x in t['collection'])]
@@ -1135,11 +1128,21 @@ class GDTape(BaseTape):
     def title_fraction(self):
         n_tracks = len(self._tracks)
         lc = string.ascii_lowercase
-        n_known = len([t for t in self._tracks if t.title != 'unknown' and sum([x in lc for x in t.title.lower()]) > 4])
+        n_known = len([t for t in self._tracks if t.title is not None and t.title != 'unknown' and sum([x in lc for x in t.title.lower()]) > 4])
         return (1 + n_known) / (1 + n_tracks)
 
     def remove_from_archive(self, page_meta):
         self._remove_from_archive = True
+
+    def reorder_tracks(self, orig_tracknums):
+        try:
+            pre_sort_order = [x.track for x in self._tracks]
+            if pre_sort_order == sorted(pre_sort_order):
+                return
+            new_tracklist = [self._tracks[i] for i in sorted(range(len(pre_sort_order)), key=pre_sort_order.__getitem__)]
+            self._tracks = new_tracklist
+        except:
+            pass
 
     def get_metadata(self, only_if_cached=False):
         if self.meta_loaded:
@@ -1151,7 +1154,7 @@ class GDTape(BaseTape):
             page_meta = json.load(open(self.meta_path, 'r'))
         except Exception:
             r = requests.get(self.url_metadata)
-            logger.info("url is {}".format(r.url))
+            logger.debug("url is {}".format(r.url))
             if r.status_code != 200:
                 logger.warning("error pulling data for {}".format(self.identifier))
                 raise Exception('Download', 'Error {} url {}'.format(r.status_code, self.url_metadata))
@@ -1166,6 +1169,7 @@ class GDTape(BaseTape):
 
         # self.reviews = page_meta['reviews'] if 'reviews' in page_meta.keys() else []
         orig_titles = {}
+        orig_tracknums = {}
         if 'files' not in page_meta.keys():
             # This tape can not be played, and should be removed from the data.
             self.remove_from_archive(page_meta)
@@ -1175,18 +1179,21 @@ class GDTape(BaseTape):
                 if ifile['source'] == 'original':
                     try:
                         orig_titles[ifile['name']] = ifile['title'] if ('title' in ifile.keys() and ifile['title'] != 'unknown') else ifile['name']
+                        if ifile.get('track', None):
+                            orig_tracknums[ifile['name']] = ifile['track']
                         # orig_titles[ifile['name']] = re.sub(r'(.flac)|(.mp3)|(.ogg)$','', orig_titles[ifile['name']])
                     except Exception as e:
                         logger.exception(e)
                         pass
                 if ifile['format'] in (self._lossy_formats if self.stream_only() else self._playable_formats):
-                    self.append_track(ifile, orig_titles)
+                    self.append_track(ifile, orig_titles, orig_tracknums)
             except KeyError as e:
                 logger.warning("Error in parsing metadata")
                 raise(e)
                 pass
             except Exception as e:   # TODO handle this!!!
                 raise (e)
+        self.reorder_tracks(orig_tracknums)
 
         try:
             self.venue_name = page_meta['metadata']['venue']
@@ -1208,7 +1215,7 @@ class GDTape(BaseTape):
         json.dump(page_meta, open(self.meta_path, 'w'))
         self.meta_loaded = True
 
-    def append_track(self, tdict, orig_titles={}):
+    def append_track(self, tdict, orig_titles={}, orig_tracks={}):
         if not 'original' in tdict.keys():  # This is not a valid track
             return
         name = tdict.get('name', 'unknown')
@@ -1221,8 +1228,8 @@ class GDTape(BaseTape):
         else:
             orig = tdict['original']
         if tdict.get('title', 'unknown') == 'unknown':
-            if orig in orig_titles.keys():
-                tdict['title'] = orig_titles[orig]
+            tdict['title'] = orig_titles.get(orig, None)
+        tdict['track'] = orig_tracks.get(orig, None)
         for i, t in enumerate(self._tracks):  # loop over the _tracks we already have
             if orig == t.original:  # add in alternate formats.
                 # make sure that this isn't a duplicate!!!
@@ -1358,7 +1365,7 @@ class GDTrack(BaseTrack):
         if tdict['source'] == 'original':
             self.original = tdict['name']
         try:
-            self.track = int(self.track) if 'track' in dir(self) else None
+            self.track = int(self.track) if 'track' in dir(self) and self.track is not None else None
         except ValueError:
             self.track = None
         self.files = []
