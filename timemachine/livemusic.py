@@ -123,7 +123,8 @@ def load_saved_state(state):
         current['TOUR_STATE'] = config.INIT
         state.set(current)
         stagedate_event.set()
-    except BaseException:
+    except BaseException as e:
+        logger.exception(F"in load_saved_state {e}")
         logger.warning(F"Failed while Loading Saved State from {state_path}")
         # raise
         state = state_orig

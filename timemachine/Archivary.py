@@ -109,7 +109,8 @@ class BaseTapeDownloader(abc.ABC):
                 except Exception:
                     logger.debug(f"removing {tmpfile}")
                     os.remove(tmpfile)
-        logger.info(f'added {n_tapes_added} tapes by period')
+        if n_tapes_added > 0:
+            logger.info(f'added {n_tapes_added} tapes by period')
         return n_tapes_added
 
     @abc.abstractmethod
@@ -733,7 +734,8 @@ class PhishinArchive(BaseArchive):
             max_showdate = max(self.tape_dates.keys())
             logger.debug(f'Refreshing Tapes\nmax showdate {max_showdate}')
             n_tapes = self.downloader.get_all_tapes(self.idpath, max_showdate)
-            logger.info(f'Loaded {n_tapes} new tapes from archive')
+            if n_tapes > 0:
+                logger.debug(f'Loaded {n_tapes} new tapes from archive')
         else:
             if len(self.tapes) > 0:  # The tapes have already been written, and nothing was added
                 return self.tapes
