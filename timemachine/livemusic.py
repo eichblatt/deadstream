@@ -123,7 +123,10 @@ def load_saved_state(state):
         current['TOUR_STATE'] = config.INIT
         state.set(current)
         stagedate_event.set()
-    except BaseException:
+    except FileNotFoundError as e:
+        logger.warning(F"{state_path} not present -- using defaults")
+    except BaseException as e:
+        logger.exception(F"in load_saved_state {e}")
         logger.warning(F"Failed while Loading Saved State from {state_path}")
         # raise
         state = state_orig
@@ -190,7 +193,6 @@ def select_tape(tape, state, autoplay=True):
         state.player._set_property('volume', current['VOLUME'])
         logger.debug(F"select_tape: current state {current}")
         if autoplay:
-            logger.debug("Autoplaying tape")
             TMB.scr.show_playstate(staged_play=True, force=True)
             state.player.play()
             current['PLAY_STATE'] = config.PLAYING

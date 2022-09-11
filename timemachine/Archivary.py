@@ -109,7 +109,8 @@ class BaseTapeDownloader(abc.ABC):
                 except Exception:
                     logger.debug(f"removing {tmpfile}")
                     os.remove(tmpfile)
-        logger.info(f'added {n_tapes_added} tapes by period')
+        if n_tapes_added > 0:
+            logger.info(f'added {n_tapes_added} tapes by period')
         return n_tapes_added
 
     @abc.abstractmethod
@@ -327,8 +328,9 @@ class BaseArchive(abc.ABC):
             for k, v in tape_dates.items():
                 try:
                     self.tape_dates[k] = sorted(v, key=methodcaller('compute_score'), reverse=True)
-                except:
+                except Exception as e:
                     self.tape_dates[k] = v
+                    logger.exception(f"{e}")
                     logger.warning(f"Failed to sort tapes on {k}")
         return self.tape_dates
 
@@ -727,13 +729,15 @@ class PhishinArchive(BaseArchive):
             os.system(f'rm -rf {self.idpath}')
             logger.info('Loading Tapes from Phish.in. This will take a few minutes')
             n_tapes = self.downloader.get_all_tapes(self.idpath)  # this will write chunks to folder
-            logger.info(f'Loaded {n_tapes} tapes from archive')
+            if n_tapes > 0:
+                logger.debug(f'Phish.in Loaded {n_tapes} tapes from archive')
 
         if with_latest:
             max_showdate = max(self.tape_dates.keys())
             logger.debug(f'Refreshing Tapes\nmax showdate {max_showdate}')
             n_tapes = self.downloader.get_all_tapes(self.idpath, max_showdate)
-            logger.info(f'Loaded {n_tapes} new tapes from archive')
+            if n_tapes > 0:
+                logger.debug(f'Phish.in Loaded {n_tapes} new tapes from archive')
         else:
             if len(self.tapes) > 0:  # The tapes have already been written, and nothing was added
                 return self.tapes
@@ -748,7 +752,8 @@ class PhishinArchive(BaseArchive):
             os.system(f'rm -rf {self.idpath}')
             logger.info(f'Loading Tapes from the Archive...this will take a few minutes. Writing to {self.idpath}')
             n_tapes = self.downloader.get_all_tapes(self.idpath)  # this will write chunks to folder
-            logger.info(f'Loaded {n_tapes} tapes from archive')
+            if n_tapes > 0:
+                logger.info(f'Loaded {n_tapes} tapes from archive')
         # loop over chunks -- get max addeddate before filtering collections.
         if os.path.isdir(self.idpath):
             for filename in os.listdir(self.idpath):
@@ -989,7 +994,8 @@ class GDArchive(BaseArchive):
                 os.system(f'rm -rf {meta_path}')
             logger.info('Loading Tapes from the Archive...this will take a few minutes')
             n_tapes = self.downloader.get_all_tapes(meta_path, date_range=self.date_range)  # this will write chunks to folder
-            logger.info(f'Loaded {n_tapes} tapes from archive')
+            if n_tapes > 0:
+                logger.info(f'Loaded {n_tapes} tapes from archive {meta_path}')
 
         elif (len(meta_files) < len(years_to_load)) and os.path.basename(meta_path).replace('_ids', '') in yearly_collections:
             for year in years_to_load:
@@ -1023,7 +1029,7 @@ class GDArchive(BaseArchive):
 
     def load_tapes(self, reload_ids=False, with_latest=False):    # IA
         """ Load the tapes, then add anything which has been added since the tapes were saved """
-        logger.info('begin loading tapes')
+        logger.debug('begin loading tapes')
         all_tapes_count = 0
         all_loaded_tapes = []
         for meta_path in self.idpath:
@@ -1037,7 +1043,8 @@ class GDArchive(BaseArchive):
                 min_download_addeddate = datetime.datetime.strftime(min_download_addeddate, '%Y-%m-%dT%H:%M:%SZ')
                 logger.debug(f'Refreshing Tapes\nmax addeddate {max_addeddate}\nmin_download_addeddate {min_download_addeddate}')
                 n_tapes = self.downloader.get_all_tapes(meta_path, min_download_addeddate)
-                logger.info(f'Loaded {n_tapes} new tapes from archive')
+                if n_tapes > 0:
+                    logger.info(f'Loaded {n_tapes} new tapes from archive {meta_path}')
             if n_tapes > 0:
                 logger.info(f'Adding {n_tapes} tapes')
                 loaded_tapes, _ = self.load_current_tapes(meta_path=meta_path)
@@ -1205,6 +1212,8 @@ class GDTape(BaseTape):
         self.write_metadata(page_meta)
 
         for track in self._tracks:
+            if not isinstance(track.title, (str, bytes)):
+                track.title = ''
             track.title = re.sub(r'gd\d{2}(?:\d{2})?-\d{2}-\d{2}[ ]*([td]\d*)*', '', track.title).strip()
             track.title = re.sub(r'(.flac)|(.mp3)|(.ogg)$', '', track.title).strip()
         self.insert_breaks()

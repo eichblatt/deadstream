@@ -192,13 +192,13 @@ class GDPlayer(MPV):
     def play(self, wait=True):
         if not retry_until_true(self.reset_audio_device, None):
             logger.warning("Failed to reset audio device when playing")
-        logger.info("playing")
+        logger.debug("playing")
         self._set_property('pause', False)
         if wait:
             self.wait_until_playing()   # blocking occasionally here.
 
     def pause(self, wait=True):
-        logger.info("pausing")
+        logger.debug("pausing")
         self._set_property('pause', True)
         if wait:
             self.wait_until_paused()

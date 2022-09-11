@@ -74,6 +74,7 @@ system "sudo apt-get install -y pulseaudio pulseaudio-module-jack pulseaudio-mod
 sudo grep -qF -- "enable_uart=1" /boot/config.txt || echo "enable_uart=1" | sudo tee -a /boot/config.txt
 sudo grep -q -- "^default-server = /var/run/pulse/native" /etc/pulse/client.conf || echo "default-server = /var/run/pulse/native" | sudo tee -a /etc/pulse/client.conf
 sudo grep -q -- "^autospawn = no" /etc/pulse/client.conf || echo "autospawn = no" | sudo tee -a /etc/pulse/client.conf
+sudo grep -q -- "^SystemMaxUse=200M" /etc/systemd/journald.conf || echo "SystemMaxUse=200M" | sudo tee -a /etc/systemd/journald.conf
 sudo usermod -a -G audio,video,bluetooth,spi,gpio,pulse,pulse-access deadhead
 sudo usermod -a -G audio,bluetooth pulse
 sudo usermod -a -G pulse,pulse-access root
