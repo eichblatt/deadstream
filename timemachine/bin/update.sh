@@ -61,6 +61,8 @@ git_branch=$remote_tag
 
 if [[ $HOSTNAME == deadstream* ]]; then
    git_branch=dev
+elif [[ $HOSTNAME == project* ]]; then
+   git_branch=projectM
 else
    system "sudo systemctl disable ssh"
 fi
