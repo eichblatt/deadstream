@@ -1536,6 +1536,8 @@ class Archivary_Updater(Thread):
         archive = self.state.date_reader.archive
         if self.scr:
             self.scr.show_venue("UPDATING ARCHIVE", color=(255, 0, 0), force=True)
+
+        # Note: This should work with a copy and set current archive after update succeeds
         archive.load_archive(reload_ids=False, with_latest=True)
         self.last_update_time = datetime.datetime.now()
 
