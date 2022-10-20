@@ -468,7 +468,11 @@ def day_button(button, state):
     if button.is_pressed or button.is_held:
         return
     logger.debug("pressing day button")
-    state.date_reader.set_date(*state.date_reader.next_show())
+    current = state.get_current()
+    if current['EXPERIENCE'] and current['ARTIST'] is not None:
+        state.date_reader.set_date(*state.date_reader.next_show_by_artist(current['ARTIST']))
+    else:
+        state.date_reader.set_date(*state.date_reader.next_show())
     stagedate_event.set()
 
 

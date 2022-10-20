@@ -275,6 +275,19 @@ class date_knob_reader:
     def tape_available(self):
         return len(self.shows_available()) > 0
 
+    def next_show_by_artist(self, artist):
+        if self.archive is None:
+            return None
+        self._update()
+        for d in self.archive.dates:
+            if d > self.fmtdate():
+                artists = [t.artist for t in self.archive.tape_dates[d]]
+                artists = list(dict.fromkeys(artists))   # make it the unique set
+                if not artist in artists:
+                    continue
+                shownum = artists.index(artist)
+        return (datetime.datetime.fromisoformat(d).date(), shownum)
+
     def next_show(self):
         if self.archive is None:
             return None
