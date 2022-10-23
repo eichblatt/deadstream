@@ -304,9 +304,9 @@ class date_knob_reader:
         if self.archive is None:
             return None
         self._update()
-        for d in self.archive.dates:
-            if d > self.fmtdate():
-                return datetime.datetime.fromisoformat(d).date()
+        current_index = bisect(self.archive.dates, self.fmtdate())
+        for d in self.archive.dates[current_index:] + self.archive.dates[:current_index]:
+            return datetime.datetime.fromisoformat(d).date()
         return self.date
 
 
