@@ -19,6 +19,7 @@ import logging
 import os
 import string
 import subprocess
+from bisect import bisect
 from time import sleep
 from threading import BoundedSemaphore, Event
 
@@ -275,6 +276,21 @@ class date_knob_reader:
     def tape_available(self):
         return len(self.shows_available()) > 0
 
+    def next_show_by_artist(self, artist):
+        if self.archive is None:
+            return None
+        self._update()
+        current_index = bisect(self.archive.dates, self.fmtdate())
+        for d in self.archive.dates[current_index:] + self.archive.dates[:current_index]:
+            artists = [t.artist for t in self.archive.tape_dates[d]]
+            artists = list(dict.fromkeys(artists))   # make it the unique set
+            if not artist in artists:
+                continue
+            shownum = artists.index(artist)
+            logger.debug(f" artist is {artist}. artists: {artists}. date {d}. Shownum {shownum}")
+            return (datetime.datetime.fromisoformat(d).date(), shownum)
+        return None
+
     def next_show(self):
         if self.archive is None:
             return None
@@ -288,9 +304,9 @@ class date_knob_reader:
         if self.archive is None:
             return None
         self._update()
-        for d in self.archive.dates:
-            if d > self.fmtdate():
-                return datetime.datetime.fromisoformat(d).date()
+        current_index = bisect(self.archive.dates, self.fmtdate())
+        for d in self.archive.dates[current_index:] + self.archive.dates[:current_index]:
+            return datetime.datetime.fromisoformat(d).date()
         return self.date
 
 
