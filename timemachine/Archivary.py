@@ -1419,6 +1419,7 @@ class GDDate_info:
         self.location = ()
         self.n_locations = 0
         for row in set_rows:
+            prevsong = ''
             if int(row.ievent) == 1:
                 self.location = (row.venue, row.city, row.state)
                 self.n_locations = 1
