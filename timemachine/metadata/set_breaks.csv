@@ -1858,36 +1858,69 @@ date,artist,event_id,venue,city,state,show_set,time,song,song_n,isong,next_set,N
 1978-02-05,GratefulDead,2866,"Uni-Dome, University of Northern Iowa",Cedar Falls,IA,Set 1,,Deal,1,13896,Set 2,1,1,long
 1978-02-05,GratefulDead,2866,"Uni-Dome, University of Northern Iowa",Cedar Falls,IA,Set 2,,Around And Around,1,13904,Encore,1,1,short
 1978-02-05,GratefulDead,2866,"Uni-Dome, University of Northern Iowa",Cedar Falls,IA,Encore,,U.S. Blues,1,13905,,1,1,long
-1978-02-15,,2877,Keystone Berkeley,Berkeley,CA,Set 1,,Midnight Moonlight,1,1728,Set 2,1,1,long
-1978-02-15,,2877,Keystone Berkeley,Berkeley,CA,Set 2,,Lonesome And A Long Way From Home,1,1731,,1,1,long
-1978-02-17,,2879,Keystone Palo Alto,Palo Alto,CA,Set 1,,Mystery Train,1,1736,Set 2,1,1,long
-1978-02-17,,2879,Keystone Palo Alto,Palo Alto,CA,Set 2,,Lonesome And A Long Way From Home,1,1740,,1,1,long
+1978-02-15,,2877,Keystone Berkeley,Berkeley,CA,Set 1,,Midnight Moonlight,1,1728,Set 2,2,2,long
+1978-02-15,,2877,Keystone Berkeley,Berkeley,CA,Set 2,,Lonesome And A Long Way From Home,1,1731,,2,2,long
+1978-02-15,BobWeir,0,Golden Bear,Huntington Beach,CA,Set 1,,Wrong Way Feelin',1,20,,2,1,long
+1978-02-17,,2879,Keystone Palo Alto,Palo Alto,CA,Set 1,,Mystery Train,1,1736,Set 2,2,2,long
+1978-02-17,,2879,Keystone Palo Alto,Palo Alto,CA,Set 2,,Lonesome And A Long Way From Home,1,1740,,2,2,long
+1978-02-17,BobWeir,1,The Roxy,West Hollywood,CA,Set 1,,Wrong Way Feelin',2,44,Encore 1,2,1,short
+1978-02-17,BobWeir,1,The Roxy,West Hollywood,CA,Encore 1,,Minglewood Blues,2,45,,2,1,long
 1978-02-18,,2880,Marin Veterans Memorial Auditorium,San Rafael,CA,Set 1,20:00:00.000,Mystery Train,1,1745,Set 2,1,1,long
 1978-02-18,,2880,Marin Veterans Memorial Auditorium,San Rafael,CA,Set 2,20:00:00.000,Lonesome And A Long Way From Home,1,1750,,1,1,long
-1978-02-19,,2881,Santa Cruz Civic Auditorium,Santa Cruz,CA,Set 1,20:00:00.000,Midnight Moonlight,1,1755,Set 2,1,1,long
-1978-02-19,,2881,Santa Cruz Civic Auditorium,Santa Cruz,CA,Set 2,20:00:00.000,Don't Let Go,1,1760,,1,1,long
+1978-02-19,,2881,Santa Cruz Civic Auditorium,Santa Cruz,CA,Set 1,20:00:00.000,Midnight Moonlight,1,1755,Set 2,2,2,long
+1978-02-19,,2881,Santa Cruz Civic Auditorium,Santa Cruz,CA,Set 2,20:00:00.000,Don't Let Go,1,1760,,2,2,long
+1978-02-19,BobWeir,2,The Roxy,West Hollywood,CA,Set 1,,Wrong Way Feelin',1,56,,2,1,long
+1978-02-21,BobWeir,3,Montezuma Hall,San Diego,CA,Set 1,,,2,66,Encore 1,1,1,short
+1978-02-21,BobWeir,3,Montezuma Hall,San Diego,CA,Encore 1,,,3,67,,1,1,long
+1978-02-23,BobWeir,4,Metropolitan Sports Center,Bloomington,MN,Set 1,,Around and Around,1,79,,1,1,long
+1978-02-25,BobWeir,5,Riviera Theatre,Chicago,IL,Set 1,,One More Saturday Night,1,93,,1,1,long
+1978-02-28,BobWeir,6,Bogart's,Cincinnati,OH,Set 1,,Around and Around,2,115,Encore 1,1,1,short
+1978-02-28,BobWeir,6,Bogart's,Cincinnati,OH,Encore 1,,Johnny B. Goode,1,116,,1,1,long
+1978-03-02,BobWeir,7,Warner Theatre,Washington,DC,Set 1,,Around and Around,2,139,Encore 1,1,1,short
+1978-03-02,BobWeir,7,Warner Theatre,Washington,DC,Encore 1,,Wrong Way Feelin',2,141,,1,1,long
 1978-03-03,,2885,Keystone Berkeley,Berkeley,CA,Set 1,,Gomorrah,1,1765,Set 2,1,1,long
 1978-03-03,,2885,Keystone Berkeley,Berkeley,CA,Set 2,,Midnight Moonlight,1,1771,,1,1,long
-1978-03-04,,2886,Keystone Palo Alto,Palo Alto,CA,Set 1,,The Night They Drove Old Dixie Down,1,1776,Set 2,1,1,long
-1978-03-04,,2886,Keystone Palo Alto,Palo Alto,CA,Set 2,,Gomorrah,1,1781,,1,1,long
-1978-03-09,,2888,Cleveland Music Hall,Cleveland,OH,Set 1,19:30:00.000,Mystery Train,1,1787,Set 2,1,1,long
-1978-03-09,,2888,Cleveland Music Hall,Cleveland,OH,Set 2,19:30:00.000,Lonesome And A Long Way From Home,1,1793,,1,1,long
-1978-03-10,,2889,Auditorium Theatre,Rochester,NY,Set 1,19:30:00.000,Mystery Train,1,1798,Set 2,1,1,long
-1978-03-10,,2889,Auditorium Theatre,Rochester,NY,Set 2,19:30:00.000,The Night They Drove Old Dixie Down,1,1804,Encore,1,1,short
-1978-03-10,,2889,Auditorium Theatre,Rochester,NY,Encore,19:30:00.000,Midnight Moonlight,1,1805,,1,1,long
-1978-03-11,,2890,Leroy Concert Theatre,Pawtucket,RI,Set 1,19:00:00.000,Mystery Train,1,1812,Set 2,1,1,long
-1978-03-11,,2890,Leroy Concert Theatre,Pawtucket,RI,Set 2,19:00:00.000,Lonesome And A Long Way From Home,1,1818,,1,1,long
-1978-03-12,,2891,Suffolk Forum,Commack,NY,Set 1,20:00:00.000,Mystery Train,1,1824,Set 2,1,1,long
-1978-03-12,,2891,Suffolk Forum,Commack,NY,Set 2,20:00:00.000,Midnight Moonlight,1,1830,Encore,1,1,short
-1978-03-12,,2891,Suffolk Forum,Commack,NY,Encore,20:00:00.000,Rhapsody In Red,1,1831,,1,1,long
-1978-03-14,,2892,Boston Music Hall,Boston,MA,Set 1,07:30:00.000,Mystery Train,1,1838,Set 2,1,1,long
-1978-03-14,,2892,Boston Music Hall,Boston,MA,Set 2,07:30:00.000,Midnight Moonlight,1,1843,,1,1,long
+1978-03-04,,2886,Keystone Palo Alto,Palo Alto,CA,Set 1,,The Night They Drove Old Dixie Down,1,1776,Set 2,2,2,long
+1978-03-04,,2886,Keystone Palo Alto,Palo Alto,CA,Set 2,,Gomorrah,1,1781,,2,2,long
+1978-03-04,BobWeir,8,Franklin Pierce College,Rindge,NH,Set 1,,One More Saturday Night,1,157,,2,1,long
+1978-03-05,BobWeir,9,Paradise Rock Club,Boston,MA,Set 1,,Wrong Way Feelin',1,169,Late Show,1,1,long
+1978-03-05,BobWeir,9,Paradise Rock Club,Boston,MA,Late Show,,Wrong Way Feelin',2,182,Encore 1,1,1,short
+1978-03-05,BobWeir,9,Paradise Rock Club,Boston,MA,Encore 1,,Johnny B. Goode,1,183,,1,1,long
+1978-03-07,BobWeir,10,SUNY Stony Brook Student Activities Center,Stony Brook,NY,Set 1,,Around and Around,1,194,Encore 1,1,1,short
+1978-03-07,BobWeir,10,SUNY Stony Brook Student Activities Center,Stony Brook,NY,Encore 1,,Wrong Way Feelin',1,196,,1,1,long
+1978-03-08,BobWeir,11,The Palladium,New York,NY,Set 1,,Around and Around,2,221,Encore 1,1,1,short
+1978-03-08,BobWeir,11,The Palladium,New York,NY,Encore 1,,Wrong Way Feelin',2,223,,1,1,long
+1978-03-09,,2888,Cleveland Music Hall,Cleveland,OH,Set 1,19:30:00.000,Mystery Train,1,1787,Set 2,2,2,long
+1978-03-09,,2888,Cleveland Music Hall,Cleveland,OH,Set 2,19:30:00.000,Lonesome And A Long Way From Home,1,1793,,2,2,long
+1978-03-09,BobWeir,12,Tower Theatre,Upper Darby,PA,Set 1,,Minglewood Blues,1,230,Set 2,2,1,long
+1978-03-09,BobWeir,12,Tower Theatre,Upper Darby,PA,Set 2,,Wrong Way Feelin',1,238,,2,1,long
+1978-03-10,,2889,Auditorium Theatre,Rochester,NY,Set 1,19:30:00.000,Mystery Train,1,1798,Set 2,2,2,long
+1978-03-10,,2889,Auditorium Theatre,Rochester,NY,Set 2,19:30:00.000,The Night They Drove Old Dixie Down,1,1804,Encore,2,2,short
+1978-03-10,,2889,Auditorium Theatre,Rochester,NY,Encore,19:30:00.000,Midnight Moonlight,1,1805,,2,2,long
+1978-03-10,BobWeir,13,Veterans Memorial Auditorium,Providence,RI,Set 1,,Around and Around,1,251,Encore 1,2,1,short
+1978-03-10,BobWeir,13,Veterans Memorial Auditorium,Providence,RI,Encore 1,,Wrong Way Feelin',1,253,,2,1,long
+1978-03-11,,2890,Leroy Concert Theatre,Pawtucket,RI,Set 1,19:00:00.000,Mystery Train,1,1812,Set 2,2,2,long
+1978-03-11,,2890,Leroy Concert Theatre,Pawtucket,RI,Set 2,19:00:00.000,Lonesome And A Long Way From Home,1,1818,,2,2,long
+1978-03-11,BobWeir,14,Capitol Theatre,Passaic,NJ,Set 1,,Around and Around,1,267,Encore 1,2,1,short
+1978-03-11,BobWeir,14,Capitol Theatre,Passaic,NJ,Encore 1,,Wrong Way Feelin',1,269,Encore 2,2,1,short
+1978-03-11,BobWeir,14,Capitol Theatre,Passaic,NJ,Encore 2,,One More Saturday Night,1,270,,2,1,long
+1978-03-12,,2891,Suffolk Forum,Commack,NY,Set 1,20:00:00.000,Mystery Train,1,1824,Set 2,2,2,long
+1978-03-12,,2891,Suffolk Forum,Commack,NY,Set 2,20:00:00.000,Midnight Moonlight,1,1830,Encore,2,2,short
+1978-03-12,,2891,Suffolk Forum,Commack,NY,Encore,20:00:00.000,Rhapsody In Red,1,1831,,2,2,long
+1978-03-12,BobWeir,15,Woolsey Hall,New Haven,CT,Set 1,,Around and Around,1,283,Encore 1,2,1,short
+1978-03-12,BobWeir,15,Woolsey Hall,New Haven,CT,Encore 1,,Wrong Way Feelin',1,285,,2,1,long
+1978-03-14,,2892,Boston Music Hall,Boston,MA,Set 1,07:30:00.000,Mystery Train,1,1838,Set 2,2,2,long
+1978-03-14,,2892,Boston Music Hall,Boston,MA,Set 2,07:30:00.000,Midnight Moonlight,1,1843,,2,2,long
+1978-03-14,BobWeir,16,Great Southeast Music Hall,Atlanta,GA,Set 1,,Around and Around,1,297,Encore 1,2,1,short
+1978-03-14,BobWeir,16,Great Southeast Music Hall,Atlanta,GA,Encore 1,,Wrong Way Feelin',1,299,,2,1,long
 1978-03-16,,2893,Spectrum Theatre,Philadelphia,PA,Set 1,19:00:00.000,Cats Under The Stars,1,1851,Encore,1,1,short
 1978-03-16,,2893,Spectrum Theatre,Philadelphia,PA,Encore,19:00:00.000,How Sweet It Is (To Be Loved By You),1,1852,,1,1,long
-1978-03-17,,2894,Capitol Theatre,Passaic,NJ,Show,19:30:00.000,Mystery Train,1,1859,Encore,2,1,short
-1978-03-17,,2894,Capitol Theatre,Passaic,NJ,Encore,19:30:00.000,Cats Under The Stars,1,1860,,2,1,long
-1978-03-17,,2895,Capitol Theatre,Passaic,NJ,Show,23:00:00.000,The Night They Drove Old Dixie Down,1,1867,Encore,2,2,short
-1978-03-17,,2895,Capitol Theatre,Passaic,NJ,Encore,23:00:00.000,Rhapsody In Red,1,1868,,2,2,long
+1978-03-17,,2894,Capitol Theatre,Passaic,NJ,Show,19:30:00.000,Mystery Train,1,1859,Encore,3,2,short
+1978-03-17,,2894,Capitol Theatre,Passaic,NJ,Encore,19:30:00.000,Cats Under The Stars,1,1860,,3,2,long
+1978-03-17,,2895,Capitol Theatre,Passaic,NJ,Show,23:00:00.000,The Night They Drove Old Dixie Down,1,1867,Encore,3,3,short
+1978-03-17,,2895,Capitol Theatre,Passaic,NJ,Encore,23:00:00.000,Rhapsody In Red,1,1868,,3,3,long
+1978-03-17,BobWeir,17,Uptown Theater,Kansas City,MO,Set 1,,Around and Around,1,311,Encore 1,3,1,short
+1978-03-17,BobWeir,17,Uptown Theater,Kansas City,MO,Encore 1,,Johnny B. Goode,1,315,,3,1,long
 1978-03-18,,2896,Warner Theatre,Washington,DC,Show,19:00:00.000,Mystery Train,1,1874,,2,1,long
 1978-03-18,,2897,Warner Theatre,Washington,DC,Show,22:30:00.000,Lonesome And A Long Way From Home,1,1882,Encore,2,2,short
 1978-03-18,,2897,Warner Theatre,Washington,DC,Encore,22:30:00.000,Palm Sunday,1,1883,,2,2,long
@@ -1896,6 +1929,7 @@ date,artist,event_id,venue,city,state,show_set,time,song,song_n,isong,next_set,N
 1978-03-19,,2898,Stanley Theatre,Pittsburgh,PA,Encore,20:00:00.000,Palm Sunday,1,1899,,1,1,long
 1978-03-22,,2899,Veteran's Hall,Sebastopol,CA,Set 1,20:00:00.000,The Night They Drove Old Dixie Down,1,1904,Set 2,1,1,long
 1978-03-22,,2899,Veteran's Hall,Sebastopol,CA,Set 2,20:00:00.000,Midnight Moonlight,1,1912,,1,1,long
+1978-03-25,BobWeir,18,The Old Waldorf,San Francisco,CA,Set 1,,Wrong Way Feelin',1,321,,1,1,long
 1978-04-06,GratefulDead,2901,Curtis Hixon Convention Hall,Tampa,FL,Set 1,,Supplication,1,13915,Set 2,1,1,long
 1978-04-06,GratefulDead,2901,Curtis Hixon Convention Hall,Tampa,FL,Set 2,,Around And Around,1,13923,Encore,1,1,short
 1978-04-06,GratefulDead,2901,Curtis Hixon Convention Hall,Tampa,FL,Encore,,U.S. Blues,1,13924,,1,1,long
@@ -2042,12 +2076,15 @@ date,artist,event_id,venue,city,state,show_set,time,song,song_n,isong,next_set,N
 1978-10-22,GratefulDead,3006,Winterland,San Francisco,CA,Encore,,Johnny B. Goode,1,14725,,1,1,long
 1978-10-24,,3007,Keystone Berkeley,Berkeley,CA,Set 1,,Mystery Train,1,2017,Set 2,1,1,long
 1978-10-24,,3007,Keystone Berkeley,Berkeley,CA,Set 2,,Midnight Moonlight,1,2021,,1,1,long
-1978-10-26,,3008,Paramount Theatre,Portland,OR,Set 1,19:00:00.000,Mystery Train,1,2027,Set 2,1,1,long
-1978-10-26,,3008,Paramount Theatre,Portland,OR,Set 2,19:00:00.000,Lonesome And A Long Way From Home,1,2033,,1,1,long
+1978-10-26,,3008,Paramount Theatre,Portland,OR,Set 1,19:00:00.000,Mystery Train,1,2027,Set 2,2,2,long
+1978-10-26,,3008,Paramount Theatre,Portland,OR,Set 2,19:00:00.000,Lonesome And A Long Way From Home,1,2033,,2,2,long
+1978-10-26,BobWeir,19,Paramount Theatre,Portland,OR,Set 1,,Around and Around,1,332,,2,1,long
 1978-10-27,,3009,"Performing Arts Pavilion, Washington State College",Cheney,WA,Set 1,20:00:00.000,Mystery Train,1,2039,Set 2,1,1,long
 1978-10-27,,3009,"Performing Arts Pavilion, Washington State College",Cheney,WA,Set 2,20:00:00.000,Midnight Moonlight,1,2045,,1,1,long
-1978-10-28,,3010,Paramount Northwest Theatre,Seattle,WA,Show,19:00:00.000,Reuben And Cherise,1,2052,,2,1,long
-1978-10-28,,3011,Paramount Northwest Theatre,Seattle,WA,Show,22:30:00.000,Lonesome And A Long Way From Home,1,2060,,2,2,long
+1978-10-28,,3010,Paramount Northwest Theatre,Seattle,WA,Show,19:00:00.000,Reuben And Cherise,1,2052,,3,2,long
+1978-10-28,,3011,Paramount Northwest Theatre,Seattle,WA,Show,22:30:00.000,Lonesome And A Long Way From Home,1,2060,,3,3,long
+1978-10-28,BobWeir,20,Paramount Theatre,Seattle,WA,Set 1,,Heaven Help the Fool,1,338,Encore 1,3,1,short
+1978-10-28,BobWeir,20,Paramount Theatre,Seattle,WA,Encore 1,,Around and Around,1,339,,3,1,long
 1978-11-02,,3012,Keystone Berkeley,Berkeley,CA,Set 1,,That's Alright Mama,1,2064,Set 2,1,1,long
 1978-11-02,,3012,Keystone Berkeley,Berkeley,CA,Set 2,,Reuben And Cherise,1,2070,,1,1,long
 1978-11-03,,3013,Keystone Palo Alto,Palo Alto,CA,Set 1,,Love In The Afternoon,1,2075,Set 2,1,1,long
@@ -2660,6 +2697,9 @@ date,artist,event_id,venue,city,state,show_set,time,song,song_n,isong,next_set,N
 1980-10-31,GratefulDead,3353,Radio City Music Hall,New York,NY,Set 1,,Deal,1,18554,Set 2,1,1,long
 1980-10-31,GratefulDead,3353,Radio City Music Hall,New York,NY,Set 2,,Good Lovin',1,18565,Encore,1,1,short
 1980-10-31,GratefulDead,3353,Radio City Music Hall,New York,NY,Encore,,Uncle John's Band,1,18566,,1,1,long
+1980-11-07,BobWeir,21,Orpheum Theatre,Boston,MA,Set 1,,Promised Land,1,347,Set 2,1,1,long
+1980-11-07,BobWeir,21,Orpheum Theatre,Boston,MA,Set 2,,Around and Around,1,358,Encore 1,1,1,short
+1980-11-07,BobWeir,21,Orpheum Theatre,Boston,MA,Encore 1,,(I Can't Get No) Satisfaction,1,360,,1,1,long
 1980-11-26,GratefulDead,3355,Sportatorium,Pembroke Pines,FL,Set 1,,Deal,1,18578,Set 2,1,1,long
 1980-11-26,GratefulDead,3355,Sportatorium,Pembroke Pines,FL,Set 2,,Good Lovin',1,18589,Encore,1,1,short
 1980-11-26,GratefulDead,3355,Sportatorium,Pembroke Pines,FL,Encore,,Satisfaction,1,18590,,1,1,long
@@ -2704,6 +2744,7 @@ date,artist,event_id,venue,city,state,show_set,time,song,song_n,isong,next_set,N
 1981-01-27,,3376,Old Waldorf,San Francisco,CA,Set 2,,Midnight Moonlight,1,2584,,1,1,long
 1981-01-29,,3377,Catalyst,Santa Cruz,CA,Set 1,21:00:00.000,Deal,1,2588,Set 2,1,1,long
 1981-01-29,,3377,Catalyst,Santa Cruz,CA,Set 2,21:00:00.000,Midnight Moonlight,1,2594,,1,1,long
+1981-01-30,BobWeir,22,Perkins Palace,Pasadena,CA,Set 1,,Young Blood,1,369,,1,1,long
 1981-01-31,,3379,Keystone Berkeley,Berkeley,CA,Set 1,,How Sweet It Is (To Be Loved By You),1,2600,Set 2,1,1,long
 1981-01-31,,3379,Keystone Berkeley,Berkeley,CA,Set 2,,Midnight Moonlight,1,2605,,1,1,long
 1981-02-01,,3380,Keystone Berkeley,Berkeley,CA,Set 1,,How Sweet It Is (To Be Loved By You),1,2610,Set 2,1,1,long
@@ -2777,6 +2818,7 @@ date,artist,event_id,venue,city,state,show_set,time,song,song_n,isong,next_set,N
 1981-03-14,GratefulDead,3411,Hartford Civic Center,Hartford,CT,Set 1,,I Know You Rider,1,19107,Set 2,1,1,long
 1981-03-14,GratefulDead,3411,Hartford Civic Center,Hartford,CT,Set 2,,Good Lovin',1,19119,Encore,1,1,short
 1981-03-14,GratefulDead,3411,Hartford Civic Center,Hartford,CT,Encore,,One More Saturday Night,1,19120,,1,1,long
+1981-03-18,BobWeir,23,Reseda Country Club,Los Angeles,CA,Set 1,,Too Many Losers,1,391,,1,1,long
 1981-03-20,GratefulDead,3412,Rainbow Theatre,"London, England",UK,Set 1,19:00:00.000,Deal,1,19131,Set 2,1,1,long
 1981-03-20,GratefulDead,3412,Rainbow Theatre,"London, England",UK,Set 2,19:00:00.000,Johnny B. Goode,1,19142,Encore,1,1,short
 1981-03-20,GratefulDead,3412,Rainbow Theatre,"London, England",UK,Encore,19:00:00.000,U.S. Blues,1,19143,,1,1,long
@@ -3098,6 +3140,8 @@ date,artist,event_id,venue,city,state,show_set,time,song,song_n,isong,next_set,N
 1982-02-04,,3588,Keystone Palo Alto,Palo Alto,CA,Set 2,,Tangled Up In Blue,1,3337,,1,1,long
 1982-02-05,,3589,Keystone Palo Alto,Palo Alto,CA,Set 1,19:30:00.000,I Second That Emotion,1,3342,Set 2,1,1,long
 1982-02-05,,3589,Keystone Palo Alto,Palo Alto,CA,Set 2,19:30:00.000,Tangled Up In Blue,1,3347,,1,1,long
+1982-02-09,BobWeir,24,"Livingston Gym, Rutgers University",Piscataway,NJ,Set 1,,Too Many Losers,1,412,Encore 1,1,1,short
+1982-02-09,BobWeir,24,"Livingston Gym, Rutgers University",Piscataway,NJ,Encore 1,,(I Can't Get No) Satisfaction,1,413,,1,1,long
 1982-02-16,GratefulDead,3591,The Warfield,San Francisco,CA,Set 1,,Might As Well,1,20692,Set 2,1,1,long
 1982-02-16,GratefulDead,3591,The Warfield,San Francisco,CA,Set 2,,Good Lovin',1,20704,Encore,1,1,short
 1982-02-16,GratefulDead,3591,The Warfield,San Francisco,CA,Encore,,Don't Ease Me In,1,20705,,1,1,long
@@ -3419,6 +3463,8 @@ date,artist,event_id,venue,city,state,show_set,time,song,song_n,isong,next_set,N
 1983-03-06,,3769,Stone,San Francisco,CA,Set 2,,Midnight Moonlight,1,4032,,1,1,long
 1983-03-07,,3770,Stone,San Francisco,CA,Set 1,,Run For The Roses,1,4036,Set 2,1,1,long
 1983-03-07,,3770,Stone,San Francisco,CA,Set 2,,Midnight Moonlight,1,4041,,1,1,long
+1983-03-10,BobWeir,25,The Palace,Los Angeles,CA,Set 1,,,3,424,Set 2,1,1,long
+1983-03-10,BobWeir,25,The Palace,Los Angeles,CA,Set 2,,Too Many Losers,1,430,,1,1,long
 1983-03-11,,3771,Arlington Theatre,Santa Barbara,CA,Show,20:00:00.000,Run For The Roses,1,4047,Encore,2,1,short
 1983-03-11,,3771,Arlington Theatre,Santa Barbara,CA,Encore,20:00:00.000,Deal,1,4048,,2,1,long
 1983-03-11,,3772,Arlington Theatre,Santa Barbara,CA,Show,22:00:00.000,Tangled Up In Blue,1,4055,,2,2,long
@@ -3483,6 +3529,13 @@ date,artist,event_id,venue,city,state,show_set,time,song,song_n,isong,next_set,N
 1983-04-26,GratefulDead,3795,Spectrum,Philadelphia,PA,Set 1,,Let It Grow,1,22377,Set 2,1,1,long
 1983-04-26,GratefulDead,3795,Spectrum,Philadelphia,PA,Set 2,,Not Fade Away,1,22388,Encore,1,1,short
 1983-04-26,GratefulDead,3795,Spectrum,Philadelphia,PA,Encore,,U.S. Blues,1,22389,,1,1,long
+1983-04-30,BobWeir,26,Münchenbryggeriet,Stockholm,26,Set 1: (With Lost Desperados),,Promised Land,1,437,Set 2: (With Rust),1,1,long
+1983-04-30,BobWeir,26,Münchenbryggeriet,Stockholm,26,Set 2: (With Rust),,Mona,1,444,,1,1,long
+1983-05-04,BobWeir,27,Garage,Stockholm,26,Set 1,,Promised Land,1,452,Set 2,1,1,long
+1983-05-04,BobWeir,27,Garage,Stockholm,26,Set 2,,Josephine,1,460,Encore 1,1,1,short
+1983-05-04,BobWeir,27,Garage,Stockholm,26,Encore 1,,Good Lovin',1,462,,1,1,long
+1983-05-05,BobWeir,28,Fasching,Stockholm,26,Set 1,,It's All Over Now,1,470,Set 2,1,1,long
+1983-05-05,BobWeir,28,Fasching,Stockholm,26,Set 2,,Around and Around,1,476,,1,1,long
 1983-05-06,,3796,Keystone Berkeley,Berkeley,CA,Set 1,,Run For The Roses,1,4078,Set 2,1,1,long
 1983-05-06,,3796,Keystone Berkeley,Berkeley,CA,Set 2,,Midnight Moonlight,1,4083,,1,1,long
 1983-05-07,,3797,Stone,San Francisco,CA,Set 1,,Run For The Roses,1,4088,Set 2,1,1,long
@@ -3663,6 +3716,7 @@ date,artist,event_id,venue,city,state,show_set,time,song,song_n,isong,next_set,N
 1983-10-22,GratefulDead,3871,"Carrier Dome, Syracuse University",Syracuse,NY,Set 1,,Day Job,1,23195,Set 2,1,1,long
 1983-10-22,GratefulDead,3871,"Carrier Dome, Syracuse University",Syracuse,NY,Set 2,,One More Saturday Night,1,23205,Encore,1,1,short
 1983-10-22,GratefulDead,3871,"Carrier Dome, Syracuse University",Syracuse,NY,Encore,,Revolution,1,23206,,1,1,long
+1983-10-26,BobWeir,29,Spectrum Theater,Philadelphia,PA,Set 1,,Too Many Losers,1,478,,1,1,long
 1983-10-30,GratefulDead,3872,Marin Veterans Memorial Auditorium,San Rafael,CA,Set 1,,Might As Well,1,23215,Set 2,1,1,long
 1983-10-30,GratefulDead,3872,Marin Veterans Memorial Auditorium,San Rafael,CA,Set 2,,Sugar Magnolia,1,23225,Encore,1,1,short
 1983-10-30,GratefulDead,3872,Marin Veterans Memorial Auditorium,San Rafael,CA,Encore,,Day Job,1,23226,,1,1,long
@@ -3677,6 +3731,8 @@ date,artist,event_id,venue,city,state,show_set,time,song,song_n,isong,next_set,N
 1983-11-14,,3876,Stone,San Francisco,CA,Set 2,,Midnight Moonlight,1,4359,,1,1,long
 1983-11-15,,3877,Keystone Berkeley,Berkeley,CA,Set 1,,Tangled Up In Blue,1,4364,Set 2,1,1,long
 1983-11-15,,3877,Keystone Berkeley,Berkeley,CA,Set 2,,Midnight Moonlight,1,4369,,1,1,long
+1983-11-22,BobWeir,30,Reseda Country Club,Los Angeles,CA,Set 1,,Rock in the 80's,1,487,Set 2,1,1,long
+1983-11-22,BobWeir,30,Reseda Country Club,Los Angeles,CA,Set 2,,,4,498,,1,1,long
 1983-11-23,,3878,Arie Crown Theater,Chicago,IL,Show,20:00:00.000,Tangled Up In Blue,1,4377,,2,1,long
 1983-11-23,,3879,Arie Crown Theater,Chicago,IL,Show,23:00:00.000,Tangled Up In Blue,1,4384,Encore,2,2,short
 1983-11-23,,3879,Arie Crown Theater,Chicago,IL,Encore,23:00:00.000,How Sweet It Is (To Be Loved By You),1,4385,,2,2,long
@@ -3737,6 +3793,7 @@ date,artist,event_id,venue,city,state,show_set,time,song,song_n,isong,next_set,N
 1984-01-14,,3907,Portland Civic Auditorium,Portland,OR,Set 1,20:00:00.000,Deal,1,4596,Set 2,1,1,long
 1984-01-14,,3907,Portland Civic Auditorium,Portland,OR,Set 2,20:00:00.000,Rhapsody In Red,1,4601,Encore,1,1,short
 1984-01-14,,3907,Portland Civic Auditorium,Portland,OR,Encore,20:00:00.000,Reuben And Cherise,1,4602,,1,1,long
+1984-01-15,BobWeir,31,Reseda Country Club,Los Angeles,CA,Set 1,,Out of Control,1,514,,1,1,long
 1984-01-16,,3908,"Silva Concert Hall, Hult Center For The Performing Arts",Eugene,OR,Set 1,20:00:00.000,Run For The Roses,1,4607,Set 2,1,1,long
 1984-01-16,,3908,"Silva Concert Hall, Hult Center For The Performing Arts",Eugene,OR,Set 2,20:00:00.000,Tangled Up In Blue,1,4612,Encore,1,1,short
 1984-01-16,,3908,"Silva Concert Hall, Hult Center For The Performing Arts",Eugene,OR,Encore,20:00:00.000,Midnight Moonlight,1,4613,,1,1,long
@@ -3919,9 +3976,10 @@ date,artist,event_id,venue,city,state,show_set,time,song,song_n,isong,next_set,N
 1984-08-10,,3986,Rocky Glen Amusement Park,Moosic,PA,Encore,,Tangled Up In Blue,1,4818,,1,1,long
 1984-08-11,,3987,Caldwell College,Caldwell,NJ,Set 1,19:00:00.000,Rhapsody In Red,1,4824,Set 2,1,1,long
 1984-08-11,,3987,Caldwell College,Caldwell,NJ,Set 2,19:00:00.000,Midnight Moonlight,1,4828,,1,1,long
-1984-08-12,,3988,Club Casino Ballroom,Hampton Beach,NH,Set 1,,Deal,1,4833,Set 2,1,1,long
-1984-08-12,,3988,Club Casino Ballroom,Hampton Beach,NH,Set 2,,Midnight Moonlight,1,4838,Encore,1,1,short
-1984-08-12,,3988,Club Casino Ballroom,Hampton Beach,NH,Encore,,How Sweet It Is (To Be Loved By You),1,4839,,1,1,long
+1984-08-12,,3988,Club Casino Ballroom,Hampton Beach,NH,Set 1,,Deal,1,4833,Set 2,2,2,long
+1984-08-12,,3988,Club Casino Ballroom,Hampton Beach,NH,Set 2,,Midnight Moonlight,1,4838,Encore,2,2,short
+1984-08-12,,3988,Club Casino Ballroom,Hampton Beach,NH,Encore,,How Sweet It Is (To Be Loved By You),1,4839,,2,2,long
+1984-08-12,BobWeir,32,The Palace,Los Angeles,CA,Set 1,,Out of Control,1,530,,2,1,long
 1984-08-13,,3989,Club Casino Ballroom,Hampton Beach,NH,Set 1,,Tangled Up In Blue,1,4844,Set 2,1,1,long
 1984-08-13,,3989,Club Casino Ballroom,Hampton Beach,NH,Set 2,,Midnight Moonlight,1,4848,Encore,1,1,short
 1984-08-13,,3989,Club Casino Ballroom,Hampton Beach,NH,Encore,,Rhapsody In Red,1,4849,,1,1,long
@@ -4340,6 +4398,7 @@ date,artist,event_id,venue,city,state,show_set,time,song,song_n,isong,next_set,N
 1986-04-22,GratefulDead,4223,Berkeley Community Theater,Berkeley,CA,Set 1,,Deal,1,26430,Set 2,1,1,long
 1986-04-22,GratefulDead,4223,Berkeley Community Theater,Berkeley,CA,Set 2,,Turn On Your Lovelight,1,26440,Encore,1,1,short
 1986-04-22,GratefulDead,4223,Berkeley Community Theater,Berkeley,CA,Encore,,Brokedown Palace,1,26441,,1,1,long
+1986-04-28,BobWeir,33,Wolfgang's,San Francisco,CA,Set 1,,Throwing Stones,1,543,,1,1,long
 1986-05-03,GratefulDead,4225,Cal Expo Amphitheatre,Sacramento,CA,Set 1,,Deal,1,26449,Set 2,1,1,long
 1986-05-03,GratefulDead,4225,Cal Expo Amphitheatre,Sacramento,CA,Set 2,,Sugar Magnolia,1,26458,,1,1,long
 1986-05-04,GratefulDead,4226,Cal Expo Amphitheatre,Sacramento,CA,Set 1,,I Know You Rider,1,26466,Set 2,1,1,long
@@ -4760,8 +4819,10 @@ date,artist,event_id,venue,city,state,show_set,time,song,song_n,isong,next_set,N
 1987-11-15,GratefulDead,4457,Long Beach Arena,Long Beach,CA,Encore,,Black Muddy River,1,28567,,1,1,long
 1987-11-27,,4463,The Warfield,San Francisco,CA,Set,20:00:00.000,Deal,1,5821,Encore,1,1,short
 1987-11-27,,4463,The Warfield,San Francisco,CA,Encore,20:00:00.000,And It Stoned Me,1,5822,,1,1,long
-1987-11-28,,4465,The Warfield,San Francisco,CA,Set,20:00:00.000,Tangled Up In Blue,1,5830,Encore,1,1,short
-1987-11-28,,4465,The Warfield,San Francisco,CA,Encore,20:00:00.000,My Sisters And Brothers,1,5831,,1,1,long
+1987-11-28,,4465,The Warfield,San Francisco,CA,Set,20:00:00.000,Tangled Up In Blue,1,5830,Encore,2,2,short
+1987-11-28,,4465,The Warfield,San Francisco,CA,Encore,20:00:00.000,My Sisters And Brothers,1,5831,,2,2,long
+1987-11-28,BobWeir,34,Fender's Ballroom,Long Beach,CA,Set 1,,Josephine,1,556,Encore 1,2,1,short
+1987-11-28,BobWeir,34,Fender's Ballroom,Long Beach,CA,Encore 1,,Turn On Your Love Light,1,557,,2,1,long
 1987-11-29,,4467,The Warfield,San Francisco,CA,Set,20:00:00.000,Midnight Moonlight,1,5839,Encore,1,1,short
 1987-11-29,,4467,The Warfield,San Francisco,CA,Encore,20:00:00.000,Evangeline,1,5840,,1,1,long
 1987-12-03,,4469,Wiltern Theatre,Los Angeles,CA,Set,20:00:00.000,Tangled Up In Blue,1,5848,Encore,1,1,short
@@ -4865,6 +4926,7 @@ date,artist,event_id,venue,city,state,show_set,time,song,song_n,isong,next_set,N
 1988-04-15,GratefulDead,4511,Rosemont Horizon,Rosemont,IL,Set 1,,Deal,1,29102,Set 2,1,1,long
 1988-04-15,GratefulDead,4511,Rosemont Horizon,Rosemont,IL,Set 2,,Turn On Your Lovelight,1,29113,Encore,1,1,short
 1988-04-15,GratefulDead,4511,Rosemont Horizon,Rosemont,IL,Encore,,Knockin' On Heaven's Door,1,29114,,1,1,long
+1988-04-16,BobWeir,35,Pasadena City College,Pasadena,CA,Set 1,,Blackbird,1,563,,1,1,long
 1988-04-22,GratefulDead,4512,Irvine Meadows Amphitheatre,Irvine,CA,Set 1,,Let It Grow,1,29122,Set 2,1,1,long
 1988-04-22,GratefulDead,4512,Irvine Meadows Amphitheatre,Irvine,CA,Set 2,,Sugar Magnolia,1,29133,Encore,1,1,short
 1988-04-22,GratefulDead,4512,Irvine Meadows Amphitheatre,Irvine,CA,Encore,,Black Muddy River,1,29134,,1,1,long
@@ -4874,6 +4936,8 @@ date,artist,event_id,venue,city,state,show_set,time,song,song_n,isong,next_set,N
 1988-04-24,GratefulDead,4514,Irvine Meadows Amphitheatre,Irvine,CA,Set 1,,Promised Land,1,29162,Set 2,1,1,long
 1988-04-24,GratefulDead,4514,Irvine Meadows Amphitheatre,Irvine,CA,Set 2,,Not Fade Away,1,29173,Encore,1,1,short
 1988-04-24,GratefulDead,4514,Irvine Meadows Amphitheatre,Irvine,CA,Encore,,The Mighty Quinn,1,29174,,1,1,long
+1988-04-26,BobWeir,36,Marin Veterans' Memorial Auditorium,San Rafael,CA,Set 1,,Throwing Stones,1,569,Encore 1,1,1,short
+1988-04-26,BobWeir,36,Marin Veterans' Memorial Auditorium,San Rafael,CA,Encore 1,,Good Times,1,572,,1,1,long
 1988-04-30,GratefulDead,4516,"Frost Amphitheatre, Stanford University",Palo Alto,CA,Set 1,14:00:00.000,Let It Grow,1,29181,Set 2,1,1,long
 1988-04-30,GratefulDead,4516,"Frost Amphitheatre, Stanford University",Palo Alto,CA,Set 2,14:00:00.000,Sugar Magnolia,1,29191,Encore,1,1,short
 1988-04-30,GratefulDead,4516,"Frost Amphitheatre, Stanford University",Palo Alto,CA,Encore,14:00:00.000,One More Saturday Night,1,29194,,1,1,long
@@ -4917,8 +4981,9 @@ date,artist,event_id,venue,city,state,show_set,time,song,song_n,isong,next_set,N
 1988-07-03,GratefulDead,4556,Oxford Plains Speedway,Oxford,ME,Set 1,,Bird Song,1,29420,Set 2,1,1,long
 1988-07-03,GratefulDead,4556,Oxford Plains Speedway,Oxford,ME,Set 2,,Hey Jude Reprise,1,29432,Encore,1,1,short
 1988-07-03,GratefulDead,4556,Oxford Plains Speedway,Oxford,ME,Encore,,Not Fade Away,1,29433,,1,1,long
-1988-07-10,,4560,"William Randolph Hearst Greek Theatre, UC Berkeley",Berkeley,CA,Set 1,15:00:00.000,Deal,1,5970,Set 2,1,1,long
-1988-07-10,,4560,"William Randolph Hearst Greek Theatre, UC Berkeley",Berkeley,CA,Set 2,15:00:00.000,Don't Let Go,1,5977,,1,1,long
+1988-07-10,,4560,"William Randolph Hearst Greek Theatre, UC Berkeley",Berkeley,CA,Set 1,15:00:00.000,Deal,1,5970,Set 2,2,2,long
+1988-07-10,,4560,"William Randolph Hearst Greek Theatre, UC Berkeley",Berkeley,CA,Set 2,15:00:00.000,Don't Let Go,1,5977,,2,2,long
+1988-07-10,BobWeir,37,William Randolph Hearst Greek Theatre,Berkeley,CA,Set 1,,Blackbird,1,582,,2,1,long
 1988-07-15,GratefulDead,4561,"William Randolph Hearst Greek Theatre, UC Berkeley",Berkeley,CA,Set 1,19:00:00.000,Bertha,1,29441,Set 2,1,1,long
 1988-07-15,GratefulDead,4561,"William Randolph Hearst Greek Theatre, UC Berkeley",Berkeley,CA,Set 2,19:00:00.000,Morning Dew,1,29452,Encore,1,1,short
 1988-07-15,GratefulDead,4561,"William Randolph Hearst Greek Theatre, UC Berkeley",Berkeley,CA,Encore,19:00:00.000,Turn On Your Lovelight,1,29453,,1,1,long
@@ -5224,8 +5289,9 @@ date,artist,event_id,venue,city,state,show_set,time,song,song_n,isong,next_set,N
 1989-09-03,,4688,Spectrum,Philadelphia,PA,Set 2,20:00:00.000,Lonesome And A Long Way From Home,1,6247,,1,1,long
 1989-09-05,,4689,Hartford Civic Center,Hartford,CT,Set 1,19:30:00.000,Deal,1,6254,Set 2,1,1,long
 1989-09-05,,4689,Hartford Civic Center,Hartford,CT,Set 2,19:30:00.000,Lonesome And A Long Way From Home,1,6261,,1,1,long
-1989-09-06,,4690,Nassau Veterans Memorial Coliseum,Uniondale,NY,Set 1,19:30:00.000,Deal,1,6268,Set 2,1,1,long
-1989-09-06,,4690,Nassau Veterans Memorial Coliseum,Uniondale,NY,Set 2,19:30:00.000,Tangled Up In Blue,1,6275,,1,1,long
+1989-09-06,,4690,Nassau Veterans Memorial Coliseum,Uniondale,NY,Set 1,19:30:00.000,Deal,1,6268,Set 2,2,2,long
+1989-09-06,,4690,Nassau Veterans Memorial Coliseum,Uniondale,NY,Set 2,19:30:00.000,Tangled Up In Blue,1,6275,,2,2,long
+1989-09-06,BobWeir,38,Nassau Veterans Memorial Coliseum,Uniondale,NY,Set 1,,Heaven Help the Fool,1,592,,2,1,long
 1989-09-07,,4691,Brendan Byrne Arena,East Rutherford,NJ,Set 1,19:30:00.000,Cats Under The Stars,1,6282,Set 2,1,1,long
 1989-09-07,,4691,Brendan Byrne Arena,East Rutherford,NJ,Set 2,19:30:00.000,Harder They Come,1,6289,,1,1,long
 1989-09-09,,4692,Great Woods Center for the Performing Arts,Mansfield,MA,Set 1,19:30:00.000,Deal,1,6295,Set 2,1,1,long
@@ -5236,8 +5302,9 @@ date,artist,event_id,venue,city,state,show_set,time,song,song_n,isong,next_set,N
 1989-09-11,,4694,Centrum,Worcester,MA,Set 2,,Lonesome And A Long Way From Home,1,6330,,1,1,long
 1989-09-13,,4697,Seashore Performing Arts Center,Old Orchard Beach,ME,Set 1,19:00:00.000,Deal,1,6337,Set 2,1,1,long
 1989-09-13,,4697,Seashore Performing Arts Center,Old Orchard Beach,ME,Set 2,19:00:00.000,Midnight Moonlight,1,6344,,1,1,long
-1989-09-15,,4698,Alpine Valley Music Theatre,East Troy,WI,Set 1,20:00:00.000,Deal,1,6351,Set 2,1,1,long
-1989-09-15,,4698,Alpine Valley Music Theatre,East Troy,WI,Set 2,20:00:00.000,Lonesome And A Long Way From Home,1,6358,,1,1,long
+1989-09-15,,4698,Alpine Valley Music Theatre,East Troy,WI,Set 1,20:00:00.000,Deal,1,6351,Set 2,2,2,long
+1989-09-15,,4698,Alpine Valley Music Theatre,East Troy,WI,Set 2,20:00:00.000,Lonesome And A Long Way From Home,1,6358,,2,2,long
+1989-09-15,BobWeir,39,Alpine Valley Music Theatre,East Troy,WI,Set 1,,Misty,1,604,,2,1,long
 1989-09-16,,4699,Poplar Creek Music Theatre,Hoffman Estates,IL,Set 1,20:00:00.000,Let's Spend The Night Together,1,6365,Set 2,1,1,long
 1989-09-16,,4699,Poplar Creek Music Theatre,Hoffman Estates,IL,Set 2,20:00:00.000,Tangled Up In Blue,1,6372,,1,1,long
 1989-09-29,GratefulDead,4700,Shoreline Amphitheatre,Mountain View,CA,Set 1,,Promised Land,1,31174,Set 2,1,1,long
@@ -5848,8 +5915,11 @@ date,artist,event_id,venue,city,state,show_set,time,song,song_n,isong,next_set,N
 1991-11-09,,4953,Hampton Coliseum,Hampton,VA,Set 1,20:00:00.000,Ain't No Bread In The Breadbox,1,7019,Set 2,1,1,long
 1991-11-09,,4953,Hampton Coliseum,Hampton,VA,Set 2,20:00:00.000,Midnight Moonlight,1,7026,Encore,1,1,short
 1991-11-09,,4953,Hampton Coliseum,Hampton,VA,Encore,20:00:00.000,What A Wonderful World,1,7027,,1,1,long
-1991-11-10,,4954,Charlotte Coliseum,Charlotte,NC,Set 1,19:30:00.000,Deal,1,7035,Set 2,1,1,long
-1991-11-10,,4954,Charlotte Coliseum,Charlotte,NC,Set 2,19:30:00.000,Everybody Needs Somebody To Love,1,7043,,1,1,long
+1991-11-10,,4954,Charlotte Coliseum,Charlotte,NC,Set 1,19:30:00.000,Deal,1,7035,Set 2,2,2,long
+1991-11-10,,4954,Charlotte Coliseum,Charlotte,NC,Set 2,19:30:00.000,Everybody Needs Somebody To Love,1,7043,,2,2,long
+1991-11-10,BobWeir,40,Paramount Theatre,Seattle,WA,Set 1,,Throwing Stones,1,619,Encore 1,2,1,short
+1991-11-10,BobWeir,40,Paramount Theatre,Seattle,WA,Encore 1,,Misty,1,620,Encore 2,2,1,short
+1991-11-10,BobWeir,40,Paramount Theatre,Seattle,WA,Encore 2,,The Weight,1,621,,2,1,long
 1991-11-12,,4955,Spectrum,Philadelphia,PA,Set 1,19:30:00.000,Deal,1,7051,Set 2,1,1,long
 1991-11-12,,4955,Spectrum,Philadelphia,PA,Set 2,19:30:00.000,Let's Spend The Night Together,1,7058,Encore,1,1,short
 1991-11-12,,4955,Spectrum,Philadelphia,PA,Encore,19:30:00.000,What A Wonderful World,1,7059,,1,1,long
@@ -5963,6 +6033,8 @@ date,artist,event_id,venue,city,state,show_set,time,song,song_n,isong,next_set,N
 1992-05-02,,5000,The Warfield,San Francisco,CA,Set 2,20:00:00.000,Tangled Up In Blue,1,7280,,1,1,long
 1992-05-03,,5001,The Warfield,San Francisco,CA,Set 1,20:00:00.000,Lay Down Sally,1,7286,Set 2,1,1,long
 1992-05-03,,5001,The Warfield,San Francisco,CA,Set 2,20:00:00.000,Midnight Moonlight,1,7293,,1,1,long
+1992-05-10,BobWeir,41,Private Venue,Carmel Valley,CA,Set 1,,Throwing Stones,1,631,Encore 1,1,1,short
+1992-05-10,BobWeir,41,Private Venue,Carmel Valley,CA,Encore 1,,The Weight,1,632,,1,1,long
 1992-05-19,GratefulDead,5008,Cal Expo Amphitheatre,Sacramento,CA,Set 1,,Let It Grow,1,34962,Set 2,1,1,long
 1992-05-19,GratefulDead,5008,Cal Expo Amphitheatre,Sacramento,CA,Set 2,,Sugar Magnolia,1,34972,Encore,1,1,short
 1992-05-19,GratefulDead,5008,Cal Expo Amphitheatre,Sacramento,CA,Encore,,Tomorrow Never Knows,1,34974,,1,1,long
@@ -6054,6 +6126,7 @@ date,artist,event_id,venue,city,state,show_set,time,song,song_n,isong,next_set,N
 1992-08-01,,5041,Irvine Meadows Amphitheatre,Irvine,CA,Set 2,19:00:00.000,What A Wonderful World,1,7364,,1,1,long
 1992-08-02,,5042,"Devore Field, Southwestern College",Chula Vista,CA,Set 1,17:00:00.000,Deal,1,7371,Set 2,1,1,long
 1992-08-02,,5042,"Devore Field, Southwestern College",Chula Vista,CA,Set 2,17:00:00.000,Midnight Moonlight,1,7378,,1,1,long
+1992-09-20,BobWeir,42,The Barn,Bensalem,PA,Set 1,,Cassidy,1,636,,1,1,long
 1992-10-31,,5069,Oakland Coliseum Arena,Oakland,CA,Set 1,19:00:00.000,Deal,1,7385,Set 2,1,1,long
 1992-10-31,,5069,Oakland Coliseum Arena,Oakland,CA,Set 2,19:00:00.000,Tangled Up In Blue,1,7393,Encore,1,1,short
 1992-10-31,,5069,Oakland Coliseum Arena,Oakland,CA,Encore,19:00:00.000,Werewolves Of London,1,7394,,1,1,long
@@ -6088,6 +6161,7 @@ date,artist,event_id,venue,city,state,show_set,time,song,song_n,isong,next_set,N
 1992-12-19,,5080,The Warfield,San Francisco,CA,Set 2,,Midnight Moonlight,1,7409,,1,1,long
 1992-12-21,,5081,The Warfield,San Francisco,CA,Set 1,,Deal,1,7417,Set 2,1,1,long
 1992-12-21,,5081,The Warfield,San Francisco,CA,Set 2,,Tangled Up In Blue,1,7424,,1,1,long
+1993-01-18,BobWeir,43,National Mall,Washington,DC,Set 1,,Throwing Stones,1,645,,1,1,long
 1993-01-24,GratefulDead,5084,Oakland Coliseum Arena,Oakland,CA,Set 1,,Bird Song,1,35609,Set 2,1,1,long
 1993-01-24,GratefulDead,5084,Oakland Coliseum Arena,Oakland,CA,Set 2,,Sugar Magnolia,1,35619,Encore,1,1,short
 1993-01-24,GratefulDead,5084,Oakland Coliseum Arena,Oakland,CA,Encore,,Knockin' On Heaven's Door,1,35620,,1,1,long
@@ -6854,58 +6928,809 @@ date,artist,event_id,venue,city,state,show_set,time,song,song_n,isong,next_set,N
 1995-07-09,GratefulDead,5400,Soldier Field,Chicago,IL,Set 1,18:00:00.000,Promised Land,1,39497,Set 2,1,1,long
 1995-07-09,GratefulDead,5400,Soldier Field,Chicago,IL,Set 2,18:00:00.000,Sugar Magnolia,1,39506,Encore,1,1,short
 1995-07-09,GratefulDead,5400,Soldier Field,Chicago,IL,Encore,18:00:00.000,Box Of Rain,1,39508,,1,1,long
-2021-10-31,DeadAndCompany,0,Hollywood Bowl,Los Angeles,CA,Set 1,,Terrapin Station,1,7,Set 2,1,1,long
-2021-10-31,DeadAndCompany,0,Hollywood Bowl,Los Angeles,CA,Set 2,,Not Fade Away,1,17,Encore 1,1,1,short
-2021-10-31,DeadAndCompany,0,Hollywood Bowl,Los Angeles,CA,Encore 1,,Brokedown Palace,1,18,,1,1,long
-2022-06-11,DeadAndCompany,1,Dodger Stadium,Los Angeles,CA,Set 1,,Casey Jones,1,25,Set 2,1,1,long
-2022-06-11,DeadAndCompany,1,Dodger Stadium,Los Angeles,CA,Set 2,,One More Saturday Night,1,36,Encore 1,1,1,short
-2022-06-11,DeadAndCompany,1,Dodger Stadium,Los Angeles,CA,Encore 1,,Werewolves of London,1,37,,1,1,long
-2022-06-13,DeadAndCompany,2,Shoreline Amphitheatre,Mountain View,CA,Set 1,,Don't Ease Me In,1,45,Set 2,1,1,long
-2022-06-13,DeadAndCompany,2,Shoreline Amphitheatre,Mountain View,CA,Set 2,,Sugar Magnolia,1,55,Encore 1,1,1,short
-2022-06-13,DeadAndCompany,2,Shoreline Amphitheatre,Mountain View,CA,Encore 1,,Ripple,1,56,,1,1,long
-2022-06-14,DeadAndCompany,3,Shoreline Amphitheatre,Mountain View,CA,Set 1,,U.S. Blues,1,63,Set 2,1,1,long
-2022-06-14,DeadAndCompany,3,Shoreline Amphitheatre,Mountain View,CA,Set 2,,Not Fade Away,1,72,Encore 1,1,1,short
-2022-06-14,DeadAndCompany,3,Shoreline Amphitheatre,Mountain View,CA,Encore 1,,Brokedown Palace,1,73,,1,1,long
-2022-06-17,DeadAndCompany,4,Folsom Field,Boulder,CO,Set 1,,Let It Grow,1,82,Set 2,1,1,long
-2022-06-17,DeadAndCompany,4,Folsom Field,Boulder,CO,Set 2,,Turn On Your Love Light,1,92,Encore 1,1,1,short
-2022-06-17,DeadAndCompany,4,Folsom Field,Boulder,CO,Encore 1,,Casey Jones,1,93,,1,1,long
-2022-06-18,DeadAndCompany,5,Folsom Field,Boulder,CO,Set 1,,Saint of Circumstance,1,101,Set 2,1,1,long
-2022-06-18,DeadAndCompany,5,Folsom Field,Boulder,CO,Set 2,,Morning Dew,1,112,Encore 1,1,1,short
-2022-06-18,DeadAndCompany,5,Folsom Field,Boulder,CO,Encore 1,,One More Saturday Night,1,114,,1,1,long
-2022-06-21,DeadAndCompany,6,Hollywood Casino Amphitheatre,Maryland Heights,MO,Set 1,,Bird Song,1,121,Set 2,1,1,long
-2022-06-21,DeadAndCompany,6,Hollywood Casino Amphitheatre,Maryland Heights,MO,Set 2,,U.S. Blues,1,132,Encore 1,1,1,short
-2022-06-21,DeadAndCompany,6,Hollywood Casino Amphitheatre,Maryland Heights,MO,Encore 1,,Ripple,1,133,,1,1,long
-2022-06-22,DeadAndCompany,7,Riverbend Music Center,Cincinnati,OH,Set 1,,Cassidy,1,140,Set 2,1,1,long
-2022-06-22,DeadAndCompany,7,Riverbend Music Center,Cincinnati,OH,Set 2,,Black Muddy River,1,152,,1,1,long
-2022-06-24,DeadAndCompany,8,Wrigley Field,Chicago,IL,Set 1,,Althea,1,160,Set 2,1,1,long
-2022-06-24,DeadAndCompany,8,Wrigley Field,Chicago,IL,Set 2,,Not Fade Away,1,171,,1,1,long
-2022-06-25,DeadAndCompany,9,Wrigley Field,Chicago,IL,Set 1,,Sugaree,1,178,Set 2,1,1,long
-2022-06-25,DeadAndCompany,9,Wrigley Field,Chicago,IL,Set 2,,One More Saturday Night,1,188,Encore 1,1,1,short
-2022-06-25,DeadAndCompany,9,Wrigley Field,Chicago,IL,Encore 1,,Touch of Grey,1,190,,1,1,long
-2022-06-28,DeadAndCompany,10,Ruoff Home Mortgage Music Center,Noblesville,IN,Set 1,,Don't Ease Me In,1,198,Set 2,1,1,long
-2022-06-28,DeadAndCompany,10,Ruoff Home Mortgage Music Center,Noblesville,IN,Set 2,,The Weight,1,208,,1,1,long
-2022-06-29,DeadAndCompany,11,Pine Knob Music Theatre,Clarkston,MI,Set 1,,Bird Song,1,216,Set 2,1,1,long
-2022-06-29,DeadAndCompany,11,Pine Knob Music Theatre,Clarkston,MI,Set 2,,U.S. Blues,1,227,Encore 1,1,1,short
-2022-06-29,DeadAndCompany,11,Pine Knob Music Theatre,Clarkston,MI,Encore 1,,Ripple,1,228,,1,1,long
-2022-07-01,DeadAndCompany,12,Bethel Woods Center for the Arts,Bethel,NY,Set 1,,Let It Grow,1,236,Set 2,1,1,long
-2022-07-01,DeadAndCompany,12,Bethel Woods Center for the Arts,Bethel,NY,Set 2,,Not Fade Away,1,246,Encore 1,1,1,short
-2022-07-01,DeadAndCompany,12,Bethel Woods Center for the Arts,Bethel,NY,Encore 1,,Sing Me Back Home,1,247,,1,1,long
-2022-07-02,DeadAndCompany,13,Gillette Stadium,Foxborough,MA,Set 1,,Bertha,1,249,Set 2,1,1,long
-2022-07-02,DeadAndCompany,13,Gillette Stadium,Foxborough,MA,Set 2,,Morning Dew,1,263,Encore 1,1,1,short
-2022-07-02,DeadAndCompany,13,Gillette Stadium,Foxborough,MA,Encore 1,,One More Saturday Night,1,265,,1,1,long
-2022-07-05,DeadAndCompany,14,XFINITY Theatre,Hartford,CT,Set 1,,Cassidy,1,273,Set 2,1,1,long
-2022-07-05,DeadAndCompany,14,XFINITY Theatre,Hartford,CT,Set 2,,Sugar Magnolia,1,283,,1,1,long
-2022-07-08,DeadAndCompany,15,Jiffy Lube Live,Bristow,VA,Set 1,,Don't Ease Me In,1,291,Set 2,1,1,long
-2022-07-08,DeadAndCompany,15,Jiffy Lube Live,Bristow,VA,Set 2,,Turn On Your Love Light,1,300,Encore 1,1,1,short
-2022-07-08,DeadAndCompany,15,Jiffy Lube Live,Bristow,VA,Encore 1,,Black Muddy River,1,301,,1,1,long
-2022-07-10,DeadAndCompany,16,Citizens Bank Park,Philadelphia,PA,Set 1,,Deal,1,308,Set 2,1,1,long
-2022-07-10,DeadAndCompany,16,Citizens Bank Park,Philadelphia,PA,Set 2,,Franklin's Tower,1,318,Encore 1,1,1,short
-2022-07-10,DeadAndCompany,16,Citizens Bank Park,Philadelphia,PA,Encore 1,,Casey Jones,1,320,,1,1,long
-2022-07-12,DeadAndCompany,17,The Pavilion at Star Lake,Burgettstown,PA,Set 1,,Saint of Circumstance,1,328,Set 2,1,1,long
-2022-07-12,DeadAndCompany,17,The Pavilion at Star Lake,Burgettstown,PA,Set 2,,U.S. Blues,1,338,Encore 1,1,1,short
-2022-07-12,DeadAndCompany,17,The Pavilion at Star Lake,Burgettstown,PA,Encore 1,,Ripple,1,339,,1,1,long
-2022-07-15,DeadAndCompany,18,Citi Field,New York,NY,Set 1,,Don't Ease Me In,1,346,Set 2,1,1,long
-2022-07-15,DeadAndCompany,18,Citi Field,New York,NY,Set 2,,Not Fade Away,1,356,Encore 1,1,1,short
-2022-07-15,DeadAndCompany,18,Citi Field,New York,NY,Encore 1,,Sugar Magnolia,1,357,,1,1,long
-2022-07-16,DeadAndCompany,19,Citi Field,New York,NY,Set 1,,Jack Straw,1,364,Set 2,1,1,long
-2022-07-16,DeadAndCompany,19,Citi Field,New York,NY,Set 2,,Deal,1,376,,1,1,long
+1996-05-15,BobWeir,44,Berkeley Community Theatre,Berkeley,CA,Set 1,,Throwing Stones,1,650,Encore 1,1,1,short
+1996-05-15,BobWeir,44,Berkeley Community Theatre,Berkeley,CA,Encore 1,,Happy Birthday to You,1,652,,1,1,long
+1997-07-04,BobWeir,45,Riverside Park,Agawam,MA,Set 1,,,1,656,,1,1,long
+1999-02-11,BobWeir,46,Wetlands Preserve,New York,NY,Set 1,,Loose Lucy,1,666,Set 2,1,1,long
+1999-02-11,BobWeir,46,Wetlands Preserve,New York,NY,Set 2,,Cassidy,1,677,Encore 1,1,1,short
+1999-02-11,BobWeir,46,Wetlands Preserve,New York,NY,Encore 1,,Knockin' on Heaven's Door,1,678,,1,1,long
+1999-02-12,BobWeir,47,Wetlands Preserve,New York,NY,Set 1,,When I Paint My Masterpiece,1,685,Set 2,1,1,long
+1999-02-12,BobWeir,47,Wetlands Preserve,New York,NY,Set 2,,Throwing Stones,1,693,Encore 1,1,1,short
+1999-02-12,BobWeir,47,Wetlands Preserve,New York,NY,Encore 1,,Sugar Magnolia,1,694,,1,1,long
+1999-02-13,BobWeir,48,Wetlands Preserve,New York,NY,Set 1,,Ripple,1,703,Set 2,1,1,long
+1999-02-13,BobWeir,48,Wetlands Preserve,New York,NY,Set 2,,Gloria,1,716,Encore 1,1,1,short
+1999-02-13,BobWeir,48,Wetlands Preserve,New York,NY,Encore 1,,One More Saturday Night,1,717,,1,1,long
+1999-06-08,BobWeir,49,South Street Seaport Museum,New York,NY,Set 1,,Throwing Stones,1,731,Encore 1,1,1,short
+1999-06-08,BobWeir,49,South Street Seaport Museum,New York,NY,Encore 1,,Touch of Grey,1,733,,1,1,long
+1999-08-12,BobWeir,50,Phoenix Theatre,Petaluma,CA,Set 1,,Playing in the Band,2,739,Set 2,1,1,long
+1999-08-12,BobWeir,50,Phoenix Theatre,Petaluma,CA,Set 2,,Bird Song,2,747,,1,1,long
+2000-04-14,BobWeir,51,Lupo's Heartbreak Hotel,Providence,RI,Set 1,,Cassidy,1,762,Encore 1,1,1,short
+2000-04-14,BobWeir,51,Lupo's Heartbreak Hotel,Providence,RI,Encore 1,,Knockin' on Heaven's Door,1,763,,1,1,long
+2000-04-15,BobWeir,52,The Capitol Center for the Arts,Concord,NH,Set 1,,Throwing Stones,1,776,Encore 1,1,1,short
+2000-04-15,BobWeir,52,The Capitol Center for the Arts,Concord,NH,Encore 1,,One More Saturday Night,1,778,,1,1,long
+2000-04-16,BobWeir,53,Sanders Theatre,Cambridge,MA,Set 1,,The Weight,1,799,Encore 1,1,1,short
+2000-04-16,BobWeir,53,Sanders Theatre,Cambridge,MA,Encore 1,,Peace in the Valley,1,800,,1,1,long
+2000-04-18,BobWeir,54,Lincoln Theater,West Hartford,CT,Set 1,,I Know You Rider,1,816,Encore 1,1,1,short
+2000-04-18,BobWeir,54,Lincoln Theater,West Hartford,CT,Encore 1,,Blackbird,1,817,,1,1,long
+2000-04-19,BobWeir,55,State Theatre,Portland,ME,Set 1,,Cassidy,1,830,Encore 1,1,1,short
+2000-04-19,BobWeir,55,State Theatre,Portland,ME,Encore 1,,Touch of Grey,1,831,,1,1,long
+2000-04-20,BobWeir,56,Colonial Theatre,Keene,NH,Set 1,,Throwing Stones,1,845,Encore 1,1,1,short
+2000-04-20,BobWeir,56,Colonial Theatre,Keene,NH,Encore 1,,Knockin' on Heaven's Door,1,846,,1,1,long
+2000-04-22,BobWeir,57,Water Street Music Hall,Rochester,NY,Set 1,,Bird Song,3,860,Encore 1,1,1,short
+2000-04-22,BobWeir,57,Water Street Music Hall,Rochester,NY,Encore 1,,One More Saturday Night,1,861,,1,1,long
+2000-04-23,BobWeir,58,Sideshow Music Hall,Lackawanna,NY,Set 1,,Throwing Stones,1,875,Encore 1,1,1,short
+2000-04-23,BobWeir,58,Sideshow Music Hall,Lackawanna,NY,Encore 1,,Touch of Grey,1,876,,1,1,long
+2000-04-25,BobWeir,59,Warner Theater,Erie,PA,Set 1,,Supplication,1,886,Encore 1,1,1,short
+2000-04-25,BobWeir,59,Warner Theater,Erie,PA,Encore 1,,Cassidy,1,889,,1,1,long
+2000-10-19,BobWeir,60,Wherehouse,Los Angeles,CA,Set 1,,Ashes and Glass,1,893,,1,1,long
+2001-01-06,BobWeir,61,Convention Center,Las Vegas,NV,Set 1,,Corrina,1,898,,1,1,long
+2002-12-21,BobWeir,62,Asheville Civic Center,Asheville,NC,Set 1,,One More Saturday Night,1,909,,1,1,long
+2003-03-28,BobWeir,63,Marin Veterans' Memorial Auditorium,San Rafael,CA,Set 1,,Ashes and Glass,1,915,,1,1,long
+2004-06-10,BobWeir,64,The XM Performance Theater,Washington,DC,Set 1,,Throwing Stones,1,920,,1,1,long
+2005-09-24,BobWeir,65,William Randolph Hearst Greek Theatre,Berkeley,CA,Set 1,,Touch of Grey,1,933,,1,1,long
+2006-10-08,BobWeir,66,Golden Gate Park,San Francisco,CA,Set 1,,Bertha,1,936,,1,1,long
+2009-09-09,BobWeir,67,Fox Theater,Oakland,CA,Set 1,,Not Fade Away,1,953,Encore 1,1,1,short
+2009-09-09,BobWeir,67,Fox Theater,Oakland,CA,Encore 1,,Touch of Grey,1,954,,1,1,long
+2010-04-16,BobWeir,68,Spirit of the Suwannee Music Park,Live Oak,FL,Set 1,,Not Fade Away,1,966,,1,1,long
+2010-04-25,BobWeir,69,National Mall,Washington,DC,Set 1,,Dancing in the Street,1,967,,1,1,long
+2010-05-06,BobWeir,70,Perkins School for the Blind,Watertown,MA,Set 1,,Ripple,1,972,,1,1,long
+2011-01-03,BobWeir,71,Revolution Live,Fort Lauderdale,FL,Set 1,,Sugar Magnolia,1,986,Encore 1,1,1,short
+2011-01-03,BobWeir,71,Revolution Live,Fort Lauderdale,FL,Encore 1,,Not Fade Away,1,987,,1,1,long
+2011-05-07,BobWeir,72,Marin Veterans' Memorial Auditorium,San Rafael,CA,Set I,,Cassidy,2,996,Set II,1,1,long
+2011-05-07,BobWeir,72,Marin Veterans' Memorial Auditorium,San Rafael,CA,Set II,,Playing in the Band,2,1004,Encore 1,1,1,short
+2011-05-07,BobWeir,72,Marin Veterans' Memorial Auditorium,San Rafael,CA,Encore 1,,Attics of My Life,1,1007,,1,1,long
+2011-08-20,BobWeir,73,Planet Bluegrass,Lyons,CO,Set 1,,I Know You Rider,1,1021,Encore 1,1,1,short
+2011-08-20,BobWeir,73,Planet Bluegrass,Lyons,CO,Encore 1,,Ripple,1,1022,,1,1,long
+2012-04-01,BobWeir,74,Fox Theater,Oakland,CA,Set 1 (Solo),,Not Fade Away,1,1032,Set 2,1,1,long
+2012-04-01,BobWeir,74,Fox Theater,Oakland,CA,Set 2,,Jack Straw,1,1038,Encore 1,1,1,short
+2012-04-01,BobWeir,74,Fox Theater,Oakland,CA,Encore 1,,Ripple,1,1039,,1,1,long
+2012-04-24,BobWeir,75,Bijou Theatre,Knoxville,TN,Set 1,,Easy to Slip,1,1046,Set 2,1,1,long
+2012-04-24,BobWeir,75,Bijou Theatre,Knoxville,TN,Set 2,,Not Fade Away,1,1052,Encore 1,1,1,short
+2012-04-24,BobWeir,75,Bijou Theatre,Knoxville,TN,Encore 1,,Ripple,1,1053,,1,1,long
+2012-04-26,BobWeir,76,The Jefferson Theater,Charlottesville,VA,Set 1,,Let It Grow,1,1061,Set 2,1,1,long
+2012-04-26,BobWeir,76,The Jefferson Theater,Charlottesville,VA,Set 2,,Sugar Magnolia,1,1068,Encore 1,1,1,short
+2012-04-26,BobWeir,76,The Jefferson Theater,Charlottesville,VA,Encore 1,,The Weight,1,1069,,1,1,long
+2012-04-27,BobWeir,77,The F.M. Kirby Center for the Performing Arts,Wilkes-Barre,PA,Set 1,,Saint of Circumstance,1,1078,Set 2,1,1,long
+2012-04-27,BobWeir,77,The F.M. Kirby Center for the Performing Arts,Wilkes-Barre,PA,Set 2,,Days Between,1,1084,Encore 1,1,1,short
+2012-04-27,BobWeir,77,The F.M. Kirby Center for the Performing Arts,Wilkes-Barre,PA,Encore 1,,Brokedown Palace,1,1085,,1,1,long
+2012-04-28,BobWeir,78,NYCB Theatre at Westbury,Westbury,NY,Set 1,,Easy to Slip,1,1093,Set 2,1,1,long
+2012-04-28,BobWeir,78,NYCB Theatre at Westbury,Westbury,NY,Set 2,,Weather Report Suite,1,1099,Encore 1,1,1,short
+2012-04-28,BobWeir,78,NYCB Theatre at Westbury,Westbury,NY,Encore 1,,Ripple,1,1101,,1,1,long
+2012-04-29,BobWeir,79,Colonial Theatre,Pittsfield,MA,Set 1,,Most of the Time,1,1107,Set 2,1,1,long
+2012-04-29,BobWeir,79,Colonial Theatre,Pittsfield,MA,Set 2,,Not Fade Away,1,1117,Encore 1,1,1,short
+2012-04-29,BobWeir,79,Colonial Theatre,Pittsfield,MA,Encore 1,,Brokedown Palace,1,1118,,1,1,long
+2012-05-01,BobWeir,80,State Theatre,Portland,ME,Set 1,,Jack Straw,1,1126,Set 2,1,1,long
+2012-05-01,BobWeir,80,State Theatre,Portland,ME,Set 2,,Sugar Magnolia,1,1133,Encore 1,1,1,short
+2012-05-01,BobWeir,80,State Theatre,Portland,ME,Encore 1,,Box of Rain,1,1135,,1,1,long
+2012-05-25,BobWeir,81,Three Sisters Park,Chillicothe,IL,Set 1,,Not Fade Away,1,1148,,1,1,long
+2012-05-26,BobWeir,82,Grinders,Kansas City,MO,Set 1,,New Speedway Boogie,1,1161,Set 2,1,1,long
+2012-05-26,BobWeir,82,Grinders,Kansas City,MO,Set 2,,Going Down the Road Feelin' Bad,1,1169,Encore 1,1,1,short
+2012-05-26,BobWeir,82,Grinders,Kansas City,MO,Encore 1,,The Weight,1,1170,,1,1,long
+2012-05-27,BobWeir,83,Harmony Park Music Garden,Clarks Grove,MN,Set 1,,Ripple,1,1183,,1,1,long
+2012-05-29,BobWeir,84,Thomas Wolfe Auditorium,Asheville,NC,Set 1,,I Know You Rider,1,1202,Encore 1,1,1,short
+2012-05-29,BobWeir,84,Thomas Wolfe Auditorium,Asheville,NC,Encore 1,,U.S. Blues,1,1203,,1,1,long
+2012-05-30,BobWeir,85,Ryman Auditorium,Nashville,TN,Set 1,,Ripple,1,1221,,1,1,long
+2012-06-03,BobWeir,86,Mishawaka Amphitheatre,Bellvue,CO,Set 1,,Tennessee Jed,1,1233,Set 2,1,1,long
+2012-06-03,BobWeir,86,Mishawaka Amphitheatre,Bellvue,CO,Set 2,,I Know You Rider,1,1240,Encore 1,1,1,short
+2012-06-03,BobWeir,86,Mishawaka Amphitheatre,Bellvue,CO,Encore 1,,Uncle John's Band,1,1241,,1,1,long
+2012-07-20,BobWeir,87,Seaside Park,Bridgeport,CT,Set 1,,Playing in the Band,1,1253,,1,1,long
+2012-09-07,BobWeir,88,Capitol Theatre,Port Chester,NY,Set 1,,Jailhouse Rock,1,1265,Encore 1,1,1,short
+2012-09-07,BobWeir,88,Capitol Theatre,Port Chester,NY,Encore 1,,Gold Dust Woman,1,1267,,1,1,long
+2012-09-09,BobWeir,89,Star Pavilion at Hersheypark Stadium,Hershey,PA,Set 1,,Not Fade Away,1,1276,,1,1,long
+2012-09-10,BobWeir,90,Tower Theatre,Upper Darby,PA,Set 1,,Weather Report Suite,1,1284,Set 2,1,1,long
+2012-09-10,BobWeir,90,Tower Theatre,Upper Darby,PA,Set 2,,Dear Prudence,1,1291,Encore 1,1,1,short
+2012-09-10,BobWeir,90,Tower Theatre,Upper Darby,PA,Encore 1,,Brokedown Palace,1,1292,,1,1,long
+2012-12-07,BobWeir,91,Balboa Theatre,San Diego,CA,Set 1,,The Star-Spangled Banner,1,1293,Set 1: Bob solo acoustic,1,1,long
+2012-12-07,BobWeir,91,Balboa Theatre,San Diego,CA,Set 1: Bob solo acoustic,,Weather Report Suite,1,1301,Set 2,1,1,long
+2012-12-07,BobWeir,91,Balboa Theatre,San Diego,CA,Set 2,,Not Fade Away,1,1308,Encore 1,1,1,short
+2012-12-07,BobWeir,91,Balboa Theatre,San Diego,CA,Encore 1,,Brokedown Palace,1,1309,,1,1,long
+2012-12-08,BobWeir,92,Wiltern Theatre,Los Angeles,CA,Set 1,,Two Djinn,1,1319,Set 2,1,1,long
+2012-12-08,BobWeir,92,Wiltern Theatre,Los Angeles,CA,Set 2,,Franklin's Tower,1,1323,Encore 1,1,1,short
+2012-12-08,BobWeir,92,Wiltern Theatre,Los Angeles,CA,Encore 1,,Ripple,1,1324,,1,1,long
+2012-12-11,BobWeir,93,Celebrity Theatre,Phoenix,AZ,Set 1,,Throwing Stones,1,1335,Set 2,1,1,long
+2012-12-11,BobWeir,93,Celebrity Theatre,Phoenix,AZ,Set 2,,Shakey Ground,1,1341,,1,1,long
+2012-12-16,BobWeir,94,Golden State Theatre,Monterey,CA,Set 1,,Sugar Magnolia,1,1349,Set 2,1,1,long
+2012-12-16,BobWeir,94,Golden State Theatre,Monterey,CA,Set 2,,Shakey Ground,1,1355,Encore 1,1,1,short
+2012-12-16,BobWeir,94,Golden State Theatre,Monterey,CA,Encore 1,,Brokedown Palace,1,1356,,1,1,long
+2012-12-17,BobWeir,95,Sweetwater Music Hall,Mill Valley,CA,Set 1,,Minglewood Blues,1,1359,,1,1,long
+2012-12-20,BobWeir,96,Troubadour,West Hollywood,CA,Set 1,,Going Down the Road Feelin' Bad,1,1366,,1,1,long
+2013-02-26,BobWeir,97,The Lensic Performing Arts Center,Santa Fe,NM,Set 1,,Two Djinn,1,1375,Set 2,1,1,long
+2013-02-26,BobWeir,97,The Lensic Performing Arts Center,Santa Fe,NM,Set 2,,Shakey Ground,1,1382,Encore 1,1,1,short
+2013-02-26,BobWeir,97,The Lensic Performing Arts Center,Santa Fe,NM,Encore 1,,Ripple,1,1383,,1,1,long
+2013-02-27,BobWeir,98,Fox Tucson Theatre,Tucson,AZ,Set 1,,Let It Grow,1,1391,Set 2,1,1,long
+2013-02-27,BobWeir,98,Fox Tucson Theatre,Tucson,AZ,Set 2,,Easy Answers,1,1398,Encore 1,1,1,short
+2013-02-27,BobWeir,98,Fox Tucson Theatre,Tucson,AZ,Encore 1,,Bertha,1,1399,,1,1,long
+2013-03-01,BobWeir,99,Pearl Concert Theater at Palms Casino Resort,Las Vegas,NV,Set 1,,Knockin' on Heaven's Door,1,1416,,1,1,long
+2013-06-09,BobWeir,100,Sweetwater Music Hall,Mill Valley,CA,Solo Acoustic,,Peggy-O,1,1419,"Bob Weir, Jason Crosby, Robin Sylvester, Dave Diamond",1,1,long
+2013-06-09,BobWeir,100,Sweetwater Music Hall,Mill Valley,CA,"Bob Weir, Jason Crosby, Robin Sylvester, Dave Diamond",,Playing in the Band,1,1421,"Bob Weir, Jason Crosby, Robin Sylvester, Dave Diamond, Leslie Mendelson",1,1,long
+2013-06-09,BobWeir,100,Sweetwater Music Hall,Mill Valley,CA,"Bob Weir, Jason Crosby, Robin Sylvester, Dave Diamond, Leslie Mendelson",,Jack Straw,1,1428,Encore 1,1,1,short
+2013-06-09,BobWeir,100,Sweetwater Music Hall,Mill Valley,CA,Encore 1,,Not Fade Away,1,1429,,1,1,long
+2013-06-12,BobWeir,101,"Grate Room, Terrapin Crossroads",San Rafael,CA,Set 1,,Playing in the Band,1,1447,,1,1,long
+2013-06-26,BobWeir,102,Cruzan Amphitheatre,West Palm Beach,FL,Set 1,,Not Fade Away,1,1453,,1,1,long
+2013-06-27,BobWeir,103,MidFlorida Credit Union Amphitheatre,Tampa,FL,Set 1,,Shakey Ground,1,1460,,1,1,long
+2013-06-29,BobWeir,104,Aaron's Amphitheatre at Lakewood,Atlanta,GA,Set 1,,Shakey Ground,1,1466,,1,1,long
+2013-06-30,BobWeir,105,The Lawn at Riverfront Park,Nashville,TN,Set 1,,Cassidy,1,1472,,1,1,long
+2013-08-18,BobWeir,106,Toyota Pavilion at Montage Mountain,Scranton,PA,Solo Acoustic,,Shakey Ground,1,1481,,1,1,long
+2015-02-05,BobWeir,107,Late Late Show With Craig Ferguson,Los Angeles,CA,Set 1,,Althea,1,1483,,1,1,long
+2015-10-29,DeadAndCompany,108,Times Union Center,Albany,NY,Set 1,,The Music Never Stopped,1,7,Set 2,1,1,long
+2015-10-29,DeadAndCompany,108,Times Union Center,Albany,NY,Set 2,,Not Fade Away,1,17,Encore 1,1,1,short
+2015-10-29,DeadAndCompany,108,Times Union Center,Albany,NY,Encore 1,,Touch of Grey,1,18,,1,1,long
+2015-10-31,DeadAndCompany,109,Madison Square Garden,New York,NY,Set 1,,Deal,1,25,Set 2,1,1,long
+2015-10-31,DeadAndCompany,109,Madison Square Garden,New York,NY,Set 2,,One More Saturday Night,1,36,Encore 1,1,1,short
+2015-10-31,DeadAndCompany,109,Madison Square Garden,New York,NY,Encore 1,,Werewolves of London,1,37,,1,1,long
+2015-11-01,DeadAndCompany,110,Madison Square Garden,New York,NY,Set 1,,Uncle John's Band,1,44,Set 2,1,1,long
+2015-11-01,DeadAndCompany,110,Madison Square Garden,New York,NY,Set 2,,Going Down the Road Feelin' Bad,1,53,Encore 1,1,1,short
+2015-11-01,DeadAndCompany,110,Madison Square Garden,New York,NY,Encore 1,,Ripple,1,54,,1,1,long
+2015-11-05,DeadAndCompany,111,Wells Fargo Center,Philadelphia,PA,Set 1,,Casey Jones,1,61,Set 2,1,1,long
+2015-11-05,DeadAndCompany,111,Wells Fargo Center,Philadelphia,PA,Set 2,,Sugar Magnolia,1,70,Encore 1,1,1,short
+2015-11-05,DeadAndCompany,111,Wells Fargo Center,Philadelphia,PA,Encore 1,,U.S. Blues,1,71,,1,1,long
+2015-11-06,DeadAndCompany,112,Verizon Center,Washington,DC,Set 1,,Saint of Circumstance,1,78,Set 2,1,1,long
+2015-11-06,DeadAndCompany,112,Verizon Center,Washington,DC,Set 2,,In the Midnight Hour,1,87,Encore 1,1,1,short
+2015-11-06,DeadAndCompany,112,Verizon Center,Washington,DC,Encore 1,,Touch of Grey,1,88,,1,1,long
+2015-11-07,DeadAndCompany,113,Madison Square Garden,New York,NY,Set 1,,Jack Straw,1,94,Set 2,1,1,long
+2015-11-07,DeadAndCompany,113,Madison Square Garden,New York,NY,Set 2,,Not Fade Away,1,104,Encore 1,1,1,short
+2015-11-07,DeadAndCompany,113,Madison Square Garden,New York,NY,Encore 1,,Brokedown Palace,1,105,,1,1,long
+2015-11-10,DeadAndCompany,114,DCU Center,Worcester,MA,Set 1,,The Music Never Stopped,1,112,Set 2,1,1,long
+2015-11-10,DeadAndCompany,114,DCU Center,Worcester,MA,Set 2,,Going Down the Road Feelin' Bad,1,121,Encore 1,1,1,short
+2015-11-10,DeadAndCompany,114,DCU Center,Worcester,MA,Encore 1,,Ripple,1,122,,1,1,long
+2015-11-11,DeadAndCompany,115,First Niagara Center,Buffalo,NY,Set 1,,U.S. Blues,1,129,Set 2,1,1,long
+2015-11-11,DeadAndCompany,115,First Niagara Center,Buffalo,NY,Set 2,,Sugar Magnolia,1,140,Encore 1,1,1,short
+2015-11-11,DeadAndCompany,115,First Niagara Center,Buffalo,NY,Encore 1,,Casey Jones,1,141,,1,1,long
+2015-11-13,DeadAndCompany,116,Nationwide Arena,Columbus,OH,Set 1,,Cumberland Blues,1,148,Set 2,1,1,long
+2015-11-13,DeadAndCompany,116,Nationwide Arena,Columbus,OH,Set 2,,Good Lovin',1,157,Encore 1,1,1,short
+2015-11-13,DeadAndCompany,116,Nationwide Arena,Columbus,OH,Encore 1,,Touch of Grey,1,158,,1,1,long
+2015-11-14,DeadAndCompany,117,Greensboro Coliseum,Greensboro,NC,Set 1,,Saint of Circumstance,1,165,Set 2,1,1,long
+2015-11-14,DeadAndCompany,117,Greensboro Coliseum,Greensboro,NC,Set 2,,One More Saturday Night,1,174,Encore 1,1,1,short
+2015-11-14,DeadAndCompany,117,Greensboro Coliseum,Greensboro,NC,Encore 1,,Friend of the Devil,1,175,,1,1,long
+2015-11-17,DeadAndCompany,118,Philips Arena,Atlanta,GA,Set 1,,Don't Ease Me In,1,182,Set 2,1,1,long
+2015-11-17,DeadAndCompany,118,Philips Arena,Atlanta,GA,Set 2,,Not Fade Away,1,192,Encore 1,1,1,short
+2015-11-17,DeadAndCompany,118,Philips Arena,Atlanta,GA,Encore 1,,Brokedown Palace,1,193,,1,1,long
+2015-11-18,DeadAndCompany,119,Bridgestone Arena,Nashville,TN,Set 1,,Deal,1,201,Set 2,1,1,long
+2015-11-18,DeadAndCompany,119,Bridgestone Arena,Nashville,TN,Set 2,,I Know You Rider,1,211,Encore 1,1,1,short
+2015-11-18,DeadAndCompany,119,Bridgestone Arena,Nashville,TN,Encore 1,,Johnny B. Goode,1,212,,1,1,long
+2015-11-20,DeadAndCompany,120,Scottrade Center,St. Louis,MO,Set 1,,The Music Never Stopped,1,219,Set 2,1,1,long
+2015-11-20,DeadAndCompany,120,Scottrade Center,St. Louis,MO,Set 2,,Sugar Magnolia,1,228,Encore 1,1,1,short
+2015-11-20,DeadAndCompany,120,Scottrade Center,St. Louis,MO,Encore 1,,Ripple,1,229,,1,1,long
+2015-11-21,DeadAndCompany,121,Target Center,Minneapolis,MN,Set 1,,Casey Jones,1,236,Set 2,1,1,long
+2015-11-21,DeadAndCompany,121,Target Center,Minneapolis,MN,Set 2,,One More Saturday Night,1,246,Encore 1,1,1,short
+2015-11-21,DeadAndCompany,121,Target Center,Minneapolis,MN,Encore 1,,Friend of the Devil,1,247,,1,1,long
+2015-11-24,DeadAndCompany,122,1st Bank Center,Broomfield,CO,Set 1,,Saint of Circumstance,1,256,Set 2,1,1,long
+2015-11-24,DeadAndCompany,122,1st Bank Center,Broomfield,CO,Set 2,,Good Lovin',1,265,Encore 1,1,1,short
+2015-11-24,DeadAndCompany,122,1st Bank Center,Broomfield,CO,Encore 1,,Touch of Grey,1,266,,1,1,long
+2015-11-25,DeadAndCompany,123,1st Bank Center,Broomfield,CO,Set 1,,The Music Never Stopped,1,273,Set 2,1,1,long
+2015-11-25,DeadAndCompany,123,1st Bank Center,Broomfield,CO,Set 2,,I Know You Rider,1,282,Encore 1,1,1,short
+2015-11-25,DeadAndCompany,123,1st Bank Center,Broomfield,CO,Encore 1,,Not Fade Away,1,283,,1,1,long
+2015-11-27,DeadAndCompany,124,MGM Grand Garden Arena,Las Vegas,NV,Set 1,,Casey Jones,1,290,Set 2,1,1,long
+2015-11-27,DeadAndCompany,124,MGM Grand Garden Arena,Las Vegas,NV,Set 2,,Sugar Magnolia,1,298,Encore 1,1,1,short
+2015-11-27,DeadAndCompany,124,MGM Grand Garden Arena,Las Vegas,NV,Encore 1,,Ripple,1,299,,1,1,long
+2015-11-28,DeadAndCompany,125,MGM Grand Garden Arena,Las Vegas,NV,Set 1,,One More Saturday Night,1,307,Set 2,1,1,long
+2015-11-28,DeadAndCompany,125,MGM Grand Garden Arena,Las Vegas,NV,Set 2,,Turn On Your Love Light,1,318,Encore 1,1,1,short
+2015-11-28,DeadAndCompany,125,MGM Grand Garden Arena,Las Vegas,NV,Encore 1,,Brokedown Palace,1,319,,1,1,long
+2015-12-27,DeadAndCompany,126,Bill Graham Civic Auditorium,San Francisco,CA,Set 1,,U.S. Blues,1,326,Set 2,1,1,long
+2015-12-27,DeadAndCompany,126,Bill Graham Civic Auditorium,San Francisco,CA,Set 2,,Going Down the Road Feelin' Bad,1,335,Encore 1,1,1,short
+2015-12-27,DeadAndCompany,126,Bill Graham Civic Auditorium,San Francisco,CA,Encore 1,,Ripple,1,336,Encore 2,1,1,short
+2015-12-27,DeadAndCompany,126,Bill Graham Civic Auditorium,San Francisco,CA,Encore 2,,Casey Jones,1,337,,1,1,long
+2015-12-28,DeadAndCompany,127,Bill Graham Civic Auditorium,San Francisco,CA,Set 1,,New Speedway Boogie,1,345,Set 2,1,1,long
+2015-12-28,DeadAndCompany,127,Bill Graham Civic Auditorium,San Francisco,CA,Set 2,,Not Fade Away,1,355,Encore 1,1,1,short
+2015-12-28,DeadAndCompany,127,Bill Graham Civic Auditorium,San Francisco,CA,Encore 1,,Brokedown Palace,1,356,,1,1,long
+2015-12-30,DeadAndCompany,128,The Forum,Inglewood,CA,Set 1,,Bird Song,1,363,Set 2,1,1,long
+2015-12-30,DeadAndCompany,128,The Forum,Inglewood,CA,Set 2,,Turn On Your Love Light,1,373,Encore 1,1,1,short
+2015-12-30,DeadAndCompany,128,The Forum,Inglewood,CA,Encore 1,,Friend of the Devil,1,374,,1,1,long
+2015-12-31,DeadAndCompany,129,The Forum,Inglewood,CA,Set 1,,Hell in a Bucket,1,380,Set 2,1,1,long
+2015-12-31,DeadAndCompany,129,The Forum,Inglewood,CA,Set 2,,Dear Prudence,1,386,Set 3,1,1,long
+2015-12-31,DeadAndCompany,129,The Forum,Inglewood,CA,Set 3,,Sunshine Daydream,1,393,Encore 1,1,1,short
+2015-12-31,DeadAndCompany,129,The Forum,Inglewood,CA,Encore 1,,Brokedown Palace,1,394,,1,1,long
+2016-02-18,DeadAndCompany,130,Universal Studios Hollywood,Universal City,CA,Set 1,,Brown-Eyed Women,1,396,,1,1,long
+2016-05-10,DeadAndCompany,131,Jimmy Kimmel Live,Los Angeles,CA,Set 1,,Not Fade Away,1,401,,1,1,long
+2016-05-15,BobWeir,132,The Carlu,Toronto,ON,Set 1,,Jack Straw,1,1491,Encore 1,1,1,short
+2016-05-15,BobWeir,132,The Carlu,Toronto,ON,Encore 1,,Ripple,1,1492,,1,1,long
+2016-05-23,DeadAndCompany,133,The Fillmore,San Francisco,CA,Set 1,,Brown-Eyed Women,1,407,Set 2,1,1,long
+2016-05-23,DeadAndCompany,133,The Fillmore,San Francisco,CA,Set 2,,I Know You Rider,1,415,Encore 1,1,1,short
+2016-05-23,DeadAndCompany,133,The Fillmore,San Francisco,CA,Encore 1,,Brokedown Palace,1,416,,1,1,long
+2016-06-10,DeadAndCompany,134,PNC Music Pavilion,Charlotte,NC,Set 1,,Promised Land,1,423,Set 2,1,1,long
+2016-06-10,DeadAndCompany,134,PNC Music Pavilion,Charlotte,NC,Set 2,,Turn On Your Love Light,1,431,,1,1,long
+2016-06-12,DeadAndCompany,135,Great Stage Park,Manchester,TN,Set 1,,Casey Jones,1,442,Set 2,1,1,long
+2016-06-12,DeadAndCompany,135,Great Stage Park,Manchester,TN,Set 2,,Franklin's Tower,1,452,Encore 1,1,1,short
+2016-06-12,DeadAndCompany,135,Great Stage Park,Manchester,TN,Encore 1,,Touch of Grey,1,453,,1,1,long
+2016-06-16,DeadAndCompany,136,Riverbend Music Center,Cincinnati,OH,Set 1,,Mississippi Half-Step Uptown Toodeloo,1,461,Set 2,1,1,long
+2016-06-16,DeadAndCompany,136,Riverbend Music Center,Cincinnati,OH,Set 2,,Sugar Magnolia,1,470,Encore 1,1,1,short
+2016-06-16,DeadAndCompany,136,Riverbend Music Center,Cincinnati,OH,Encore 1,,U.S. Blues,1,471,,1,1,long
+2016-06-17,DeadAndCompany,137,Klipsch Music Center,Noblesville,IN,Set: 1,,Saint of Circumstance,1,478,Set: 2,1,1,long
+2016-06-17,DeadAndCompany,137,Klipsch Music Center,Noblesville,IN,Set: 2,,Going Down the Road Feelin' Bad,1,487,Encore 1,1,1,short
+2016-06-17,DeadAndCompany,137,Klipsch Music Center,Noblesville,IN,Encore 1,,Black Muddy River,1,488,,1,1,long
+2016-06-20,DeadAndCompany,138,BB&T Pavilion,Camden,NJ,Set: 1,,Big Railroad Blues,1,495,Set: 2,1,1,long
+2016-06-20,DeadAndCompany,138,BB&T Pavilion,Camden,NJ,Set: 2,,Not Fade Away,1,505,Encore 1,1,1,short
+2016-06-20,DeadAndCompany,138,BB&T Pavilion,Camden,NJ,Encore 1,,Ripple,1,506,,1,1,long
+2016-06-21,DeadAndCompany,139,Saratoga Performing Arts Center,Saratoga Springs,NY,Set 1,,Deal,1,513,Set 2,1,1,long
+2016-06-21,DeadAndCompany,139,Saratoga Performing Arts Center,Saratoga Springs,NY,Set 2,,Good Lovin',1,522,Encore 1,1,1,short
+2016-06-21,DeadAndCompany,139,Saratoga Performing Arts Center,Saratoga Springs,NY,Encore 1,,Brokedown Palace,1,523,Encore 2,1,1,short
+2016-06-21,DeadAndCompany,139,Saratoga Performing Arts Center,Saratoga Springs,NY,Encore 2,,Johnny B. Goode,1,524,,1,1,long
+2016-06-23,DeadAndCompany,140,Jiffy Lube Live,Bristow,VA,Set 1,,Don't Ease Me In,1,531,Set 2,1,1,long
+2016-06-23,DeadAndCompany,140,Jiffy Lube Live,Bristow,VA,Set 2,,Sugar Magnolia,1,539,Encore 1,1,1,short
+2016-06-23,DeadAndCompany,140,Jiffy Lube Live,Bristow,VA,Encore 1,,Black Muddy River,1,540,,1,1,long
+2016-06-25,DeadAndCompany,141,Citi Field,New York,NY,Set 1,,Casey Jones,1,548,Set 2,1,1,long
+2016-06-25,DeadAndCompany,141,Citi Field,New York,NY,Set 2,,Throwing Stones,1,557,Encore 1,1,1,short
+2016-06-25,DeadAndCompany,141,Citi Field,New York,NY,Encore 1,,One More Saturday Night,1,559,,1,1,long
+2016-06-26,DeadAndCompany,142,Citi Field,New York,NY,Set 1,,Going Down the Road Feelin' Bad,1,566,Set 2,1,1,long
+2016-06-26,DeadAndCompany,142,Citi Field,New York,NY,Set 2,,I Know You Rider,1,576,Encore 1,1,1,short
+2016-06-26,DeadAndCompany,142,Citi Field,New York,NY,Encore 1,,Samson and Delilah,1,577,,1,1,long
+2016-06-28,DeadAndCompany,143,XFINITY Theatre,Hartford,CT,Set 1,,Cumberland Blues,1,584,Set 2,1,1,long
+2016-06-28,DeadAndCompany,143,XFINITY Theatre,Hartford,CT,Set 2,,U.S. Blues,1,593,Encore 1,1,1,short
+2016-06-28,DeadAndCompany,143,XFINITY Theatre,Hartford,CT,Encore 1,,Touch of Grey,1,594,,1,1,long
+2016-07-02,DeadAndCompany,144,Folsom Field,Boulder,CO,Set 1,,One More Saturday Night,1,601,Set 2,1,1,long
+2016-07-02,DeadAndCompany,144,Folsom Field,Boulder,CO,Set 2,,Not Fade Away,1,610,Encore 1,1,1,short
+2016-07-02,DeadAndCompany,144,Folsom Field,Boulder,CO,Encore 1,,Black Muddy River,1,611,,1,1,long
+2016-07-03,DeadAndCompany,145,Folsom Field,Boulder,CO,Set 1,,New Speedway Boogie,1,617,Set 2,1,1,long
+2016-07-03,DeadAndCompany,145,Folsom Field,Boulder,CO,Set 2,,Morning Dew,1,626,Encore 1,1,1,short
+2016-07-03,DeadAndCompany,145,Folsom Field,Boulder,CO,Encore 1,,U.S. Blues,1,628,,1,1,long
+2016-07-07,DeadAndCompany,146,DTE Energy Music Theatre,Clarkston,MI,Set 1,,Don't Ease Me In,1,635,Set 2,1,1,long
+2016-07-07,DeadAndCompany,146,DTE Energy Music Theatre,Clarkston,MI,Set 2,,Casey Jones,1,644,Encore 1,1,1,short
+2016-07-07,DeadAndCompany,146,DTE Energy Music Theatre,Clarkston,MI,Encore 1,,Johnny B. Goode,1,645,,1,1,long
+2016-07-09,DeadAndCompany,147,Alpine Valley Music Theatre,East Troy,WI,Set 1,,The Music Never Stopped,1,652,Set 2,1,1,long
+2016-07-09,DeadAndCompany,147,Alpine Valley Music Theatre,East Troy,WI,Set 2,,One More Saturday Night,1,663,Encore 1,1,1,short
+2016-07-09,DeadAndCompany,147,Alpine Valley Music Theatre,East Troy,WI,Encore 1,,Knockin' on Heaven's Door,1,664,,1,1,long
+2016-07-10,DeadAndCompany,148,Alpine Valley Music Theatre,East Troy,WI,Set 1,,Going Down the Road Feelin' Bad,1,671,Set 2,1,1,long
+2016-07-10,DeadAndCompany,148,Alpine Valley Music Theatre,East Troy,WI,Set 2,,Sunshine Daydream,1,679,Encore 1,1,1,short
+2016-07-10,DeadAndCompany,148,Alpine Valley Music Theatre,East Troy,WI,Encore 1,,Touch of Grey,1,681,,1,1,long
+2016-07-13,DeadAndCompany,149,First Niagara Pavilion,Burgettstown,PA,Set 1,,Throwing Stones,1,690,Set 2,1,1,long
+2016-07-13,DeadAndCompany,149,First Niagara Pavilion,Burgettstown,PA,Set 2,,Johnny B. Goode,1,699,Encore 1,1,1,short
+2016-07-13,DeadAndCompany,149,First Niagara Pavilion,Burgettstown,PA,Encore 1,,In the Midnight Hour,1,700,,1,1,long
+2016-07-15,DeadAndCompany,150,Fenway Park,Boston,MA,Set 1,,Franklin's Tower,1,709,Set 2,1,1,long
+2016-07-15,DeadAndCompany,150,Fenway Park,Boston,MA,Set 2,,Casey Jones,1,716,Encore 1,1,1,short
+2016-07-15,DeadAndCompany,150,Fenway Park,Boston,MA,Encore 1,,U.S. Blues,1,718,,1,1,long
+2016-07-16,DeadAndCompany,151,Fenway Park,Boston,MA,Set 1,,Going Down the Road Feelin' Bad,1,726,Set 2,1,1,long
+2016-07-16,DeadAndCompany,151,Fenway Park,Boston,MA,Set 2,,Not Fade Away,1,735,Encore 1,1,1,short
+2016-07-16,DeadAndCompany,151,Fenway Park,Boston,MA,Encore 1,,One More Saturday Night,1,736,,1,1,long
+2016-07-22,DeadAndCompany,152,Moda Center,Portland,OR,Set 1,,Don't Ease Me In,1,744,Set 2,1,1,long
+2016-07-22,DeadAndCompany,152,Moda Center,Portland,OR,Set 2,,The Wheel,1,752,Encore 1,1,1,short
+2016-07-22,DeadAndCompany,152,Moda Center,Portland,OR,Encore 1,,Ripple,1,754,,1,1,long
+2016-07-23,DeadAndCompany,153,The Gorge Amphitheatre,George,WA,Set 1,,One More Saturday Night,1,763,Set 2,1,1,long
+2016-07-23,DeadAndCompany,153,The Gorge Amphitheatre,George,WA,Set 2,,Casey Jones,1,772,Encore 1,1,1,short
+2016-07-23,DeadAndCompany,153,The Gorge Amphitheatre,George,WA,Encore 1,,Knockin' on Heaven's Door,1,773,,1,1,long
+2016-07-26,DeadAndCompany,154,Irvine Meadows Amphitheatre,Irvine,CA,Set 1,,Mississippi Half-Step Uptown Toodeloo,1,780,Set 2,1,1,long
+2016-07-26,DeadAndCompany,154,Irvine Meadows Amphitheatre,Irvine,CA,Set 2,,U.S. Blues,1,789,Encore 1,1,1,short
+2016-07-26,DeadAndCompany,154,Irvine Meadows Amphitheatre,Irvine,CA,Encore 1,,Johnny B. Goode,1,791,,1,1,long
+2016-07-27,DeadAndCompany,155,Sleep Train Amphitheatre,Chula Vista,CA,Set 1,,The Music Never Stopped,1,799,Set 2,1,1,long
+2016-07-27,DeadAndCompany,155,Sleep Train Amphitheatre,Chula Vista,CA,Set 2,,Throwing Stones,1,809,Encore 1,1,1,short
+2016-07-27,DeadAndCompany,155,Sleep Train Amphitheatre,Chula Vista,CA,Encore 1,,Black Muddy River,1,810,,1,1,long
+2016-07-29,DeadAndCompany,156,Toyota Amphitheatre,Wheatland,CA,Set 1,,Touch of Grey,1,817,Set 2,1,1,long
+2016-07-29,DeadAndCompany,156,Toyota Amphitheatre,Wheatland,CA,Set 2,,Casey Jones,1,827,Encore 1,1,1,short
+2016-07-29,DeadAndCompany,156,Toyota Amphitheatre,Wheatland,CA,Encore 1,,Ripple,1,828,,1,1,long
+2016-07-30,DeadAndCompany,157,Shoreline Amphitheatre,Mountain View,CA,Set 1,,Franklin's Tower,1,836,Set 2,1,1,long
+2016-07-30,DeadAndCompany,157,Shoreline Amphitheatre,Mountain View,CA,Set 2,,Not Fade Away,1,844,Encore 1,1,1,short
+2016-07-30,DeadAndCompany,157,Shoreline Amphitheatre,Mountain View,CA,Encore 1,,Brokedown Palace,1,846,,1,1,long
+2016-08-04,BobWeir,158,McKittrick Hotel,New York,NY,Set 1,,Ki-Yi Bossie,1,1495,,1,1,long
+2016-09-22,BobWeir,159,Country Music Hall of Fame and Museum,Nashville,TN,Set 1,,,1,1496,,1,1,long
+2016-09-27,BobWeir,160,Amoeba Music,Los Angeles,CA,Set 1,,Ki-Yi Bossie,1,1503,Encore 1,1,1,short
+2016-09-27,BobWeir,160,Amoeba Music,Los Angeles,CA,Encore 1,,K.C. Moan,1,1504,,1,1,long
+2016-10-07,BobWeir,161,Marin Veterans' Memorial Auditorium,San Rafael,CA,Set 1,,Gonesville,1,1512,Set 2,1,1,long
+2016-10-07,BobWeir,161,Marin Veterans' Memorial Auditorium,San Rafael,CA,Set 2,,Looks Like Rain,1,1517,Encore 1,1,1,short
+2016-10-07,BobWeir,161,Marin Veterans' Memorial Auditorium,San Rafael,CA,Encore 1,,Ripple,1,1520,,1,1,long
+2016-10-08,BobWeir,162,Fox Theater,Oakland,CA,Set 1,,Big River,1,1528,Set 2,1,1,long
+2016-10-08,BobWeir,162,Fox Theater,Oakland,CA,Set 2,,Going Down the Road Feelin' Bad,1,1535,Encore 1,1,1,short
+2016-10-08,BobWeir,162,Fox Theater,Oakland,CA,Encore 1,,Peggy-O,1,1537,,1,1,long
+2016-10-10,BobWeir,163,Wiltern Theatre,Los Angeles,CA,Set 1,,Gonesville,1,1546,Set 2,1,1,long
+2016-10-10,BobWeir,163,Wiltern Theatre,Los Angeles,CA,Set 2,,I Know You Rider,1,1552,Encore 1,1,1,short
+2016-10-10,BobWeir,163,Wiltern Theatre,Los Angeles,CA,Encore 1,,Ripple,1,1555,,1,1,long
+2016-10-12,BobWeir,164,Tower Theatre,Upper Darby,PA,Set 1,,Gonesville,1,1563,Set 2,1,1,long
+2016-10-12,BobWeir,164,Tower Theatre,Upper Darby,PA,Set 2,,Looks Like Rain,1,1569,Encore 1,1,1,short
+2016-10-12,BobWeir,164,Tower Theatre,Upper Darby,PA,Encore 1,,Not Fade Away,1,1571,,1,1,long
+2016-10-14,BobWeir,165,Kings Theatre,Brooklyn,NY,Set 1,,Big River,1,1580,Set 2,1,1,long
+2016-10-14,BobWeir,165,Kings Theatre,Brooklyn,NY,Set 2,,Going Down the Road Feelin' Bad,1,1586,Encore 1,1,1,short
+2016-10-14,BobWeir,165,Kings Theatre,Brooklyn,NY,Encore 1,,Friend of the Devil,1,1588,,1,1,long
+2016-10-15,BobWeir,166,Kings Theatre,Brooklyn,NY,Set 1,,Gonesville,1,1597,Set 2,1,1,long
+2016-10-15,BobWeir,166,Kings Theatre,Brooklyn,NY,Set 2,,Jack Straw,1,1603,Encore 1,1,1,short
+2016-10-15,BobWeir,166,Kings Theatre,Brooklyn,NY,Encore 1,,I Know You Rider,1,1605,,1,1,long
+2016-10-16,BobWeir,167,Capitol Theatre,Port Chester,NY,Set 1,,Gonesville,1,1615,Set 2,1,1,long
+2016-10-16,BobWeir,167,Capitol Theatre,Port Chester,NY,Set 2,,Not Fade Away,1,1621,Encore 1,1,1,short
+2016-10-16,BobWeir,167,Capitol Theatre,Port Chester,NY,Encore 1,,Brokedown Palace,1,1623,,1,1,long
+2016-10-17,BobWeir,168,Late Show With Stephen Colbert,New York,NY,Set 1,,Lay My Lily Down,1,1624,,1,1,long
+2016-10-19,BobWeir,169,Ryman Auditorium,Nashville,TN,Set 1,,Gonesville,1,1633,Set 2,1,1,long
+2016-10-19,BobWeir,169,Ryman Auditorium,Nashville,TN,Set 2,,Going Down the Road Feelin' Bad,1,1639,Encore 1,1,1,short
+2016-10-19,BobWeir,169,Ryman Auditorium,Nashville,TN,Encore 1,,Ripple,1,1642,,1,1,long
+2016-10-20,BobWeir,170,The Chicago Theatre,Chicago,IL,Set 1,,Gonesville,1,1652,Set 2,1,1,long
+2016-10-20,BobWeir,170,The Chicago Theatre,Chicago,IL,Set 2,,I Know You Rider,1,1661,Encore 1,1,1,short
+2016-10-20,BobWeir,170,The Chicago Theatre,Chicago,IL,Encore 1,,Brokedown Palace,1,1664,,1,1,long
+2016-12-09,BobWeir,171,The Orange Peel,Asheville,NC,Set 1,,Touch of Grey,1,1672,,1,1,long
+2016-12-10,BobWeir,172,U.S. Cellular Center,Asheville,NC,Set 1,,Ripple,1,1680,,1,1,long
+2017-01-12,BobWeir,173,"Procter & Gamble Hall, Aronoff Center for the Arts",Cincinnati,OH,Set 1,,Gonesville,1,1691,Set 2,1,1,long
+2017-01-12,BobWeir,173,"Procter & Gamble Hall, Aronoff Center for the Arts",Cincinnati,OH,Set 2,,Not Fade Away,1,1697,Encore 1,1,1,short
+2017-01-12,BobWeir,173,"Procter & Gamble Hall, Aronoff Center for the Arts",Cincinnati,OH,Encore 1,,Ripple,1,1700,,1,1,long
+2017-03-16,BobWeir,174,The Sitzmark,Girdwood,AK,Set 1,,I Know You Rider,1,1709,Set 2,1,1,long
+2017-03-16,BobWeir,174,The Sitzmark,Girdwood,AK,Set 2,,Not Fade Away,1,1715,,1,1,long
+2017-03-17,BobWeir,175,The Sitzmark,Girdwood,AK,Set 1,,Uncle John's Band,1,1722,Set 2,1,1,long
+2017-03-17,BobWeir,175,The Sitzmark,Girdwood,AK,Set 2,,Cassidy,1,1728,Encore 1,1,1,short
+2017-03-17,BobWeir,175,The Sitzmark,Girdwood,AK,Encore 1,,Knockin' on Heaven's Door,1,1729,,1,1,long
+2017-03-18,BobWeir,176,The Sitzmark,Girdwood,AK,Set 1,,Truckin',1,1738,Set 2,1,1,long
+2017-03-18,BobWeir,176,The Sitzmark,Girdwood,AK,Set 2,,Sugar Magnolia,1,1747,Encore 1,1,1,short
+2017-03-18,BobWeir,176,The Sitzmark,Girdwood,AK,Encore 1,,Brokedown Palace,1,1748,,1,1,long
+2017-04-13,BobWeir,177,Music Hall at Fair Park,Dallas,TX,Set 1,,Gonesville,1,1757,Set 2,1,1,long
+2017-04-13,BobWeir,177,Music Hall at Fair Park,Dallas,TX,Set 2,,Going Down the Road Feelin' Bad,1,1765,Encore 1,1,1,short
+2017-04-13,BobWeir,177,Music Hall at Fair Park,Dallas,TX,Encore 1,,Ripple,1,1767,,1,1,long
+2017-04-15,BobWeir,178,ACL Live at The Moody Theater,Austin,TX,Set 1,,Gonesville,1,1778,Set 2,1,1,long
+2017-04-15,BobWeir,178,ACL Live at The Moody Theater,Austin,TX,Set 2,,Morning Dew,1,1785,Encore 1,1,1,short
+2017-04-15,BobWeir,178,ACL Live at The Moody Theater,Austin,TX,Encore 1,,Peggy-O,1,1787,,1,1,long
+2017-04-16,BobWeir,179,ACL Live at The Moody Theater,Austin,TX,Set 1,,Gonesville,1,1796,Set 2,1,1,long
+2017-04-16,BobWeir,179,ACL Live at The Moody Theater,Austin,TX,Set 2,,Not Fade Away,1,1803,Encore 1,1,1,short
+2017-04-16,BobWeir,179,ACL Live at The Moody Theater,Austin,TX,Encore 1,,Uncle John's Band,1,1804,,1,1,long
+2017-04-18,BobWeir,180,Saenger Performing Arts Theater,New Orleans,LA,Set 1,,Lay My Lily Down,1,1815,Set 2,1,1,long
+2017-04-18,BobWeir,180,Saenger Performing Arts Theater,New Orleans,LA,Set 2,,I Know You Rider,1,1823,Encore 1,1,1,short
+2017-04-18,BobWeir,180,Saenger Performing Arts Theater,New Orleans,LA,Encore 1,,Peggy-O,1,1824,,1,1,long
+2017-04-19,BobWeir,181,Saenger Theater,Mobile,AL,Set 1,,Gonesville,1,1834,Set 2,1,1,long
+2017-04-19,BobWeir,181,Saenger Theater,Mobile,AL,Set 2,,Looks Like Rain,1,1840,Encore 1,1,1,short
+2017-04-19,BobWeir,181,Saenger Theater,Mobile,AL,Encore 1,,Ripple,1,1842,,1,1,long
+2017-04-21,BobWeir,182,Spirit of the Suwannee Music Park,Live Oak,FL,Set 1,,I Know You Rider,1,1855,Encore 1,1,1,short
+2017-04-21,BobWeir,182,Spirit of the Suwannee Music Park,Live Oak,FL,Encore 1,,Going Down the Road Feelin' Bad,1,1856,,1,1,long
+2017-04-22,BobWeir,183,Spirit of the Suwannee Music Park,Live Oak,FL,Set 1,,Jack Straw,1,1869,Set 2,1,1,long
+2017-04-22,BobWeir,183,Spirit of the Suwannee Music Park,Live Oak,FL,Set 2,,Morning Dew,1,1874,Encore 1,1,1,short
+2017-04-22,BobWeir,183,Spirit of the Suwannee Music Park,Live Oak,FL,Encore 1,,Ripple,1,1876,,1,1,long
+2017-05-15,BobWeir,184,The Fillmore,San Francisco,CA,Acoustic,,Loose Lucy,1,1881,,1,1,long
+2017-05-27,DeadAndCompany,185,MGM Grand Garden Arena,Las Vegas,NV,Set 1,,Bird Song,1,853,Set 2,1,1,long
+2017-05-27,DeadAndCompany,185,MGM Grand Garden Arena,Las Vegas,NV,Set 2,,One More Saturday Night,1,862,Encore 1,1,1,short
+2017-05-27,DeadAndCompany,185,MGM Grand Garden Arena,Las Vegas,NV,Encore 1,,Knockin' on Heaven's Door,1,863,,1,1,long
+2017-05-28,DeadAndCompany,186,Ak-Chin Pavilion,Phoenix,AZ,Set 1,,Samson and Delilah,1,871,Set 2,1,1,long
+2017-05-28,DeadAndCompany,186,Ak-Chin Pavilion,Phoenix,AZ,Set 2,,Casey Jones,1,880,Encore 1,1,1,short
+2017-05-28,DeadAndCompany,186,Ak-Chin Pavilion,Phoenix,AZ,Encore 1,,Touch of Grey,1,881,,1,1,long
+2017-05-31,DeadAndCompany,187,Hollywood Bowl,Los Angeles,CA,Set 1,,Promised Land,1,888,Set 2,1,1,long
+2017-05-31,DeadAndCompany,187,Hollywood Bowl,Los Angeles,CA,Set 2,,Sugar Magnolia,1,897,Encore 1,1,1,short
+2017-05-31,DeadAndCompany,187,Hollywood Bowl,Los Angeles,CA,Encore 1,,Ripple,1,898,,1,1,long
+2017-06-01,DeadAndCompany,188,Hollywood Bowl,Los Angeles,CA,Set 1,,U.S. Blues,1,906,Set 2,1,1,long
+2017-06-01,DeadAndCompany,188,Hollywood Bowl,Los Angeles,CA,Set 2,,Morning Dew,1,913,Encore 1,1,1,short
+2017-06-01,DeadAndCompany,188,Hollywood Bowl,Los Angeles,CA,Encore 1,,Not Fade Away,1,914,,1,1,long
+2017-06-03,DeadAndCompany,189,Shoreline Amphitheatre,Mountain View,CA,Set 1,,One More Saturday Night,1,922,Set 2,1,1,long
+2017-06-03,DeadAndCompany,189,Shoreline Amphitheatre,Mountain View,CA,Set 2,,Good Lovin',1,932,Encore 1,1,1,short
+2017-06-03,DeadAndCompany,189,Shoreline Amphitheatre,Mountain View,CA,Encore 1,,Black Muddy River,1,933,,1,1,long
+2017-06-04,DeadAndCompany,190,Shoreline Amphitheatre,Mountain View,CA,Set 1,,Don't Ease Me In,1,940,Set 2,1,1,long
+2017-06-04,DeadAndCompany,190,Shoreline Amphitheatre,Mountain View,CA,Set 2,,Casey Jones,1,950,Encore 1,1,1,short
+2017-06-04,DeadAndCompany,190,Shoreline Amphitheatre,Mountain View,CA,Encore 1,,Brokedown Palace,1,951,,1,1,long
+2017-06-07,DeadAndCompany,191,USANA Amphitheatre,West Valley City,UT,Set 1,,Promised Land,1,960,Set 2,1,1,long
+2017-06-07,DeadAndCompany,191,USANA Amphitheatre,West Valley City,UT,Set 2,,Going Down the Road Feelin' Bad,1,969,Encore 1,1,1,short
+2017-06-07,DeadAndCompany,191,USANA Amphitheatre,West Valley City,UT,Encore 1,,U.S. Blues,1,970,,1,1,long
+2017-06-09,DeadAndCompany,192,Folsom Field,Boulder,CO,Set 1,,Ripple,1,978,Set 2,1,1,long
+2017-06-09,DeadAndCompany,192,Folsom Field,Boulder,CO,Set 2,,Morning Dew,1,987,Encore 1,1,1,short
+2017-06-09,DeadAndCompany,192,Folsom Field,Boulder,CO,Encore 1,,Touch of Grey,1,988,,1,1,long
+2017-06-10,DeadAndCompany,193,Folsom Field,Boulder,CO,Set 1,,Turn On Your Love Light,1,997,Set 2,1,1,long
+2017-06-10,DeadAndCompany,193,Folsom Field,Boulder,CO,Set 2,,I Know You Rider,1,1007,Encore 1,1,1,short
+2017-06-10,DeadAndCompany,193,Folsom Field,Boulder,CO,Encore 1,,One More Saturday Night,1,1008,,1,1,long
+2017-06-13,DeadAndCompany,194,Lakewood Amphitheatre,Atlanta,GA,Set 1,,Mississippi Half-Step Uptown Toodeloo,1,1015,Set 2,1,1,long
+2017-06-13,DeadAndCompany,194,Lakewood Amphitheatre,Atlanta,GA,Set 2,,Sugar Magnolia,1,1025,Encore 1,1,1,short
+2017-06-13,DeadAndCompany,194,Lakewood Amphitheatre,Atlanta,GA,Encore 1,,Knockin' on Heaven's Door,1,1026,,1,1,long
+2017-06-15,DeadAndCompany,195,KeyBank Pavilion,Burgettstown,PA,Set 1,,Throwing Stones,1,1033,Set 2,1,1,long
+2017-06-15,DeadAndCompany,195,KeyBank Pavilion,Burgettstown,PA,Set 2,,Casey Jones,1,1042,Encore 1,1,1,short
+2017-06-15,DeadAndCompany,195,KeyBank Pavilion,Burgettstown,PA,Encore 1,,Liberty,1,1043,,1,1,long
+2017-06-17,DeadAndCompany,196,Fenway Park,Boston,MA,Set 1,,Passenger,1,1050,Set 2,1,1,long
+2017-06-17,DeadAndCompany,196,Fenway Park,Boston,MA,Set 2,,Franklin's Tower,1,1060,Encore 1,1,1,short
+2017-06-17,DeadAndCompany,196,Fenway Park,Boston,MA,Encore 1,,One More Saturday Night,1,1062,,1,1,long
+2017-06-18,DeadAndCompany,197,Fenway Park,Boston,MA,Set 1,,Ripple,1,1070,Set 2,1,1,long
+2017-06-18,DeadAndCompany,197,Fenway Park,Boston,MA,Set 2,,Not Fade Away,1,1077,Encore 1,1,1,short
+2017-06-18,DeadAndCompany,197,Fenway Park,Boston,MA,Encore 1,,Brokedown Palace,1,1078,,1,1,long
+2017-06-20,DeadAndCompany,198,Saratoga Performing Arts Center,Saratoga Springs,NY,Set 1,,Saint of Circumstance,1,1086,Set 2,1,1,long
+2017-06-20,DeadAndCompany,198,Saratoga Performing Arts Center,Saratoga Springs,NY,Set 2,,I Know You Rider,1,1095,Encore 1,1,1,short
+2017-06-20,DeadAndCompany,198,Saratoga Performing Arts Center,Saratoga Springs,NY,Encore 1,,Going Down the Road Feelin' Bad,1,1096,,1,1,long
+2017-06-22,DeadAndCompany,199,Jiffy Lube Live,Bristow,VA,Set 1,,"Man Smart, Woman Smarter",1,1103,Set 2,1,1,long
+2017-06-22,DeadAndCompany,199,Jiffy Lube Live,Bristow,VA,Set 2,,U.S. Blues,1,1112,Encore 1,1,1,short
+2017-06-22,DeadAndCompany,199,Jiffy Lube Live,Bristow,VA,Encore 1,,Liberty,1,1113,,1,1,long
+2017-06-24,DeadAndCompany,200,Citi Field,New York,NY,Set 1,,One More Saturday Night,1,1120,Set 2,1,1,long
+2017-06-24,DeadAndCompany,200,Citi Field,New York,NY,Set 2,,Morning Dew,1,1129,Encore 1,1,1,short
+2017-06-24,DeadAndCompany,200,Citi Field,New York,NY,Encore 1,,Johnny B. Goode,1,1131,,1,1,long
+2017-06-25,DeadAndCompany,201,BB&T Pavilion,Camden,NJ,Set 1,,Casey Jones,1,1139,Set 2,1,1,long
+2017-06-25,DeadAndCompany,201,BB&T Pavilion,Camden,NJ,Set 2,,Sugar Magnolia,1,1149,Encore 1,1,1,short
+2017-06-25,DeadAndCompany,201,BB&T Pavilion,Camden,NJ,Encore 1,,Brokedown Palace,1,1150,,1,1,long
+2017-06-28,DeadAndCompany,202,Blossom Music Center,Cuyahoga Falls,OH,Set 1,,Big Railroad Blues,1,1157,Set 2,1,1,long
+2017-06-28,DeadAndCompany,202,Blossom Music Center,Cuyahoga Falls,OH,Set 2,,Good Lovin',1,1166,Encore 1,1,1,short
+2017-06-28,DeadAndCompany,202,Blossom Music Center,Cuyahoga Falls,OH,Encore 1,,Black Muddy River,1,1167,,1,1,long
+2017-06-30,DeadAndCompany,203,Wrigley Field,Chicago,IL,Set 1,,Uncle John's Band,1,1173,Set 2,1,1,long
+2017-06-30,DeadAndCompany,203,Wrigley Field,Chicago,IL,Set 2,,Franklin's Tower,1,1185,Encore 1,1,1,short
+2017-06-30,DeadAndCompany,203,Wrigley Field,Chicago,IL,Encore 1,,U.S. Blues,1,1187,,1,1,long
+2017-07-01,DeadAndCompany,204,Wrigley Field,Chicago,IL,Set 1,,Casey Jones,1,1195,Set 2,1,1,long
+2017-07-01,DeadAndCompany,204,Wrigley Field,Chicago,IL,Set 2,,Not Fade Away,1,1206,Encore 1,1,1,short
+2017-07-01,DeadAndCompany,204,Wrigley Field,Chicago,IL,Encore 1,,Sunshine Daydream,1,1208,,1,1,long
+2017-08-04,BobWeir,205,Red Rocks Amphitheatre,Morrison,CO,Bob Weir and The Campfire Band,,I Know You Rider,1,1892,Encore 1,1,1,short
+2017-08-04,BobWeir,205,Red Rocks Amphitheatre,Morrison,CO,Encore 1,,Brokedown Palace,1,1894,,1,1,long
+2017-10-01,BobWeir,206,Mill Valley Recreation Center,Mill Valley,CA,Set 1,,The Other One,1,1898,,1,1,long
+2017-10-02,BobWeir,207,eTown Hall,Boulder,CO,Set 1,,Loose Lucy,1,1909,,1,1,long
+2017-10-07,BobWeir,208,Sweetwater Music Hall,Mill Valley,CA,Set 1,,Breakdown,1,1911,,1,1,long
+2017-11-09,DeadAndCompany,209,AT&T Park,San Francisco,CA,Set 1,,Touch of Grey,1,1214,,1,1,long
+2017-11-12,DeadAndCompany,210,Madison Square Garden,New York,NY,Set 1,,Cumberland Blues,1,1221,Set 2,1,1,long
+2017-11-12,DeadAndCompany,210,Madison Square Garden,New York,NY,Set 2,,Casey Jones,1,1230,Encore 1,1,1,short
+2017-11-12,DeadAndCompany,210,Madison Square Garden,New York,NY,Encore 1,,Werewolves of London,1,1232,,1,1,long
+2017-11-13,DeadAndCompany,211,Late Show With Stephen Colbert,New York,NY,Set 1,,Uncle John's Band,1,1234,,1,1,long
+2017-11-14,DeadAndCompany,212,Madison Square Garden,New York,NY,Set 1,,"Man Smart, Woman Smarter",1,1241,Set 2,1,1,long
+2017-11-14,DeadAndCompany,212,Madison Square Garden,New York,NY,Set 2,,Not Fade Away,1,1252,Encore 1,1,1,short
+2017-11-14,DeadAndCompany,212,Madison Square Garden,New York,NY,Encore 1,,U.S. Blues,1,1253,,1,1,long
+2017-11-16,DeadAndCompany,213,Wells Fargo Center,Philadelphia,PA,Set 1,,Let It Grow,1,1260,Set 2,1,1,long
+2017-11-16,DeadAndCompany,213,Wells Fargo Center,Philadelphia,PA,Set 2,,Going Down the Road Feelin' Bad,1,1270,Encore 1,1,1,short
+2017-11-16,DeadAndCompany,213,Wells Fargo Center,Philadelphia,PA,Encore 1,,Black Muddy River,1,1271,,1,1,long
+2017-11-17,DeadAndCompany,214,TD Garden,Boston,MA,Set 1,,The Music Never Stopped,1,1278,Set 2,1,1,long
+2017-11-17,DeadAndCompany,214,TD Garden,Boston,MA,Set 2,,Sugar Magnolia,1,1288,Encore 1,1,1,short
+2017-11-17,DeadAndCompany,214,TD Garden,Boston,MA,Encore 1,,Ripple,1,1289,,1,1,long
+2017-11-19,DeadAndCompany,215,TD Garden,Boston,MA,Set 1,,Greatest Story Ever Told,1,1296,Set 2,1,1,long
+2017-11-19,DeadAndCompany,215,TD Garden,Boston,MA,Set 2,,Casey Jones,1,1305,Encore 1,1,1,short
+2017-11-19,DeadAndCompany,215,TD Garden,Boston,MA,Encore 1,,Brokedown Palace,1,1306,,1,1,long
+2017-11-21,DeadAndCompany,216,Capital One Arena,Washington,DC,Set 1,,Deal,1,1313,Set 2,1,1,long
+2017-11-21,DeadAndCompany,216,Capital One Arena,Washington,DC,Set 2,,Throwing Stones,1,1322,Encore 1,1,1,short
+2017-11-21,DeadAndCompany,216,Capital One Arena,Washington,DC,Encore 1,,Touch of Grey,1,1323,,1,1,long
+2017-11-22,DeadAndCompany,217,XL Center,Hartford,CT,Set 1,,Bird Song,1,1329,Set 2,1,1,long
+2017-11-22,DeadAndCompany,217,XL Center,Hartford,CT,Set 2,,U.S. Blues,1,1339,Encore 1,1,1,short
+2017-11-22,DeadAndCompany,217,XL Center,Hartford,CT,Encore 1,,Knockin' on Heaven's Door,1,1340,,1,1,long
+2017-11-24,DeadAndCompany,218,Little Caesars Arena,Detroit,MI,Set 1,,Sugaree,1,1347,Set 2,1,1,long
+2017-11-24,DeadAndCompany,218,Little Caesars Arena,Detroit,MI,Set 2,,Not Fade Away,1,1356,Encore 1,1,1,short
+2017-11-24,DeadAndCompany,218,Little Caesars Arena,Detroit,MI,Encore 1,,Casey Jones,1,1357,,1,1,long
+2017-11-25,DeadAndCompany,219,Nationwide Arena,Columbus,OH,Set 1,,One More Saturday Night,1,1364,Set 2,1,1,long
+2017-11-25,DeadAndCompany,219,Nationwide Arena,Columbus,OH,Set 2,,Sugar Magnolia,1,1374,Encore 1,1,1,short
+2017-11-25,DeadAndCompany,219,Nationwide Arena,Columbus,OH,Encore 1,,Ripple,1,1375,,1,1,long
+2017-11-28,DeadAndCompany,220,Spectrum Center,Charlotte,NC,Set 1,,Let It Grow,1,1383,Set 2,1,1,long
+2017-11-28,DeadAndCompany,220,Spectrum Center,Charlotte,NC,Set 2,,Going Down the Road Feelin' Bad,1,1392,Encore 1,1,1,short
+2017-11-28,DeadAndCompany,220,Spectrum Center,Charlotte,NC,Encore 1,,Playing in the Band,2,1394,,1,1,long
+2017-11-29,DeadAndCompany,221,Philips Arena,Atlanta,GA,Set 1,,Deal,1,1403,Set 2,1,1,long
+2017-11-29,DeadAndCompany,221,Philips Arena,Atlanta,GA,Set 2,,U.S. Blues,1,1413,Encore 1,1,1,short
+2017-11-29,DeadAndCompany,221,Philips Arena,Atlanta,GA,Encore 1,,Brokedown Palace,1,1414,,1,1,long
+2017-12-01,DeadAndCompany,222,American Airlines Center,Dallas,TX,Set 1,,Easy Answers,1,1422,Set 2,1,1,long
+2017-12-01,DeadAndCompany,222,American Airlines Center,Dallas,TX,Set 2,,Casey Jones,1,1431,Encore 1,1,1,short
+2017-12-01,DeadAndCompany,222,American Airlines Center,Dallas,TX,Encore 1,,Knockin' on Heaven's Door,1,1432,,1,1,long
+2017-12-02,DeadAndCompany,223,Frank Erwin Center,Austin,TX,Set 1,,Sugaree,1,1439,Set 2,1,1,long
+2017-12-02,DeadAndCompany,223,Frank Erwin Center,Austin,TX,Set 2,,Morning Dew,1,1448,Encore 1,1,1,short
+2017-12-02,DeadAndCompany,223,Frank Erwin Center,Austin,TX,Encore 1,,One More Saturday Night,1,1449,,1,1,long
+2018-02-15,DeadAndCompany,224,The Barceló,Riviera Maya,ROO,Set 1,,La bamba,1,1457,Set 2,1,1,long
+2018-02-15,DeadAndCompany,224,The Barceló,Riviera Maya,ROO,Set 2,,Casey Jones,1,1467,Encore 1,1,1,short
+2018-02-15,DeadAndCompany,224,The Barceló,Riviera Maya,ROO,Encore 1,,The Weight,1,1468,,1,1,long
+2018-02-17,DeadAndCompany,225,The Barceló,Riviera Maya,ROO,Set 1,,Ripple,1,1476,Set 2,1,1,long
+2018-02-17,DeadAndCompany,225,The Barceló,Riviera Maya,ROO,Set 2,,Sugar Magnolia,1,1486,Encore 1,1,1,short
+2018-02-17,DeadAndCompany,225,The Barceló,Riviera Maya,ROO,Encore 1,,One More Saturday Night,1,1487,,1,1,long
+2018-02-18,DeadAndCompany,226,The Barceló,Riviera Maya,ROO,Set 1,,Bird Song,1,1494,Set 2,1,1,long
+2018-02-18,DeadAndCompany,226,The Barceló,Riviera Maya,ROO,Set 2,,Not Fade Away,1,1503,Encore 1,1,1,short
+2018-02-18,DeadAndCompany,226,The Barceló,Riviera Maya,ROO,Encore 1,,Brokedown Palace,1,1504,,1,1,long
+2018-02-24,DeadAndCompany,227,Smoothie King Center,New Orleans,LA,Set 1,,Sugaree,1,1512,Set 2,1,1,long
+2018-02-24,DeadAndCompany,227,Smoothie King Center,New Orleans,LA,Set 2,,One More Saturday Night,1,1521,Encore 1,1,1,short
+2018-02-24,DeadAndCompany,227,Smoothie King Center,New Orleans,LA,Encore 1,,Werewolves of London,1,1522,,1,1,long
+2018-02-26,DeadAndCompany,228,BB&T Center,Sunrise,FL,Set 1,,Deal,1,1529,Set 2,1,1,long
+2018-02-26,DeadAndCompany,228,BB&T Center,Sunrise,FL,Set 2,,Throwing Stones,1,1538,Encore 1,1,1,short
+2018-02-26,DeadAndCompany,228,BB&T Center,Sunrise,FL,Encore 1,,Touch of Grey,1,1539,,1,1,long
+2018-02-27,DeadAndCompany,229,Amway Center,Orlando,FL,Set 1,,You Can Call Me Al,1,1548,Set 2,1,1,long
+2018-02-27,DeadAndCompany,229,Amway Center,Orlando,FL,Set 2,,Casey Jones,1,1557,Encore 1,1,1,short
+2018-02-27,DeadAndCompany,229,Amway Center,Orlando,FL,Encore 1,,U.S. Blues,1,1558,,1,1,long
+2018-04-09,BobWeir,230,Sweetwater Music Hall,Mill Valley,CA,Set 1,,Cassidy,1,1925,,1,1,long
+2018-04-16,BobWeir,231,Embarcadero Marina Park South,San Diego,CA,Set 1,,Cassidy,1,1935,Encore 1,1,1,short
+2018-04-16,BobWeir,231,Embarcadero Marina Park South,San Diego,CA,Encore 1,,Ripple,1,1936,,1,1,long
+2018-05-15,BobWeir,232,The Fillmore,San Francisco,CA,Set 1,,Easy Answers,1,1939,,1,1,long
+2018-05-30,DeadAndCompany,233,Xfinity Center,Mansfield,MA,Set 1,,Loose Lucy,1,1565,Set 2,1,1,long
+2018-05-30,DeadAndCompany,233,Xfinity Center,Mansfield,MA,Set 2,,Touch of Grey,1,1574,,1,1,long
+2018-06-01,DeadAndCompany,234,BB&T Pavilion,Camden,NJ,Set 1,,Jack Straw,2,1582,Set 2,1,1,long
+2018-06-01,DeadAndCompany,234,BB&T Pavilion,Camden,NJ,Set 2,,Not Fade Away,2,1591,Encore 1,1,1,short
+2018-06-01,DeadAndCompany,234,BB&T Pavilion,Camden,NJ,Encore 1,,Ripple,1,1592,,1,1,long
+2018-06-02,DeadAndCompany,235,BB&T Pavilion,Camden,NJ,Set 1,,Easy Answers,1,1600,Set 2,1,1,long
+2018-06-02,DeadAndCompany,235,BB&T Pavilion,Camden,NJ,Set 2,,Uncle John's Band,1,1602,,1,1,long
+2018-06-04,DeadAndCompany,236,Riverbend Music Center,Cincinnati,OH,Set 1,,New Speedway Boogie,1,1610,Set 2,1,1,long
+2018-06-04,DeadAndCompany,236,Riverbend Music Center,Cincinnati,OH,Set 2,,U.S. Blues,1,1619,Encore 1,1,1,short
+2018-06-04,DeadAndCompany,236,Riverbend Music Center,Cincinnati,OH,Encore 1,,Knockin' on Heaven's Door,1,1620,,1,1,long
+2018-06-06,DeadAndCompany,237,Ruoff Home Mortgage Music Center,Noblesville,IN,Set 1,,Viola Lee Blues,1,1628,Set 2,1,1,long
+2018-06-06,DeadAndCompany,237,Ruoff Home Mortgage Music Center,Noblesville,IN,Set 2,,Sunshine Daydream,1,1638,Encore 1,1,1,short
+2018-06-06,DeadAndCompany,237,Ruoff Home Mortgage Music Center,Noblesville,IN,Encore 1,,Casey Jones,1,1639,,1,1,long
+2018-06-08,DeadAndCompany,238,Cellairis Amphitheatre at Lakewood,Atlanta,GA,Set 1,,Saint of Circumstance,1,1647,Set 2,1,1,long
+2018-06-08,DeadAndCompany,238,Cellairis Amphitheatre at Lakewood,Atlanta,GA,Set 2,,Morning Dew,1,1656,Encore 1,1,1,short
+2018-06-08,DeadAndCompany,238,Cellairis Amphitheatre at Lakewood,Atlanta,GA,Encore 1,,Johnny B. Goode,1,1657,,1,1,long
+2018-06-09,DeadAndCompany,239,Coastal Credit Union Music Park at Walnut Creek,Raleigh,NC,Set 1,,Bird Song,2,1665,Set 2,1,1,long
+2018-06-09,DeadAndCompany,239,Coastal Credit Union Music Park at Walnut Creek,Raleigh,NC,Set 2,,One More Saturday Night,1,1675,Encore 1,1,1,short
+2018-06-09,DeadAndCompany,239,Coastal Credit Union Music Park at Walnut Creek,Raleigh,NC,Encore 1,,Ripple,1,1676,,1,1,long
+2018-06-11,DeadAndCompany,240,Saratoga Performing Arts Center,Saratoga Springs,NY,Set 1,,Cassidy,1,1684,Set 2,1,1,long
+2018-06-11,DeadAndCompany,240,Saratoga Performing Arts Center,Saratoga Springs,NY,Set 2,,Good Lovin',1,1693,Encore 1,1,1,short
+2018-06-11,DeadAndCompany,240,Saratoga Performing Arts Center,Saratoga Springs,NY,Encore 1,,Touch of Grey,1,1694,,1,1,long
+2018-06-13,DeadAndCompany,241,XFINITY Theatre,Hartford,CT,Set 1,,Don't Ease Me In,1,1701,Set 2,1,1,long
+2018-06-13,DeadAndCompany,241,XFINITY Theatre,Hartford,CT,Set 2,,Not Fade Away,1,1710,Encore 1,1,1,short
+2018-06-13,DeadAndCompany,241,XFINITY Theatre,Hartford,CT,Encore 1,,Brokedown Palace,1,1711,,1,1,long
+2018-06-15,DeadAndCompany,242,Citi Field,New York,NY,Set 1,,Easy Answers,1,1719,Set 2,1,1,long
+2018-06-15,DeadAndCompany,242,Citi Field,New York,NY,Set 2,,U.S. Blues,1,1728,Encore 1,1,1,short
+2018-06-15,DeadAndCompany,242,Citi Field,New York,NY,Encore 1,,Going Down the Road Feelin' Bad,1,1729,,1,1,long
+2018-06-16,DeadAndCompany,243,Citi Field,New York,NY,Set 1,,New Speedway Boogie,1,1737,Set 2,1,1,long
+2018-06-16,DeadAndCompany,243,Citi Field,New York,NY,Set 2,,Sunshine Daydream,1,1748,Encore 1,1,1,short
+2018-06-16,DeadAndCompany,243,Citi Field,New York,NY,Encore 1,,One More Saturday Night,1,1749,,1,1,long
+2018-06-19,DeadAndCompany,244,Darien Lake Performing Arts Center,Darien Center,NY,Set 1,,Let It Grow,1,1757,Set 2,1,1,long
+2018-06-19,DeadAndCompany,244,Darien Lake Performing Arts Center,Darien Center,NY,Set 2,,Casey Jones,1,1766,Encore 1,1,1,short
+2018-06-19,DeadAndCompany,244,Darien Lake Performing Arts Center,Darien Center,NY,Encore 1,,Werewolves of London,1,1767,,1,1,long
+2018-06-20,DeadAndCompany,245,Blossom Music Center,Cuyahoga Falls,OH,Set 1,,Passenger,1,1775,Set 2,1,1,long
+2018-06-20,DeadAndCompany,245,Blossom Music Center,Cuyahoga Falls,OH,Set 2,,Throwing Stones,1,1785,Encore 1,1,1,short
+2018-06-20,DeadAndCompany,245,Blossom Music Center,Cuyahoga Falls,OH,Encore 1,,Knockin' on Heaven's Door,1,1786,,1,1,long
+2018-06-22,DeadAndCompany,246,Alpine Valley Music Theatre,East Troy,WI,Set 1,,Touch of Grey,1,1795,Set 2,1,1,long
+2018-06-22,DeadAndCompany,246,Alpine Valley Music Theatre,East Troy,WI,Set 2,,Going Down the Road Feelin' Bad,1,1807,Encore 1,1,1,short
+2018-06-22,DeadAndCompany,246,Alpine Valley Music Theatre,East Troy,WI,Encore 1,,Ripple,1,1808,,1,1,long
+2018-06-23,DeadAndCompany,247,Alpine Valley Music Theatre,East Troy,WI,Set 1,,Bird Song,1,1816,Set 2,1,1,long
+2018-06-23,DeadAndCompany,247,Alpine Valley Music Theatre,East Troy,WI,Set 2,,Sugar Magnolia,1,1826,Encore 1,1,1,short
+2018-06-23,DeadAndCompany,247,Alpine Valley Music Theatre,East Troy,WI,Encore 1,,One More Saturday Night,1,1827,,1,1,long
+2018-06-27,BobWeir,248,Bananas at Large,San Rafael,CA,Set 1,,Only a River,1,1941,,1,1,long
+2018-06-29,DeadAndCompany,249,The Gorge Amphitheatre,George,WA,Set 1,,Cumberland Blues,1,1834,Set 2,1,1,long
+2018-06-29,DeadAndCompany,249,The Gorge Amphitheatre,George,WA,Set 2,,Playing in the Band,2,1843,Encore 1,1,1,short
+2018-06-29,DeadAndCompany,249,The Gorge Amphitheatre,George,WA,Encore 1,,U.S. Blues,1,1844,,1,1,long
+2018-06-30,DeadAndCompany,250,Autzen Stadium,Eugene,OR,Set 1,,One More Saturday Night,1,1852,Set 2,1,1,long
+2018-06-30,DeadAndCompany,250,Autzen Stadium,Eugene,OR,Set 2,,Turn On Your Love Light,1,1862,Encore 1,1,1,short
+2018-06-30,DeadAndCompany,250,Autzen Stadium,Eugene,OR,Encore 1,,Brokedown Palace,1,1863,,1,1,long
+2018-07-02,DeadAndCompany,251,Shoreline Amphitheatre,Mountain View,CA,Set 1,,Throwing Stones,1,1870,Set 2,1,1,long
+2018-07-02,DeadAndCompany,251,Shoreline Amphitheatre,Mountain View,CA,Set 2,,Not Fade Away,1,1881,Encore 1,1,1,short
+2018-07-02,DeadAndCompany,251,Shoreline Amphitheatre,Mountain View,CA,Encore 1,,Touch of Grey,1,1882,,1,1,long
+2018-07-03,DeadAndCompany,252,Shoreline Amphitheatre,Mountain View,CA,Set 1,,Let It Grow,1,1889,Set 2,1,1,long
+2018-07-03,DeadAndCompany,252,Shoreline Amphitheatre,Mountain View,CA,Set 2,,Casey Jones,1,1898,Encore 1,1,1,short
+2018-07-03,DeadAndCompany,252,Shoreline Amphitheatre,Mountain View,CA,Encore 1,,Ripple,1,1899,,1,1,long
+2018-07-06,DeadAndCompany,253,Mattress Firm Amphitheatre,Chula Vista,CA,Set 1,,Bird Song,2,1907,Set 2,1,1,long
+2018-07-06,DeadAndCompany,253,Mattress Firm Amphitheatre,Chula Vista,CA,Set 2,,U.S. Blues,1,1917,Encore 1,1,1,short
+2018-07-06,DeadAndCompany,253,Mattress Firm Amphitheatre,Chula Vista,CA,Encore 1,,Knockin' on Heaven's Door,1,1918,,1,1,long
+2018-07-07,DeadAndCompany,254,Dodger Stadium,Los Angeles,CA,Set 1,,Deal,1,1926,Set 2,1,1,long
+2018-07-07,DeadAndCompany,254,Dodger Stadium,Los Angeles,CA,Set 2,,Sunshine Daydream,1,1935,Encore 1,1,1,short
+2018-07-07,DeadAndCompany,254,Dodger Stadium,Los Angeles,CA,Encore 1,,Not Fade Away,1,1937,,1,1,long
+2018-07-08,DeadAndCompany,255,Private Venue,Los Angeles,CA,Set 1,,Touch of Grey,1,1944,,1,1,long
+2018-07-11,DeadAndCompany,256,Isleta Amphitheatre,Albuquerque,NM,Set 1,,Easy Answers,1,1952,Set 2,1,1,long
+2018-07-11,DeadAndCompany,256,Isleta Amphitheatre,Albuquerque,NM,Set 2,,Good Lovin',1,1963,Encore 1,1,1,short
+2018-07-11,DeadAndCompany,256,Isleta Amphitheatre,Albuquerque,NM,Encore 1,,Johnny B. Goode,1,1964,,1,1,long
+2018-07-13,DeadAndCompany,257,Folsom Field,Boulder,CO,Set 1,,Deal,1,1973,Set 2,1,1,long
+2018-07-13,DeadAndCompany,257,Folsom Field,Boulder,CO,Set 2,,Throwing Stones,1,1983,Encore 1,1,1,short
+2018-07-13,DeadAndCompany,257,Folsom Field,Boulder,CO,Encore 1,,U.S. Blues,1,1985,,1,1,long
+2018-07-14,DeadAndCompany,258,Folsom Field,Boulder,CO,Set 1,,One More Saturday Night,1,1992,Set 2,1,1,long
+2018-07-14,DeadAndCompany,258,Folsom Field,Boulder,CO,Set 2,,Sugar Magnolia,1,2001,Encore 1,1,1,short
+2018-07-14,DeadAndCompany,258,Folsom Field,Boulder,CO,Encore 1,,Uncle John's Band,1,2002,Encore 2,1,1,short
+2018-07-14,DeadAndCompany,258,Folsom Field,Boulder,CO,Encore 2,,Ripple,1,2003,,1,1,long
+2018-08-25,DeadAndCompany,259,Infinity Downs Farm,Arrington,VA,Set 1,,Deal,1,2010,Set 2,1,1,long
+2018-08-25,DeadAndCompany,259,Infinity Downs Farm,Arrington,VA,Set 2,,Franklin's Tower,1,2020,Encore 1,1,1,short
+2018-08-25,DeadAndCompany,259,Infinity Downs Farm,Arrington,VA,Encore 1,,One More Saturday Night,1,2022,,1,1,long
+2018-08-26,DeadAndCompany,260,Infinity Downs Farm,Arrington,VA,Set 1,,Sunshine Daydream,1,2030,Set 2,1,1,long
+2018-08-26,DeadAndCompany,260,Infinity Downs Farm,Arrington,VA,Set 2,,Not Fade Away,1,2038,Encore 1,1,1,short
+2018-08-26,DeadAndCompany,260,Infinity Downs Farm,Arrington,VA,Encore 1,,Ripple,1,2041,,1,1,long
+2018-09-08,BobWeir,261,Sidney B. Cushing Memorial Amphitheatre,Marin County,CA,Set 1,,Not Fade Away,1,1947,,1,1,long
+2018-09-14,BobWeir,262,Masonic Auditorium,San Francisco,CA,Set 1,,Touch of Grey,1,1953,,1,1,long
+2018-10-19,BobWeir,263,The Theatre at Ace Hotel,Los Angeles,CA,Set 1,,Truckin',1,1957,,1,1,long
+2018-12-31,BobWeir,264,Princeville Golf Club,Princeville,HI,Set 1,,Let It Grow,1,1965,Set 2,1,1,long
+2018-12-31,BobWeir,264,Princeville Golf Club,Princeville,HI,Set 2,,Touch of Grey,1,1976,Encore 1,1,1,short
+2018-12-31,BobWeir,264,Princeville Golf Club,Princeville,HI,Encore 1,,Ripple,1,1977,,1,1,long
+2019-01-17,DeadAndCompany,265,The Barceló,Riviera Maya,ROO,Set 1,,Bird Song,1,2048,Set 2,1,1,long
+2019-01-17,DeadAndCompany,265,The Barceló,Riviera Maya,ROO,Set 2,,Franklin's Tower,1,2058,Encore 1,1,1,short
+2019-01-17,DeadAndCompany,265,The Barceló,Riviera Maya,ROO,Encore 1,,Ripple,1,2059,,1,1,long
+2019-01-19,DeadAndCompany,266,The Barceló,Riviera Maya,ROO,Set 1,,One More Saturday Night,1,2067,Set 2,1,1,long
+2019-01-19,DeadAndCompany,266,The Barceló,Riviera Maya,ROO,Set 2,,Morning Dew,1,2076,Encore 1,1,1,short
+2019-01-19,DeadAndCompany,266,The Barceló,Riviera Maya,ROO,Encore 1,,Turn On Your Love Light,1,2077,,1,1,long
+2019-01-20,DeadAndCompany,267,The Barceló,Riviera Maya,ROO,Set 1,,Sunshine Daydream,1,2085,Set 2,1,1,long
+2019-01-20,DeadAndCompany,267,The Barceló,Riviera Maya,ROO,Set 2,,Casey Jones,1,2095,Encore 1,1,1,short
+2019-01-20,DeadAndCompany,267,The Barceló,Riviera Maya,ROO,Encore 1,,Werewolves of London,1,2097,,1,1,long
+2019-05-08,BobWeir,268,Oracle Arena,Oakland,CA,Set 1,,The Star-Spangled Banner,1,1978,,1,1,long
+2019-05-15,BobWeir,269,The Fillmore,San Francisco,CA,Set 1,,Easy to Slip,1,1981,,1,1,long
+2019-05-31,DeadAndCompany,270,Shoreline Amphitheatre,Mountain View,CA,Set 1,,Casey Jones,1,2105,Set 2,1,1,long
+2019-05-31,DeadAndCompany,270,Shoreline Amphitheatre,Mountain View,CA,Set 2,,Sugar Magnolia,1,2115,Encore 1,1,1,short
+2019-05-31,DeadAndCompany,270,Shoreline Amphitheatre,Mountain View,CA,Encore 1,,The Weight,1,2116,,1,1,long
+2019-06-01,DeadAndCompany,271,Shoreline Amphitheatre,Mountain View,CA,Set 1,,Saint of Circumstance,1,2124,Set 2,1,1,long
+2019-06-01,DeadAndCompany,271,Shoreline Amphitheatre,Mountain View,CA,Set 2,,Morning Dew,1,2134,Encore 1,1,1,short
+2019-06-01,DeadAndCompany,271,Shoreline Amphitheatre,Mountain View,CA,Encore 1,,Playing in the Band,1,2136,,1,1,long
+2019-06-03,DeadAndCompany,272,Hollywood Bowl,Los Angeles,CA,Set 1,,Don't Ease Me In,1,2144,Set 2,1,1,long
+2019-06-03,DeadAndCompany,272,Hollywood Bowl,Los Angeles,CA,Set 2,,Not Fade Away,1,2154,Encore 1,1,1,short
+2019-06-03,DeadAndCompany,272,Hollywood Bowl,Los Angeles,CA,Encore 1,,Terrapin Station,1,2155,,1,1,long
+2019-06-04,DeadAndCompany,273,Hollywood Bowl,Los Angeles,CA,Set 1,,Fire on the Mountain,1,2163,Set 2,1,1,long
+2019-06-04,DeadAndCompany,273,Hollywood Bowl,Los Angeles,CA,Set 2,,U.S. Blues,1,2172,Encore 1,1,1,short
+2019-06-04,DeadAndCompany,273,Hollywood Bowl,Los Angeles,CA,Encore 1,,Brokedown Palace,1,2173,,1,1,long
+2019-06-07,DeadAndCompany,274,The Gorge Amphitheatre,George,WA,Set 1,,The Music Never Stopped,1,2180,Set 2,1,1,long
+2019-06-07,DeadAndCompany,274,The Gorge Amphitheatre,George,WA,Set 2,,Casey Jones,1,2190,Encore 1,1,1,short
+2019-06-07,DeadAndCompany,274,The Gorge Amphitheatre,George,WA,Encore 1,,Ripple,1,2191,,1,1,long
+2019-06-08,DeadAndCompany,275,The Gorge Amphitheatre,George,WA,Set 1,,Terrapin Station,1,2198,Set 2,1,1,long
+2019-06-08,DeadAndCompany,275,The Gorge Amphitheatre,George,WA,Set 2,,One More Saturday Night,1,2209,Encore,1,1,short
+2019-06-08,DeadAndCompany,275,The Gorge Amphitheatre,George,WA,Encore,,Touch of Grey,1,2210,,1,1,long
+2019-06-12,DeadAndCompany,276,Ruoff Home Mortgage Music Center,Noblesville,IN,Set 1,,Let It Grow,1,2218,Set 2,1,1,long
+2019-06-12,DeadAndCompany,276,Ruoff Home Mortgage Music Center,Noblesville,IN,Set 2,,Going Down the Road Feelin' Bad,1,2229,Encore 1,1,1,short
+2019-06-12,DeadAndCompany,276,Ruoff Home Mortgage Music Center,Noblesville,IN,Encore 1,,Black Muddy River,1,2230,,1,1,long
+2019-06-14,DeadAndCompany,277,Wrigley Field,Chicago,IL,Set 1,,Jack Straw,1,2238,Set 2,1,1,long
+2019-06-14,DeadAndCompany,277,Wrigley Field,Chicago,IL,Set 2,,Not Fade Away,1,2248,Encore 1,1,1,short
+2019-06-14,DeadAndCompany,277,Wrigley Field,Chicago,IL,Encore 1,,Knockin' on Heaven's Door,1,2249,,1,1,long
+2019-06-15,DeadAndCompany,278,Wrigley Field,Chicago,IL,Set 1,,Turn On Your Love Light,1,2257,Set 2,1,1,long
+2019-06-15,DeadAndCompany,278,Wrigley Field,Chicago,IL,Set 2,,Sunshine Daydream,1,2268,Encore 1,1,1,short
+2019-06-15,DeadAndCompany,278,Wrigley Field,Chicago,IL,Encore 1,,One More Saturday Night,1,2270,,1,1,long
+2019-06-18,DeadAndCompany,279,Saratoga Performing Arts Center,Saratoga Springs,NY,Set 1,,U.S. Blues,1,2278,Set 2,1,1,long
+2019-06-18,DeadAndCompany,279,Saratoga Performing Arts Center,Saratoga Springs,NY,Set 2,,Casey Jones,1,2288,Encore 1,1,1,short
+2019-06-18,DeadAndCompany,279,Saratoga Performing Arts Center,Saratoga Springs,NY,Encore 1,,Playing in the Band,2,2290,,1,1,long
+2019-06-20,DeadAndCompany,280,BB&T Pavilion,Camden,NJ,Set 1,,Saint of Circumstance,1,2298,Set 2,1,1,long
+2019-06-20,DeadAndCompany,280,BB&T Pavilion,Camden,NJ,Set 2,,Good Lovin',1,2309,Encore 1,1,1,short
+2019-06-20,DeadAndCompany,280,BB&T Pavilion,Camden,NJ,Encore 1,,Touch of Grey,1,2310,,1,1,long
+2019-06-22,DeadAndCompany,281,Gillette Stadium,Foxborough,MA,Set 1,,Box of Rain,1,2318,Set 2,1,1,long
+2019-06-22,DeadAndCompany,281,Gillette Stadium,Foxborough,MA,Set 2,,Going Down the Road Feelin' Bad,1,2328,Encore 1,1,1,short
+2019-06-22,DeadAndCompany,281,Gillette Stadium,Foxborough,MA,Encore 1,,The Weight,1,2329,,1,1,long
+2019-06-23,DeadAndCompany,282,Citi Field,New York,NY,Set 1,,Jack Straw,1,2337,Set 2,1,1,long
+2019-06-23,DeadAndCompany,282,Citi Field,New York,NY,Set 2,,Morning Dew,1,2346,Encore 1,1,1,short
+2019-06-23,DeadAndCompany,282,Citi Field,New York,NY,Encore 1,,Brokedown Palace,1,2347,,1,1,long
+2019-06-26,DeadAndCompany,283,Jiffy Lube Live,Bristow,VA,Set 1,,Throwing Stones,1,2355,Set 2,1,1,long
+2019-06-26,DeadAndCompany,283,Jiffy Lube Live,Bristow,VA,Set 2,,U.S. Blues,1,2365,Encore 1,1,1,short
+2019-06-26,DeadAndCompany,283,Jiffy Lube Live,Bristow,VA,Encore 1,,Ripple,1,2366,,1,1,long
+2019-06-28,DeadAndCompany,284,PNC Music Pavilion,Charlotte,NC,Set 1,,Casey Jones,1,2375,Set 2,1,1,long
+2019-06-28,DeadAndCompany,284,PNC Music Pavilion,Charlotte,NC,Set 2,,Sugar Magnolia,1,2383,Encore 1,1,1,short
+2019-06-28,DeadAndCompany,284,PNC Music Pavilion,Charlotte,NC,Encore 1,,Touch of Grey,1,2384,,1,1,long
+2019-06-29,DeadAndCompany,285,Cellairis Amphitheatre at Lakewood,Atlanta,GA,Set 1,,Bird Song,2,2393,Set 2,1,1,long
+2019-06-29,DeadAndCompany,285,Cellairis Amphitheatre at Lakewood,Atlanta,GA,Set 2,,One More Saturday Night,1,2404,Encore 1,1,1,short
+2019-06-29,DeadAndCompany,285,Cellairis Amphitheatre at Lakewood,Atlanta,GA,Encore 1,,Fire on the Mountain,1,2405,,1,1,long
+2019-07-02,DeadAndCompany,286,Dos Equis Pavilion,Dallas,TX,Set 1,,Jack Straw,1,2413,Set 2,1,1,long
+2019-07-02,DeadAndCompany,286,Dos Equis Pavilion,Dallas,TX,Set 2,,Good Lovin',1,2422,Encore 1,1,1,short
+2019-07-02,DeadAndCompany,286,Dos Equis Pavilion,Dallas,TX,Encore 1,,Black Muddy River,1,2423,,1,1,long
+2019-07-05,DeadAndCompany,287,Folsom Field,Boulder,CO,Set 1,,Cold Rain and Snow,1,2425,Set 2,1,1,long
+2019-07-05,DeadAndCompany,287,Folsom Field,Boulder,CO,Set 2,,Morning Dew,1,2440,Encore 1,1,1,short
+2019-07-05,DeadAndCompany,287,Folsom Field,Boulder,CO,Encore 1,,U.S. Blues,1,2442,,1,1,long
+2019-07-06,DeadAndCompany,288,Folsom Field,Boulder,CO,Set 1,,Don't Ease Me In,1,2450,Set 2,1,1,long
+2019-07-06,DeadAndCompany,288,Folsom Field,Boulder,CO,Set 2,,Not Fade Away,1,2461,Encore 1,1,1,short
+2019-07-06,DeadAndCompany,288,Folsom Field,Boulder,CO,Encore 1,,Playing in the Band,2,2464,,1,1,long
+2019-10-31,DeadAndCompany,289,Madison Square Garden,New York,NY,Set 1,,Terrapin Station,1,2471,Set 2,1,1,long
+2019-10-31,DeadAndCompany,289,Madison Square Garden,New York,NY,Set 2,,Sugar Magnolia,1,2481,Encore 1,1,1,short
+2019-10-31,DeadAndCompany,289,Madison Square Garden,New York,NY,Encore 1,,Werewolves of London,1,2482,,1,1,long
+2019-11-01,DeadAndCompany,290,Madison Square Garden,New York,NY,Set 1,,Bird Song,1,2490,Set 2,1,1,long
+2019-11-01,DeadAndCompany,290,Madison Square Garden,New York,NY,Set 2,,Morning Dew,1,2500,Encore 1,1,1,short
+2019-11-01,DeadAndCompany,290,Madison Square Garden,New York,NY,Encore 1,,Brokedown Palace,1,2502,,1,1,long
+2019-11-05,DeadAndCompany,291,Nassau Veterans Memorial Coliseum,Uniondale,NY,Set 1,,Casey Jones,1,2510,Set 2,1,1,long
+2019-11-05,DeadAndCompany,291,Nassau Veterans Memorial Coliseum,Uniondale,NY,Set 2,,Not Fade Away,1,2520,Encore 1,1,1,short
+2019-11-05,DeadAndCompany,291,Nassau Veterans Memorial Coliseum,Uniondale,NY,Encore 1,,U.S. Blues,1,2521,,1,1,long
+2019-11-06,DeadAndCompany,292,Nassau Veterans Memorial Coliseum,Uniondale,NY,Set 1,,The Music Never Stopped,1,2528,Set 2,1,1,long
+2019-11-06,DeadAndCompany,292,Nassau Veterans Memorial Coliseum,Uniondale,NY,Set 2,,Turn On Your Love Light,1,2538,Encore 1,1,1,short
+2019-11-06,DeadAndCompany,292,Nassau Veterans Memorial Coliseum,Uniondale,NY,Encore 1,,Knockin' on Heaven's Door,1,2539,,1,1,long
+2019-11-08,DeadAndCompany,293,Hampton Coliseum,Hampton,VA,Set 1,,Throwing Stones,1,2547,Set 2,1,1,long
+2019-11-08,DeadAndCompany,293,Hampton Coliseum,Hampton,VA,Set 2,,I Know You Rider,1,2557,Encore 1,1,1,short
+2019-11-08,DeadAndCompany,293,Hampton Coliseum,Hampton,VA,Encore 1,,Touch of Grey,1,2558,,1,1,long
+2019-11-09,DeadAndCompany,294,Hampton Coliseum,Hampton,VA,Set 1,,One More Saturday Night,1,2565,Set 2,1,1,long
+2019-11-09,DeadAndCompany,294,Hampton Coliseum,Hampton,VA,Set 2,,Sugar Magnolia,1,2575,Encore 1,1,1,short
+2019-11-09,DeadAndCompany,294,Hampton Coliseum,Hampton,VA,Encore 1,,Ripple,1,2576,,1,1,long
+2019-12-27,DeadAndCompany,295,The Forum,Inglewood,CA,Set 1,,Don't Ease Me In,1,2584,Set 2,1,1,long
+2019-12-27,DeadAndCompany,295,The Forum,Inglewood,CA,Set 2,,U.S. Blues,1,2592,Encore 1,1,1,short
+2019-12-27,DeadAndCompany,295,The Forum,Inglewood,CA,Encore 1,,Ripple,1,2593,,1,1,long
+2019-12-28,DeadAndCompany,296,The Forum,Inglewood,CA,Set 1,,Saint of Circumstance,1,2601,Set 2,1,1,long
+2019-12-28,DeadAndCompany,296,The Forum,Inglewood,CA,Set 2,,One More Saturday Night,1,2611,Encore 1,1,1,short
+2019-12-28,DeadAndCompany,296,The Forum,Inglewood,CA,Encore 1,,The Weight,1,2612,,1,1,long
+2019-12-30,DeadAndCompany,297,Chase Center,San Francisco,CA,Set 1,,Bird Song,1,2619,Set 2,1,1,long
+2019-12-30,DeadAndCompany,297,Chase Center,San Francisco,CA,Set 2,,Casey Jones,1,2630,Encore 1,1,1,short
+2019-12-30,DeadAndCompany,297,Chase Center,San Francisco,CA,Encore 1,,Quinn the Eskimo (The Mighty Quinn),1,2631,,1,1,long
+2019-12-31,DeadAndCompany,298,Chase Center,San Francisco,CA,Set 1,,New Speedway Boogie,1,2639,Set 2,1,1,long
+2019-12-31,DeadAndCompany,298,Chase Center,San Francisco,CA,Set 2,,Not Fade Away,1,2649,Set 3,1,1,long
+2019-12-31,DeadAndCompany,298,Chase Center,San Francisco,CA,Set 3,,Sunshine Daydream,1,2654,Encore,1,1,short
+2019-12-31,DeadAndCompany,298,Chase Center,San Francisco,CA,Encore,,Touch of Grey,1,2655,,1,1,long
+2020-01-16,DeadAndCompany,299,Moon Palace The Grand,Cancún,ROO,Set 1,,Let It Grow,1,2663,Set 2,1,1,long
+2020-01-16,DeadAndCompany,299,Moon Palace The Grand,Cancún,ROO,Set 2,,Casey Jones,1,2672,Encore 1,1,1,short
+2020-01-16,DeadAndCompany,299,Moon Palace The Grand,Cancún,ROO,Encore 1,,The Weight,1,2673,,1,1,long
+2020-01-18,DeadAndCompany,300,Moon Palace The Grand,Cancún,ROO,Set 1,,Quinn the Eskimo (The Mighty Quinn),1,2681,Set 2,1,1,long
+2020-01-18,DeadAndCompany,300,Moon Palace The Grand,Cancún,ROO,Set 2,,Franklin's Tower,1,2694,Encore 1,1,1,short
+2020-01-18,DeadAndCompany,300,Moon Palace The Grand,Cancún,ROO,Encore 1,,One More Saturday Night,1,2695,,1,1,long
+2020-01-19,DeadAndCompany,301,Moon Palace The Grand,Cancún,ROO,Set 1,,Terrapin Station,1,2703,Set 2,1,1,long
+2020-01-19,DeadAndCompany,301,Moon Palace The Grand,Cancún,ROO,Set 2,,U.S. Blues,1,2713,Encore 1,1,1,short
+2020-01-19,DeadAndCompany,301,Moon Palace The Grand,Cancún,ROO,Encore 1,,Not Fade Away,1,2715,,1,1,long
+2020-02-06,BobWeir,302,The Fillmore,San Francisco,CA,Set 1,,No One Else on Earth,1,1989,Encore 1,1,1,short
+2020-02-06,BobWeir,302,The Fillmore,San Francisco,CA,Encore 1,,Love Can Build a Bridge,1,1991,,1,1,long
+2020-08-21,BobWeir,303,Private Venue,,,Set 1,,Death or Glory,1,1992,,1,1,long
+2020-08-27,BobWeir,304,Private Venue,Mill Valley,CA,Set 1,,Bird Song,1,1996,,1,1,long
+2020-12-26,BobWeir,305,Tamalpais Research Institute,San Rafael,CA,Set 1,,Throwing Stones,1,1999,,1,1,long
+2021-08-16,DeadAndCompany,306,Coastal Credit Union Music Park at Walnut Creek,Raleigh,NC,Set 1,,New Speedway Boogie,1,2721,Set 2,1,1,long
+2021-08-16,DeadAndCompany,306,Coastal Credit Union Music Park at Walnut Creek,Raleigh,NC,Set 2,,Not Fade Away,1,2734,,1,1,long
+2021-08-18,DeadAndCompany,307,Jiffy Lube Live,Bristow,VA,Set 1,,Don't Ease Me In,1,2742,Set 2,1,1,long
+2021-08-18,DeadAndCompany,307,Jiffy Lube Live,Bristow,VA,Set 2,,Sugar Magnolia,1,2751,Encore 1,1,1,short
+2021-08-18,DeadAndCompany,307,Jiffy Lube Live,Bristow,VA,Encore 1,,Black Muddy River,1,2752,,1,1,long
+2021-08-20,DeadAndCompany,308,Citi Field,New York,NY,Set 1,,Casey Jones,1,2760,Set 2,1,1,long
+2021-08-20,DeadAndCompany,308,Citi Field,New York,NY,Set 2,,U.S. Blues,1,2771,Encore 1,1,1,short
+2021-08-20,DeadAndCompany,308,Citi Field,New York,NY,Encore 1,,The Weight,1,2772,,1,1,long
+2021-08-21,DeadAndCompany,309,Citizens Bank Park,Philadelphia,PA,Set 1,,Morning Dew,1,2785,Encore 1,1,1,short
+2021-08-21,DeadAndCompany,309,Citizens Bank Park,Philadelphia,PA,Encore 1,,Brokedown Palace,1,2787,,1,1,long
+2021-08-23,DeadAndCompany,310,Bethel Woods Center for the Arts,Bethel,NY,Set 1,,Saint of Circumstance,1,2795,Set 2,1,1,long
+2021-08-23,DeadAndCompany,310,Bethel Woods Center for the Arts,Bethel,NY,Set 2,,Standing on the Moon,1,2804,Encore 1,1,1,short
+2021-08-23,DeadAndCompany,310,Bethel Woods Center for the Arts,Bethel,NY,Encore 1,,Ripple,1,2805,,1,1,long
+2021-08-25,DeadAndCompany,311,Darien Lake Performing Arts Center,Darien Center,NY,Set 1,,New Speedway Boogie,1,2812,Set 2,1,1,long
+2021-08-25,DeadAndCompany,311,Darien Lake Performing Arts Center,Darien Center,NY,Set 2,,Wharf Rat,1,2821,Encore 1,1,1,short
+2021-08-25,DeadAndCompany,311,Darien Lake Performing Arts Center,Darien Center,NY,Encore 1,,Knockin' on Heaven's Door,1,2822,,1,1,long
+2021-08-27,DeadAndCompany,312,Saratoga Performing Arts Center,Saratoga Springs,NY,Set 1,,Bird Song,1,2829,Set 2,1,1,long
+2021-08-27,DeadAndCompany,312,Saratoga Performing Arts Center,Saratoga Springs,NY,Set 2,,Not Fade Away,1,2839,Encore 1,1,1,short
+2021-08-27,DeadAndCompany,312,Saratoga Performing Arts Center,Saratoga Springs,NY,Encore 1,,Black Muddy River,1,2840,,1,1,long
+2021-08-28,DeadAndCompany,313,Hersheypark Stadium,Hershey,PA,Set 1,,Don't Ease Me In,1,2848,Set 2,1,1,long
+2021-08-28,DeadAndCompany,313,Hersheypark Stadium,Hershey,PA,Set 2,,Quinn the Eskimo (The Mighty Quinn),1,2859,,1,1,long
+2021-09-02,DeadAndCompany,314,Xfinity Center,Mansfield,MA,Set 1,,Let It Grow,1,2866,Set 2,1,1,long
+2021-09-02,DeadAndCompany,314,Xfinity Center,Mansfield,MA,Set 2,,Sugar Magnolia,1,2875,Encore 1,1,1,short
+2021-09-02,DeadAndCompany,314,Xfinity Center,Mansfield,MA,Encore 1,,Ripple,1,2876,,1,1,long
+2021-09-03,DeadAndCompany,315,Xfinity Center,Mansfield,MA,Set 1,,Sugaree,1,2883,Set 2,1,1,long
+2021-09-03,DeadAndCompany,315,Xfinity Center,Mansfield,MA,Set 2,,Morning Dew,1,2892,Encore 1,1,1,short
+2021-09-03,DeadAndCompany,315,Xfinity Center,Mansfield,MA,Encore 1,,U.S. Blues,1,2893,,1,1,long
+2021-09-05,DeadAndCompany,316,XFINITY Theatre,Hartford,CT,Set 1,,Franklin's Tower,2,2918,Set 2,1,1,long
+2021-09-05,DeadAndCompany,316,XFINITY Theatre,Hartford,CT,Set 2,,Playing in the Band,2,2928,Encore 1,1,1,short
+2021-09-05,DeadAndCompany,316,XFINITY Theatre,Hartford,CT,Encore 1,,Werewolves of London,2,2929,,1,1,long
+2021-09-07,DeadAndCompany,317,Blossom Music Center,Cuyahoga Falls,OH,Set 1,,Bird Song,2,2954,Set 2,1,1,long
+2021-09-07,DeadAndCompany,317,Blossom Music Center,Cuyahoga Falls,OH,Set 2,,Not Fade Away,2,2963,Encore 1,1,1,short
+2021-09-07,DeadAndCompany,317,Blossom Music Center,Cuyahoga Falls,OH,Encore 1,,Brokedown Palace,2,2964,,1,1,long
+2021-09-10,DeadAndCompany,318,Pine Knob Music Theatre,Clarkston,MI,Set 1,,Don't Ease Me In,1,2971,Set 2,1,1,long
+2021-09-10,DeadAndCompany,318,Pine Knob Music Theatre,Clarkston,MI,Set 2,,Casey Jones,1,2981,Encore 1,1,1,short
+2021-09-10,DeadAndCompany,318,Pine Knob Music Theatre,Clarkston,MI,Encore 1,,The Weight,1,2982,,1,1,long
+2021-09-11,DeadAndCompany,319,Riverbend Music Center,Cincinnati,OH,Set 1,,Going Down the Road Feelin' Bad,1,2990,Set 2,1,1,long
+2021-09-11,DeadAndCompany,319,Riverbend Music Center,Cincinnati,OH,Set 2,,One More Saturday Night,1,3001,Encore 1,1,1,short
+2021-09-11,DeadAndCompany,319,Riverbend Music Center,Cincinnati,OH,Encore 1,,Touch of Grey,1,3002,,1,1,long
+2021-09-13,DeadAndCompany,320,Hollywood Casino Amphitheatre,Maryland Heights,MO,Set 1,,U.S. Blues,1,3010,Set 2,1,1,long
+2021-09-13,DeadAndCompany,320,Hollywood Casino Amphitheatre,Maryland Heights,MO,Set 2,,Sugar Magnolia,1,3019,Encore 1,1,1,short
+2021-09-13,DeadAndCompany,320,Hollywood Casino Amphitheatre,Maryland Heights,MO,Encore 1,,Johnny B. Goode,1,3020,,1,1,long
+2021-09-15,DeadAndCompany,321,Ruoff Home Mortgage Music Center,Noblesville,IN,Set 1,,Big Railroad Blues,1,3028,Set 2,1,1,long
+2021-09-15,DeadAndCompany,321,Ruoff Home Mortgage Music Center,Noblesville,IN,Set 2,,Black Muddy River,1,3039,,1,1,long
+2021-09-17,DeadAndCompany,322,Wrigley Field,Chicago,IL,Set 1,,Ramble On Rose,1,3043,Set 2,1,1,long
+2021-09-17,DeadAndCompany,322,Wrigley Field,Chicago,IL,Set 2,,Not Fade Away,1,3053,Encore 1,1,1,short
+2021-09-17,DeadAndCompany,322,Wrigley Field,Chicago,IL,Encore 1,,Ripple,1,3054,,1,1,long
+2021-09-18,DeadAndCompany,323,Wrigley Field,Chicago,IL,Set 1,,One More Saturday Night,1,3061,Set 2,1,1,long
+2021-09-18,DeadAndCompany,323,Wrigley Field,Chicago,IL,Set 2,,Franklin's Tower,1,3072,Encore 1,1,1,short
+2021-09-18,DeadAndCompany,323,Wrigley Field,Chicago,IL,Encore 1,,Touch of Grey,1,3074,,1,1,long
+2021-10-11,DeadAndCompany,324,PNC Music Pavilion,Charlotte,NC,Set 1,,Bird Song,1,3081,Set 2,1,1,long
+2021-10-11,DeadAndCompany,324,PNC Music Pavilion,Charlotte,NC,Set 2,,Casey Jones,1,3090,Encore 1,1,1,short
+2021-10-11,DeadAndCompany,324,PNC Music Pavilion,Charlotte,NC,Encore 1,,Ripple,1,3091,,1,1,long
+2021-10-12,DeadAndCompany,325,Cellairis Amphitheatre at Lakewood,Atlanta,GA,Set 1,,Deal,1,3098,Set 2,1,1,long
+2021-10-12,DeadAndCompany,325,Cellairis Amphitheatre at Lakewood,Atlanta,GA,Set 2,,Stella Blue,1,3107,,1,1,long
+2021-10-14,DeadAndCompany,326,Dos Equis Pavilion,Dallas,TX,Set 1,,Sugaree,1,3114,Set 2,1,1,long
+2021-10-14,DeadAndCompany,326,Dos Equis Pavilion,Dallas,TX,Set 2,,Sugar Magnolia,1,3124,Encore 1,1,1,short
+2021-10-14,DeadAndCompany,326,Dos Equis Pavilion,Dallas,TX,Encore 1,,Liberty,1,3125,,1,1,long
+2021-10-15,DeadAndCompany,327,Cynthia Woods Mitchell Pavilion,The Woodlands,TX,Set 1,,Mississippi Half-Step Uptown Toodeloo,1,3132,Set 2,1,1,long
+2021-10-15,DeadAndCompany,327,Cynthia Woods Mitchell Pavilion,The Woodlands,TX,Set 2,,U.S. Blues,1,3142,Encore 1,1,1,short
+2021-10-15,DeadAndCompany,327,Cynthia Woods Mitchell Pavilion,The Woodlands,TX,Encore 1,,Black Muddy River,1,3143,,1,1,long
+2021-10-19,DeadAndCompany,328,Red Rocks Amphitheatre,Morrison,CO,Set 1,,Don't Ease Me In,1,3151,Set 2,1,1,long
+2021-10-19,DeadAndCompany,328,Red Rocks Amphitheatre,Morrison,CO,Set 2,,Casey Jones,1,3160,Encore 1,1,1,short
+2021-10-19,DeadAndCompany,328,Red Rocks Amphitheatre,Morrison,CO,Encore 1,,Althea,1,3161,,1,1,long
+2021-10-20,DeadAndCompany,329,Red Rocks Amphitheatre,Morrison,CO,Set 1,,Bird Song,1,3168,Set 2,1,1,long
+2021-10-20,DeadAndCompany,329,Red Rocks Amphitheatre,Morrison,CO,Set 2,,Not Fade Away,1,3177,Encore 1,1,1,short
+2021-10-20,DeadAndCompany,329,Red Rocks Amphitheatre,Morrison,CO,Encore 1,,Ripple,1,3178,,1,1,long
+2021-10-22,DeadAndCompany,330,Fiddler's Green Amphitheatre,Greenwood Village,CO,Set 1,,Deal,1,3186,Set 2,1,1,long
+2021-10-22,DeadAndCompany,330,Fiddler's Green Amphitheatre,Greenwood Village,CO,Set 2,,Sugar Magnolia,1,3195,Encore 1,1,1,short
+2021-10-22,DeadAndCompany,330,Fiddler's Green Amphitheatre,Greenwood Village,CO,Encore 1,,The Weight,1,3196,,1,1,long
+2021-10-23,DeadAndCompany,331,Fiddler's Green Amphitheatre,Greenwood Village,CO,Set 1,,Going Down the Road Feelin' Bad,1,3203,Set 2,1,1,long
+2021-10-23,DeadAndCompany,331,Fiddler's Green Amphitheatre,Greenwood Village,CO,Set 2,,One More Saturday Night,1,3213,Encore 1,1,1,short
+2021-10-23,DeadAndCompany,331,Fiddler's Green Amphitheatre,Greenwood Village,CO,Encore 1,,Brokedown Palace,1,3214,,1,1,long
+2021-10-25,DeadAndCompany,332,Ak-Chin Pavilion,Phoenix,AZ,Set 1,,Let It Grow,1,3222,Set 2,1,1,long
+2021-10-25,DeadAndCompany,332,Ak-Chin Pavilion,Phoenix,AZ,Set 2,,U.S. Blues,1,3232,Encore 1,1,1,short
+2021-10-25,DeadAndCompany,332,Ak-Chin Pavilion,Phoenix,AZ,Encore 1,,Knockin' on Heaven's Door,1,3233,,1,1,long
+2021-10-27,DeadAndCompany,333,North Island Credit Union Amphitheatre,Chula Vista,CA,Set 1,,Mississippi Half-Step Uptown Toodeloo,1,3240,Set 2,1,1,long
+2021-10-27,DeadAndCompany,333,North Island Credit Union Amphitheatre,Chula Vista,CA,Set 2,,Good Lovin',1,3250,Encore 1,1,1,short
+2021-10-27,DeadAndCompany,333,North Island Credit Union Amphitheatre,Chula Vista,CA,Encore 1,,Black Muddy River,1,3251,,1,1,long
+2021-10-29,DeadAndCompany,334,Hollywood Bowl,Los Angeles,CA,Set 1,,High Time,1,3258,Set 2,1,1,long
+2021-10-29,DeadAndCompany,334,Hollywood Bowl,Los Angeles,CA,Set 2,,Sunshine Daydream,1,3268,Encore 1,1,1,short
+2021-10-29,DeadAndCompany,334,Hollywood Bowl,Los Angeles,CA,Encore 1,,Ripple,1,3269,,1,1,long
+2021-10-30,DeadAndCompany,335,Hollywood Bowl,Los Angeles,CA,Set 1,,Bird Song,1,3276,Set 2,1,1,long
+2021-10-30,DeadAndCompany,335,Hollywood Bowl,Los Angeles,CA,Set 2,,Not Fade Away,1,3286,Encore 1,1,1,short
+2021-10-30,DeadAndCompany,335,Hollywood Bowl,Los Angeles,CA,Encore 1,,U.S. Blues,1,3287,,1,1,long
+2021-10-31,DeadAndCompany,336,Hollywood Bowl,Los Angeles,CA,Set 1,,Terrapin Station,1,3294,Set 2,1,1,long
+2021-10-31,DeadAndCompany,336,Hollywood Bowl,Los Angeles,CA,Set 2,,Not Fade Away,1,3304,Encore 1,1,1,short
+2021-10-31,DeadAndCompany,336,Hollywood Bowl,Los Angeles,CA,Encore 1,,Brokedown Palace,1,3305,,1,1,long
+2022-06-11,DeadAndCompany,337,Dodger Stadium,Los Angeles,CA,Set 1,,Casey Jones,1,3312,Set 2,1,1,long
+2022-06-11,DeadAndCompany,337,Dodger Stadium,Los Angeles,CA,Set 2,,One More Saturday Night,1,3323,Encore 1,1,1,short
+2022-06-11,DeadAndCompany,337,Dodger Stadium,Los Angeles,CA,Encore 1,,Werewolves of London,1,3324,,1,1,long
+2022-06-13,DeadAndCompany,338,Shoreline Amphitheatre,Mountain View,CA,Set 1,,Don't Ease Me In,1,3332,Set 2,1,1,long
+2022-06-13,DeadAndCompany,338,Shoreline Amphitheatre,Mountain View,CA,Set 2,,Sugar Magnolia,1,3342,Encore 1,1,1,short
+2022-06-13,DeadAndCompany,338,Shoreline Amphitheatre,Mountain View,CA,Encore 1,,Ripple,1,3343,,1,1,long
+2022-06-14,DeadAndCompany,339,Shoreline Amphitheatre,Mountain View,CA,Set 1,,U.S. Blues,1,3350,Set 2,1,1,long
+2022-06-14,DeadAndCompany,339,Shoreline Amphitheatre,Mountain View,CA,Set 2,,Not Fade Away,1,3359,Encore 1,1,1,short
+2022-06-14,DeadAndCompany,339,Shoreline Amphitheatre,Mountain View,CA,Encore 1,,Brokedown Palace,1,3360,,1,1,long
+2022-06-17,DeadAndCompany,340,Folsom Field,Boulder,CO,Set 1,,Let It Grow,1,3369,Set 2,1,1,long
+2022-06-17,DeadAndCompany,340,Folsom Field,Boulder,CO,Set 2,,Turn On Your Love Light,1,3379,Encore 1,1,1,short
+2022-06-17,DeadAndCompany,340,Folsom Field,Boulder,CO,Encore 1,,Casey Jones,1,3380,,1,1,long
+2022-06-18,DeadAndCompany,341,Folsom Field,Boulder,CO,Set 1,,Saint of Circumstance,1,3388,Set 2,1,1,long
+2022-06-18,DeadAndCompany,341,Folsom Field,Boulder,CO,Set 2,,Morning Dew,1,3399,Encore 1,1,1,short
+2022-06-18,DeadAndCompany,341,Folsom Field,Boulder,CO,Encore 1,,One More Saturday Night,1,3401,,1,1,long
+2022-06-21,DeadAndCompany,342,Hollywood Casino Amphitheatre,Maryland Heights,MO,Set 1,,Bird Song,1,3408,Set 2,1,1,long
+2022-06-21,DeadAndCompany,342,Hollywood Casino Amphitheatre,Maryland Heights,MO,Set 2,,U.S. Blues,1,3419,Encore 1,1,1,short
+2022-06-21,DeadAndCompany,342,Hollywood Casino Amphitheatre,Maryland Heights,MO,Encore 1,,Ripple,1,3420,,1,1,long
+2022-06-22,DeadAndCompany,343,Riverbend Music Center,Cincinnati,OH,Set 1,,Cassidy,1,3427,Set 2,1,1,long
+2022-06-22,DeadAndCompany,343,Riverbend Music Center,Cincinnati,OH,Set 2,,Black Muddy River,1,3439,,1,1,long
+2022-06-24,DeadAndCompany,344,Wrigley Field,Chicago,IL,Set 1,,Althea,1,3447,Set 2,1,1,long
+2022-06-24,DeadAndCompany,344,Wrigley Field,Chicago,IL,Set 2,,Not Fade Away,1,3458,,1,1,long
+2022-06-25,DeadAndCompany,345,Wrigley Field,Chicago,IL,Set 1,,Sugaree,1,3465,Set 2,1,1,long
+2022-06-25,DeadAndCompany,345,Wrigley Field,Chicago,IL,Set 2,,One More Saturday Night,1,3475,Encore 1,1,1,short
+2022-06-25,DeadAndCompany,345,Wrigley Field,Chicago,IL,Encore 1,,Touch of Grey,1,3477,,1,1,long
+2022-06-28,DeadAndCompany,346,Ruoff Home Mortgage Music Center,Noblesville,IN,Set 1,,Don't Ease Me In,1,3485,Set 2,1,1,long
+2022-06-28,DeadAndCompany,346,Ruoff Home Mortgage Music Center,Noblesville,IN,Set 2,,The Weight,1,3495,,1,1,long
+2022-06-29,DeadAndCompany,347,Pine Knob Music Theatre,Clarkston,MI,Set 1,,Bird Song,1,3503,Set 2,1,1,long
+2022-06-29,DeadAndCompany,347,Pine Knob Music Theatre,Clarkston,MI,Set 2,,U.S. Blues,1,3514,Encore 1,1,1,short
+2022-06-29,DeadAndCompany,347,Pine Knob Music Theatre,Clarkston,MI,Encore 1,,Ripple,1,3515,,1,1,long
+2022-07-01,DeadAndCompany,348,Bethel Woods Center for the Arts,Bethel,NY,Set 1,,Let It Grow,1,3523,Set 2,1,1,long
+2022-07-01,DeadAndCompany,348,Bethel Woods Center for the Arts,Bethel,NY,Set 2,,Not Fade Away,1,3533,Encore 1,1,1,short
+2022-07-01,DeadAndCompany,348,Bethel Woods Center for the Arts,Bethel,NY,Encore 1,,Sing Me Back Home,1,3534,,1,1,long
+2022-07-02,DeadAndCompany,349,Gillette Stadium,Foxborough,MA,Set 1,,Bertha,1,3536,Set 2,1,1,long
+2022-07-02,DeadAndCompany,349,Gillette Stadium,Foxborough,MA,Set 2,,Morning Dew,1,3550,Encore 1,1,1,short
+2022-07-02,DeadAndCompany,349,Gillette Stadium,Foxborough,MA,Encore 1,,One More Saturday Night,1,3552,,1,1,long
+2022-07-05,DeadAndCompany,350,XFINITY Theatre,Hartford,CT,Set 1,,Cassidy,1,3560,Set 2,1,1,long
+2022-07-05,DeadAndCompany,350,XFINITY Theatre,Hartford,CT,Set 2,,Sugar Magnolia,1,3570,,1,1,long
+2022-07-08,DeadAndCompany,351,Jiffy Lube Live,Bristow,VA,Set 1,,Don't Ease Me In,1,3578,Set 2,1,1,long
+2022-07-08,DeadAndCompany,351,Jiffy Lube Live,Bristow,VA,Set 2,,Turn On Your Love Light,1,3587,Encore 1,1,1,short
+2022-07-08,DeadAndCompany,351,Jiffy Lube Live,Bristow,VA,Encore 1,,Black Muddy River,1,3588,,1,1,long
+2022-07-10,DeadAndCompany,352,Citizens Bank Park,Philadelphia,PA,Set 1,,Deal,1,3595,Set 2,1,1,long
+2022-07-10,DeadAndCompany,352,Citizens Bank Park,Philadelphia,PA,Set 2,,Franklin's Tower,1,3605,Encore 1,1,1,short
+2022-07-10,DeadAndCompany,352,Citizens Bank Park,Philadelphia,PA,Encore 1,,Casey Jones,1,3607,,1,1,long
+2022-07-12,DeadAndCompany,353,The Pavilion at Star Lake,Burgettstown,PA,Set 1,,Saint of Circumstance,1,3615,Set 2,1,1,long
+2022-07-12,DeadAndCompany,353,The Pavilion at Star Lake,Burgettstown,PA,Set 2,,U.S. Blues,1,3625,Encore 1,1,1,short
+2022-07-12,DeadAndCompany,353,The Pavilion at Star Lake,Burgettstown,PA,Encore 1,,Ripple,1,3626,,1,1,long
+2022-07-15,DeadAndCompany,354,Citi Field,New York,NY,Set 1,,Don't Ease Me In,1,3633,Set 2,1,1,long
+2022-07-15,DeadAndCompany,354,Citi Field,New York,NY,Set 2,,Not Fade Away,1,3643,Encore 1,1,1,short
+2022-07-15,DeadAndCompany,354,Citi Field,New York,NY,Encore 1,,Sugar Magnolia,1,3644,,1,1,long
+2022-07-16,DeadAndCompany,355,Citi Field,New York,NY,Set 1,,Jack Straw,1,3651,Set 2,1,1,long
+2022-07-16,DeadAndCompany,355,Citi Field,New York,NY,Set 2,,Deal,1,3663,,1,1,long
+2022-11-17,BobWeir,356,Sweetwater Music Hall,Mill Valley,CA,Set 1,,What's Going On,1,2007,Set 2,1,1,long
+2022-11-17,BobWeir,356,Sweetwater Music Hall,Mill Valley,CA,Set 2,,Not Fade Away,1,2014,Encore 1,1,1,short
+2022-11-17,BobWeir,356,Sweetwater Music Hall,Mill Valley,CA,Encore 1,,Ripple,1,2015,,1,1,long

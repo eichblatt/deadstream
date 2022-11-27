@@ -1,7 +1,7 @@
 
 c:.opts.addopt[`;`debug;1b;"debug"];
 c:.opts.addopt[c;`csvpath;`:/home/steve/projects/jerrybase/data/songlist.csv;"file path"];
-c:.opts.addopt[c;`csvpath_dc;`:/home/steve/projects/deadstream/dead_and_co_setlists/test.csv;"file path"];
+c:.opts.addopt[c;`csvpath_dc;`:/home/steve/projects/deadstream/other_setlists/setlists.csv;"file path"];
 c:.opts.addopt[c;`outpath;`:/home/steve/projects/deadstream/metadata/set_breaks.csv;"output file path"];
 parms:.opts.get_opts c;
 
@@ -10,7 +10,7 @@ system["c 40 400"]
 main:{[parms]
   dc:`date xasc ("DSSSSSS";1#csv) 0:parms`csvpath_dc;            // read the csv file
   dc:`date`event_id xcols dc lj select last event_id by date,act,venue from update event_id:`int$i from select by date,act,venue from dc;
-  dc:update artist:`$"DeadAndCompany",time:0Nt from dc where act=`$"Dead & Company";
+  dc:update artist:act,time:0Nt from dc;
   dc:`date`event_id`artist`time xcols delete isong,act from dc;
 
   jb:("DTISSSSSS";1#csv) 0:parms`csvpath;            // read the csv file
