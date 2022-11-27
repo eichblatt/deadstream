@@ -599,10 +599,12 @@ def refresh_venue(state):
     stream_only = False
     tape_color = (0, 255, 255)
     tape = state.player.tape
+    artist = ''
     if tape is not None:
         tape_id = tape.identifier
         stream_only = tape.stream_only()
         tape_color = (255, 255, 255) if stream_only else (0, 0, 255)
+        artist = tape.artist
     else:
         tape_id = None
 
@@ -611,7 +613,7 @@ def refresh_venue(state):
     except Exception:
         vcs = [tape_id] if tape_id is not None else ''
 
-    artist = config.ARTIST if config.ARTIST is not None else ''
+    artist = config.ARTIST if config.ARTIST is not None else artist
     venue = ''
     city_state = ''
     display_string = ''
@@ -865,6 +867,13 @@ def event_loop(state, lock):
                 if idle_seconds > QUIESCENT_TIME:
                     if config.DATE:
                         TMB.scr.show_staged_date(config.DATE)
+                    else:
+                        try:
+                            current['DATE'] = to_date(state.player.tape.date)
+                            state.set(current)
+                            TMB.scr.show_selected_date(current['DATE'])
+                        except:
+                            pass
                     try:
                         if current['PLAY_STATE'] > config.INIT:
                             refresh_venue(state)
