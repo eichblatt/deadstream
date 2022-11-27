@@ -8,8 +8,9 @@ from timemachine import GD
 
 track_event = Event()
 
-config.optd = {'COLLECTIONS': ['GratefulDead', 'Phish', 'PhilLeshandFriends', 'TedeschiTrucksBand'], 'FAVORED_TAPER': 'miller', 'PLAY_LOSSLESS': 'false'}
+config.optd = {'COLLECTIONS': ['GratefulDead', 'Phish', 'PhilLeshandFriends', 'TedeschiTrucksBand', 'DeadAndCompany'], 'FAVORED_TAPER': 'miller', 'PLAY_LOSSLESS': 'false'}
 aa = Archivary.Archivary(collection_list=config.optd['COLLECTIONS'])
+
 
 config.optd = {'COLLECTIONS': ['georgeblood'], 'FAVORED_TAPER': 'miller', 'PLAY_LOSSLESS': 'false'}
 aa = Archivary.Archivary(collection_list=config.optd['COLLECTIONS'], date_range=[1930, 1935])

@@ -933,7 +933,7 @@ class GDArchive(BaseArchive):
         """
         super().__init__(url, dbpath, reload_ids, with_latest, collection_list, date_range)
         self.archive_type = 'Internet Archive'
-        self.set_data = GDSet(self.collection_list)
+        self.set_data = GDSetBreaks(self.collection_list)
         self.date_range = date_range
         self.load_archive(reload_ids, with_latest)
 
@@ -1094,9 +1094,9 @@ class GDTape(BaseTape):
         if isinstance(self.date, list):
             self.date = self.date[0]
         self.date = self.date[:10]
-        self.set_data = set_data.get(self.date)
         colls = config.optd['COLLECTIONS']
         self.artist = colls[min([colls.index(c) if c in colls else 100 for c in self.collection])] if len(colls) > 1 else colls[0]
+        self.set_data = set_data.get_date(self.artist,self.date)
         date = to_date(self.date).date()
         self.meta_path = os.path.join(self.dbpath, str(date.year), str(date.month), self.identifier + '.json')
 
@@ -1261,12 +1261,12 @@ class GDTape(BaseTape):
         if sd is None:
             return self.identifier
         venue_string = ""
-        loc = sd['location']
+        loc = sd.location
         if tracknum > 0:    # only pull the metadata if the query is about a late track.
             self.get_metadata()
             breaks = self._compute_breaks()
             if (len(breaks['location']) > 0) and (tracknum > breaks['location'][0]):
-                loc = sd['location2']
+                loc = sd.location2
         venue_string = F"{loc[0]}, {loc[1]}, {loc[2]}"
         return venue_string
 
@@ -1279,10 +1279,10 @@ class GDTape(BaseTape):
         tlist = [replacer(n, n) for n in tlist]
         sd = self.set_data
         if sd is None:
-            sd = {}
-        lb = sd['longbreaks'] if 'longbreaks' in sd.keys() else []
-        sb = sd['shortbreaks'] if 'shortbreaks' in sd.keys() else []
-        locb = sd['locationbreak'] if 'locationbreak' in sd.keys() else []
+            sd = GDDate_info([])
+        lb = sd.longbreaks 
+        sb = sd.shortbreaks
+        locb = sd.locationbreak
         long_breaks = []
         short_breaks = []
         location_breaks = []
@@ -1392,81 +1392,113 @@ class GDTrack(BaseTrack):
         self.files = sorted(self.files, key=lambda x: self._playable_formats.index(x['format']))
 
 
-class GDSet:
+class GDSet_row:
+    """ Set Information from a Grateful Dead or (other collection) date """
+    def __init__(self,data_row):
+        for elem in ['date','artist','time','song','venue','city','state','break_length','show_set',
+                'time','song_n','isong','next_set','Nevents','ievent']:
+            setattr(self,elem,data_row.get(elem,''))
+        self.start_time = datetime.time.fromisoformat(self.time) if len(self.time) > 0 else None
+
+    def __repr__(self):
+        retstr = f'{self.artist} {self.date}: {self.venue} {self.city}, {self.state}. {self.show_set} {self.song} '
+        return retstr
+
+class GDDate_info:
+    """ Date Information from a Grateful Dead or (other collection) date """
+    def __init__(self,set_rows):
+        self.n_sets = len(set_rows)
+        self.date = set_rows[0].date if self.n_sets > 0 else ''
+        self.locationbreak = []
+        self.longbreaks = []
+        self.shortbreaks = []
+        self.location = ()
+        self.n_locations = 0
+        for row in set_rows:
+            if int(row.ievent) == 1:
+                self.location = (row.venue, row.city, row.state)
+                self.n_locations = 1
+                prevsong = row.song
+            if int(row.ievent) == 2:
+                self.n_locations = 2
+                self.location2 = (row.venue, row.city, row.state)
+                self.locationbreak = [prevsong]
+            if row.break_length == 'long':
+                self.longbreaks.append(row.song)
+            if row.break_length == 'short':
+                self.shortbreaks.append(row.song)
+
+    def __repr__(self):
+        retstr = f'{self.date} {self.location} -- {self.n_sets} Rows. Long breaks:{self.longbreaks}. Short breaks {self.shortbreaks}'
+        return retstr
+
+
+class GDSetBreaks:
     """ Set Information from a Grateful Dead date """
 
     def __init__(self, collection_list):
         self.collection_list = collection_list
-        set_data = {}
-        if 'GratefulDead' not in self.collection_list:
-            self.set_data = set_data
-            return
-        prevsong = None
+        self.asd = {}
+        self.set_rows = []
+        # if 'GratefulDead' not in self.collection_list:
+        #    self.set_data = set_data
+        #    return
         set_breaks = pkg_resources.resource_stream('timemachine.metadata', 'set_breaks.csv')
         utf8_reader = codecs.getreader("utf-8")
         r = [r for r in csv.reader(utf8_reader(set_breaks))]
         headers = r[0]
         for row in r[1:]:
             d = dict(zip(headers, row))
-            date = d['date']
-            time = d['time']
-            song = d['song']
-            if date not in set_data.keys():
-                set_data[date] = {}
-            set_data[date]['start_time'] = datetime.time.fromisoformat(time) if len(time) > 0 else None
-            if int(d['ievent']) == 1:
-                set_data[date]['location'] = (d['venue'], d['city'], d['state'])
-                prevsong = song
-            if int(d['ievent']) == 2:
-                set_data[date]['location2'] = (d['venue'], d['city'], d['state'])
-                set_data[date]['locationbreak'] = [prevsong]
-            if d['break_length'] == 'long':
-                try:
-                    set_data[date]['longbreaks'].append(song)
-                except KeyError:
-                    set_data[date]['longbreaks'] = [song]
-            if d['break_length'] == 'short':
-                try:
-                    set_data[date]['shortbreaks'].append(song)
-                except KeyError:
-                    set_data[date]['shortbreaks'] = [song]
+            current_row = GDSet_row(d)
+            self.set_rows.append(current_row)
 
-        self.set_data = set_data
-        """
-    for k,v in set_data.items():
-       setattr(self,k,v)
-    """
+        # self.set_data = set_data
 
-    def get(self, date):
-        return self.set_data[date] if date in self.set_data.keys() else None
+    def get_artist_set_dict(self,artist):
+        if artist in self.asd.keys():
+            return self.asd[artist]
 
-    def multi_location(self, date):
-        d = self.get(date)
-        return 'location2' in d.keys()
+        self.asd[artist] = {}
+        artist_rows = [sd for sd in self.set_rows if sd.artist==artist]
+        for s in artist_rows:
+            if not s.date in self.asd[artist].keys():
+                self.asd[artist][s.date] = [s]
+            else:
+                self.asd[artist][s.date].append(s)
 
-    def location(self, date):
-        d = self.get(date)
-        return d['location']
+        return self.asd[artist]
 
-    def shortbreaks(self, date):
-        d = self.get(date)
-        return d['shortbreaks']
 
-    def longbreaks(self, date):
-        d = self.get(date)
-        return d['longbreaks']
+    def get_date(self, artist, date):
+        return GDDate_info(self.get_artist_set_dict(artist).get(date,[]))
 
-    def location2(self, date):
-        d = self.get(date)
-        if self.multi_location(date):
-            return d['location2']
+    def multi_location(self, artist, date):
+        d = self.get_date(artist, date)
+        return d.n_locations > 1
+
+    def location(self, artist, date):
+        d = self.get_date(artist, date)
+        return d.location
+
+    def shortbreaks(self, artist, date):
+        d = self.get_date(artist, date)
+        return d.shortbreaks
+
+    def longbreaks(self, artist, date):
+        d = self.get_date(artist, date)
+        return d.longbreaks
+
+    def location2(self, artist, date):
+        d = self.get_date(artist, date)
+        if self.multi_location(artist, date):
+            return d.location2
         else:
             return None
 
-    def locationbreaks(self, date):
-        d = self.get(date)
-        if self.multi_location(date):
-            return d['locationbreak']
+    def locationbreaks(self, artist, date):
+        d = self.get_date(artist, date)
+        if self.multi_location(artist, date):
+            return d.locationbreak
         else:
             return None
 
