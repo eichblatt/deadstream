@@ -373,7 +373,7 @@ class BaseTape(abc.ABC):
 
     def __repr__(self):
         tag = "SBD" if self.stream_only() else "aud"
-        retstr = '{} - {} - {:5.2f} - {}\n'.format(self.date, tag, self.compute_score(), self.identifier)
+        retstr = '{} {} - {} - {:5.2f} - {} Loaded:{}\n'.format(self.artist, self.date, tag, self.compute_score(), self.identifier, self.meta_loaded)
         return retstr
 
     def contains_sound(self):
@@ -1096,7 +1096,7 @@ class GDTape(BaseTape):
         self.date = self.date[:10]
         colls = config.optd['COLLECTIONS']
         self.artist = colls[min([colls.index(c) if c in colls else 100 for c in self.collection])] if len(colls) > 1 else colls[0]
-        self.set_data = set_data.get_date(self.artist,self.date)
+        self.set_data = set_data.get_date(self.artist, self.date)
         date = to_date(self.date).date()
         self.meta_path = os.path.join(self.dbpath, str(date.year), str(date.month), self.identifier + '.json')
 
@@ -1196,7 +1196,7 @@ class GDTape(BaseTape):
                     self.append_track(ifile, orig_titles, orig_tracknums)
             except KeyError as e:
                 logger.warning("Error in parsing metadata")
-                raise(e)
+                raise (e)
                 pass
             except Exception as e:   # TODO handle this!!!
                 raise (e)
@@ -1258,8 +1258,9 @@ class GDTape(BaseTape):
                 venue_string = f'{venue_name}, {city_state}'
                 return venue_string
         sd = self.set_data
-        if sd is None:
+        if sd.n_sets == 0:
             return self.identifier
+        # logger.warning(f'sd is {sd}. Tape is {self}')
         venue_string = ""
         loc = sd.location
         if tracknum > 0:    # only pull the metadata if the query is about a late track.
@@ -1280,7 +1281,7 @@ class GDTape(BaseTape):
         sd = self.set_data
         if sd is None:
             sd = GDDate_info([])
-        lb = sd.longbreaks 
+        lb = sd.longbreaks
         sb = sd.shortbreaks
         locb = sd.locationbreak
         long_breaks = []
@@ -1394,19 +1395,22 @@ class GDTrack(BaseTrack):
 
 class GDSet_row:
     """ Set Information from a Grateful Dead or (other collection) date """
-    def __init__(self,data_row):
-        for elem in ['date','artist','time','song','venue','city','state','break_length','show_set',
-                'time','song_n','isong','next_set','Nevents','ievent']:
-            setattr(self,elem,data_row.get(elem,''))
+
+    def __init__(self, data_row):
+        for elem in ['date', 'artist', 'time', 'song', 'venue', 'city', 'state', 'break_length', 'show_set',
+                'time', 'song_n', 'isong', 'next_set', 'Nevents', 'ievent']:
+            setattr(self, elem, data_row.get(elem, ''))
         self.start_time = datetime.time.fromisoformat(self.time) if len(self.time) > 0 else None
 
     def __repr__(self):
         retstr = f'{self.artist} {self.date}: {self.venue} {self.city}, {self.state}. {self.show_set} {self.song} '
         return retstr
 
+
 class GDDate_info:
     """ Date Information from a Grateful Dead or (other collection) date """
-    def __init__(self,set_rows):
+
+    def __init__(self, set_rows):
         self.n_sets = len(set_rows)
         self.date = set_rows[0].date if self.n_sets > 0 else ''
         self.locationbreak = []
@@ -1454,12 +1458,19 @@ class GDSetBreaks:
 
         # self.set_data = set_data
 
-    def get_artist_set_dict(self,artist):
+    def __str__(self):
+        return self.__repr__()
+
+    def __repr__(self):
+        retstr = "Grateful Dead set data"
+        return retstr
+
+    def get_artist_set_dict(self, artist):
         if artist in self.asd.keys():
             return self.asd[artist]
 
         self.asd[artist] = {}
-        artist_rows = [sd for sd in self.set_rows if sd.artist==artist]
+        artist_rows = [sd for sd in self.set_rows if sd.artist == artist]
         for s in artist_rows:
             if not s.date in self.asd[artist].keys():
                 self.asd[artist][s.date] = [s]
@@ -1468,9 +1479,8 @@ class GDSetBreaks:
 
         return self.asd[artist]
 
-
     def get_date(self, artist, date):
-        return GDDate_info(self.get_artist_set_dict(artist).get(date,[]))
+        return GDDate_info(self.get_artist_set_dict(artist).get(date, []))
 
     def multi_location(self, artist, date):
         d = self.get_date(artist, date)
@@ -1501,13 +1511,6 @@ class GDSetBreaks:
             return d.locationbreak
         else:
             return None
-
-    def __str__(self):
-        return self.__repr__()
-
-    def __repr__(self):
-        retstr = "Grateful Dead set data"
-        return retstr
 
 
 class Archivary_Updater(Thread):

@@ -945,19 +945,28 @@ class state:
         try:
             self.dict['VOLUME'] = self.player.get_prop('volume')
             self.dict['TRACK_NUM'] = self.player._get_property('playlist-pos')
-            self.dict['TAPE_ID'] = self.player.tape.identifier
-            self.dict['TRACK_TITLE'] = self.player.tape.tracks()[self.dict['TRACK_NUM']].title
-            if (self.dict['TRACK_NUM'] + 1) < len(self.player.playlist):
-                next_track = self.dict['TRACK_NUM'] + 1
-                self.dict['NEXT_TRACK_TITLE'] = self.player.tape.tracks()[next_track].title
+            if not isinstance(self.player.tape, type(None)):
+                self.dict['TAPE_ID'] = self.player.tape.identifier
+                self.dict['VENUE'] = self.player.tape.venue()
+                self.dict['TRACK_TITLE'] = self.player.tape.tracks()[self.dict['TRACK_NUM']].title
+                if (self.dict['TRACK_NUM'] + 1) < len(self.player.playlist):
+                    next_track = self.dict['TRACK_NUM'] + 1
+                    self.dict['NEXT_TRACK_TITLE'] = self.player.tape.tracks()[next_track].title
+                else:
+                    self.dict['NEXT_TRACK_TITLE'] = ''
             else:
+                self.dict['TRACK_NUM'] = -1
+                self.dict['TAPE_ID'] = ''
+                self.dict['TRACK_TITLE'] = ''
                 self.dict['NEXT_TRACK_TITLE'] = ''
+                self.dict['VENUE'] = ''
         except Exception:
             self.dict['TRACK_NUM'] = -1
             self.dict['TAPE_ID'] = ''
             self.dict['TRACK_TITLE'] = ''
             self.dict['NEXT_TRACK_TITLE'] = ''
-            # logger.debug('Exception getting current state. Using some defaults')
+            self.dict['VENUE'] = ''
+            logger.warning('Exception getting current state. Using some defaults')
         self.dict['TRACK_ID'] = self.dict['TAPE_ID'] + "_track_" + str(self.dict['TRACK_NUM'])
         return self.dict
 

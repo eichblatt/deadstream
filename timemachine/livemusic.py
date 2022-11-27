@@ -138,7 +138,7 @@ def load_saved_state(state):
 
 @sequential
 def save_state(state):
-    state_path = os.path.join(parms.dbpath, 'etree_state.json')
+    state_path = os.path.join(getattr(parms, dbpath, '/home/deadhead/deadstream/timemachine/metadata'), 'etree_state.json')
     # logger.debug (F"Saving state to {state_path}")
     current = state.get_current()
     with open(state_path, 'w') as statefile:
@@ -609,7 +609,7 @@ def refresh_venue(state):
     try:
         vcs = [x.strip() for x in config.VENUE.split(',')]
     except Exception:
-        vcs = tape_id if tape_id is not None else ''
+        vcs = [tape_id] if tape_id is not None else ''
 
     artist = config.ARTIST if config.ARTIST is not None else ''
     venue = ''
