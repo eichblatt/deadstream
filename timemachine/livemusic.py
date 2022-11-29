@@ -89,7 +89,7 @@ def load_saved_state(state):
     """ This function loads a subset of the fields from the state, which was saved with json
         Not Yet Working !!!
     """
-    state_path = os.path.join(parms.dbpath, 'etree_state.json')
+    state_path = os.path.join(getattr(parms, dbpath, '/home/deadhead/deadstream/timemachine/metadata'), 'etree_state.json')
     logger.info(F"Loading Saved State from {state_path}")
     state_orig = state
     try:
@@ -761,8 +761,10 @@ def event_loop(state, lock):
     stagedate_event.set()
     TMB.scr.clear()
 
+    loop_delay = 0.005
+    # loop_delay = 0.5
     try:
-        while not stop_loop_event.wait(timeout=0.001):
+        while not stop_loop_event.wait(timeout=loop_delay):
             if not free_event.wait(timeout=0.01):
                 continue
             lock.acquire()
