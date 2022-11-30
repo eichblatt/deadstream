@@ -34,7 +34,7 @@ from tenacity.stop import stop_after_delay
 from typing import Callable
 
 import pkg_resources
-from timemachine import config
+from timemachine import config, Archivary
 
 
 logging.basicConfig(format='%(asctime)s.%(msecs)03d %(levelname)s: %(name)s %(message)s', level=logging.DEBUG, datefmt='%Y-%m-%d %H:%M:%S')
@@ -942,16 +942,16 @@ class state:
         self.date_reader._update()
         self.dict['DATE_READER'] = self.date_reader.date
         self.dict['VOLUME'] = 100.0
-        self.dict['PLAY_STATE'] = -1
         self.dict['TRACK_NUM'] = -1
         self.dict['TAPE_ID'] = ''
         self.dict['TRACK_TITLE'] = ''
         self.dict['NEXT_TRACK_TITLE'] = ''
-        self.dict['VENUE'] = ''
+        self.dict['PLAY_STATE'] = self.dict.get('PLAY_STATE', -1)
+        self.dict['VENUE'] = self.dict.get('VENUE', '')
         try:
             self.dict['VOLUME'] = self.player.get_prop('volume')
             self.dict['TRACK_NUM'] = self.player._get_property('playlist-pos')
-            if not isinstance(self.player.tape, type(None)):
+            if isinstance(self.player.tape, Archivary.GDTape):  # type(None)):
                 self.dict['TAPE_ID'] = self.player.tape.identifier
                 self.dict['VENUE'] = self.player.tape.venue()
                 self.dict['TRACK_TITLE'] = self.player.tape.tracks()[self.dict['TRACK_NUM']].title
