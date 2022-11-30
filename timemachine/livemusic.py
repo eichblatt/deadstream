@@ -762,7 +762,7 @@ def event_loop(state, lock):
     TMB.scr.clear()
 
     loop_delay = 0.01
-    loop_delay = 0.5
+    # loop_delay = 0.5
     try:
         while not stop_loop_event.wait(timeout=loop_delay):
             if not free_event.wait(timeout=0.01):
