@@ -89,14 +89,21 @@ def load_saved_state(state):
     """ This function loads a subset of the fields from the state, which was saved with json
         Not Yet Working !!!
     """
-    state_path = os.path.join(getattr(parms, dbpath, '/home/deadhead/deadstream/timemachine/metadata'), 'etree_state.json')
+    state_path = os.path.join(parms.dbpath, 'etree_state.json')
     logger.info(F"Loading Saved State from {state_path}")
+    if not os.path.exists(state_path):
+        logger.info(F"Creating state path {state_path}")
+        open(state_path, 'a').close()
+    try:
+        f = open(state_path, 'r')
+        loaded_state = json.loads(f.read())
+    except Exception as e:
+        logger.exception(e)
+        return
+
     state_orig = state
     try:
         current = state.get_current()
-        # if not os.path.exists(state_path):
-        f = open(state_path, 'r')
-        loaded_state = json.loads(f.read())
         fields_to_load = [
             'DATE', 'VENUE', 'STAGED_DATE', 'ON_TOUR', 'TOUR_YEAR', 'TOUR_STATE', 'EXPERIENCE', 'TRACK_NUM', 'TAPE_ID',
             'TRACK_TITLE', 'NEXT_TRACK_TITLE', 'TRACK_ID', 'DATE_READER', 'VOLUME']
@@ -138,9 +145,13 @@ def load_saved_state(state):
 
 @sequential
 def save_state(state):
-    state_path = os.path.join(getattr(parms, dbpath, '/home/deadhead/deadstream/timemachine/metadata'), 'etree_state.json')
-    # logger.debug (F"Saving state to {state_path}")
+    state_path = os.path.join(parms.dbpath, 'etree_state.json')
     current = state.get_current()
+
+    if not os.path.exists(state_path):
+        logger.error(F"STATE PATH DOESN'T EXIST {state_path}")
+        return
+
     with open(state_path, 'w') as statefile:
         json.dump(current, statefile, indent=1, default=str)
 
