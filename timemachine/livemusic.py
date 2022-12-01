@@ -98,7 +98,7 @@ def load_saved_state(state):
         f = open(state_path, 'r')
         loaded_state = json.loads(f.read())
     except Exception as e:
-        logger.exception(e)
+        logger.warning(f"---------- ERROR READING state file {state_path} ------ this is probably ok, as long as it doesn't persist")
         return
 
     state_orig = state
