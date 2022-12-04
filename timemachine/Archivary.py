@@ -1250,14 +1250,15 @@ class GDTape(BaseTape):
         """return the venue, city, state"""
         # Note, if tracknum > 0, this could be a second show...check after running insert_breaks
         # 1970-02-14 is an example with 2 shows.
-        if self.artist not in ['GratefulDead']:
+
+        sd = self.set_data
+        if sd.n_sets == 0:
             self.get_metadata(only_if_cached=True)
             if self.meta_loaded:
                 venue_name = self.venue_name
                 city_state = self.coverage
                 venue_string = f'{venue_name}, {city_state}'
                 return venue_string
-        sd = self.set_data
         if sd.n_sets == 0:
             return self.identifier
         # logger.warning(f'sd is {sd}. Tape is {self}')
