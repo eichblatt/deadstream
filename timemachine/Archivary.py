@@ -1388,14 +1388,14 @@ class GDTape(BaseTape):
         if sd.n_sets == 0:
             return self.identifier
         # logger.warning(f'sd is {sd}. Tape is {self}')
-        venue_string = ""
-        loc = sd.location
-        if tracknum > 0:  # only pull the metadata if the query is about a late track.
-            self.get_metadata()
-            breaks = self._compute_breaks()
-            if (len(breaks["location"]) > 0) and (tracknum > breaks["location"][0]):
-                loc = sd.location2
         try:
+            venue_string = ""
+            loc = sd.location
+            if tracknum > 0:  # only pull the metadata if the query is about a late track.
+                self.get_metadata()
+                breaks = self._compute_breaks()
+                if (len(breaks["location"]) > 0) and (tracknum > breaks["location"][0]):
+                    loc = sd.location2
             venue_string = f"{loc[0]}, {loc[1]}, {loc[2]}"
         except:
             return self.identifier
