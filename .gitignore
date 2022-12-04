@@ -24,3 +24,11 @@ __pycache__/
 .pytest_cache/
 # pytest profiler output
 /prof/
+other_setlists/*
+timemachine/metadata_orig/*
+docs/*
+download_urls.py
+input_selector.py
+poti.py
+timemachine/testradio.py
+timemachine/testvinyl.py
