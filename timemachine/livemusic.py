@@ -33,7 +33,7 @@ from tenacity import retry
 from tenacity.stop import stop_after_delay
 from typing import Callable
 
-from timemachine import Archivary, config, controls, GD, options
+from timemachine import Archivary, config, controls, GD
 
 knob_sense_path = os.path.join(os.getenv("HOME"), ".knob_sense")
 
