@@ -25,9 +25,6 @@ parser.add_option(
     "--box", dest="box", type="string", default="v1", help="v0 box has screen at 270. [default %default]"
 )
 parser.add_option(
-    "--dbpath", default=os.path.join(GD.ROOT_DIR, "metadata"), help="path to database [default %default]"
-)
-parser.add_option(
     "--test_update",
     action="store_true",
     default=False,
@@ -90,7 +87,7 @@ def main_test_update():
 
 
 def main():
-    # archive = Archivary.Archivary(parms.dbpath, reload_ids=reload_ids, with_latest=False, collection_list=config.optd['COLLECTIONS'])
+    # archive = Archivary.Archivary(config.DB_PATH, reload_ids=reload_ids, with_latest=False, collection_list=config.optd['COLLECTIONS'])
     # player = GD.GDPlayer()
     if config.optd["MODULE"] == "livemusic":
         from timemachine import livemusic as tm

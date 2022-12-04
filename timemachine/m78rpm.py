@@ -96,7 +96,7 @@ def load_saved_state(state):
     """ This function loads a subset of the fields from the state, which was saved with json
         Not Yet Working !!!
     """
-    state_path = os.path.join(parms.dbpath, "georgeblood_state.json")
+    state_path = os.path.join(config.DB_PATH, "georgeblood_state.json")
     logger.info(f"Loading Saved State from {state_path}")
     state_orig = state
     try:
@@ -147,7 +147,7 @@ def load_saved_state(state):
 
 @sequential
 def save_state(state):
-    state_path = os.path.join(parms.dbpath, "georgeblood_state.json")
+    state_path = os.path.join(config.DB_PATH, "georgeblood_state.json")
     # logger.debug (F"Saving state to {state_path}")
     current = state.get_current()
     with open(state_path, "w") as statefile:
@@ -1029,7 +1029,6 @@ TMB.d.steps = 1
 TMB.y.steps = 0
 
 state = controls.state((date_reader, artist_counter), player)
-dbpath = os.path.join(GD.ROOT_DIR, "metadata")
 
 board_callbacks()
 
