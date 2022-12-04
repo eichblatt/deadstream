@@ -1016,7 +1016,7 @@ if config.RELOAD_COLLECTIONS:
     logger.info("Reloading ids")
 logger.info(f"config.optd is now {config.optd}")
 archive = Archivary.Archivary(
-    config.dbpath,
+    config.DB_PATH,
     reload_ids=config.RELOAD_COLLECTIONS,
     with_latest=False,
     collection_list=config.optd["COLLECTIONS"],
