@@ -91,7 +91,7 @@ def load_saved_state(state):
     """ This function loads a subset of the fields from the state, which was saved with json
         Not Yet Working !!!
     """
-    state_path = os.path.join(parms.dbpath, "etree_state.json")
+    state_path = os.path.join(config.DB_PATH, "etree_state.json")
     logger.info(f"Loading Saved State from {state_path}")
     if not os.path.exists(state_path):
         logger.info(f"Creating state path {state_path}")
@@ -164,7 +164,7 @@ def load_saved_state(state):
 
 @sequential
 def save_state(state):
-    state_path = os.path.join(parms.dbpath, "etree_state.json")
+    state_path = os.path.join(config.DB_PATH, "etree_state.json")
     current = state.get_current()
 
     if not os.path.exists(state_path):
@@ -487,7 +487,7 @@ def month_button_longpress(button, state):
     if button.is_held:
         TMB.scr.clear()
         config.optd["MODULE"] = "78rpm"
-        save_options(config.optd)
+        config.save_options(config.optd)
         cmd = "sudo service timemachine restart"
         os.system(cmd)
         TMB.stop_event.set()
@@ -993,8 +993,6 @@ if TMB.rewind.is_pressed:
 if TMB.stop.is_pressed:
     logger.info("Resetting to factory archive -- nyi")
 
-dbpath = os.path.join(GD.ROOT_DIR, "metadata")
-
 
 def set_date_range():
     start_year = 1880
@@ -1018,7 +1016,7 @@ if config.RELOAD_COLLECTIONS:
     logger.info("Reloading ids")
 logger.info(f"config.optd is now {config.optd}")
 archive = Archivary.Archivary(
-    dbpath,
+    config.DB_PATH,
     reload_ids=config.RELOAD_COLLECTIONS,
     with_latest=False,
     collection_list=config.optd["COLLECTIONS"],
@@ -1136,6 +1134,6 @@ def main(parms_arg):
 def main_test_update(parms_arg):
     global parms
     parms = parms_arg
-    config.optd = default_options()  # no weirdness during update testing
+    config.optd = config.default_options()  # no weirdness during update testing
     load_saved_state(state)
     test_update(state)
