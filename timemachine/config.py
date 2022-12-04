@@ -5,7 +5,7 @@ import logging
 import subprocess
 import time
 
-from timemachine import GD
+from timemachine.GD import ROOT_DIR
 
 logger = logging.getLogger(__name__)
 try:
@@ -14,7 +14,7 @@ except NotImplementedError:
     logger.warning(f"Failied to import controls")
 
 OPTIONS_PATH = os.path.join(os.getenv("HOME"), ".timemachine_options.txt")
-DB_PATH = os.path.join(GD.ROOT_DIR, "metadata")
+DB_PATH = os.path.join(ROOT_DIR, "metadata")
 
 optd = {}
 
@@ -39,7 +39,7 @@ STOPPED = 3
 PLAYING = 4
 ENDED = 5
 PLAY_STATE = INIT
-# PLAY_STATES = ['Init','Ready','Paused','Stopped','Playing']
+# PLAY_STATES = ['Not Ready', 'Init','Ready','Paused','Stopped','Playing', 'Ended']
 SELECT_STAGED_DATE = False
 DATE = None
 VENUE = None
