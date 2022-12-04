@@ -13,7 +13,7 @@ except NotImplementedError:
 
 OPTIONS_PATH = (os.path.join(os.getenv("HOME"), ".timemachine_options.txt"),)
 
-OPTD = {}
+optd = {}
 
 
 def get_board_version():
@@ -89,28 +89,29 @@ def default_options():
     return d
 
 
-def save_options(optd):
-    logger.debug(f"in save_options. optd {optd}")
+def save_options(optd_to_save):
+    logger.debug(f"in save_options. optd {optd_to_save}")
     options = {}
     f = open(OPTIONS_PATH, "r")
     tmpd = json.loads(f.read())
-    if optd["COLLECTIONS"] == None:
-        optd["COLLECTIONS"] = tmpd["COLLECTIONS"]
-    for arg in optd.keys():
+    if optd_to_save["COLLECTIONS"] == None:
+        optd_to_save["COLLECTIONS"] = tmpd["COLLECTIONS"]
+    for arg in optd_to_save.keys():
         if arg == arg.upper():
             if arg == "DEFAULT_START_TIME":
-                if isinstance(optd[arg], datetime.time):
-                    optd[arg] = datetime.time.strftime(optd[arg], "%H:%M:%S")
-            elif isinstance(optd[arg], (list, tuple)):
-                optd[arg] = ",".join(optd[arg])
-            elif isinstance(optd[arg], (bool)):
-                optd[arg] = str(optd[arg]).lower()
-            options[arg] = optd[arg]
+                if isinstance(optd_to_save[arg], datetime.time):
+                    optd_to_save[arg] = datetime.time.strftime(optd_to_save[arg], "%H:%M:%S")
+            elif isinstance(optd_to_save[arg], (list, tuple)):
+                optd_to_save[arg] = ",".join(optd_to_save[arg])
+            elif isinstance(optd_to_save[arg], (bool)):
+                optd_to_save[arg] = str(optd_to_save[arg]).lower()
+            options[arg] = optd_to_save[arg]
     with open(OPTIONS_PATH, "w") as outfile:
         json.dump(options, outfile, indent=1)
 
 
 def load_options(parms):
+    global optd
     optd = default_options()
     tmpd = {}
     try:

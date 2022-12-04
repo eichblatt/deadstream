@@ -18,7 +18,7 @@ import logging
 import optparse
 import os
 
-from timemachine import config, GD, options
+from timemachine import config, GD
 
 parser = optparse.OptionParser()
 parser.add_option(
@@ -79,7 +79,7 @@ try:
     ) or config.optd["UPDATE_ARCHIVE_ON_STARTUP"]
     config.optd["COLLECTIONS"] = [x for x in config.optd["COLLECTIONS"] if not x.lower() in ["__reload__"]]
     optd = config.optd.copy()
-    options.save_options(optd)
+    config.save_options(optd)
 except Exception:
     logger.warning("Failed in saving options")
 finally:
