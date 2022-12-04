@@ -110,7 +110,7 @@ def save_options(optd_to_save):
         json.dump(options, outfile, indent=1)
 
 
-def load_options(parms):
+def load_options():
     global optd
     optd = default_options()
     tmpd = {}
@@ -142,7 +142,7 @@ def load_options(parms):
             except Exception:
                 logger.warning(f"Failed to set option {k}. Using {optd[k]}")
     except Exception:
-        logger.warning(f"Failed to read options from {parms.options_path}. Using defaults")
+        logger.warning(f"Failed to read options from {OPTIONS_PATH}. Using defaults")
     optd.update(tmpd)  # update defaults with those read from the file.
     logger.info(f"in load_options, optd {optd}")
     os.environ["TZ"] = optd["TIMEZONE"]

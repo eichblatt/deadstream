@@ -28,11 +28,6 @@ parser.add_option(
     "--dbpath", default=os.path.join(GD.ROOT_DIR, "metadata"), help="path to database [default %default]"
 )
 parser.add_option(
-    "--options_path",
-    default=os.path.join(os.getenv("HOME"), ".timemachine_options.txt"),
-    help="path to options file [default %default]",
-)
-parser.add_option(
     "--test_update",
     action="store_true",
     default=False,
@@ -69,7 +64,7 @@ if parms.debug > 0:
 
 
 try:
-    config.load_options(parms)
+    config.load_options()
 except Exception:
     logger.warning("Failed in loading options")
 try:
