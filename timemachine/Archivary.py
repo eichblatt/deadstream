@@ -1398,6 +1398,7 @@ class GDTape(BaseTape):
                     loc = sd.location2
             venue_string = f"{loc[0]}, {loc[1]}, {loc[2]}"
         except:
+            logger.warning(f"failed to get venue for tape id {self.identifier}")
             return self.identifier
         return venue_string
 
