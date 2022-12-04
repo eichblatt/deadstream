@@ -33,7 +33,7 @@ from tenacity import retry
 from tenacity.stop import stop_after_delay
 from typing import Callable
 
-from timemachine import Archivary, config, controls, GD
+from timemachine import Archivary, config, controls, GD, options
 
 knob_sense_path = os.path.join(os.getenv("HOME"), ".knob_sense")
 
@@ -487,7 +487,7 @@ def month_button_longpress(button, state):
     if button.is_held:
         TMB.scr.clear()
         config.optd["MODULE"] = "78rpm"
-        save_options(config.optd)
+        config.save_options(config.optd)
         cmd = "sudo service timemachine restart"
         os.system(cmd)
         TMB.stop_event.set()
@@ -1136,6 +1136,6 @@ def main(parms_arg):
 def main_test_update(parms_arg):
     global parms
     parms = parms_arg
-    config.optd = default_options()  # no weirdness during update testing
+    config.optd = config.default_options()  # no weirdness during update testing
     load_saved_state(state)
     test_update(state)
