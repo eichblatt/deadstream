@@ -14,6 +14,7 @@ main:{[parms]
   dc:`date`event_id`artist`time xcols delete isong,act from dc;
 
   jb:("DTISSSSSS";1#csv) 0:parms`csvpath;            // read the csv file
+  jb:update artist:act from jb;
   jb:update artist:`$"GratefulDead" from jb where act=`$"Grateful Dead";
   jb:`date`event_id`artist xcols delete act from jb;
 
