@@ -39,12 +39,16 @@ from typing import Callable, Optional
 import pkg_resources
 from timemachine import config
 
-logging.basicConfig(format='%(asctime)s.%(msecs)03d %(levelname)s: %(name)s %(message)s', level=logging.INFO, datefmt='%Y-%m-%d %H:%M:%S')
+logging.basicConfig(
+    format="%(asctime)s.%(msecs)03d %(levelname)s: %(name)s %(message)s",
+    level=logging.INFO,
+    datefmt="%Y-%m-%d %H:%M:%S",
+)
 VERBOSE = 5
 logging.addLevelName(VERBOSE, "VERBOSE")
 logger = logging.getLogger(__name__)
 ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
-BIN_DIR = os.path.join(os.path.dirname(ROOT_DIR), 'bin')
+BIN_DIR = os.path.join(os.path.dirname(ROOT_DIR), "bin")
 
 
 @retry(stop=stop_after_delay(30))
@@ -61,17 +65,18 @@ def flatten(lis):
     return lis_flat
 
 
-def to_date(datestring): return datetime.datetime.fromisoformat(datestring)
+def to_date(datestring):
+    return datetime.datetime.fromisoformat(datestring)
 
 
 def to_year(datestring):
-    if type(datestring) == list:      # handle one bad case on 2009.01.10
+    if type(datestring) == list:  # handle one bad case on 2009.01.10
         datestring = datestring[0]
     return to_date(datestring[:10]).year
 
 
 def to_decade(datestring):
-    if type(datestring) == list:      # handle one bad case on 2009.01.10
+    if type(datestring) == list:  # handle one bad case on 2009.01.10
         datestring = datestring[0]
     return 10 * divmod(to_date(datestring[:10]).year, 10)[0]
 
@@ -86,31 +91,33 @@ class BaseTapeDownloader(abc.ABC):
         # Store the tapes json data into files by period
         n_tapes_added = 0
         os.makedirs(iddir, exist_ok=True)
-        periods = sorted(list(set([period_func(t['date']) for t in tapes])))
+        periods = sorted(list(set([period_func(t["date"]) for t in tapes])))
         logger.debug(f"storing metadata {periods}")
 
         for period in periods:
             orig_tapes = []
-            outpath = os.path.join(iddir, f'ids_{period}.json')
+            outpath = os.path.join(iddir, f"ids_{period}.json")
             if os.path.exists(outpath):
-                orig_tapes = json.load(open(outpath, 'r'))
-            tapes_from_period = [t for t in tapes if period_func(t['date']) == period]
-            new_ids = [x['identifier'] for x in tapes_from_period]
-            period_tapes = [x for x in orig_tapes if not x['identifier'] in new_ids] + tapes_from_period
+                orig_tapes = json.load(open(outpath, "r"))
+            tapes_from_period = [t for t in tapes if period_func(t["date"]) == period]
+            new_ids = [x["identifier"] for x in tapes_from_period]
+            period_tapes = [x for x in orig_tapes if not x["identifier"] in new_ids] + tapes_from_period
             n_period_tapes_added = len(period_tapes) - len(orig_tapes)
             n_tapes_added = n_tapes_added + n_period_tapes_added
-            if n_period_tapes_added > 0:      # NOTE This condition prevents updates for _everything_ unless there are new tapes.
+            if (
+                n_period_tapes_added > 0
+            ):  # NOTE This condition prevents updates for _everything_ unless there are new tapes.
                 logger.info(f"Writing {len(period_tapes)} tapes to {outpath}")
                 try:
-                    tmpfile = tempfile.mkstemp('.json')[1]
-                    json.dump(period_tapes, open(tmpfile, 'w'))
+                    tmpfile = tempfile.mkstemp(".json")[1]
+                    json.dump(period_tapes, open(tmpfile, "w"))
                     os.rename(tmpfile, outpath)
                     logger.debug(f"renamed {tmpfile} to {outpath}")
                 except Exception:
                     logger.debug(f"removing {tmpfile}")
                     os.remove(tmpfile)
         if n_tapes_added > 0:
-            logger.info(f'added {n_tapes_added} tapes by period')
+            logger.info(f"added {n_tapes_added} tapes by period")
         return n_tapes_added
 
     @abc.abstractmethod
@@ -123,10 +130,17 @@ def remove_none(lis):
     return [a for a in lis if a is not None]
 
 
-class Archivary():
+class Archivary:
     """ A collection of Archive objects """
 
-    def __init__(self, dbpath=os.path.join(ROOT_DIR, 'metadata'), reload_ids=False, with_latest=False, collection_list=['GratefulDead'], date_range=None):
+    def __init__(
+        self,
+        dbpath=os.path.join(ROOT_DIR, "metadata"),
+        reload_ids=False,
+        with_latest=False,
+        collection_list=["GratefulDead"],
+        date_range=None,
+    ):
         # if 'rElOaD' in collection_list:
         #     self.reload_ids = True
         #     collection_list.remove('rElOaD')
@@ -134,14 +148,22 @@ class Archivary():
         self.archives = []
         phishin_archive = None
         ia_archive = None
-        ia_collections = [x for x in self.collection_list if x != 'Phish']
-        if 'Phish' in self.collection_list:
+        ia_collections = [x for x in self.collection_list if x != "Phish"]
+        if "Phish" in self.collection_list:
             try:
-                phishin_archive = PhishinArchive(dbpath=dbpath, reload_ids=reload_ids, with_latest=with_latest)
+                phishin_archive = PhishinArchive(
+                    dbpath=dbpath, reload_ids=reload_ids, with_latest=with_latest
+                )
             except Exception:
                 pass
         if len(ia_collections) > 0:
-            ia_archive = GDArchive(dbpath=dbpath, reload_ids=reload_ids, with_latest=with_latest, collection_list=ia_collections, date_range=date_range)
+            ia_archive = GDArchive(
+                dbpath=dbpath,
+                reload_ids=reload_ids,
+                with_latest=with_latest,
+                collection_list=ia_collections,
+                date_range=date_range,
+            )
         self.archives = remove_none([ia_archive, phishin_archive])
         self.tape_dates = self.get_tape_dates()
         self.dates = sorted(self.tape_dates.keys())
@@ -193,7 +215,7 @@ class Archivary():
                     result.append(cdict[k][i])
         return result
 
-    def get_tape_dates(self, sort_across=True):   # Archivary
+    def get_tape_dates(self, sort_across=True):  # Archivary
         td = self.archives[0].tape_dates
         for a in self.archives[1:]:
             for date, tapes in a.tape_dates.items():
@@ -247,23 +269,33 @@ class BaseArchive(abc.ABC):
         collection_list: A list of collections from archive.org
     """
 
-    def __init__(self, url, dbpath=os.path.join(ROOT_DIR, 'metadata'), reload_ids=False, with_latest=False, collection_list=['GratefulDead'], date_range=None):
-        self.archive_type = 'Base Archive'
+    def __init__(
+        self,
+        url,
+        dbpath=os.path.join(ROOT_DIR, "metadata"),
+        reload_ids=False,
+        with_latest=False,
+        collection_list=["GratefulDead"],
+        date_range=None,
+    ):
+        self.archive_type = "Base Archive"
         self.url = url
         self.dbpath = dbpath
         self.collection_list = collection_list
         self.tapes = []
         self.date_range = date_range
-        self.collection_list = collection_list if isinstance(collection_list, (list, tuple)) else [collection_list]
+        self.collection_list = (
+            collection_list if isinstance(collection_list, (list, tuple)) else [collection_list]
+        )
         if len(self.collection_list) == 1:
-            self.idpath = [os.path.join(self.dbpath, F'{collection_list[0]}_ids')]
-            if self.collection_list[0] == 'Phish':
+            self.idpath = [os.path.join(self.dbpath, f"{collection_list[0]}_ids")]
+            if self.collection_list[0] == "Phish":
                 self.idpath = self.idpath[0]
                 self.downloader = PhishinTapeDownloader(url, collection_list=collection_list[0])
             else:
                 self.downloader = IATapeDownloader(url, collection_list=collection_list[0])
         else:
-            self.idpath = [os.path.join(self.dbpath, f'{x}_ids') for x in self.collection_list]
+            self.idpath = [os.path.join(self.dbpath, f"{x}_ids") for x in self.collection_list]
             # self.idpath = os.path.join(self.dbpath, 'etree_ids')
             self.downloader = IATapeDownloader(url)
         self.set_data = None
@@ -272,19 +304,19 @@ class BaseArchive(abc.ABC):
         return self.__repr__()
 
     def __repr__(self):
-        retstr = F"{self.collection_list} Archive with {len(self.tapes)} tapes on {len(self.dates)} dates from {self.dates[0]} to {self.dates[-1]} "
+        retstr = f"{self.collection_list} Archive with {len(self.tapes)} tapes on {len(self.dates)} dates from {self.dates[0]} to {self.dates[-1]} "
         return retstr
 
     def year_list(self):
         return sorted(set([to_date(x).year for x in self.dates]))
 
     def build_idpath(self):  # This may be needed for dynamic update of COLLECTIONS
-        self.idpath = [os.path.join(self.dbpath, f'{x}_ids') for x in self.collection_list]
+        self.idpath = [os.path.join(self.dbpath, f"{x}_ids") for x in self.collection_list]
         return self.idpath
 
     def tape_at_date(self, dt, which_tape=0):
         then_date = dt.date()
-        then = then_date.strftime('%Y-%m-%d')
+        then = then_date.strftime("%Y-%m-%d")
         try:
             tape = self.tape_dates[then]
         except KeyError:
@@ -306,13 +338,13 @@ class BaseArchive(abc.ABC):
         tape = self.tape_at_date(dt)
         if not tape:
             return None
-        tape_start_time = tape.set_data['start_time'] if tape.set_data else None
+        tape_start_time = tape.set_data["start_time"] if tape.set_data else None
         if tape_start_time is None:
             tape_start_time = default_start
         tape_start = datetime.datetime.combine(dt.date(), tape_start_time)  # date + time
         return tape_start
 
-    def get_tape_dates(self, sort_within=True):   # BaseArchive
+    def get_tape_dates(self, sort_within=True):  # BaseArchive
         tape_dates = {}
         for tape in self.tapes:
             k = tape.date
@@ -327,7 +359,7 @@ class BaseArchive(abc.ABC):
             self.tape_dates = {}
             for k, v in tape_dates.items():
                 try:
-                    self.tape_dates[k] = sorted(v, key=methodcaller('compute_score'), reverse=True)
+                    self.tape_dates[k] = sorted(v, key=methodcaller("compute_score"), reverse=True)
                 except Exception as e:
                     self.tape_dates[k] = v
                     logger.exception(f"{e}")
@@ -352,11 +384,11 @@ class BaseTape(abc.ABC):
         self.dbpath = dbpath
 
         """ NOTE This should be part of the player, not part of the tape or track, as it is now """
-        if config.optd['PLAY_LOSSLESS']:
-            self._playable_formats = ['Flac', 'Shorten', 'Ogg Vorbis', 'VBR MP3', 'MP3']
+        if config.optd["PLAY_LOSSLESS"]:
+            self._playable_formats = ["Flac", "Shorten", "Ogg Vorbis", "VBR MP3", "MP3"]
         else:
-            self._playable_formats = ['Ogg Vorbis', 'VBR MP3', 'MP3']
-        self._lossy_formats = ['Ogg Vorbis', 'VBR MP3', 'MP3']
+            self._playable_formats = ["Ogg Vorbis", "VBR MP3", "MP3"]
+        self._lossy_formats = ["Ogg Vorbis", "VBR MP3", "MP3"]
         """ ----------------------------------------------------------------------------------- """
 
         self._breaks_added = False
@@ -373,7 +405,9 @@ class BaseTape(abc.ABC):
 
     def __repr__(self):
         tag = "SBD" if self.stream_only() else "aud"
-        retstr = '{} {} - {} - {:5.2f} - {} Loaded:{}\n'.format(self.artist, self.date, tag, self.compute_score(), self.identifier, self.meta_loaded)
+        retstr = "{} {} - {} - {:5.2f} - {} Loaded:{}\n".format(
+            self.artist, self.date, tag, self.compute_score(), self.identifier, self.meta_loaded
+        )
         return retstr
 
     def contains_sound(self):
@@ -415,7 +449,7 @@ class BaseTrack:
         return self.__repr__()
 
     def __repr__(self):
-        retstr = 'track {}. {}'.format(self.track, self.title)
+        retstr = "track {}. {}".format(self.track, self.title)
         return retstr
 
     @abc.abstractmethod
@@ -430,21 +464,19 @@ class PhishinTapeDownloader(BaseTapeDownloader):
         self.url = url
         self.api = f"{self.url}/api/v1/shows"
         try:
-            self.apikey = open(os.path.join(os.getenv('HOME'), '.phishinkey'), 'r').read().rstrip()
+            self.apikey = open(os.path.join(os.getenv("HOME"), ".phishinkey"), "r").read().rstrip()
         except Exception:
             self.apikey = None
-        self.parms = {'sort_attr': 'date',
-                      'sort_dir': 'desc', 'per_page': '300'}
-        self.headers = {'Accept': 'application/json',
-                        'Authorization': f'Bearer {self.apikey}'}
+        self.parms = {"sort_attr": "date", "sort_dir": "desc", "per_page": "300"}
+        self.headers = {"Accept": "application/json", "Authorization": f"Bearer {self.apikey}"}
 
     def extract_show_data(self, json_resp):
         shows = []
-        fields = ['id', 'date', 'duration', 'incomplete', 'sbd', 'venue_name']
-        for show in json_resp['data']:
+        fields = ["id", "date", "duration", "incomplete", "sbd", "venue_name"]
+        for show in json_resp["data"]:
             tmp_dict = {k: show[k] for k in fields}
-            tmp_dict['identifier'] = tmp_dict['id']
-            tmp_dict['venue_location'] = show['venue']['location']
+            tmp_dict["identifier"] = tmp_dict["id"]
+            tmp_dict["venue_location"] = show["venue"]["location"]
             shows.append(tmp_dict)
         return shows
 
@@ -452,7 +484,7 @@ class PhishinTapeDownloader(BaseTapeDownloader):
         """Get a list of all Phish.in shows
         Write all tapes to a folder by time period
         """
-        per_page = self.parms['per_page']
+        per_page = self.parms["per_page"]
 
         # No need to update if we already have a show from today.
         if min_addeddate is not None:
@@ -462,21 +494,21 @@ class PhishinTapeDownloader(BaseTapeDownloader):
         page_no = 1
         r = self.get_page(page_no, per_page)
         json_resp = r.json()
-        total = json_resp['total_entries']
-        total_pages = json_resp['total_pages']
+        total = json_resp["total_entries"]
+        total_pages = json_resp["total_pages"]
         logger.debug(f"total rows {total} on {total_pages} pages")
-        current_page = json_resp['page']
+        current_page = json_resp["page"]
 
         shows = self.extract_show_data(json_resp)
         self.store_metadata(iddir, shows)
 
         # If min_addeddate is not None, then check that the earliest update on this page is after the latest show we already had.
-        while (current_page < total_pages) if min_addeddate is None else (shows[-1]['date'] > min_addeddate):
+        while (current_page < total_pages) if min_addeddate is None else (shows[-1]["date"] > min_addeddate):
             r = self.get_page(current_page + 1, per_page)
             json_resp = r.json()
             shows = self.extract_show_data(json_resp)
             self.store_metadata(iddir, shows)
-            current_page = json_resp['page']
+            current_page = json_resp["page"]
         return total
 
     def get_page(self, page_no, per_page=None):
@@ -484,15 +516,14 @@ class PhishinTapeDownloader(BaseTapeDownloader):
         Returns a list of dictionaries of tape information
         """
         parms = self.parms.copy()
-        parms['page'] = page_no
+        parms["page"] = page_no
         if isinstance(per_page, int):
-            parms['per_page'] = per_page
+            parms["per_page"] = per_page
         r = requests.get(self.api, headers=self.headers, params=parms)
         logger.debug(f"url is {r.url}")
         if r.status_code != 200:
             logger.error(f"Error {r.status_code} collecting data")
-            raise Exception(
-                'Download', 'Error {} collection'.format(r.status_code))
+            raise Exception("Download", "Error {} collection".format(r.status_code))
         return r
 
 
@@ -503,17 +534,31 @@ class IATapeDownloader(BaseTapeDownloader):
         self.url = url
         self.collection_list = collection_list
         self.api = f"{self.url}/services/search/v1/scrape"
-        fields = ["identifier", "date", "avg_rating", "num_reviews",
-                  "num_favorites", "stars", "downloads", "files_count",
-                  "format", "collection", "source", "subject", "type", "addeddate"]
-        sorts = ["date asc", "avg_rating desc",
-                 "num_favorites desc", "downloads desc"]
-        self.parms = {'debug': 'false',
-                      'xvar': 'production',
-                      'total_only': 'false',
-                      'count': '10000',
-                      'sorts': ",".join(sorts),
-                      'fields': ",".join(fields)}
+        fields = [
+            "identifier",
+            "date",
+            "avg_rating",
+            "num_reviews",
+            "num_favorites",
+            "stars",
+            "downloads",
+            "files_count",
+            "format",
+            "collection",
+            "source",
+            "subject",
+            "type",
+            "addeddate",
+        ]
+        sorts = ["date asc", "avg_rating desc", "num_favorites desc", "downloads desc"]
+        self.parms = {
+            "debug": "false",
+            "xvar": "production",
+            "total_only": "false",
+            "count": "10000",
+            "sorts": ",".join(sorts),
+            "fields": ",".join(fields),
+        }
 
     def save_all_collection_names(self):
         """
@@ -521,32 +566,38 @@ class IATapeDownloader(BaseTapeDownloader):
              This should leverage the _get_piece function
         """
         current_rows = 0
-        parms = {'debug': 'false', 'xvar': 'production', 'total_only': 'false', 'count': '10000',
-                 'fields': 'identifier, item_count,collection_size,downloads,num_favorites',
-                 'q': 'collection:etree AND mediatype:collection'}
+        parms = {
+            "debug": "false",
+            "xvar": "production",
+            "total_only": "false",
+            "count": "10000",
+            "fields": "identifier, item_count,collection_size,downloads,num_favorites",
+            "q": "collection:etree AND mediatype:collection",
+        }
         r = requests.get(self.api, params=parms)
         logger.debug(f"url is {r.url}")
         if r.status_code != 200:
             logger.error(f"Error {r.status_code} collecting data")
-            raise Exception(
-                'Download', f'Error {r.status_code} collection')
+            raise Exception("Download", f"Error {r.status_code} collection")
             # ChunkedEncodingError:
         j = r.json()
-        total = j['total']
-        current_rows += j['count']
+        total = j["total"]
+        current_rows += j["count"]
         if current_rows < total:
-            logger.warning(f"Not all collection names were downloaded. Total:{total} downloaded:{current_rows}")
+            logger.warning(
+                f"Not all collection names were downloaded. Total:{total} downloaded:{current_rows}"
+            )
             # if/when we see this, we need to loop over downloads.
 
-        collection_path = os.path.join(os.getenv('HOME'), '.etree_collection_names.json')
+        collection_path = os.path.join(os.getenv("HOME"), ".etree_collection_names.json")
         try:
-            tmpfile = tempfile.mkstemp('.json')[1]
-            json.dump(j, open(tmpfile, 'w'))
+            tmpfile = tempfile.mkstemp(".json")[1]
+            json.dump(j, open(tmpfile, "w"))
             os.rename(tmpfile, collection_path)
         except Exception:
             logger.debug(f"removing {tmpfile}")
             os.remove(tmpfile)
-        logger.info(f'saved {current_rows} collection names to {collection_path}')
+        logger.info(f"saved {current_rows} collection names to {collection_path}")
 
     def get_all_tapes(self, iddir, min_addeddate=None, date_range=None, collection=None):
         """Get a list of all tapes.  Write all tapes to a folder by time period
@@ -561,42 +612,44 @@ class IATapeDownloader(BaseTapeDownloader):
         n_tapes_added = 0
         n_tapes_total = 0
         tapes = []
-        yearly_collections = ['etree', 'georgeblood']  # should this be in config?
-        collection = collection if collection is not None else os.path.basename(iddir).replace('_ids', '')
+        yearly_collections = ["etree", "georgeblood"]  # should this be in config?
+        collection = collection if collection is not None else os.path.basename(iddir).replace("_ids", "")
 
         if not date_range:
-            min_date = '1880-01-01'
-            max_date = datetime.datetime.now().date().strftime('%Y-%m-%d')
+            min_date = "1880-01-01"
+            max_date = datetime.datetime.now().date().strftime("%Y-%m-%d")
         elif len(date_range) == 2:
-            min_date = f'{date_range[0]}-01-01'
-            max_date = f'{date_range[1]}-12-31'
+            min_date = f"{date_range[0]}-01-01"
+            max_date = f"{date_range[1]}-12-31"
         elif len(date_range) > 2:
             result_list = [self.get_all_tapes(iddir, min_addeddate, x) for x in date_range]
             return sum(result_list)
         elif len(date_range) == 1:
-            min_date = f'{date_range[0]}-01-01'
-            max_date = f'{date_range[0]}-12-31'
+            min_date = f"{date_range[0]}-01-01"
+            max_date = f"{date_range[0]}-12-31"
 
         r = self._get_piece(min_date, max_date, min_addeddate, collection=collection)
         j = r.json()
-        total = j['total']
+        total = j["total"]
         logger.debug(f"total rows {total}")
-        current_rows += j['count']
-        tapes = j['items']
+        current_rows += j["count"]
+        tapes = j["items"]
 
-        period_func = to_year if os.path.basename(iddir).replace('_ids', '') in yearly_collections else to_decade
+        period_func = (
+            to_year if os.path.basename(iddir).replace("_ids", "") in yearly_collections else to_decade
+        )
         logger.debug("Loading tapes")
         n_tapes_added = self.store_metadata(iddir, tapes, period_func=period_func)
         n_tapes_total = n_tapes_added
 
         while (current_rows < 1.25 * total) and n_tapes_added > 0:
             logger.debug("in while loop")
-            min_date_field = tapes[-1]['date']
+            min_date_field = tapes[-1]["date"]
             min_date = min_date_field[:10]  # Should we subtract some days for overlap?
             r = self._get_piece(min_date, max_date, min_addeddate, collection=collection)
             j = r.json()
-            current_rows += j['count']
-            tapes = j['items']
+            current_rows += j["count"]
+            tapes = j["items"]
             n_tapes_added = self.store_metadata(iddir, tapes, period_func=period_func)
             n_tapes_total = n_tapes_total + n_tapes_added
         return n_tapes_total
@@ -625,17 +678,17 @@ class IATapeDownloader(BaseTapeDownloader):
         tapes = []
         r = self._get_chunk(year)
         j = r.json()
-        total = j['total']
+        total = j["total"]
         logger.debug(f"total rows {total}")
-        current_rows += j['count']
-        tapes = j['items']
+        current_rows += j["count"]
+        tapes = j["items"]
         while current_rows < total:
-            cursor = j['cursor']
+            cursor = j["cursor"]
             r = self._get_chunk(year, cursor)
             j = r.json()
-            cursor = j['cursor']
-            current_rows += j['count']
-            tapes.extend(j['items'])
+            cursor = j["cursor"]
+            current_rows += j["count"]
+            tapes.extend(j["items"])
         return tapes
 
     def _get_piece(self, min_date, max_date, min_addeddate=None, collection=None):
@@ -647,11 +700,11 @@ class IATapeDownloader(BaseTapeDownloader):
         need_retry = False
         collection = self.collection_list if collection is None else collection
         if min_addeddate is None:
-            query = F'collection:{collection} AND date:[{min_date} TO {max_date}]'
+            query = f"collection:{collection} AND date:[{min_date} TO {max_date}]"
         else:
             # max_addeddate = datetime.datetime.now().strftime('%Y-%m-%dT%H:%M:%SZ')
-            query = F'collection:{collection} AND date:[{min_date} TO {max_date}] AND addeddate:[{min_addeddate} TO {max_date}]'
-        parms['q'] = query
+            query = f"collection:{collection} AND date:[{min_date} TO {max_date}] AND addeddate:[{min_addeddate} TO {max_date}]"
+        parms["q"] = query
         try:
             r = requests.get(self.api, params=parms)
         except Exception as e:
@@ -671,8 +724,7 @@ class IATapeDownloader(BaseTapeDownloader):
         logger.debug(f"url is {r.url}")
         if r.status_code != 200:
             logger.error(f"Error {r.status_code} collecting data")
-            raise Exception(
-                'Download', f'Error {r.status_code} collection')
+            raise Exception("Download", f"Error {r.status_code} collection")
             # ChunkedEncodingError:
         return r
 
@@ -688,20 +740,26 @@ class IATapeDownloader(BaseTapeDownloader):
         """
         parms = self.parms.copy()
         if cursor is not None:
-            parms['cursor'] = cursor
-        query = F'collection:{self.collection_list} AND year:{year}'
-        parms['q'] = query
+            parms["cursor"] = cursor
+        query = f"collection:{self.collection_list} AND year:{year}"
+        parms["q"] = query
         r = requests.get(self.api, params=parms)
         logger.debug(f"url is {r.url}")
         if r.status_code != 200:
             logger.error(f"Error {r.status_code} collecting data")
-            raise Exception(
-                'Download', f'Error {r.status_code} collection')
+            raise Exception("Download", f"Error {r.status_code} collection")
         return r
 
 
 class PhishinArchive(BaseArchive):
-    def __init__(self, url='https://phish.in', dbpath=os.path.join(ROOT_DIR, 'metadata'), reload_ids=False, with_latest=False, collection_list=['Phish']):
+    def __init__(
+        self,
+        url="https://phish.in",
+        dbpath=os.path.join(ROOT_DIR, "metadata"),
+        reload_ids=False,
+        with_latest=False,
+        collection_list=["Phish"],
+    ):
         """Create a new PhishinArchive.
 
         Parameters:
@@ -714,7 +772,7 @@ class PhishinArchive(BaseArchive):
         """
         super().__init__(url, dbpath, reload_ids, with_latest, collection_list)
         self.load_archive(reload_ids, with_latest)
-        self.archive_type = 'Phishin Archive'
+        self.archive_type = "Phishin Archive"
 
     def load_archive(self, reload_ids=False, with_latest=False):
         self.tapes = self.load_tapes(reload_ids, with_latest)
@@ -726,18 +784,18 @@ class PhishinArchive(BaseArchive):
         n_tapes = 0
 
         if reload_ids or not os.path.exists(self.idpath):
-            os.system(f'rm -rf {self.idpath}')
-            logger.info('Loading Tapes from Phish.in. This will take a few minutes')
+            os.system(f"rm -rf {self.idpath}")
+            logger.info("Loading Tapes from Phish.in. This will take a few minutes")
             n_tapes = self.downloader.get_all_tapes(self.idpath)  # this will write chunks to folder
             if n_tapes > 0:
-                logger.debug(f'Phish.in Loaded {n_tapes} tapes from archive')
+                logger.debug(f"Phish.in Loaded {n_tapes} tapes from archive")
 
         if with_latest:
             max_showdate = max(self.tape_dates.keys())
-            logger.debug(f'Refreshing Tapes\nmax showdate {max_showdate}')
+            logger.debug(f"Refreshing Tapes\nmax showdate {max_showdate}")
             n_tapes = self.downloader.get_all_tapes(self.idpath, max_showdate)
             if n_tapes > 0:
-                logger.debug(f'Phish.in Loaded {n_tapes} new tapes from archive')
+                logger.debug(f"Phish.in Loaded {n_tapes} new tapes from archive")
         else:
             if len(self.tapes) > 0:  # The tapes have already been written, and nothing was added
                 return self.tapes
@@ -745,24 +803,26 @@ class PhishinArchive(BaseArchive):
         self.tapes = [PhishinTape(self.dbpath, tape, self.set_data) for tape in loaded_tapes]
         return self.tapes
 
-    def load_current_tapes(self, reload_ids=False):   # Phishin
+    def load_current_tapes(self, reload_ids=False):  # Phishin
         logger.debug("Loading current tapes")
         tapes = []
         if reload_ids or not os.path.exists(self.idpath):
-            os.system(f'rm -rf {self.idpath}')
-            logger.info(f'Loading Tapes from the Archive...this will take a few minutes. Writing to {self.idpath}')
+            os.system(f"rm -rf {self.idpath}")
+            logger.info(
+                f"Loading Tapes from the Archive...this will take a few minutes. Writing to {self.idpath}"
+            )
             n_tapes = self.downloader.get_all_tapes(self.idpath)  # this will write chunks to folder
             if n_tapes > 0:
-                logger.info(f'Loaded {n_tapes} tapes from archive')
+                logger.info(f"Loaded {n_tapes} tapes from archive")
         # loop over chunks -- get max addeddate before filtering collections.
         if os.path.isdir(self.idpath):
             for filename in os.listdir(self.idpath):
-                if filename.endswith('.json'):
-                    chunk = json.load(open(os.path.join(self.idpath, filename), 'r'))
+                if filename.endswith(".json"):
+                    chunk = json.load(open(os.path.join(self.idpath, filename), "r"))
                     # chunk = [t for t in chunk if any(x in self.collection_list for x in t['collection'])]
                     tapes.extend(chunk)
         else:
-            tapes = json.load(open(self.idpath, 'r'))
+            tapes = json.load(open(self.idpath, "r"))
             # addeddates.append(max([x['addeddate'] for x in tapes]))
             # tapes = [t for t in tapes if any(x in self.collection_list for x in t['collection'])]
         max_addeddate = None
@@ -771,7 +831,7 @@ class PhishinArchive(BaseArchive):
     def resort_tape_date(self, date):
         """ Phishin version of this method """
         if isinstance(date, datetime.date):
-            date = date.strftime('%Y-%m-%d')
+            date = date.strftime("%Y-%m-%d")
         if date not in self.dates:
             return [None]
         tapes = self.tape_dates[date]
@@ -780,7 +840,7 @@ class PhishinArchive(BaseArchive):
     def best_tape(self, date, resort=True):
         """ Phishin version of this method """
         if isinstance(date, datetime.date):
-            date = date.strftime('%Y-%m-%d')
+            date = date.strftime("%Y-%m-%d")
         if date not in self.dates:
             return None
         if resort:
@@ -790,7 +850,7 @@ class PhishinArchive(BaseArchive):
         return tapes[0]
 
     def year_artists(self, year, other_year=None):
-        id_dict = {1983: 'Phish'}
+        id_dict = {1983: "Phish"}
         return id_dict
 
 
@@ -799,26 +859,24 @@ class PhishinTape(BaseTape):
 
     def __init__(self, dbpath, raw_json, set_data):
         super().__init__(dbpath, raw_json, set_data)
-        attribs = ['date', 'id', 'duration', 'incomplete', 'sbd', 'venue_name', 'venue_location']
+        attribs = ["date", "id", "duration", "incomplete", "sbd", "venue_name", "venue_location"]
         for k, v in raw_json.items():
             if k in attribs:
                 setattr(self, k, v)
-        self.identifier = F"phishin_{self.id}"
+        self.identifier = f"phishin_{self.id}"
         self.set_data = None
-        self.collection = ['Phish']
-        self.artist = 'Phish'
-        delattr(self, 'id')
+        self.collection = ["Phish"]
+        self.artist = "Phish"
+        delattr(self, "id")
         date = to_date(self.date).date()
-        self.meta_path = os.path.join(self.dbpath, str(date.year), str(date.month), self.identifier + '.json')
-        self.url_metadata = 'https://phish.in/api/v1/shows/' + self.date
+        self.meta_path = os.path.join(self.dbpath, str(date.year), str(date.month), self.identifier + ".json")
+        self.url_metadata = "https://phish.in/api/v1/shows/" + self.date
         try:
-            self.apikey = open(os.path.join(os.getenv('HOME'), '.phishinkey'), 'r').read().rstrip()
+            self.apikey = open(os.path.join(os.getenv("HOME"), ".phishinkey"), "r").read().rstrip()
         except Exception:
             self.apikey = None
-        self.parms = {'sort_attr': 'date',
-                      'sort_dir': 'asc', 'per_page': '300'}
-        self.headers = {'Accept': 'application/json',
-                        'Authorization': f'Bearer {self.apikey}'}
+        self.parms = {"sort_attr": "date", "sort_dir": "asc", "per_page": "300"}
+        self.headers = {"Accept": "application/json", "Authorization": f"Bearer {self.apikey}"}
 
     def stream_only(self):
         return False
@@ -828,7 +886,7 @@ class PhishinTape(BaseTape):
 
     def venue(self, tracknum=0):
         """return the venue, city, state"""
-        return F"{self.venue_name},{self.venue_location}"
+        return f"{self.venue_name},{self.venue_location}"
 
     def get_metadata(self, only_if_cached=False):
         if self.meta_loaded:
@@ -836,16 +894,16 @@ class PhishinTape(BaseTape):
         if only_if_cached and not os.path.exists(self.meta_path):
             return
         self._tracks = []
-        try:     # I used to check if file exists, but it may also be corrupt, so this is safer.
-            page_meta = json.load(open(self.meta_path, 'r'))
+        try:  # I used to check if file exists, but it may also be corrupt, so this is safer.
+            page_meta = json.load(open(self.meta_path, "r"))
         except Exception:
             parms = self.parms.copy()
-            parms['page'] = 1
+            parms["page"] = 1
             r = requests.get(self.url_metadata, headers=self.headers)
             logger.debug(f"url is {r.url}")
             if r.status_code != 200:
                 logger.warning(f"error pulling data for {self.identifier}")
-                raise Exception('Download', f'Error {r.status_code} url {self.url_metadata}')
+                raise Exception("Download", f"Error {r.status_code} url {self.url_metadata}")
             try:
                 page_meta = r.json()
             except ValueError:
@@ -855,12 +913,14 @@ class PhishinTape(BaseTape):
                 logger.warning("Error getting metadata (json?)")
                 return None
 
-        if page_meta['total_pages'] > 1:
-            logger.warning(F"More than 1 page in metadata for show on {page_meta['data']['date']}. There are {page_meta['total_pages']} pages")
+        if page_meta["total_pages"] > 1:
+            logger.warning(
+                f"More than 1 page in metadata for show on {page_meta['data']['date']}. There are {page_meta['total_pages']} pages"
+            )
 
-        data = page_meta['data']
-        for itrack, track_data in enumerate(data['tracks']):
-            set_name = track_data['set']
+        data = page_meta["data"]
+        for itrack, track_data in enumerate(data["tracks"]):
+            set_name = track_data["set"]
             if itrack == 0:
                 current_set = set_name
             if set_name != current_set:
@@ -869,12 +929,12 @@ class PhishinTape(BaseTape):
             self._tracks.append(PhishinTrack(track_data, self.identifier))
 
         os.makedirs(os.path.dirname(self.meta_path), exist_ok=True)
-        json.dump(page_meta, open(self.meta_path, 'w'))
+        json.dump(page_meta, open(self.meta_path, "w"))
         self.meta_loaded = True
         # return page_meta
         for track in self._tracks:
-            track.title = re.sub(r'gd\d{2}(?:\d{2})?-\d{2}-\d{2}[ ]*([td]\d*)*', '', track.title).strip()
-            track.title = re.sub(r'(.flac)|(.mp3)|(.ogg)$', '', track.title).strip()
+            track.title = re.sub(r"gd\d{2}(?:\d{2})?-\d{2}-\d{2}[ ]*([td]\d*)*", "", track.title).strip()
+            track.title = re.sub(r"(.flac)|(.mp3)|(.ogg)$", "", track.title).strip()
         return
 
 
@@ -883,44 +943,61 @@ class PhishinTrack(BaseTrack):
 
     def __init__(self, tdict, parent_id, break_track=False):
         super().__init__(tdict, parent_id, break_track)
-        attribs = ['set', 'venue_name', 'venue_location', 'title', 'position', 'duration', 'mp3', 'updated_at']
+        attribs = [
+            "set",
+            "venue_name",
+            "venue_location",
+            "title",
+            "position",
+            "duration",
+            "mp3",
+            "updated_at",
+        ]
         for k, v in tdict.items():
             if k in attribs:
                 setattr(self, k, v)
-        self.format = 'MP3'
+        self.format = "MP3"
         self.track = self.position
         self.files = []
         self.add_file(tdict, break_track)
 
     def add_file(self, tdict, break_track=False):
         d = {}
-        d['source'] = 'phishin'
+        d["source"] = "phishin"
         if not break_track:
-            d['name'] = self.title
-            d['format'] = 'MP3'
-            d['size'] = self.duration
-            d['path'] = ''
-            d['url'] = self.mp3
+            d["name"] = self.title
+            d["format"] = "MP3"
+            d["size"] = self.duration
+            d["path"] = ""
+            d["url"] = self.mp3
         else:
             logger.debug("adding break track in Phishin")
-            d['name'] = ''
-            if self.set == 'E':
-                d['path'] = pkg_resources.resource_filename('timemachine.metadata', 'silence0.ogg')
-                self.title = 'Encore Break'
+            d["name"] = ""
+            if self.set == "E":
+                d["path"] = pkg_resources.resource_filename("timemachine.metadata", "silence0.ogg")
+                self.title = "Encore Break"
             else:
-                d['path'] = pkg_resources.resource_filename('timemachine.metadata', 'silence600.ogg')
+                d["path"] = pkg_resources.resource_filename("timemachine.metadata", "silence600.ogg")
                 logger.debug(f"path is {d['path']}")
-                self.title = 'Set Break'
-            d['format'] = 'Ogg Vorbis'
+                self.title = "Set Break"
+            d["format"] = "Ogg Vorbis"
             # d['url'] = 'file://'+os.path.join(d['path'], d['name'])
-            d['url'] = f'file://{d["path"]}'
+            d["url"] = f'file://{d["path"]}'
         self.files.append(d)
 
 
 class GDArchive(BaseArchive):
     """ The Grateful Dead Collection on Archive.org """
 
-    def __init__(self, url='https://archive.org', dbpath=os.path.join(ROOT_DIR, 'metadata'), reload_ids=False, with_latest=False, collection_list=['GratefulDead'], date_range=None):
+    def __init__(
+        self,
+        url="https://archive.org",
+        dbpath=os.path.join(ROOT_DIR, "metadata"),
+        reload_ids=False,
+        with_latest=False,
+        collection_list=["GratefulDead"],
+        date_range=None,
+    ):
         """Create a new GDArchive.
 
         Parameters:
@@ -932,7 +1009,7 @@ class GDArchive(BaseArchive):
           collection_list: A list of collections from archive.org
         """
         super().__init__(url, dbpath, reload_ids, with_latest, collection_list, date_range)
-        self.archive_type = 'Internet Archive'
+        self.archive_type = "Internet Archive"
         self.set_data = GDSetBreaks(self.collection_list)
         self.date_range = date_range
         self.load_archive(reload_ids, with_latest)
@@ -940,27 +1017,29 @@ class GDArchive(BaseArchive):
     def load_archive(self, reload_ids=False, with_latest=False):
         self.tapes = self.load_tapes(reload_ids, with_latest)
         sort_within = True
-        if 'georgeblood' in self.collection_list:
+        if "georgeblood" in self.collection_list:
             sort_within = False
         self.tape_dates = self.get_tape_dates(sort_within=sort_within)
         self.dates = sorted(self.tape_dates.keys())
 
-    def resort_tape_date(self, date):        # IA
+    def resort_tape_date(self, date):  # IA
         """  archive.org version of this method """
         if isinstance(date, datetime.date):
-            date = date.strftime('%Y-%m-%d')
+            date = date.strftime("%Y-%m-%d")
         if date not in self.dates:
             return [None]
         tapes = self.tape_dates[date]
-        _ = [t.tracks() for t in tapes[:3]]   # load first 3 tapes' tracks. Decrease score of those without titles.
-        tapes = sorted(tapes, key=methodcaller('compute_score'), reverse=True)
+        _ = [
+            t.tracks() for t in tapes[:3]
+        ]  # load first 3 tapes' tracks. Decrease score of those without titles.
+        tapes = sorted(tapes, key=methodcaller("compute_score"), reverse=True)
         tapes = [t for t in tapes if not t._remove_from_archive]  # eliminate missing tapes
         return tapes
 
-    def best_tape(self, date, resort=True):        # IA
+    def best_tape(self, date, resort=True):  # IA
         """  archive.org version of this method """
         if isinstance(date, datetime.date):
-            date = date.strftime('%Y-%m-%d')
+            date = date.strftime("%Y-%m-%d")
         if date not in self.dates:
             return None
 
@@ -970,66 +1049,74 @@ class GDArchive(BaseArchive):
             tapes = self.tape_dates[date]
         return tapes[0]
 
-    def load_current_tapes(self, reload_ids=False, meta_path=None):   # IA
+    def load_current_tapes(self, reload_ids=False, meta_path=None):  # IA
         """ Load current tapes or download them from archive.org if they are not already loaded """
         logger.debug("Loading current tapes")
         meta_path = self.idpath if meta_path is None else meta_path
         tapes = []
         addeddates = []
-        collection_path = os.path.join(os.getenv('HOME'), '.etree_collection_names.json')
-        yearly_collections = ['etree', 'georgeblood']  # should this be in config?
+        collection_path = os.path.join(os.getenv("HOME"), ".etree_collection_names.json")
+        yearly_collections = ["etree", "georgeblood"]  # should this be in config?
 
         if not self.date_range:
             self.date_range = [1880, datetime.datetime.now().year]
         elif isinstance(self.date_range, int):
             self.date_range = [self.date_range]
-        years_to_load = range(min(self.date_range), max(self.date_range) + 1) if len(self.date_range) <= 2 else self.date_range
+        years_to_load = (
+            range(min(self.date_range), max(self.date_range) + 1)
+            if len(self.date_range) <= 2
+            else self.date_range
+        )
 
         meta_files = os.listdir(meta_path) if os.path.exists(meta_path) else []
-        meta_files = [x for x in meta_files if x.endswith('.json')]
-        meta_files = [x for x in meta_files if int(os.path.splitext(x)[0].split('_')[-1]) in years_to_load]
+        meta_files = [x for x in meta_files if x.endswith(".json")]
+        meta_files = [x for x in meta_files if int(os.path.splitext(x)[0].split("_")[-1]) in years_to_load]
 
         if reload_ids or len(meta_files) == 0:
             if reload_ids:
-                os.system(f'rm -rf {meta_path}')
-            logger.info('Loading Tapes from the Archive...this will take a few minutes')
-            n_tapes = self.downloader.get_all_tapes(meta_path, date_range=self.date_range)  # this will write chunks to folder
+                os.system(f"rm -rf {meta_path}")
+            logger.info("Loading Tapes from the Archive...this will take a few minutes")
+            n_tapes = self.downloader.get_all_tapes(
+                meta_path, date_range=self.date_range
+            )  # this will write chunks to folder
             if n_tapes > 0:
-                logger.info(f'Loaded {n_tapes} tapes from archive {meta_path}')
+                logger.info(f"Loaded {n_tapes} tapes from archive {meta_path}")
 
-        elif (len(meta_files) < len(years_to_load)) and os.path.basename(meta_path).replace('_ids', '') in yearly_collections:
+        elif (len(meta_files) < len(years_to_load)) and os.path.basename(meta_path).replace(
+            "_ids", ""
+        ) in yearly_collections:
             for year in years_to_load:
-                if len([x for x in meta_files if f'{year}' in x]) == 0:
+                if len([x for x in meta_files if f"{year}" in x]) == 0:
                     n_tapes = self.downloader.get_all_tapes(meta_path, date_range=[year])
 
-        if reload_ids or not os.path.exists(collection_path) and meta_path.endswith('etree_ids'):
-            logger.info('Loading collection names from archive.org')
+        if reload_ids or not os.path.exists(collection_path) and meta_path.endswith("etree_ids"):
+            logger.info("Loading collection names from archive.org")
             try:
                 self.downloader.save_all_collection_names()
             except Exception as e:
-                logger.warning(f'Error saving all collection_names {e}')
+                logger.warning(f"Error saving all collection_names {e}")
         # loop over chunks -- get max addeddate before filtering collections.
         if os.path.isdir(meta_path):
             for filename in os.listdir(meta_path):
-                if filename.endswith('.json'):
-                    time_period = int(filename.split('_')[-1].replace('.json', ''))
+                if filename.endswith(".json"):
+                    time_period = int(filename.split("_")[-1].replace(".json", ""))
                     # if min_year <= time_period <= max_year:
                     if time_period in years_to_load:
                         logger.debug(f"loading time period {time_period}")
-                        chunk = json.load(open(os.path.join(meta_path, filename), 'r'))
-                        addeddates.append(max([x['addeddate'] for x in chunk]))
-                        chunk = [t for t in chunk if any(x in self.collection_list for x in t['collection'])]
+                        chunk = json.load(open(os.path.join(meta_path, filename), "r"))
+                        addeddates.append(max([x["addeddate"] for x in chunk]))
+                        chunk = [t for t in chunk if any(x in self.collection_list for x in t["collection"])]
                         tapes.extend(chunk)
         else:
-            tapes = json.load(open(meta_path, 'r'))
-            addeddates.append(max([x['addeddate'] for x in tapes]))
-            tapes = [t for t in tapes if any(x in self.collection_list for x in t['collection'])]
+            tapes = json.load(open(meta_path, "r"))
+            addeddates.append(max([x["addeddate"] for x in tapes]))
+            tapes = [t for t in tapes if any(x in self.collection_list for x in t["collection"])]
         max_addeddate = max(addeddates) if len(tapes) > 0 else None
         return (tapes, max_addeddate)
 
-    def load_tapes(self, reload_ids=False, with_latest=False):    # IA
+    def load_tapes(self, reload_ids=False, with_latest=False):  # IA
         """ Load the tapes, then add anything which has been added since the tapes were saved """
-        logger.debug('begin loading tapes')
+        logger.debug("begin loading tapes")
         all_tapes_count = 0
         all_loaded_tapes = []
         for meta_path in self.idpath:
@@ -1037,20 +1124,28 @@ class GDArchive(BaseArchive):
             loaded_tapes, max_addeddate = self.load_current_tapes(reload_ids, meta_path=meta_path)
             if len(loaded_tapes) == 0:  # e.g. in case of an invalid collection
                 continue
-            logger.debug(f'max addeddate {max_addeddate}')
+            logger.debug(f"max addeddate {max_addeddate}")
             if with_latest:
-                min_download_addeddate = (datetime.datetime.fromisoformat(max_addeddate[:-1])) - datetime.timedelta(hours=1)
-                min_download_addeddate = datetime.datetime.strftime(min_download_addeddate, '%Y-%m-%dT%H:%M:%SZ')
-                logger.debug(f'Refreshing Tapes\nmax addeddate {max_addeddate}\nmin_download_addeddate {min_download_addeddate}')
+                min_download_addeddate = (
+                    datetime.datetime.fromisoformat(max_addeddate[:-1])
+                ) - datetime.timedelta(hours=1)
+                min_download_addeddate = datetime.datetime.strftime(
+                    min_download_addeddate, "%Y-%m-%dT%H:%M:%SZ"
+                )
+                logger.debug(
+                    f"Refreshing Tapes\nmax addeddate {max_addeddate}\nmin_download_addeddate {min_download_addeddate}"
+                )
                 n_tapes = self.downloader.get_all_tapes(meta_path, min_download_addeddate)
                 if n_tapes > 0:
-                    logger.info(f'Loaded {n_tapes} new tapes from archive {meta_path}')
+                    logger.info(f"Loaded {n_tapes} new tapes from archive {meta_path}")
             if n_tapes > 0:
-                logger.info(f'Adding {n_tapes} tapes')
+                logger.info(f"Adding {n_tapes} tapes")
                 loaded_tapes, _ = self.load_current_tapes(meta_path=meta_path)
             all_loaded_tapes.extend(loaded_tapes)
             all_tapes_count = all_tapes_count + n_tapes
-        if (all_tapes_count == 0) and (len(self.tapes) > 0):  # The tapes have already been written, and nothing was added
+        if (all_tapes_count == 0) and (
+            len(self.tapes) > 0
+        ):  # The tapes have already been written, and nothing was added
             return self.tapes
         self.tapes = [GDTape(self.dbpath, tape, self.set_data) for tape in all_loaded_tapes]
         return self.tapes
@@ -1064,7 +1159,7 @@ class GDArchive(BaseArchive):
         logger.info(f"Select artists between {start_year} and {end_year}. There are {len(year_tapes)} tapes")
 
         tapes = [item for sublist in year_tapes.values() for item in sublist]
-        kvlist = [(' '.join(x.identifier.split('_')[2].split('-')[:2]), x) for x in tapes]
+        kvlist = [(" ".join(x.identifier.split("_")[2].split("-")[:2]), x) for x in tapes]
         for kv in kvlist:
             id_dict.setdefault(kv[0], []).append(kv[1])
         return id_dict
@@ -1078,7 +1173,16 @@ class GDTape(BaseTape):
         self.meta_loaded = False
         self.venue_name = None
         self.coverage = None
-        attribs = ['date', 'identifier', 'avg_rating', 'format', 'collection', 'num_reviews', 'downloads', 'addeddate']
+        attribs = [
+            "date",
+            "identifier",
+            "avg_rating",
+            "format",
+            "collection",
+            "num_reviews",
+            "downloads",
+            "addeddate",
+        ]
         for k in attribs:
             if k in raw_json.keys():
                 setattr(self, k, raw_json[k])
@@ -1086,26 +1190,30 @@ class GDTape(BaseTape):
         # for k, v in raw_json.items():
         #     if k in attribs:
         #         setattr(self, k, v)
-        self.url_metadata = 'https://archive.org/metadata/' + self.identifier
-        self.url_details = 'https://archive.org/details/' + self.identifier
-        if self.addeddate.startswith('0000'):
-            self.addeddate = '1990-01-01T00:00:00Z'
+        self.url_metadata = "https://archive.org/metadata/" + self.identifier
+        self.url_details = "https://archive.org/details/" + self.identifier
+        if self.addeddate.startswith("0000"):
+            self.addeddate = "1990-01-01T00:00:00Z"
         self.addeddate = datetime.datetime.fromisoformat(self.addeddate[:-1])
         if isinstance(self.date, list):
             self.date = self.date[0]
         self.date = self.date[:10]
-        colls = config.optd['COLLECTIONS']
-        self.artist = colls[min([colls.index(c) if c in colls else 100 for c in self.collection])] if len(colls) > 1 else colls[0]
+        colls = config.optd["COLLECTIONS"]
+        self.artist = (
+            colls[min([colls.index(c) if c in colls else 100 for c in self.collection])]
+            if len(colls) > 1
+            else colls[0]
+        )
         self.set_data = set_data.get_date(self.artist, self.date)
         date = to_date(self.date).date()
-        self.meta_path = os.path.join(self.dbpath, str(date.year), str(date.month), self.identifier + '.json')
+        self.meta_path = os.path.join(self.dbpath, str(date.year), str(date.month), self.identifier + ".json")
 
-        self.avg_rating = float(raw_json.get('avg_rating', 2))
-        self.num_reviews = int(raw_json.get('num_reviews', 1))
-        self.downloads = int(raw_json.get('downloads', 1))
+        self.avg_rating = float(raw_json.get("avg_rating", 2))
+        self.num_reviews = int(raw_json.get("num_reviews", 1))
+        self.downloads = int(raw_json.get("downloads", 1))
 
     def stream_only(self):
-        return 'stream_only' in self.collection
+        return "stream_only" in self.collection
 
     def compute_score(self):
         """ compute a score for sorting the tape. High score means it should be played first """
@@ -1114,8 +1222,8 @@ class GDTape(BaseTape):
         score = 3
         if self.stream_only():
             score = score + 10
-        if 'optd' in dir(config) and len(config.optd['FAVORED_TAPER']) > 0:
-            if any(x.lower() in self.identifier.lower() for x in config.optd['FAVORED_TAPER']):
+        if "optd" in dir(config) and len(config.optd["FAVORED_TAPER"]) > 0:
+            if any(x.lower() in self.identifier.lower() for x in config.optd["FAVORED_TAPER"]):
                 score = score + 3
         # This is now taken care of at the Archivary level.
         # if 'optd' in dir(config) and len(config.optd['COLLECTIONS']) > 1:
@@ -1129,13 +1237,23 @@ class GDTape(BaseTape):
             score = score + 3 * (self.title_fraction() - 1)  # reduce score for tapes without titles.
             score = score + min(20, len(self._tracks)) / 4
         score = score + math.log(1 + self.downloads)
-        score = score + 0.5 * (self.avg_rating - 2.0 / math.sqrt(self.num_reviews))  # down-weigh avg_rating: it's usually about the show, not the tape.
+        score = score + 0.5 * (
+            self.avg_rating - 2.0 / math.sqrt(self.num_reviews)
+        )  # down-weigh avg_rating: it's usually about the show, not the tape.
         return score
 
     def title_fraction(self):
         n_tracks = len(self._tracks)
         lc = string.ascii_lowercase
-        n_known = len([t for t in self._tracks if t.title is not None and t.title != 'unknown' and sum([x in lc for x in t.title.lower()]) > 4])
+        n_known = len(
+            [
+                t
+                for t in self._tracks
+                if t.title is not None
+                and t.title != "unknown"
+                and sum([x in lc for x in t.title.lower()]) > 4
+            ]
+        )
         return (1 + n_known) / (1 + n_tracks)
 
     def remove_from_archive(self, page_meta):
@@ -1146,7 +1264,9 @@ class GDTape(BaseTape):
             pre_sort_order = [x.track for x in self._tracks]
             if pre_sort_order == sorted(pre_sort_order):
                 return
-            new_tracklist = [self._tracks[i] for i in sorted(range(len(pre_sort_order)), key=pre_sort_order.__getitem__)]
+            new_tracklist = [
+                self._tracks[i] for i in sorted(range(len(pre_sort_order)), key=pre_sort_order.__getitem__)
+            ]
             self._tracks = new_tracklist
         except:
             pass
@@ -1154,17 +1274,17 @@ class GDTape(BaseTape):
     def get_metadata(self, only_if_cached=False):
         if self.meta_loaded:
             return
-        if only_if_cached and not os.path.exists(self.meta_path):   # we don't have it cached, so return.
+        if only_if_cached and not os.path.exists(self.meta_path):  # we don't have it cached, so return.
             return
         self._tracks = []
-        try:     # I used to check if file exists, but it may also be corrupt, so this is safer.
-            page_meta = json.load(open(self.meta_path, 'r'))
+        try:  # I used to check if file exists, but it may also be corrupt, so this is safer.
+            page_meta = json.load(open(self.meta_path, "r"))
         except Exception:
             r = requests.get(self.url_metadata)
             logger.debug("url is {}".format(r.url))
             if r.status_code != 200:
                 logger.warning("error pulling data for {}".format(self.identifier))
-                raise Exception('Download', 'Error {} url {}'.format(r.status_code, self.url_metadata))
+                raise Exception("Download", "Error {} url {}".format(r.status_code, self.url_metadata))
             try:
                 page_meta = r.json()
             except ValueError:
@@ -1177,34 +1297,38 @@ class GDTape(BaseTape):
         # self.reviews = page_meta['reviews'] if 'reviews' in page_meta.keys() else []
         orig_titles = {}
         orig_tracknums = {}
-        if 'files' not in page_meta.keys():
+        if "files" not in page_meta.keys():
             # This tape can not be played, and should be removed from the data.
             self.remove_from_archive(page_meta)
             return
-        for ifile in page_meta['files']:
+        for ifile in page_meta["files"]:
             try:
-                if ifile['source'] == 'original':
+                if ifile["source"] == "original":
                     try:
-                        orig_titles[ifile['name']] = ifile['title'] if ('title' in ifile.keys() and ifile['title'] != 'unknown') else ifile['name']
-                        if ifile.get('track', None):
-                            orig_tracknums[ifile['name']] = ifile['track']
+                        orig_titles[ifile["name"]] = (
+                            ifile["title"]
+                            if ("title" in ifile.keys() and ifile["title"] != "unknown")
+                            else ifile["name"]
+                        )
+                        if ifile.get("track", None):
+                            orig_tracknums[ifile["name"]] = ifile["track"]
                         # orig_titles[ifile['name']] = re.sub(r'(.flac)|(.mp3)|(.ogg)$','', orig_titles[ifile['name']])
                     except Exception as e:
                         logger.exception(e)
                         pass
-                if ifile['format'] in (self._lossy_formats if self.stream_only() else self._playable_formats):
+                if ifile["format"] in (self._lossy_formats if self.stream_only() else self._playable_formats):
                     self.append_track(ifile, orig_titles, orig_tracknums)
             except KeyError as e:
                 logger.warning("Error in parsing metadata")
                 raise (e)
                 pass
-            except Exception as e:   # TODO handle this!!!
+            except Exception as e:  # TODO handle this!!!
                 raise (e)
         self.reorder_tracks(orig_tracknums)
 
         try:
-            self.venue_name = page_meta['metadata']['venue']
-            self.coverage = page_meta['metadata']['coverage']
+            self.venue_name = page_meta["metadata"]["venue"]
+            self.coverage = page_meta["metadata"]["coverage"]
         except Exception:
             # logger.warn(f"Failed to read venue, city, state from metadata. {self.meta_path}")
             pass
@@ -1213,32 +1337,34 @@ class GDTape(BaseTape):
 
         for track in self._tracks:
             if not isinstance(track.title, (str, bytes)):
-                track.title = ''
-            track.title = re.sub(r'gd\d{2}(?:\d{2})?-\d{2}-\d{2}[ ]*([td]\d*)*', '', track.title).strip()
-            track.title = re.sub(r'(.flac)|(.mp3)|(.ogg)$', '', track.title).strip()
+                track.title = ""
+            track.title = re.sub(r"gd\d{2}(?:\d{2})?-\d{2}-\d{2}[ ]*([td]\d*)*", "", track.title).strip()
+            track.title = re.sub(r"(.flac)|(.mp3)|(.ogg)$", "", track.title).strip()
         self.insert_breaks()
         return
 
     def write_metadata(self, page_meta):
         os.makedirs(os.path.dirname(self.meta_path), exist_ok=True)
-        json.dump(page_meta, open(self.meta_path, 'w'))
+        json.dump(page_meta, open(self.meta_path, "w"))
         self.meta_loaded = True
 
     def append_track(self, tdict, orig_titles={}, orig_tracks={}):
-        if not 'original' in tdict.keys():  # This is not a valid track
+        if not "original" in tdict.keys():  # This is not a valid track
             return
-        name = tdict.get('name', 'unknown')
-        if name.startswith('_78'):          # in the georgeblood collections, these are auxilliary tracks, to be ignored.
+        name = tdict.get("name", "unknown")
+        if name.startswith(
+            "_78"
+        ):  # in the georgeblood collections, these are auxilliary tracks, to be ignored.
             return
-        source = tdict['source']
-        if source == 'original':
-            orig = tdict['name']
+        source = tdict["source"]
+        if source == "original":
+            orig = tdict["name"]
             # orig = re.sub(r'(.flac)|(.mp3)|(.ogg)$','', orig)
         else:
-            orig = tdict['original']
-        if tdict.get('title', 'unknown') == 'unknown':
-            tdict['title'] = orig_titles.get(orig, None)
-        tdict['track'] = orig_tracks.get(orig, None)
+            orig = tdict["original"]
+        if tdict.get("title", "unknown") == "unknown":
+            tdict["title"] = orig_titles.get(orig, None)
+        tdict["track"] = orig_tracks.get(orig, None)
         for i, t in enumerate(self._tracks):  # loop over the _tracks we already have
             if orig == t.original:  # add in alternate formats.
                 # make sure that this isn't a duplicate!!!
@@ -1257,26 +1383,34 @@ class GDTape(BaseTape):
             if self.meta_loaded:
                 venue_name = self.venue_name
                 city_state = self.coverage
-                venue_string = f'{venue_name}, {city_state}'
+                venue_string = f"{venue_name}, {city_state}"
                 return venue_string
         if sd.n_sets == 0:
             return self.identifier
         # logger.warning(f'sd is {sd}. Tape is {self}')
-        venue_string = ""
-        loc = sd.location
-        if tracknum > 0:    # only pull the metadata if the query is about a late track.
-            self.get_metadata()
-            breaks = self._compute_breaks()
-            if (len(breaks['location']) > 0) and (tracknum > breaks['location'][0]):
-                loc = sd.location2
-        venue_string = F"{loc[0]}, {loc[1]}, {loc[2]}"
+        try:
+            venue_string = ""
+            loc = sd.location
+            if tracknum > 0:  # only pull the metadata if the query is about a late track.
+                self.get_metadata()
+                breaks = self._compute_breaks()
+                if (len(breaks["location"]) > 0) and (tracknum > breaks["location"][0]):
+                    loc = sd.location2
+            venue_string = f"{loc[0]}, {loc[1]}, {loc[2]}"
+        except:
+            logger.warning(f"failed to get venue for tape id {self.identifier}")
+            return self.identifier
         return venue_string
 
     def _compute_breaks(self):
         if not self.meta_loaded:
             self.get_metadata()
         tlist = [x.title for x in self._tracks]
-        replacements = {'GDTRFB': 'Going Down the Road Feeling Bad', 'FOTD': 'Friend of the Devil', 'EOTW': 'Eyes of the World'}
+        replacements = {
+            "GDTRFB": "Going Down the Road Feeling Bad",
+            "FOTD": "Friend of the Devil",
+            "EOTW": "Eyes of the World",
+        }
         replacer = replacements.get
         tlist = [replacer(n, n) for n in tlist]
         sd = self.set_data
@@ -1300,11 +1434,13 @@ class GDTape(BaseTape):
         locb_locations = []
         lb_locations = [j for t, j in {t: j + 1 for j, t in enumerate(tlist) if t in long_breaks}.items()]
         sb_locations = [j for t, j in {t: j + 1 for j, t in enumerate(tlist) if t in short_breaks}.items()]
-        locb_locations = [j for t, j in {t: j + 1 for j, t in enumerate(tlist) if t in location_breaks}.items()]
+        locb_locations = [
+            j for t, j in {t: j + 1 for j, t in enumerate(tlist) if t in location_breaks}.items()
+        ]
         # At this point, i need to add "longbreak" and "shortbreak" tracks to the tape.
         # This will require creating special GDTracks.
         # for now, return the location indices.
-        return {'long': lb_locations, 'short': sb_locations, 'location': locb_locations}
+        return {"long": lb_locations, "short": sb_locations, "location": locb_locations}
 
     def insert_breaks(self, breaks=None, force=False):
         if not self.meta_loaded:
@@ -1313,41 +1449,49 @@ class GDTape(BaseTape):
             return
         if not breaks:
             breaks = self._compute_breaks()
-        longbreak_path = pkg_resources.resource_filename('timemachine.metadata', 'silence600.ogg')
-        breakd = {'track': -1, 'original': 'setbreak', 'title': 'Set Break', 'format': 'Ogg Vorbis', 'size': 1, 'source': 'original', 'path': os.path.dirname(longbreak_path)}
-        lbreakd = dict(list(breakd.items()) + [('title', 'Set Break'), ('name', 'silence600.ogg')])
-        sbreakd = dict(list(breakd.items()) + [('title', 'Encore Break'), ('name', 'silence0.ogg')])
-        locbreakd = dict(list(breakd.items()) + [('title', 'Location Break'), ('name', 'silence600.ogg')])
-        flipbreakd = dict(list(breakd.items()) + [('title', 'Record Flip'), ('name', 'silence30.ogg')])
-        recordbreakd = dict(list(breakd.items()) + [('title', 'Record Change'), ('name', 'silence120.ogg')])
+        longbreak_path = pkg_resources.resource_filename("timemachine.metadata", "silence600.ogg")
+        breakd = {
+            "track": -1,
+            "original": "setbreak",
+            "title": "Set Break",
+            "format": "Ogg Vorbis",
+            "size": 1,
+            "source": "original",
+            "path": os.path.dirname(longbreak_path),
+        }
+        lbreakd = dict(list(breakd.items()) + [("title", "Set Break"), ("name", "silence600.ogg")])
+        sbreakd = dict(list(breakd.items()) + [("title", "Encore Break"), ("name", "silence0.ogg")])
+        locbreakd = dict(list(breakd.items()) + [("title", "Location Break"), ("name", "silence600.ogg")])
+        flipbreakd = dict(list(breakd.items()) + [("title", "Record Flip"), ("name", "silence30.ogg")])
+        recordbreakd = dict(list(breakd.items()) + [("title", "Record Change"), ("name", "silence120.ogg")])
 
         # make the tracks
         newtracks = []
         tlist = [x.title for x in self._tracks]
-        set_breaks_already_in_tape = difflib.get_close_matches('Set Break', tlist, cutoff=0.6)
+        set_breaks_already_in_tape = difflib.get_close_matches("Set Break", tlist, cutoff=0.6)
         set_breaks_already_locs = [tlist.index(x) for x in set_breaks_already_in_tape]
         for i, t in enumerate(self._tracks):
             if i not in set_breaks_already_locs:
-                if 'long' in breaks.keys():
-                    for j in breaks['long']:
+                if "long" in breaks.keys():
+                    for j in breaks["long"]:
                         if i == j:
-                            newtracks.append(GDTrack(lbreakd, '', True))
-                if 'short' in breaks.keys():
-                    for j in breaks['short']:
+                            newtracks.append(GDTrack(lbreakd, "", True))
+                if "short" in breaks.keys():
+                    for j in breaks["short"]:
                         if i == j:
-                            newtracks.append(GDTrack(sbreakd, '', True))
-                if 'location' in breaks.keys():
-                    for j in breaks['location']:
+                            newtracks.append(GDTrack(sbreakd, "", True))
+                if "location" in breaks.keys():
+                    for j in breaks["location"]:
                         if i == j:
-                            newtracks.append(GDTrack(locbreakd, '', True))
-                if 'flip' in breaks.keys():
-                    for j in breaks['flip']:
+                            newtracks.append(GDTrack(locbreakd, "", True))
+                if "flip" in breaks.keys():
+                    for j in breaks["flip"]:
                         if i == j:
-                            newtracks.append(GDTrack(flipbreakd, '', True))
-                if 'record' in breaks.keys():
-                    for j in breaks['record']:
+                            newtracks.append(GDTrack(flipbreakd, "", True))
+                if "record" in breaks.keys():
+                    for j in breaks["record"]:
                         if i == j:
-                            newtracks.append(GDTrack(recordbreakd, '', True))
+                            newtracks.append(GDTrack(recordbreakd, "", True))
             newtracks.append(t)
         self._breaks_added = True
         self._tracks = newtracks.copy()
@@ -1358,53 +1502,70 @@ class GDTrack(BaseTrack):
 
     def __init__(self, tdict, parent_id, break_track=False):
         super().__init__(tdict, parent_id, break_track)
-        attribs = ['track', 'original', 'title']
+        attribs = ["track", "original", "title"]
 
         """ NOTE This should be part of the player, not part of the tape or track, as it is now """
-        if config.optd['PLAY_LOSSLESS']:
-            self._playable_formats = ['Flac', 'Shorten', 'Ogg Vorbis', 'VBR MP3', 'MP3']
+        if config.optd["PLAY_LOSSLESS"]:
+            self._playable_formats = ["Flac", "Shorten", "Ogg Vorbis", "VBR MP3", "MP3"]
         else:
-            self._playable_formats = ['Ogg Vorbis', 'VBR MP3', 'MP3']
-        self._lossy_formats = ['Ogg Vorbis', 'VBR MP3', 'MP3']
+            self._playable_formats = ["Ogg Vorbis", "VBR MP3", "MP3"]
+        self._lossy_formats = ["Ogg Vorbis", "VBR MP3", "MP3"]
         """ ----------------------------------------------------------------------------------- """
 
-        if 'title' not in tdict.keys():
-            tdict['title'] = tdict['name'] if 'name' in tdict.keys() else 'unknown'
+        if "title" not in tdict.keys():
+            tdict["title"] = tdict["name"] if "name" in tdict.keys() else "unknown"
         for k, v in tdict.items():
             if k in attribs:
                 setattr(self, k, v)
-        if tdict['source'] == 'original':
-            self.original = tdict['name']
+        if tdict["source"] == "original":
+            self.original = tdict["name"]
         try:
-            self.track = int(self.track) if 'track' in dir(self) and self.track is not None else None
+            self.track = int(self.track) if "track" in dir(self) and self.track is not None else None
         except ValueError:
             self.track = None
         self.files = []
         self.add_file(tdict, break_track)
 
     def add_file(self, tdict, break_track=False):
-        attribs = ['name', 'format', 'size', 'source', 'path']
+        attribs = ["name", "format", "size", "source", "path"]
         d = {k: v for (k, v) in tdict.items() if k in attribs}
-        d['size'] = int(d['size'])
+        d["size"] = int(d["size"])
         if not break_track:
-            d['url'] = 'https://archive.org/download/' + self.parent_id + '/' + d['name']
+            d["url"] = "https://archive.org/download/" + self.parent_id + "/" + d["name"]
         else:
-            d['url'] = 'file://' + os.path.join(d['path'], d['name'])
+            d["url"] = "file://" + os.path.join(d["path"], d["name"])
         self.files.append(d)
-        self.files = sorted(self.files, key=lambda x: self._playable_formats.index(x['format']))
+        self.files = sorted(self.files, key=lambda x: self._playable_formats.index(x["format"]))
 
 
 class GDSet_row:
     """ Set Information from a Grateful Dead or (other collection) date """
 
     def __init__(self, data_row):
-        for elem in ['date', 'artist', 'time', 'song', 'venue', 'city', 'state', 'break_length', 'show_set',
-                'time', 'song_n', 'isong', 'next_set', 'Nevents', 'ievent']:
-            setattr(self, elem, data_row.get(elem, ''))
+        for elem in [
+            "date",
+            "artist",
+            "time",
+            "song",
+            "venue",
+            "city",
+            "state",
+            "break_length",
+            "show_set",
+            "time",
+            "song_n",
+            "isong",
+            "next_set",
+            "Nevents",
+            "ievent",
+        ]:
+            setattr(self, elem, data_row.get(elem, ""))
         self.start_time = datetime.time.fromisoformat(self.time) if len(self.time) > 0 else None
 
     def __repr__(self):
-        retstr = f'{self.artist} {self.date}: {self.venue} {self.city}, {self.state}. {self.show_set} {self.song} '
+        retstr = (
+            f"{self.artist} {self.date}: {self.venue} {self.city}, {self.state}. {self.show_set} {self.song} "
+        )
         return retstr
 
 
@@ -1413,14 +1574,14 @@ class GDDate_info:
 
     def __init__(self, set_rows):
         self.n_sets = len(set_rows)
-        self.date = set_rows[0].date if self.n_sets > 0 else ''
+        self.date = set_rows[0].date if self.n_sets > 0 else ""
         self.locationbreak = []
         self.longbreaks = []
         self.shortbreaks = []
         self.location = ()
         self.n_locations = 0
         for row in set_rows:
-            prevsong = ''
+            prevsong = ""
             if int(row.ievent) == 1:
                 self.location = (row.venue, row.city, row.state)
                 self.n_locations = 1
@@ -1429,13 +1590,13 @@ class GDDate_info:
                 self.n_locations = 2
                 self.location2 = (row.venue, row.city, row.state)
                 self.locationbreak = [prevsong]
-            if row.break_length == 'long':
+            if row.break_length == "long":
                 self.longbreaks.append(row.song)
-            if row.break_length == 'short':
+            if row.break_length == "short":
                 self.shortbreaks.append(row.song)
 
     def __repr__(self):
-        retstr = f'{self.date} {self.location} -- {self.n_sets} Rows. Long breaks:{self.longbreaks}. Short breaks {self.shortbreaks}'
+        retstr = f"{self.date} {self.location} -- {self.n_sets} Rows. Long breaks:{self.longbreaks}. Short breaks {self.shortbreaks}"
         return retstr
 
 
@@ -1449,7 +1610,7 @@ class GDSetBreaks:
         # if 'GratefulDead' not in self.collection_list:
         #    self.set_data = set_data
         #    return
-        set_breaks = pkg_resources.resource_stream('timemachine.metadata', 'set_breaks.csv')
+        set_breaks = pkg_resources.resource_stream("timemachine.metadata", "set_breaks.csv")
         utf8_reader = codecs.getreader("utf-8")
         r = [r for r in csv.reader(utf8_reader(set_breaks))]
         headers = r[0]
@@ -1525,7 +1686,15 @@ class Archivary_Updater(Thread):
     to the time spent waiting for the next update check.
     """
 
-    def __init__(self, state, interval: float, event: Event, scr=None, lock: Optional[Lock] = None, stop_on_exception: bool = False) -> None:
+    def __init__(
+        self,
+        state,
+        interval: float,
+        event: Event,
+        scr=None,
+        lock: Optional[Lock] = None,
+        stop_on_exception: bool = False,
+    ) -> None:
         """Create an Updater.
 
              Args:
@@ -1560,7 +1729,7 @@ class Archivary_Updater(Thread):
         Returns:
             (bool) True if AUTO_UPDATE and the player is currently not playing
         """
-        if not config.optd['AUTO_UPDATE_ARCHIVE']:
+        if not config.optd["AUTO_UPDATE_ARCHIVE"]:
             return False
         logger.debug("Checking for updates.")
         time_since_last_update = (datetime.datetime.now() - self.last_update_time).seconds
@@ -1581,7 +1750,7 @@ class Archivary_Updater(Thread):
     def run(self):
         while not self.stopped.wait(timeout=self.interval * (1 + 0.1 * random.random())):
             current = self.state.get_current()
-            playstate = current['PLAY_STATE']
+            playstate = current["PLAY_STATE"]
             if not self.check_for_updates(playstate):
                 continue
             try:
@@ -1594,5 +1763,5 @@ class Archivary_Updater(Thread):
                 logger.exception(e)
             finally:
                 if self.lock:
-                    logger.debug('releasing updater lock')
+                    logger.debug("releasing updater lock")
                     self.lock.release()
