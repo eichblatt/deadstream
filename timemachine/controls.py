@@ -949,19 +949,27 @@ class state:
         self.dict['PLAY_STATE'] = self.dict.get('PLAY_STATE', -1)
         self.dict['VENUE'] = self.dict.get('VENUE', '')
         try:
+            rownum = 0
             self.dict['VOLUME'] = self.player.get_prop('volume')
+            rownum += 1
             self.dict['TRACK_NUM'] = self.player._get_property('playlist-pos')
+            rownum += 1
             if isinstance(self.player.tape, Archivary.GDTape):  # type(None)):
                 self.dict['TAPE_ID'] = self.player.tape.identifier
+                rownum += 1
                 self.dict['VENUE'] = self.player.tape.venue()
+                rownum += 1
                 self.dict['TRACK_TITLE'] = self.player.tape.tracks()[self.dict['TRACK_NUM']].title
+                rownum += 1
                 if (self.dict['TRACK_NUM'] + 1) < len(self.player.playlist):
+                    rownum += 1
                     next_track = self.dict['TRACK_NUM'] + 1
                     self.dict['NEXT_TRACK_TITLE'] = self.player.tape.tracks()[next_track].title
+                    rownum += 1
                 else:
                     self.dict['NEXT_TRACK_TITLE'] = ''
         except Exception:
-            logger.warning('Exception getting current state. Using some defaults')
+            logger.warning(F'Exception getting current state. Using some defaults {rownum}')
         self.dict['TRACK_ID'] = F"{self.dict['TAPE_ID']}_track_{self.dict['TRACK_NUM']}"
         return self.dict
 
