@@ -954,16 +954,15 @@ class state:
             if isinstance(self.player.tape, Archivary.GDTape):  # type(None)):
                 self.dict['TAPE_ID'] = self.player.tape.identifier
                 self.dict['VENUE'] = self.player.tape.venue()
-                if self.dict['TRACK_NUM'] is not None:
-                    if (self.dict['TRACK_NUM']) < len(self.player.playlist):
-                        self.dict['TRACK_TITLE'] = self.player.tape.tracks()[self.dict['TRACK_NUM']].title
-                    if (self.dict['TRACK_NUM'] + 1) < len(self.player.playlist):
-                        next_track = self.dict['TRACK_NUM'] + 1
-                        self.dict['NEXT_TRACK_TITLE'] = self.player.tape.tracks()[next_track].title
-                    else:
-                        self.dict['NEXT_TRACK_TITLE'] = ''
+                if (self.dict['TRACK_NUM']) < len(self.player.playlist):
+                    self.dict['TRACK_TITLE'] = self.player.tape.tracks()[self.dict['TRACK_NUM']].title
+                if (self.dict['TRACK_NUM'] + 1) < len(self.player.playlist):
+                    next_track = self.dict['TRACK_NUM'] + 1
+                    self.dict['NEXT_TRACK_TITLE'] = self.player.tape.tracks()[next_track].title
+                else:
+                    self.dict['NEXT_TRACK_TITLE'] = ''
         except Exception:
-            # logger.warning(F'Exception getting current state. Using some defaults {rownum}')
+            # logger.debug('Exception getting current state. Using some defaults')
             pass
         self.dict['TRACK_ID'] = F"{self.dict['TAPE_ID']}_track_{self.dict['TRACK_NUM']}"
         return self.dict
