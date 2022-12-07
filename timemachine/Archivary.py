@@ -1260,13 +1260,20 @@ class GDTape(BaseTape):
         self._remove_from_archive = True
 
     def reorder_tracks(self, orig_tracknums):
+        tracknums_orig = {int(v): k for k, v in orig_tracknums.items()}
         try:
-            pre_sort_order = [x.track for x in self._tracks]
+            pre_sort_order = [x.track if x.track is not None else -1 for x in self._tracks]
             if pre_sort_order == sorted(pre_sort_order):
                 return
-            new_tracklist = [
-                self._tracks[i] for i in sorted(range(len(pre_sort_order)), key=pre_sort_order.__getitem__)
-            ]
+            # new_tracklist = [self._tracks[i] for i in sorted(range(len(pre_sort_order)), key=pre_sort_order.__getitem__)]
+            new_tracklist = []
+            for k in sorted(tracknums_orig.keys()):
+                filename = tracknums_orig[k]
+                for t in self._tracks:
+                    if os.path.splitext(t.files[0].get('name', ''))[0] == os.path.splitext(filename)[0]:
+                        new_tracklist.append(t)
+                        continue
+            #new_tracklist = [self._tracks[i] for i in sorted(range(len(pre_sort_order)), key=tracknums_orig.__getitem__)]
             self._tracks = new_tracklist
         except:
             pass
