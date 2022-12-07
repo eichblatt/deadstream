@@ -31,7 +31,6 @@ setup(
         'cherrypy',
         'gpiozero',
         'pexpect',
-        'pickle5',
         'Pillow',
         'pre-commit',
         'pulsectl',
