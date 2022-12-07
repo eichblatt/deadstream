@@ -324,14 +324,18 @@ def play_pause_button(button, state):
         state.player.pause()
         current["PAUSED_AT"] = datetime.datetime.now()
         current["PLAY_STATE"] = config.PAUSED
-    elif current["PLAY_STATE"] in [config.PAUSED, config.STOPPED, config.READY, config.ENDED]:
+    elif current["PLAY_STATE"] in [config.PAUSED, config.STOPPED]:
         current["PLAY_STATE"] = config.PLAYING
         TMB.scr.wake_up()
         TMB.screen_event.set()
-        TMB.scr.show_playstate(
-            staged_play=True, force=True
-        )  # show that we've registered the button-press before blocking call.
+        # show that we've registered the button-press before blocking call.
+        TMB.scr.show_playstate(staged_play=True, force=True)
         state.player.play()  # this is a blocking call. I could move the "wait_until_playing" to the event handler.
+    elif current["PLAY_STATE"] in [config.READY, config.ENDED]:
+        if current['TAPE_ID'] != '':
+            tape = state.player.tape
+            state.player.insert_tape(tape)
+            state.player.play()  # this is a blocking call. I could move the "wait_until_playing" to the event handler.
     state.set(current)
     playstate_event.set()
 
@@ -701,7 +705,7 @@ def refresh_venue(state):
         display_offset = 0 if (display_offset < screen_width) else display_offset
         TMB.scr.show_venue(display_string[display_offset:], color=id_color)
     else:
-        TMB.scr.show_venue(display_string[-1 * (screen_width - 1) :], color=id_color)
+        TMB.scr.show_venue(display_string[-1 * (screen_width - 1):], color=id_color)
 
     div, mod = divmod(venue_counter[1] + 1, n_subfields)
     venue_counter = (divmod(venue_counter[0] + div, n_fields)[1], mod)
