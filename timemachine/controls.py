@@ -959,17 +959,20 @@ class state:
                 rownum += 1
                 self.dict['VENUE'] = self.player.tape.venue()
                 rownum += 1
-                self.dict['TRACK_TITLE'] = self.player.tape.tracks()[self.dict['TRACK_NUM']].title
-                rownum += 1
-                if (self.dict['TRACK_NUM'] + 1) < len(self.player.playlist):
-                    rownum += 1
-                    next_track = self.dict['TRACK_NUM'] + 1
-                    self.dict['NEXT_TRACK_TITLE'] = self.player.tape.tracks()[next_track].title
-                    rownum += 1
-                else:
-                    self.dict['NEXT_TRACK_TITLE'] = ''
+                if self.dict['TRACK_NUM'] is not None:
+                    if (self.dict['TRACK_NUM']) < len(self.player.playlist):
+                        self.dict['TRACK_TITLE'] = self.player.tape.tracks()[self.dict['TRACK_NUM']].title
+                        rownum += 1
+                    if (self.dict['TRACK_NUM'] + 1) < len(self.player.playlist):
+                        rownum += 1
+                        next_track = self.dict['TRACK_NUM'] + 1
+                        self.dict['NEXT_TRACK_TITLE'] = self.player.tape.tracks()[next_track].title
+                        rownum += 1
+                    else:
+                        self.dict['NEXT_TRACK_TITLE'] = ''
         except Exception:
-            logger.warning(F'Exception getting current state. Using some defaults {rownum}')
+            # logger.warning(F'Exception getting current state. Using some defaults {rownum}')
+            pass
         self.dict['TRACK_ID'] = F"{self.dict['TAPE_ID']}_track_{self.dict['TRACK_NUM']}"
         return self.dict
 
