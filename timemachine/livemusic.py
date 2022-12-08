@@ -333,8 +333,12 @@ def play_pause_button(button, state):
         state.player.play()  # this is a blocking call. I could move the "wait_until_playing" to the event handler.
     elif current["PLAY_STATE"] in [config.READY, config.ENDED]:
         if current['TAPE_ID'] != '':
+            TMB.scr.wake_up()
+            TMB.screen_event.set()
             tape = state.player.tape
             state.player.insert_tape(tape)
+            current["PLAY_STATE"] = config.PLAYING
+            TMB.scr.show_playstate(staged_play=True, force=True)
             state.player.play()  # this is a blocking call. I could move the "wait_until_playing" to the event handler.
     state.set(current)
     playstate_event.set()
