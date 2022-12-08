@@ -20,22 +20,21 @@ import os
 import string
 import subprocess
 from bisect import bisect
-from time import sleep
 from threading import BoundedSemaphore, Event
+from time import sleep
+from typing import Callable
 
 import adafruit_rgb_display.st7735 as st7735
 import board
 import digitalio
+import pkg_resources
 from adafruit_rgb_display import color565
-from gpiozero import Button, LED, RotaryEncoder
+from gpiozero import LED, Button, RotaryEncoder
 from PIL import Image, ImageDraw, ImageFont
 from tenacity import retry
 from tenacity.stop import stop_after_delay
-from typing import Callable
 
-import pkg_resources
-from timemachine import config, Archivary
-
+from timemachine import Archivary, config
 
 logging.basicConfig(format='%(asctime)s.%(msecs)03d %(levelname)s: %(name)s %(message)s', level=logging.DEBUG, datefmt='%Y-%m-%d %H:%M:%S')
 VERBOSE = 5
