@@ -244,7 +244,11 @@ def select_current_date(state, autoplay=True):
         TMB.scr.show_venue("No Audio", color=(255, 255, 255), force=True)
         sleep(2)
         return
-    tape = tapes[date_reader.shownum]
+    shownum = date_reader.shownum
+    if shownum > len(tapes) - 1:
+        logger.warning(f"A tape has been removed from this date {date_reader.fmtdate()}")
+        shownum = len(tapes) - 1
+    tape = tapes[shownum]
     TMB.scr.show_playstate(staged_play=True, force=True)
     state = select_tape(tape, state, autoplay=autoplay)
 
