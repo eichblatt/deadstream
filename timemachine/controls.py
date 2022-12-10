@@ -950,7 +950,7 @@ class state:
         try:
             self.dict['VOLUME'] = self.player.get_prop('volume')
             self.dict['TRACK_NUM'] = self.player._get_property('playlist-pos')
-            if isinstance(self.player.tape, Archivary.GDTape):  # type(None)):
+            if not isinstance(self.player.tape, type(None)):  # could be more specific, but needs to cover all archive types
                 self.dict['TAPE_ID'] = self.player.tape.identifier
                 self.dict['VENUE'] = self.player.tape.venue()
                 if (self.dict['TRACK_NUM']) < len(self.player.playlist):
