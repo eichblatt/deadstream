@@ -36,13 +36,17 @@ from tenacity.stop import stop_after_delay
 
 from timemachine import Archivary, config
 
-logging.basicConfig(format='%(asctime)s.%(msecs)03d %(levelname)s: %(name)s %(message)s', level=logging.DEBUG, datefmt='%Y-%m-%d %H:%M:%S')
+logging.basicConfig(
+    format="%(asctime)s.%(msecs)03d %(levelname)s: %(name)s %(message)s",
+    level=logging.DEBUG,
+    datefmt="%Y-%m-%d %H:%M:%S",
+)
 VERBOSE = 5
 logging.addLevelName(VERBOSE, "VERBOSE")
 logger = logging.getLogger(__name__)
 
 ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
-FONTS_DIR = os.path.join(ROOT_DIR, 'fonts')
+FONTS_DIR = os.path.join(ROOT_DIR, "fonts")
 
 screen_semaphore = BoundedSemaphore(1)
 state_semaphore = BoundedSemaphore(1)
@@ -61,12 +65,13 @@ def with_state_semaphore(func):
             acquired = state_semaphore.acquire(timeout=5)
             if not acquired:
                 logger.warning("State semaphore not acquired after 5 seconds!")
-                raise Exception('state semaphore not acquired')
+                raise Exception("state semaphore not acquired")
             func(*args, **kwargs)
         except BaseException:
             raise
         finally:
             state_semaphore.release()
+
     return inner
 
 
@@ -76,12 +81,13 @@ def with_semaphore(func):
             acquired = screen_semaphore.acquire(timeout=5)
             if not acquired:
                 logger.warning("Screen semaphore not acquired after 5 seconds!")
-                raise Exception('screen semaphore not acquired')
+                raise Exception("screen semaphore not acquired")
             func(*args, **kwargs)
         except BaseException:
             raise
         finally:
             screen_semaphore.release()
+
     return inner
 
 
@@ -89,15 +95,15 @@ OS_VERSION = None
 
 
 def get_os_version():
-    global OS_VERSION   # cache the value of os version
+    global OS_VERSION  # cache the value of os version
     if OS_VERSION is None:
         try:
             cmd = "cat /etc/os-release"
             lines = subprocess.check_output(cmd, shell=True)
-            lines = lines.decode().split('\n')
+            lines = lines.decode().split("\n")
             for line in lines:
-                split_line = line.split('=')
-                if split_line[0] == 'VERSION_ID':
+                split_line = line.split("=")
+                if split_line[0] == "VERSION_ID":
                     OS_VERSION = int(split_line[1].strip('"'))
         except Exception:
             logger.warning("Failed to get OS Version")
@@ -126,11 +132,11 @@ class artist_knob_reader:
         return self.__repr__()
 
     def __repr__(self):
-        avail = ''
+        avail = ""
         shows = self.shows_available()
         if len(shows) > 0:
-            avail = f'{shows} shows Available. Now at {shows[self.shownum]}'
-        return F'Date Knob Says: {self.date.strftime("%Y-%m-%d")}. {avail}'
+            avail = f"{shows} shows Available. Now at {shows[self.shownum]}"
+        return f'Date Knob Says: {self.date.strftime("%Y-%m-%d")}. {avail}'
 
     def update(self):
         self.shownum = 0
@@ -140,9 +146,9 @@ class artist_knob_reader:
         m_val = self.m.steps
         d_val = self.d.steps
         y_val = self.y.steps + self.year_baseline
-        logger.debug(F"updating date reader. m:{m_val},d:{d_val},y:{y_val}")
+        logger.debug(f"updating date reader. m:{m_val},d:{d_val},y:{y_val}")
         self.date = datetime.date(y_val, 1, 1)
-        logger.debug(F"date reader date {self.date}")
+        logger.debug(f"date reader date {self.date}")
 
     def set_date(self, date, shownum=0):
         new_month, new_day, new_year = (date.month, date.day, date.year)
@@ -155,7 +161,7 @@ class artist_knob_reader:
     def fmtdate(self):
         if self.date is None:
             return None
-        return self.date.strftime('%Y-%m-%d')
+        return self.date.strftime("%Y-%m-%d")
 
     def venue(self):
         if self.tape_available():
@@ -214,11 +220,11 @@ class date_knob_reader:
         return self.__repr__()
 
     def __repr__(self):
-        avail = ''
+        avail = ""
         shows = self.shows_available()
         if len(shows) > 0:
-            avail = f'{shows} shows Available. Now at {shows[self.shownum]}'
-        return F'Date Knob Says: {self.date.strftime("%Y-%m-%d")}. {avail}'
+            avail = f"{shows} shows Available. Now at {shows[self.shownum]}"
+        return f'Date Knob Says: {self.date.strftime("%Y-%m-%d")}. {avail}'
 
     def update(self):
         self.shownum = 0
@@ -228,7 +234,7 @@ class date_knob_reader:
         m_val = self.m.steps
         d_val = self.d.steps
         y_val = self.y.steps + self.year_baseline
-        logger.debug(F"updating date reader. m:{m_val},d:{d_val},y:{y_val}")
+        logger.debug(f"updating date reader. m:{m_val},d:{d_val},y:{y_val}")
         if d_val > self.maxd[m_val - 1]:
             self.d.steps = self.maxd[m_val - 1]
             d_val = self.d.steps
@@ -238,7 +244,7 @@ class date_knob_reader:
             self.d.steps = self.d.steps - 1
             d_val = d_val - 1
             self.date = datetime.date(y_val, m_val, d_val)
-        logger.debug(F"date reader date {self.date}")
+        logger.debug(f"date reader date {self.date}")
 
     def set_date(self, date, shownum=0):
         new_month, new_day, new_year = (date.month, date.day, date.year)
@@ -251,7 +257,7 @@ class date_knob_reader:
     def fmtdate(self):
         if self.date is None:
             return None
-        return self.date.strftime('%Y-%m-%d')
+        return self.date.strftime("%Y-%m-%d")
 
     def venue(self):
         if self.tape_available():
@@ -282,7 +288,7 @@ class date_knob_reader:
         current_index = bisect(self.archive.dates, self.fmtdate())
         for d in self.archive.dates[current_index:] + self.archive.dates[:current_index]:
             artists = [t.artist for t in self.archive.tape_dates[d]]
-            artists = list(dict.fromkeys(artists))   # make it the unique set
+            artists = list(dict.fromkeys(artists))  # make it the unique set
             if not artist in artists:
                 continue
             shownum = artists.index(artist)
@@ -309,7 +315,7 @@ class date_knob_reader:
         return self.date
 
 
-class decade_counter():
+class decade_counter:
     def __init__(self, tens: RotaryEncoder, ones: RotaryEncoder, bounds=(None, None)):
         self.bounds = bounds
         self.tens = tens
@@ -329,7 +335,7 @@ class decade_counter():
         return self.value
 
 
-class Time_Machine_Board():
+class Time_Machine_Board:
     """ TMB class describes and addresses the hardware of the Time Machine Board """
 
     def __init__(self, mdy_bounds=[(0, 9), (0, 9), (0, 9)], upside_down=False):
@@ -344,9 +350,27 @@ class Time_Machine_Board():
         if mdy_bounds is None:
             return
         knob_sense = self.get_knob_sense()
-        self.m = retry_call(RotaryEncoder, config.month_pins[knob_sense & 1], config.month_pins[~knob_sense & 1], max_steps=0, threshold_steps=mdy_bounds[0])
-        self.d = retry_call(RotaryEncoder, config.day_pins[(knob_sense >> 1) & 1], config.day_pins[~(knob_sense >> 1) & 1], max_steps=0, threshold_steps=mdy_bounds[1])
-        self.y = retry_call(RotaryEncoder, config.year_pins[(knob_sense >> 2) & 1], config.year_pins[~(knob_sense >> 2) & 1], max_steps=0, threshold_steps=mdy_bounds[2])
+        self.m = retry_call(
+            RotaryEncoder,
+            config.month_pins[knob_sense & 1],
+            config.month_pins[~knob_sense & 1],
+            max_steps=0,
+            threshold_steps=mdy_bounds[0],
+        )
+        self.d = retry_call(
+            RotaryEncoder,
+            config.day_pins[(knob_sense >> 1) & 1],
+            config.day_pins[~(knob_sense >> 1) & 1],
+            max_steps=0,
+            threshold_steps=mdy_bounds[1],
+        )
+        self.y = retry_call(
+            RotaryEncoder,
+            config.year_pins[(knob_sense >> 2) & 1],
+            config.year_pins[~(knob_sense >> 2) & 1],
+            max_steps=0,
+            threshold_steps=mdy_bounds[2],
+        )
 
     def setup_buttons(self):
         self.m_button = retry_call(Button, config.month_pins[2])
@@ -367,7 +391,7 @@ class Time_Machine_Board():
         self.knob_event = Event()
         self.screen_event = Event()
         self.rewind_event = Event()
-        self.stop_event = Event()   # stop button
+        self.stop_event = Event()  # stop button
         self.ffwd_event = Event()
         self.play_pause_event = Event()
         self.select_event = Event()
@@ -377,8 +401,22 @@ class Time_Machine_Board():
         self.m_knob_event = Event()
         self.d_knob_event = Event()
         self.y_knob_event = Event()
-        self.events = [self.button_event, self.knob_event, self.screen_event, self.rewind_event, self.stop_event, self.ffwd_event, self.play_pause_event,
-                       self.select_event, self.m_event, self.d_event, self.y_event, self.m_knob_event, self.d_knob_event, self.y_knob_event]
+        self.events = [
+            self.button_event,
+            self.knob_event,
+            self.screen_event,
+            self.rewind_event,
+            self.stop_event,
+            self.ffwd_event,
+            self.play_pause_event,
+            self.select_event,
+            self.m_event,
+            self.d_event,
+            self.y_event,
+            self.m_knob_event,
+            self.d_knob_event,
+            self.y_knob_event,
+        ]
 
     def clear_events(self):
         _ = [x.clear() for x in self.events]
@@ -420,15 +458,15 @@ class Time_Machine_Board():
             self.y_knob_event.set()
 
     def get_knob_sense(self):
-        knob_sense_path = os.path.join(os.getenv('HOME'), ".knob_sense")
+        knob_sense_path = os.path.join(os.getenv("HOME"), ".knob_sense")
         try:
-            kfile = open(knob_sense_path, 'r')
+            kfile = open(knob_sense_path, "r")
             knob_sense = int(kfile.read())
             if knob_sense > 7 or knob_sense < 0:
                 raise ValueError
             kfile.close()
         except Exception as e:
-            logger.warning(f'error in get_knob_sense {e}. Setting knob_sense to 0')
+            logger.warning(f"error in get_knob_sense {e}. Setting knob_sense to 0")
             knob_sense = 0
         finally:
             return knob_sense
@@ -475,7 +513,8 @@ class Time_Machine_Board():
 
 
 def select_option(TMB, counter, message, chooser):
-    if type(chooser) == type(lambda: None): choices = chooser()
+    if type(chooser) == type(lambda: None):
+        choices = chooser()
     else:
         choices = chooser
     scr = TMB.scr
@@ -494,12 +533,13 @@ def select_option(TMB, counter, message, chooser):
     (text_width, text_height) = scr.smallfont.getsize(message)
 
     text_height = text_height + 1
-    y_origin = text_height * (1 + message.count('\n'))
+    y_origin = text_height * (1 + message.count("\n"))
     selection_bbox = Bbox(0, y_origin, 160, 128)
 
     while not TMB.select_event.is_set():
         if TMB.rewind_event.is_set():
-            if type(chooser) == type(lambda: None): choices = chooser()
+            if type(chooser) == type(lambda: None):
+                choices = chooser()
             else:
                 choices = chooser
             TMB.rewind_event.clear()
@@ -508,20 +548,20 @@ def select_option(TMB, counter, message, chooser):
         y_loc = y_origin
         step = divmod(counter.value, len(choices))[1]
 
-        text = '\n'.join(choices[max(0, step - int(screen_height / 2)):step])
+        text = "\n".join(choices[max(0, step - int(screen_height / 2)) : step])
         (text_width, text_height) = scr.smallfont.getsize(text)
         scr.show_text(text, loc=(x_loc, y_loc), font=scr.smallfont, force=False)
-        y_loc = y_loc + text_height * (1 + text.count('\n'))
+        y_loc = y_loc + text_height * (1 + text.count("\n"))
 
         if len(choices[step]) > screen_width:
-            text = '>' + '..' + choices[step][-13:]
+            text = ">" + ".." + choices[step][-13:]
         else:
-            text = '>' + choices[step]
+            text = ">" + choices[step]
         (text_width, text_height) = scr.smallfont.getsize(text)
         scr.show_text(text, loc=(x_loc, y_loc), font=scr.smallfont, color=(0, 0, 255), force=False)
         y_loc = y_loc + text_height
 
-        text = '\n'.join(choices[step + 1:min(step + screen_height, len(choices))])
+        text = "\n".join(choices[step + 1 : min(step + screen_height, len(choices))])
         (text_width, text_height) = scr.smallfont.getsize(text)
         scr.show_text(text, loc=(x_loc, y_loc), font=scr.smallfont, force=True)
 
@@ -530,7 +570,7 @@ def select_option(TMB, counter, message, chooser):
     selected = choices[step]
     # scr.show_text(F"So far: \n{selected}",loc=selected_bbox.origin(),color=(255,255,255),font=scr.smallfont,force=True)
 
-    logger.info(F"word selected {selected}")
+    logger.info(f"word selected {selected}")
     scr.update_now = update_now
     return selected
 
@@ -538,7 +578,7 @@ def select_option(TMB, counter, message, chooser):
 def select_chars(TMB, counter, message, message2="So Far", character_set=string.printable):
     scr = TMB.scr
     scr.clear()
-    selected = ''
+    selected = ""
     counter.set_value(0, 1)
     screen_width = 12
     update_now = scr.update_now
@@ -549,7 +589,7 @@ def select_chars(TMB, counter, message, message2="So Far", character_set=string.
     scr.show_text(message, loc=(0, 0), font=scr.smallfont, color=(0, 255, 255), force=True)
     (text_width, text_height) = scr.smallfont.getsize(message)
 
-    y_origin = text_height * (1 + message.count('\n'))
+    y_origin = text_height * (1 + message.count("\n"))
     selection_bbox = Bbox(0, y_origin, 160, y_origin + 22)
     selected_bbox = Bbox(0, y_origin + 21, 160, 128)
 
@@ -560,43 +600,45 @@ def select_chars(TMB, counter, message, message2="So Far", character_set=string.
             x_loc = 0
             y_loc = y_origin
 
-            text = 'DEL'
+            text = "DEL"
             (text_width, text_height) = scr.oldfont.getsize(text)
             if counter.value == 0:  # we are deleting
                 scr.show_text(text, loc=(x_loc, y_loc), font=scr.oldfont, color=(0, 0, 255), force=False)
-                scr.show_text(character_set[:screen_width], loc=(x_loc + text_width, y_loc), font=scr.oldfont, force=True)
+                scr.show_text(
+                    character_set[:screen_width], loc=(x_loc + text_width, y_loc), font=scr.oldfont, force=True
+                )
                 continue
             scr.show_text(text, loc=(x_loc, y_loc), font=scr.oldfont, force=False)
             x_loc = x_loc + text_width
 
             # print the white before the red, if applicable
-            text = character_set[max(0, -1 + counter.value - int(screen_width / 2)):-1 + counter.value]
+            text = character_set[max(0, -1 + counter.value - int(screen_width / 2)) : -1 + counter.value]
             for x in character_set[94:]:
-                text = text.replace(x, u'\u25A1')
+                text = text.replace(x, u"\u25A1")
             (text_width, text_height) = scr.oldfont.getsize(text)
             scr.show_text(text, loc=(x_loc, y_loc), font=scr.oldfont, force=False)
             x_loc = x_loc + text_width
 
             # print the red character
             text = character_set[-1 + min(counter.value, len(character_set))]
-            if text == ' ':
+            if text == " ":
                 text = "SPC"
-            elif text == '\t':
+            elif text == "\t":
                 text = "\\t"
-            elif text == '\n':
+            elif text == "\n":
                 text = "\\n"
-            elif text == '\r':
+            elif text == "\r":
                 text = "\\r"
-            elif text == '\x0b':
+            elif text == "\x0b":
                 text = "\\v"
-            elif text == '\x0c':
+            elif text == "\x0c":
                 text = "\\f"
             (text_width, text_height) = scr.oldfont.getsize(text)
             scr.show_text(text, loc=(x_loc, y_loc), font=scr.oldfont, color=(0, 0, 255), force=False)
             x_loc = x_loc + text_width
 
             # print the white after the red, if applicable
-            text = character_set[counter.value:min(-1 + counter.value + screen_width, len(character_set))]
+            text = character_set[counter.value : min(-1 + counter.value + screen_width, len(character_set))]
             for x in character_set[94:]:
                 text = text.replace(x, u'\u25A1')
             (text_width, text_height) = scr.oldfont.getsize(text)
@@ -613,18 +655,24 @@ def select_chars(TMB, counter, message, message2="So Far", character_set=string.
         else:
             selected = selected + character_set[-1 + counter.value]
         scr.clear_area(selected_bbox, force=False)
-        scr.show_text(F"{message2}:\n{selected[-screen_width:]}", loc=selected_bbox.origin(), color=(255, 255, 255), font=scr.oldfont, force=True)
+        scr.show_text(
+            f"{message2}:\n{selected[-screen_width:]}",
+            loc=selected_bbox.origin(),
+            color=(255, 255, 255),
+            font=scr.oldfont,
+            force=True,
+        )
 
-    logger.info(F"word selected {selected}")
+    logger.info(f"word selected {selected}")
     scr.update_now = update_now
     return selected
 
 
 def get_version():
-    __version__ = 'v1.0'
+    __version__ = "v1.0"
     try:
-        latest_tag_path = pkg_resources.resource_filename('timemachine', '.latest_tag')
-        with open(latest_tag_path, 'r') as tag:
+        latest_tag_path = pkg_resources.resource_filename("timemachine", ".latest_tag")
+        with open(latest_tag_path, "r") as tag:
             __version__ = tag.readline()
         __version__ = __version__.strip()
         return __version__
@@ -643,7 +691,7 @@ class Bbox:
         return self.__repr__()
 
     def __repr__(self):
-        return F"Bbox: x0 {self.x0},y0 {self.y0},x1 {self.x1},y1 {self.y1}"
+        return f"Bbox: x0 {self.x0},y0 {self.y0},x1 {self.x1},y1 {self.y1}"
 
     def width(self): return self.x1 - self.x0
     def height(self): return self.y1 - self.y0
@@ -655,7 +703,7 @@ class Bbox:
 
 
 class screen:
-    def __init__(self, upside_down=False, name='screen'):
+    def __init__(self, upside_down=False, name="screen"):
         cs_pin = digitalio.DigitalInOut(board.CE0)
         dc_pin = digitalio.DigitalInOut(board.D24)
         reset_pin = digitalio.DigitalInOut(board.D25)
@@ -674,9 +722,13 @@ class screen:
         else:
             width, height = self.disp.width, self.disp.height
         self.width, self.height = width, height
-        logger.debug(F" ---> disp {self.disp.width},{self.disp.height}")
-        self.boldfont = ImageFont.truetype(pkg_resources.resource_filename("timemachine.fonts", "DejaVuSansMono-Bold.ttf"), 33)
-        self.boldsmall = ImageFont.truetype(pkg_resources.resource_filename("timemachine.fonts", "DejaVuSansMono-Bold.ttf"), 22)
+        logger.debug(f" ---> disp {self.disp.width},{self.disp.height}")
+        self.boldfont = ImageFont.truetype(
+            pkg_resources.resource_filename("timemachine.fonts", "DejaVuSansMono-Bold.ttf"), 33
+        )
+        self.boldsmall = ImageFont.truetype(
+            pkg_resources.resource_filename("timemachine.fonts", "DejaVuSansMono-Bold.ttf"), 22
+        )
         self.font = ImageFont.truetype(pkg_resources.resource_filename("timemachine.fonts", "ariallgt.ttf"), 30)
         self.smallfont = ImageFont.truetype(pkg_resources.resource_filename("timemachine.fonts", "ariallgt.ttf"), 20)
         self.oldfont = ImageFont.truetype(pkg_resources.resource_filename("timemachine.fonts", "FreeMono.ttf"), 20)
@@ -684,7 +736,7 @@ class screen:
         self.hugefont = ImageFont.truetype(pkg_resources.resource_filename("timemachine.fonts", "FreeMono.ttf"), 40)
 
         self.image = Image.new("RGB", (width, height))
-        self.draw = ImageDraw.Draw(self.image)       # draw using this object. Display image when complete.
+        self.draw = ImageDraw.Draw(self.image)  # draw using this object. Display image when complete.
 
         self.staged_years = (-1, -1)
         self.staged_date = None
@@ -739,7 +791,7 @@ class screen:
         if font is None:
             font = self.font
         (text_width, text_height) = font.getsize(text)
-        logger.debug(F' show_text {text}. text_size {text_height},{text_width}')
+        logger.debug(f" show_text {text}. text_size {text_height},{text_width}")
         if clear:
             self.clear()
         self.draw.text(loc, text, font=font, stroke_width=stroke_width, fill=color)
@@ -772,7 +824,13 @@ class screen:
                         break
                     # sleep(0.005)
                     self.clear_area(bbox)
-                    self.show_text(text, bbox.shift(Bbox(inc * i, 0, 0, 0)).origin(), font=font, color=color, stroke_width=stroke_width)
+                    self.show_text(
+                        text,
+                        bbox.shift(Bbox(inc * i, 0, 0, 0)).origin(),
+                        font=font,
+                        color=color,
+                        stroke_width=stroke_width,
+                    )
                 sleep(1)
                 self.clear_area(bbox)
 
@@ -805,18 +863,18 @@ class screen:
             return
         self.clear_area(self.staged_date_bbox)
         start_year = str(years[0])
-        end_year = str(years[1] % 100).rjust(2, '0')
+        end_year = str(years[1] % 100).rjust(2, "0")
         if years[0] < years[1]:
-            if years[1] // 100 > years[0] // 100:   # different century
+            if years[1] // 100 > years[0] // 100:  # different century
                 text = f"{start_year}-'{end_year}"
             else:
-                text = f'{start_year}-{end_year}'
+                text = f"{start_year}-{end_year}"
         else:
-            if show_dash:   # waiting for input
-                text = f'{start_year}-'
+            if show_dash:  # waiting for input
+                text = f"{start_year}-"
             else:
-                text = f'{start_year}'
-        logger.debug(F"staged date string {text}")
+                text = f"{start_year}"
+        logger.debug(f"staged date string {text}")
         self.show_text(text, self.staged_date_bbox.origin(), self.boldfont, color=color, force=force)
         self.staged_years = years
 
@@ -824,8 +882,8 @@ class screen:
         if (date == self.staged_date) and not force:
             return
         self.clear_area(self.staged_date_bbox)
-        text = f'{date.year}'
-        logger.debug(F"staged date string {text}")
+        text = f"{date.year}"
+        logger.debug(f"staged date string {text}")
         self.show_text(text, self.staged_date_bbox.origin(), self.boldfont, color=color, force=force)
         self.staged_date = date
 
@@ -835,9 +893,9 @@ class screen:
         self.clear_area(self.staged_date_bbox)
         month = str(date.month).rjust(2)
         day = str(date.day).rjust(2)
-        year = str(date.year % 100).rjust(2, '0')
-        text = month + '-' + day + '-' + year
-        logger.debug(F"staged date string {text}")
+        year = str(date.year % 100).rjust(2, "0")
+        text = month + "-" + day + "-" + year
+        logger.debug(f"staged date string {text}")
         self.show_text(text, self.staged_date_bbox.origin(), self.boldfont, color=color, force=force)
         self.staged_date = date
 
@@ -848,12 +906,12 @@ class screen:
         month = str(date.month).rjust(2)
         day = str(date.day).rjust(2)
         year = str(date.year).rjust(4)
-        text = month + '-' + day + '-' + year
+        text = month + "-" + day + "-" + year
         self.show_text(text, self.selected_date_bbox.origin(), self.boldsmall, color=color, force=force)
         self.selected_date = date
 
     def show_track(self, text, trackpos, color=(120, 0, 255), raw_text=False, force=False):
-        text = text if raw_text else ' '.join(x.capitalize() for x in text.split())
+        text = text if raw_text else " ".join(x.capitalize() for x in text.split())
         bbox = self.track1_bbox if trackpos == 0 else self.track2_bbox
         self.clear_area(bbox)
         self.draw.text(bbox.origin(), text, font=self.smallfont, fill=color, stroke_width=1)
@@ -861,7 +919,7 @@ class screen:
             self.refresh(True)
 
     def show_playstate(self, staged_play=False, color=(0, 100, 255), sbd=None, force=False):
-        logger.debug(F"showing playstate {config.PLAY_STATE}")
+        logger.debug(f"showing playstate {config.PLAY_STATE}")
         bbox = self.playstate_bbox
         self.clear_area(bbox)
         if staged_play:
@@ -894,7 +952,7 @@ class screen:
 
 class state:
     def __init__(self, date_reader, player=None):
-        self.module_name = 'config'
+        self.module_name = "config"
         if type(date_reader) == tuple:
             self.date_reader = date_reader[0]
             self.artist_counter = date_reader[1]
@@ -907,7 +965,7 @@ class state:
         return self.__repr__()
 
     def __repr__(self):
-        return F"state is {self.dict}"
+        return f"state is {self.dict}"
 
     @staticmethod
     def dict_diff(d1, d2):
@@ -924,46 +982,48 @@ class state:
         return (changes, previous, current)
 
     def get_changes(self):
-        previous = self.dict   # do this first!
+        previous = self.dict  # do this first!
         current = self.get_current()
         return self.dict_diff(previous, current)
 
     @with_state_semaphore
     def set(self, new_state):
         for k in new_state.keys():
-            config.__dict__[k] = new_state[k]   # NOTE This directly names config, which I'd like to be a variable.
+            config.__dict__[k] = new_state[k]  # NOTE This directly names config, which I'd like to be a variable.
 
     def get_current(self):
         module = globals().get(self.module_name, None)
         self.dict = {}
         if module:
-            self.dict = {key: value for key, value in module.__dict__.items() if (not key.startswith('_')) and key.isupper()}
+            self.dict = {
+                key: value for key, value in module.__dict__.items() if (not key.startswith("_")) and key.isupper()
+            }
         self.date_reader._update()
-        self.dict['DATE_READER'] = self.date_reader.date
-        self.dict['VOLUME'] = 100.0
-        self.dict['TRACK_NUM'] = -1
-        self.dict['TAPE_ID'] = ''
-        self.dict['TRACK_TITLE'] = ''
-        self.dict['NEXT_TRACK_TITLE'] = ''
-        self.dict['PLAY_STATE'] = self.dict.get('PLAY_STATE', 0)
-        self.dict['VENUE'] = self.dict.get('VENUE', '')
+        self.dict["DATE_READER"] = self.date_reader.date
+        self.dict["VOLUME"] = 100.0
+        self.dict["TRACK_NUM"] = -1
+        self.dict["TAPE_ID"] = ""
+        self.dict["TRACK_TITLE"] = ""
+        self.dict["NEXT_TRACK_TITLE"] = ""
+        self.dict["PLAY_STATE"] = self.dict.get("PLAY_STATE", 0)
+        self.dict["VENUE"] = self.dict.get("VENUE", "")
         try:
-            self.dict['VOLUME'] = self.player.get_prop('volume')
-            self.dict['TRACK_NUM'] = self.player._get_property('playlist-pos')
-            if not isinstance(self.player.tape, type(None)):  # could be more specific, but needs to cover all archive types
-                self.dict['TAPE_ID'] = self.player.tape.identifier
-                self.dict['VENUE'] = self.player.tape.venue()
-                if (self.dict['TRACK_NUM']) < len(self.player.playlist):
-                    self.dict['TRACK_TITLE'] = self.player.tape.tracks()[self.dict['TRACK_NUM']].title
-                if (self.dict['TRACK_NUM'] + 1) < len(self.player.playlist):
-                    next_track = self.dict['TRACK_NUM'] + 1
-                    self.dict['NEXT_TRACK_TITLE'] = self.player.tape.tracks()[next_track].title
+            self.dict["VOLUME"] = self.player.get_prop("volume")
+            self.dict["TRACK_NUM"] = self.player._get_property("playlist-pos")
+            if not isinstance(self.player.tape, type(None)):  # needs to cover all archive types
+                self.dict["TAPE_ID"] = self.player.tape.identifier
+                self.dict["VENUE"] = self.player.tape.venue()
+                if (self.dict["TRACK_NUM"]) < len(self.player.playlist):
+                    self.dict["TRACK_TITLE"] = self.player.tape.tracks()[self.dict["TRACK_NUM"]].title
+                if (self.dict["TRACK_NUM"] + 1) < len(self.player.playlist):
+                    next_track = self.dict["TRACK_NUM"] + 1
+                    self.dict["NEXT_TRACK_TITLE"] = self.player.tape.tracks()[next_track].title
                 else:
-                    self.dict['NEXT_TRACK_TITLE'] = ''
+                    self.dict["NEXT_TRACK_TITLE"] = ""
         except Exception:
             # logger.debug('Exception getting current state. Using some defaults')
             pass
-        self.dict['TRACK_ID'] = F"{self.dict['TAPE_ID']}_track_{self.dict['TRACK_NUM']}"
+        self.dict["TRACK_ID"] = f"{self.dict['TAPE_ID']}_track_{self.dict['TRACK_NUM']}"
         return self.dict
 
 
