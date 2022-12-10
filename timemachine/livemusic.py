@@ -88,9 +88,7 @@ def sequential(func):
 
 
 def load_saved_state(state):
-    """ This function loads a subset of the fields from the state, which was saved with json
-        Not Yet Working !!!
-    """
+    """ This function loads a subset of the fields from the state, which was saved with json """
     state_path = os.path.join(config.DB_PATH, "etree_state.json")
     logger.info(f"Loading Saved State from {state_path}")
     if not os.path.exists(state_path):
@@ -267,7 +265,7 @@ def select_button(button, state):
     current = state.get_current()
     if current["PLAY_STATE"] == config.ENDED:
         logger.debug("setting PLAY_STATE to READY")
-        if current['DATE'] == current['DATE_READER']:
+        if current["DATE"] == current["DATE_READER"]:
             logger.debug("setting autoplay to False")
             autoplay = False
         current["PLAY_STATE"] = config.READY
@@ -338,7 +336,7 @@ def play_pause_button(button, state):
         TMB.scr.show_playstate(staged_play=True, force=True)
         state.player.play()  # this is a blocking call. I could move the "wait_until_playing" to the event handler.
     elif current["PLAY_STATE"] in [config.READY, config.ENDED]:
-        if current['TAPE_ID'] != '':
+        if current["TAPE_ID"] != "":
             TMB.scr.wake_up()
             TMB.screen_event.set()
             tape = state.player.tape
@@ -715,7 +713,7 @@ def refresh_venue(state):
         display_offset = 0 if (display_offset < screen_width) else display_offset
         TMB.scr.show_venue(display_string[display_offset:], color=id_color)
     else:
-        TMB.scr.show_venue(display_string[-1 * (screen_width - 1):], color=id_color)
+        TMB.scr.show_venue(display_string[-1 * (screen_width - 1) :], color=id_color)
 
     div, mod = divmod(venue_counter[1] + 1, n_subfields)
     venue_counter = (divmod(venue_counter[0] + div, n_fields)[1], mod)
