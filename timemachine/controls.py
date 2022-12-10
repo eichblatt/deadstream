@@ -20,22 +20,21 @@ import os
 import string
 import subprocess
 from bisect import bisect
-from time import sleep
 from threading import BoundedSemaphore, Event
+from time import sleep
+from typing import Callable
 
 import adafruit_rgb_display.st7735 as st7735
 import board
 import digitalio
+import pkg_resources
 from adafruit_rgb_display import color565
-from gpiozero import Button, LED, RotaryEncoder
+from gpiozero import LED, Button, RotaryEncoder
 from PIL import Image, ImageDraw, ImageFont
 from tenacity import retry
 from tenacity.stop import stop_after_delay
-from typing import Callable
 
-import pkg_resources
-from timemachine import config
-
+from timemachine import Archivary, config
 
 logging.basicConfig(format='%(asctime)s.%(msecs)03d %(levelname)s: %(name)s %(message)s', level=logging.DEBUG, datefmt='%Y-%m-%d %H:%M:%S')
 VERBOSE = 5
@@ -942,23 +941,29 @@ class state:
         self.date_reader._update()
         self.dict['DATE_READER'] = self.date_reader.date
         self.dict['VOLUME'] = 100.0
+        self.dict['TRACK_NUM'] = -1
+        self.dict['TAPE_ID'] = ''
+        self.dict['TRACK_TITLE'] = ''
+        self.dict['NEXT_TRACK_TITLE'] = ''
+        self.dict['PLAY_STATE'] = self.dict.get('PLAY_STATE', -1)
+        self.dict['VENUE'] = self.dict.get('VENUE', '')
         try:
             self.dict['VOLUME'] = self.player.get_prop('volume')
             self.dict['TRACK_NUM'] = self.player._get_property('playlist-pos')
-            self.dict['TAPE_ID'] = self.player.tape.identifier
-            self.dict['TRACK_TITLE'] = self.player.tape.tracks()[self.dict['TRACK_NUM']].title
-            if (self.dict['TRACK_NUM'] + 1) < len(self.player.playlist):
-                next_track = self.dict['TRACK_NUM'] + 1
-                self.dict['NEXT_TRACK_TITLE'] = self.player.tape.tracks()[next_track].title
-            else:
-                self.dict['NEXT_TRACK_TITLE'] = ''
+            if isinstance(self.player.tape, Archivary.GDTape):  # type(None)):
+                self.dict['TAPE_ID'] = self.player.tape.identifier
+                self.dict['VENUE'] = self.player.tape.venue()
+                if (self.dict['TRACK_NUM']) < len(self.player.playlist):
+                    self.dict['TRACK_TITLE'] = self.player.tape.tracks()[self.dict['TRACK_NUM']].title
+                if (self.dict['TRACK_NUM'] + 1) < len(self.player.playlist):
+                    next_track = self.dict['TRACK_NUM'] + 1
+                    self.dict['NEXT_TRACK_TITLE'] = self.player.tape.tracks()[next_track].title
+                else:
+                    self.dict['NEXT_TRACK_TITLE'] = ''
         except Exception:
-            self.dict['TRACK_NUM'] = -1
-            self.dict['TAPE_ID'] = ''
-            self.dict['TRACK_TITLE'] = ''
-            self.dict['NEXT_TRACK_TITLE'] = ''
             # logger.debug('Exception getting current state. Using some defaults')
-        self.dict['TRACK_ID'] = self.dict['TAPE_ID'] + "_track_" + str(self.dict['TRACK_NUM'])
+            pass
+        self.dict['TRACK_ID'] = F"{self.dict['TAPE_ID']}_track_{self.dict['TRACK_NUM']}"
         return self.dict
 
 
