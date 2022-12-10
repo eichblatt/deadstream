@@ -614,7 +614,7 @@ def select_chars(TMB, counter, message, message2="So Far", character_set=string.
             # print the white before the red, if applicable
             text = character_set[max(0, -1 + counter.value - int(screen_width / 2)) : -1 + counter.value]
             for x in character_set[94:]:
-                text = text.replace(x, u"\u25A1")
+                text = text.replace(x, "\u25A1")
             (text_width, text_height) = scr.oldfont.getsize(text)
             scr.show_text(text, loc=(x_loc, y_loc), font=scr.oldfont, force=False)
             x_loc = x_loc + text_width
@@ -640,7 +640,7 @@ def select_chars(TMB, counter, message, message2="So Far", character_set=string.
             # print the white after the red, if applicable
             text = character_set[counter.value : min(-1 + counter.value + screen_width, len(character_set))]
             for x in character_set[94:]:
-                text = text.replace(x, u'\u25A1')
+                text = text.replace(x, "\u25A1")
             (text_width, text_height) = scr.oldfont.getsize(text)
             scr.show_text(text, loc=(x_loc, y_loc), font=scr.oldfont, force=True)
             x_loc = x_loc + text_width
@@ -693,13 +693,26 @@ class Bbox:
     def __repr__(self):
         return f"Bbox: x0 {self.x0},y0 {self.y0},x1 {self.x1},y1 {self.y1}"
 
-    def width(self): return self.x1 - self.x0
-    def height(self): return self.y1 - self.y0
-    def origin(self): return (self.x0, self.y0)
-    def topright(self): return (self.x1, self.y1)
-    def size(self): return (int(self.height()), int(self.width()))
-    def center(self): return (int((self.x0 + self.x1) / 2), int((self.y0 + self.y1) / 2))
-    def shift(self, d): return Bbox(self.x0 - d.x0, self.y0 - d.y0, self.x1 - d.x1, self.y1 - d.y1)
+    def width(self):
+        return self.x1 - self.x0
+
+    def height(self):
+        return self.y1 - self.y0
+
+    def origin(self):
+        return (self.x0, self.y0)
+
+    def topright(self):
+        return (self.x1, self.y1)
+
+    def size(self):
+        return (int(self.height()), int(self.width()))
+
+    def center(self):
+        return (int((self.x0 + self.x1) / 2), int((self.y0 + self.y1) / 2))
+
+    def shift(self, d):
+        return Bbox(self.x0 - d.x0, self.y0 - d.y0, self.x1 - d.x1, self.y1 - d.y1)
 
 
 class screen:
