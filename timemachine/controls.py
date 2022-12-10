@@ -945,7 +945,7 @@ class state:
         self.dict['TAPE_ID'] = ''
         self.dict['TRACK_TITLE'] = ''
         self.dict['NEXT_TRACK_TITLE'] = ''
-        self.dict['PLAY_STATE'] = self.dict.get('PLAY_STATE', -1)
+        self.dict['PLAY_STATE'] = self.dict.get('PLAY_STATE', 0)
         self.dict['VENUE'] = self.dict.get('VENUE', '')
         try:
             self.dict['VOLUME'] = self.player.get_prop('volume')
