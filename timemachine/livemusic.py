@@ -266,8 +266,10 @@ def select_button(button, state):
     logger.debug("pressing select")
     current = state.get_current()
     if current["PLAY_STATE"] == config.ENDED:
-        logger.debug("setting PLAY_STATE to READY, autoplay to False")
-        autoplay = False
+        logger.debug("setting PLAY_STATE to READY")
+        if current['DATE'] == current['DATE_READER']:
+            logger.debug("setting autoplay to False")
+            autoplay = False
         current["PLAY_STATE"] = config.READY
         state.set(current)
     if current["ON_TOUR"] and current["TOUR_STATE"] in [config.READY, config.PLAYING]:
@@ -1083,6 +1085,10 @@ if "GratefulDead" not in archive.collection_list:
     date_reader.set_date(*date_reader.next_show())
 
 state = controls.state(date_reader, player)
+current = state.get_current()
+current["PLAY_STATE"] = config.READY
+state.set(current)
+
 TMB.m.when_rotated = lambda x: twist_knob(TMB.m, "month", date_reader)
 TMB.d.when_rotated = lambda x: twist_knob(TMB.d, "day", date_reader)
 TMB.y.when_rotated = lambda x: twist_knob(TMB.y, "year", date_reader)
