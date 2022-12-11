@@ -6,6 +6,7 @@ from typing import Callable
 import board
 import digitalio
 from adafruit_rgb_display.st7735 import ST7735R
+from adafruit_rgb_display import color565
 from gpiozero import RotaryEncoder, Button
 from tenacity import retry
 from tenacity.stop import stop_after_delay
@@ -105,7 +106,7 @@ if __name__ == "__main__":
         baudrate=40000000,
     )
 
-    display.fill(get_color())
+    display.fill(color565(0, 0, 0))
 
     print("Twist and press the knobs and buttons.")
     print("Press a knob for longer than 3 seconds or Ctrl-C to exit.")
@@ -113,7 +114,7 @@ if __name__ == "__main__":
     try:
         while not stop_event.wait(timeout=0.001):
             if screen_event.is_set():
-                display.fill(get_color())
+                display.fill(color565(0, 0, 0))
                 screen_event.clear()
     except KeyboardInterrupt:
         exit(0)
