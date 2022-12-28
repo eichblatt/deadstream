@@ -63,9 +63,7 @@ SLEEP_AFTER_SECONDS = 3600
 PWR_LED_ON = False
 AUTO_PLAY = True
 
-random.seed(
-    datetime.datetime.now().timestamp()
-)  # to ensure that random show will be new each time.
+random.seed(datetime.datetime.now().timestamp())  # to ensure that random show will be new each time.
 parms = None
 
 
@@ -132,16 +130,12 @@ def load_saved_state(state):
         if current["DATE"]:
             state.date_reader.m.steps = current["DATE"].month
             state.date_reader.d.steps = current["DATE"].day
-            state.date_reader.y.steps = current["DATE"].year - min(
-                state.date_reader.archive.year_list()
-            )
+            state.date_reader.y.steps = current["DATE"].year - min(state.date_reader.archive.year_list())
             state.date_reader.update()
         elif current["DATE_READER"]:
             state.date_reader.m.steps = current["DATE_READER"].month
             state.date_reader.d.steps = current["DATE_READER"].day
-            state.date_reader.y.steps = current["DATE_READER"].year - min(
-                state.date_reader.archive.year_list()
-            )
+            state.date_reader.y.steps = current["DATE_READER"].year - min(state.date_reader.archive.year_list())
             state.date_reader.update()
 
         current["DATE_READER"] = state.date_reader
@@ -208,9 +202,7 @@ def select_tape(tape, state, autoplay=True):
         return
     current = state.get_current()
     if tape.identifier == current["TAPE_ID"]:
-        TMB.scr.show_experience(
-            text=f"{controls.get_version()}", color=(255, 100, 0), force=True
-        )
+        TMB.scr.show_experience(text=f"{controls.get_version()}", color=(255, 100, 0), force=True)
         sleep(1)
         return  # already selected.
     logger.debug(f"select_tape: current state at entry {current}")
@@ -250,9 +242,7 @@ def select_current_date(state, autoplay=True):
         return
     shownum = date_reader.shownum
     if shownum > len(tapes) - 1:
-        logger.warning(
-            f"A tape has been removed from this date {date_reader.fmtdate()}"
-        )
+        logger.warning(f"A tape has been removed from this date {date_reader.fmtdate()}")
         shownum = len(tapes) - 1
     tape = tapes[shownum]
     TMB.scr.show_playstate(staged_play=True, force=True)
@@ -299,17 +289,13 @@ def select_button_longpress(button, state):
         tape_id = tapes[itape].identifier
         sbd = tapes[itape].stream_only()
         id_color = (0, 255, 255) if sbd else (0, 0, 255)
-        logger.info(
-            f"Selecting Tape: {tape_id}, the {itape}th of {len(tapes)} choices. SBD:{sbd}"
-        )
+        logger.info(f"Selecting Tape: {tape_id}, the {itape}th of {len(tapes)} choices. SBD:{sbd}")
         if len(tape_id) < 16:
             show_venue_text(tapes[itape], color=id_color, show_id=True, force=True)
             sleep(4)
         else:
             for i in range(0, max(1, len(tape_id)), 2):
-                show_venue_text(
-                    tapes[itape], color=id_color, show_id=True, offset=i, force=True
-                )
+                show_venue_text(tapes[itape], color=id_color, show_id=True, offset=i, force=True)
                 # TMB.scr.show_venue(tape_id[i:], color=id_color, force=True)
                 sleep(0.25)
                 if not button.is_held:
@@ -443,9 +429,7 @@ def stop_button_longpress(button, state):
 def rewind_button(button, state):
     logger.debug("press of rewind")
     current = state.get_current()
-    if current["EXPERIENCE"] or (
-        current["ON_TOUR"] and current["TOUR_STATE"] in [config.READY, config.PLAYING]
-    ):
+    if current["EXPERIENCE"] or (current["ON_TOUR"] and current["TOUR_STATE"] in [config.READY, config.PLAYING]):
         current_volume = state.player.get_prop("volume")
         state.player._set_property("volume", max(current_volume * 0.9, 40))
         return
@@ -470,9 +454,7 @@ def rewind_button_longpress(button, state):
 def ffwd_button(button, state):
     logger.debug("press of ffwd")
     current = state.get_current()
-    if current["EXPERIENCE"] or (
-        current["ON_TOUR"] and current["TOUR_STATE"] in [config.READY, config.PLAYING]
-    ):
+    if current["EXPERIENCE"] or (current["ON_TOUR"] and current["TOUR_STATE"] in [config.READY, config.PLAYING]):
         current_volume = state.player.get_prop("volume")
         state.player._set_property("volume", min(current_volume * 1.1, 130))
         return
@@ -509,9 +491,7 @@ def month_button(button, state):
 def month_button_longpress(button, state):
     logger.debug(f"long pressing month_button")
     pixels = TMB.scr.image.tobytes()
-    TMB.scr.show_experience(
-        text="Hold 5s to Switch\nto 78 RPM", color=(50, 255, 100), force=True
-    )
+    TMB.scr.show_experience(text="Hold 5s to Switch\nto 78 RPM", color=(50, 255, 100), force=True)
     sleep(5)
     if button.is_held:
         TMB.scr.clear()
@@ -538,9 +518,7 @@ def day_button(button, state):
     logger.debug("pressing day button")
     current = state.get_current()
     if current["EXPERIENCE"] and current["ARTIST"] is not None:
-        state.date_reader.set_date(
-            *state.date_reader.next_show_by_artist(current["ARTIST"])
-        )
+        state.date_reader.set_date(*state.date_reader.next_show_by_artist(current["ARTIST"]))
     else:
         state.date_reader.set_date(*state.date_reader.next_show())
     stagedate_event.set()
@@ -563,13 +541,9 @@ def year_button(button, state):
     d = state.date_reader.date.day
     y = state.date_reader.date.year
 
-    if (
-        m == now_m and d == now_d
-    ):  # move to the next year where there is a tape available
+    if m == now_m and d == now_d:  # move to the next year where there is a tape available
         tihstring = f"{m:0>2d}-{d:0>2d}"
-        tih_tapedates = [
-            to_date(d) for d in state.date_reader.archive.dates if d.endswith(tihstring)
-        ]
+        tih_tapedates = [to_date(d) for d in state.date_reader.archive.dates if d.endswith(tihstring)]
         if len(tih_tapedates) > 0:
             cut = 0
             for i, dt in enumerate(tih_tapedates):
@@ -598,9 +572,7 @@ def year_button_longpress(button, state):
     logger.debug(" longpress of year button")
     current = state.get_current()
     if current["ON_TOUR"]:
-        TMB.scr.show_experience(
-            text=f"ON_TOUR:{current['TOUR_YEAR']}\nHold 3s to exit", force=True
-        )
+        TMB.scr.show_experience(text=f"ON_TOUR:{current['TOUR_YEAR']}\nHold 3s to exit", force=True)
         sleep(3)
         if button.is_held:
             logger.info("   EXITING ON_TOUR mode")
@@ -613,9 +585,7 @@ def year_button_longpress(button, state):
         current["TOUR_YEAR"] = state.date_reader.date.year
         current["TOUR_STATE"] = config.INIT
         logger.info(f" ---> ON_TOUR:{current['TOUR_YEAR']}")
-        TMB.scr.show_experience(
-            text=f"ON_TOUR:{current['TOUR_YEAR']}\n{ip_address}", force=True
-        )
+        TMB.scr.show_experience(text=f"ON_TOUR:{current['TOUR_YEAR']}\n{ip_address}", force=True)
     sleep(3)
     track_event.set()
     state.set(current)
@@ -800,11 +770,7 @@ def show_venue_text(arg, color=(0, 255, 255), show_id=False, offset=0, force=Fal
     if isinstance(arg, controls.date_knob_reader):
         date_reader = arg
         archive = date_reader.archive
-        tapes = (
-            archive.tape_dates[date_reader.fmtdate()]
-            if date_reader.fmtdate() in archive.tape_dates.keys()
-            else []
-        )
+        tapes = archive.tape_dates[date_reader.fmtdate()] if date_reader.fmtdate() in archive.tape_dates.keys() else []
         num_events = len(date_reader.shows_available())
         venue_name = ""
         artist_name = ""
@@ -873,25 +839,19 @@ def event_loop(state, lock):
             default_start = config.optd["DEFAULT_START_TIME"]
 
             if current["ON_TOUR"]:
-                if (
-                    current["TOUR_STATE"] == config.ENDED and now.hour < 1
-                ):  # reset ENDED to INIT after midnight.
+                if current["TOUR_STATE"] == config.ENDED and now.hour < 1:  # reset ENDED to INIT after midnight.
                     current["TOUR_STATE"] = config.INIT
                 if current["TOUR_STATE"] not in [config.PLAYING, config.ENDED]:
                     then_time = now.replace(year=current["TOUR_YEAR"])
                     # At the "scheduled time", stop whatever is playing and wait.
-                    tape = state.date_reader.archive.tape_at_time(
-                        then_time, default_start=default_start
-                    )
+                    tape = state.date_reader.archive.tape_at_time(then_time, default_start=default_start)
                     if not tape:
                         current["TOUR_STATE"] = config.INIT
                     else:
                         current["TOUR_STATE"] = config.READY
                         state.player.stop()
                         current["TAPE_ID"] = None
-                        start_time = state.date_reader.archive.tape_start_time(
-                            then_time, default_start=default_start
-                        )
+                        start_time = state.date_reader.archive.tape_start_time(then_time, default_start=default_start)
                         TMB.scr.show_experience(
                             text=f"ON_TOUR:{current['TOUR_YEAR']}\nWaiting for show",
                             force=True,
@@ -903,25 +863,15 @@ def event_loop(state, lock):
                             f"On Tour Tape Found on {then_time}. Sleeping 10 seconds. Waiting for {(start_time + datetime.timedelta(seconds=wait_time)).time()}"
                         )
                         sleep(10)
-                        if (
-                            now.time()
-                            >= (
-                                start_time + datetime.timedelta(seconds=wait_time)
-                            ).time()
-                        ):
-                            point_in_show = (
-                                then_time
-                                - (start_time + datetime.timedelta(seconds=wait_time))
-                            ).seconds
+                        if now.time() >= (start_time + datetime.timedelta(seconds=wait_time)).time():
+                            point_in_show = (then_time - (start_time + datetime.timedelta(seconds=wait_time))).seconds
                             play_on_tour(tape, state, seek_to=point_in_show)
                 if current["TOUR_STATE"] == config.PLAYING:
                     if current["PLAY_STATE"] == config.ENDED:
                         current["TOUR_STATE"] = config.ENDED
                         state.set(current)
                         track_event.set()
-                        logger.debug(
-                            f" ENDED!! TOUR_STATE is {current['TOUR_STATE']}, default_start: {default_start}"
-                        )
+                        logger.debug(f" ENDED!! TOUR_STATE is {current['TOUR_STATE']}, default_start: {default_start}")
 
             if TMB.screen_event.is_set():
                 TMB.scr.refresh()
@@ -952,17 +902,12 @@ def event_loop(state, lock):
                 playstate_event.clear()
                 TMB.screen_event.set()
             if q_counter and config.DATE and idle_seconds > QUIESCENT_TIME:
-                logger.debug(
-                    f"Reverting staged date back to selected date {idle_seconds}> {QUIESCENT_TIME}"
-                )
+                logger.debug(f"Reverting staged date back to selected date {idle_seconds}> {QUIESCENT_TIME}")
                 TMB.scr.show_staged_date(config.DATE)
                 TMB.scr.show_venue(config.VENUE)
                 q_counter = False
                 TMB.screen_event.set()
-            if (
-                idle_second_hand in refresh_times
-                and idle_second_hand != last_idle_second_hand
-            ):
+            if idle_second_hand in refresh_times and idle_second_hand != last_idle_second_hand:
                 last_idle_second_hand = idle_second_hand
                 # if now.minute != last_idle_minute:
                 # if now.day != last_idle_day:
@@ -977,25 +922,17 @@ def event_loop(state, lock):
                 track_event.set()
                 playstate_event.set()
                 save_state(state)
-                if (
-                    current["PLAY_STATE"] != config.PLAYING
-                ):  # deal with overnight pauses, which freeze the alsa player.
-                    if (
-                        now - config.PAUSED_AT
-                    ).seconds > SLEEP_AFTER_SECONDS and state.player.get_prop(
+                if current["PLAY_STATE"] != config.PLAYING:  # deal with overnight pauses, which freeze the alsa player.
+                    if (now - config.PAUSED_AT).seconds > SLEEP_AFTER_SECONDS and state.player.get_prop(
                         "audio-device"
                     ) not in [
                         "null",
                         "pulse",
                     ]:
-                        logger.info(
-                            f"Paused at {config.PAUSED_AT}, sleeping after {SLEEP_AFTER_SECONDS}, now {now}"
-                        )
+                        logger.info(f"Paused at {config.PAUSED_AT}, sleeping after {SLEEP_AFTER_SECONDS}, now {now}")
                         TMB.scr.sleep()
                         state.player._set_property("audio-device", "null")
-                        state.player.wait_for_property(
-                            "audio-device", lambda x: x == "null"
-                        )
+                        state.player.wait_for_property("audio-device", lambda x: x == "null")
                         state.set(current)
                         playstate_event.set()
                     elif (now - current["WOKE_AT"]).seconds > SLEEP_AFTER_SECONDS:
@@ -1054,18 +991,12 @@ config.WOKE_AT = datetime.datetime.now()
 
 TMB = controls.Time_Machine_Board(mdy_bounds=None)
 ip_address = get_ip()
-TMB.scr.show_text(
-    "Time\n  Machine\n   Loading...", color=(0, 255, 255), force=False, clear=True
-)
-TMB.scr.show_text(
-    f"{ip_address}", loc=(0, 100), font=TMB.scr.smallfont, color=(255, 255, 255)
-)
+TMB.scr.show_text("Time\n  Machine\n   Loading...", color=(0, 255, 255), force=False, clear=True)
+TMB.scr.show_text(f"{ip_address}", loc=(0, 100), font=TMB.scr.smallfont, color=(255, 255, 255))
 
 
 if TMB.rewind.is_pressed:
-    TMB.scr.show_text(
-        "Reloading\nfrom\narchive.org...", color=(0, 255, 255), force=True, clear=True
-    )
+    TMB.scr.show_text("Reloading\nfrom\narchive.org...", color=(0, 255, 255), force=True, clear=True)
     logger.info("Reloading from archive.org")
 if TMB.stop.is_pressed:
     logger.info("Resetting to factory archive -- nyi")
@@ -1180,9 +1111,7 @@ TMB.m_button.when_held = lambda button: month_button_longpress(button, state)
 TMB.y_button.when_held = lambda button: year_button_longpress(button, state)
 
 TMB.scr.clear_area(controls.Bbox(0, 0, 160, 100))
-TMB.scr.show_text(
-    "Powered by\n archive.org\n & phish.in", color=(0, 255, 255), force=True
-)
+TMB.scr.show_text("Powered by\n archive.org\n & phish.in", color=(0, 255, 255), force=True)
 TMB.scr.show_text(
     str(len(archive.collection_list)).rjust(3),
     font=TMB.scr.boldsmall,
@@ -1203,9 +1132,7 @@ def main(parms_arg):
         set_logger_debug()
     load_saved_state(state)
     if config.optd["AUTO_UPDATE_ARCHIVE"] or config.UPDATE_COLLECTIONS:
-        archive_updater = Archivary.Archivary_Updater(
-            state, 3600, stop_update_event, scr=TMB.scr, lock=lock
-        )
+        archive_updater = Archivary.Archivary_Updater(state, 3600, stop_update_event, scr=TMB.scr, lock=lock)
         archive_updater.start()
         if config.UPDATE_COLLECTIONS:
             archive_updater.update()  # Do it now
