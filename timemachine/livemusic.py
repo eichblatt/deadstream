@@ -312,10 +312,7 @@ def select_button_longpress(button, state):
 @sequential
 def play_pause_button(button, state):
     current = state.get_current()
-    if current["EXPERIENCE"] and current["PLAY_STATE"] in [
-        config.PLAYING,
-        config.PAUSED,
-    ]:
+    if current["EXPERIENCE"] and current["PLAY_STATE"] in [config.PLAYING, config.PAUSED]:
         return
     if current["ON_TOUR"] and current["TOUR_STATE"] in [config.READY, config.PLAYING]:
         return
@@ -705,10 +702,7 @@ def refresh_venue(state):
     display_string = re.sub(r"\d{2,4}-\d\d-\d\d\.*", "~", display_string)
     # logger.debug(F"display_string is {display_string}")
 
-    display_offset = min(
-        max(0, len(display_string) - (screen_width - 1)),
-        screen_width * venue_counter[1],
-    )
+    display_offset = min(max(0, len(display_string) - (screen_width - 1)), screen_width * venue_counter[1])
     if venue_counter[1] < n_subfields - 1:
         display_offset = 0 if (display_offset < screen_width) else display_offset
         TMB.scr.show_venue(display_string[display_offset:], color=id_color)
@@ -784,22 +778,10 @@ def show_venue_text(arg, color=(0, 255, 255), show_id=False, offset=0, force=Fal
         artist_name = tape.artist
         num_events = 1
     TMB.scr.clear_area(TMB.scr.venue_bbox)
-    TMB.scr.show_text(
-        venue_name,
-        TMB.scr.venue_bbox.origin(),
-        font=TMB.scr.boldsmall,
-        color=color,
-        force=force,
-    )
+    TMB.scr.show_text(venue_name, TMB.scr.venue_bbox.origin(), font=TMB.scr.boldsmall, color=color, force=force)
     if len(config.optd["COLLECTIONS"]) > 1:
         TMB.scr.clear_area(TMB.scr.track1_bbox)
-        TMB.scr.show_text(
-            artist_name,
-            TMB.scr.track1_bbox.origin(),
-            font=TMB.scr.boldsmall,
-            color=color,
-            force=True,
-        )
+        TMB.scr.show_text(artist_name, TMB.scr.track1_bbox.origin(), font=TMB.scr.boldsmall, color=color, force=True)
     if num_events > 1:
         TMB.scr.show_nevents(str(num_events), force=force)
 
@@ -852,10 +834,7 @@ def event_loop(state, lock):
                         state.player.stop()
                         current["TAPE_ID"] = None
                         start_time = state.date_reader.archive.tape_start_time(then_time, default_start=default_start)
-                        TMB.scr.show_experience(
-                            text=f"ON_TOUR:{current['TOUR_YEAR']}\nWaiting for show",
-                            force=True,
-                        )
+                        TMB.scr.show_experience(text=f"ON_TOUR:{current['TOUR_YEAR']}\nWaiting for show", force=True)
                         then_date = then_time.date()
                         random.seed(then_date.year + then_date.month + then_date.day)
                         wait_time = random.randrange(60, 600)
@@ -925,10 +904,7 @@ def event_loop(state, lock):
                 if current["PLAY_STATE"] != config.PLAYING:  # deal with overnight pauses, which freeze the alsa player.
                     if (now - config.PAUSED_AT).seconds > SLEEP_AFTER_SECONDS and state.player.get_prop(
                         "audio-device"
-                    ) not in [
-                        "null",
-                        "pulse",
-                    ]:
+                    ) not in ["null", "pulse"]:
                         logger.info(f"Paused at {config.PAUSED_AT}, sleeping after {SLEEP_AFTER_SECONDS}, now {now}")
                         TMB.scr.sleep()
                         state.player._set_property("audio-device", "null")
@@ -1113,11 +1089,7 @@ TMB.y_button.when_held = lambda button: year_button_longpress(button, state)
 TMB.scr.clear_area(controls.Bbox(0, 0, 160, 100))
 TMB.scr.show_text("Powered by\n archive.org\n & phish.in", color=(0, 255, 255), force=True)
 TMB.scr.show_text(
-    str(len(archive.collection_list)).rjust(3),
-    font=TMB.scr.boldsmall,
-    loc=(120, 100),
-    color=(255, 100, 0),
-    force=True,
+    str(len(archive.collection_list)).rjust(3), font=TMB.scr.boldsmall, loc=(120, 100), color=(255, 100, 0), force=True
 )
 
 # save_pid()
