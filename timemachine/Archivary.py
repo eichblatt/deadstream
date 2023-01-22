@@ -131,7 +131,7 @@ def remove_none(lis):
 
 
 class Archivary:
-    """ A collection of Archive objects """
+    """A collection of Archive objects"""
 
     def __init__(
         self,
@@ -436,7 +436,7 @@ class BaseTape(abc.ABC):
 
 
 class BaseTrack:
-    """ A Base track from a tape """
+    """A Base track from a tape"""
 
     def __init__(self, tdict, parent_id, break_track=False):
         self.parent_id = parent_id
@@ -558,8 +558,8 @@ class IATapeDownloader(BaseTapeDownloader):
 
     def save_all_collection_names(self):
         """
-             get a list of all collection names within archive.org's etree collection.
-             This should leverage the _get_piece function
+        get a list of all collection names within archive.org's etree collection.
+        This should leverage the _get_piece function
         """
         current_rows = 0
         parms = {
@@ -772,7 +772,7 @@ class PhishinArchive(BaseArchive):
         self.dates = sorted(self.tape_dates.keys())
 
     def load_tapes(self, reload_ids=False, with_latest=False):
-        """ Load the tapes, then add anything which has been added since the tapes were saved """
+        """Load the tapes, then add anything which has been added since the tapes were saved"""
         n_tapes = 0
 
         if reload_ids or not os.path.exists(self.idpath):
@@ -819,7 +819,7 @@ class PhishinArchive(BaseArchive):
         return (tapes, max_addeddate)
 
     def resort_tape_date(self, date):
-        """ Phishin version of this method """
+        """Phishin version of this method"""
         if isinstance(date, datetime.date):
             date = date.strftime("%Y-%m-%d")
         if date not in self.dates:
@@ -828,7 +828,7 @@ class PhishinArchive(BaseArchive):
         return tapes
 
     def best_tape(self, date, resort=True):
-        """ Phishin version of this method """
+        """Phishin version of this method"""
         if isinstance(date, datetime.date):
             date = date.strftime("%Y-%m-%d")
         if date not in self.dates:
@@ -845,7 +845,7 @@ class PhishinArchive(BaseArchive):
 
 
 class PhishinTape(BaseTape):
-    """ A Phishin tape  """
+    """A Phishin tape"""
 
     def __init__(self, dbpath, raw_json, set_data):
         super().__init__(dbpath, raw_json, set_data)
@@ -929,7 +929,7 @@ class PhishinTape(BaseTape):
 
 
 class PhishinTrack(BaseTrack):
-    """ A track from a Phishin recording """
+    """A track from a Phishin recording"""
 
     def __init__(self, tdict, parent_id, break_track=False):
         super().__init__(tdict, parent_id, break_track)
@@ -968,7 +968,7 @@ class PhishinTrack(BaseTrack):
 
 
 class GDArchive(BaseArchive):
-    """ The Grateful Dead Collection on Archive.org """
+    """The Grateful Dead Collection on Archive.org"""
 
     def __init__(
         self,
@@ -1004,7 +1004,7 @@ class GDArchive(BaseArchive):
         self.dates = sorted(self.tape_dates.keys())
 
     def resort_tape_date(self, date):  # IA
-        """  archive.org version of this method """
+        """archive.org version of this method"""
         if isinstance(date, datetime.date):
             date = date.strftime("%Y-%m-%d")
         if date not in self.dates:
@@ -1016,7 +1016,7 @@ class GDArchive(BaseArchive):
         return tapes
 
     def best_tape(self, date, resort=True):  # IA
-        """  archive.org version of this method """
+        """archive.org version of this method"""
         if isinstance(date, datetime.date):
             date = date.strftime("%Y-%m-%d")
         if date not in self.dates:
@@ -1029,7 +1029,7 @@ class GDArchive(BaseArchive):
         return tapes[0]
 
     def load_current_tapes(self, reload_ids=False, meta_path=None):  # IA
-        """ Load current tapes or download them from archive.org if they are not already loaded """
+        """Load current tapes or download them from archive.org if they are not already loaded"""
         logger.debug("Loading current tapes")
         meta_path = self.idpath if meta_path is None else meta_path
         tapes = []
@@ -1092,7 +1092,7 @@ class GDArchive(BaseArchive):
         return (tapes, max_addeddate)
 
     def load_tapes(self, reload_ids=False, with_latest=False):  # IA
-        """ Load the tapes, then add anything which has been added since the tapes were saved """
+        """Load the tapes, then add anything which has been added since the tapes were saved"""
         logger.debug("begin loading tapes")
         all_tapes_count = 0
         all_loaded_tapes = []
@@ -1126,7 +1126,7 @@ class GDArchive(BaseArchive):
         return self.tapes
 
     def year_artists(self, year, other_year=None):
-        """ NOTE: should use some caching here """
+        """NOTE: should use some caching here"""
         id_dict = {}
         other_year = other_year if other_year else year
         start_year, end_year = sorted([year, other_year])
@@ -1141,7 +1141,7 @@ class GDArchive(BaseArchive):
 
 
 class GDTape(BaseTape):
-    """ A Grateful Dead Identifier Item -- does not contain tracks """
+    """A Grateful Dead Identifier Item -- does not contain tracks"""
 
     def __init__(self, dbpath, raw_json, set_data):
         super().__init__(dbpath, raw_json, set_data)
@@ -1180,7 +1180,7 @@ class GDTape(BaseTape):
         return "stream_only" in self.collection
 
     def compute_score(self):
-        """ compute a score for sorting the tape. High score means it should be played first """
+        """compute a score for sorting the tape. High score means it should be played first"""
         if self._remove_from_archive:
             return -1
         score = 3
@@ -1227,6 +1227,8 @@ class GDTape(BaseTape):
             if pre_sort_order == sorted(pre_sort_order):
                 return
             tracknums_orig = {int(v): k for k, v in orig_tracknums.items()}
+            if len(tracknums_orig) < len(orig_tracknums):
+                return
             # new_tracklist = [self._tracks[i] for i in sorted(range(len(pre_sort_order)), key=pre_sort_order.__getitem__)]
             new_tracklist = []
             for k in sorted(tracknums_orig.keys()):
@@ -1462,7 +1464,7 @@ class GDTape(BaseTape):
 
 
 class GDTrack(BaseTrack):
-    """ A track from a GDTape recording """
+    """A track from a GDTape recording"""
 
     def __init__(self, tdict, parent_id, break_track=False):
         super().__init__(tdict, parent_id, break_track)
@@ -1503,7 +1505,7 @@ class GDTrack(BaseTrack):
 
 
 class GDSet_row:
-    """ Set Information from a Grateful Dead or (other collection) date """
+    """Set Information from a Grateful Dead or (other collection) date"""
 
     def __init__(self, data_row):
         for elem in [
@@ -1532,7 +1534,7 @@ class GDSet_row:
 
 
 class GDDate_info:
-    """ Date Information from a Grateful Dead or (other collection) date """
+    """Date Information from a Grateful Dead or (other collection) date"""
 
     def __init__(self, set_rows):
         self.n_sets = len(set_rows)
@@ -1563,7 +1565,7 @@ class GDDate_info:
 
 
 class GDSetBreaks:
-    """ Set Information from a Grateful Dead date """
+    """Set Information from a Grateful Dead date"""
 
     def __init__(self, collection_list):
         self.collection_list = collection_list
@@ -1659,22 +1661,22 @@ class Archivary_Updater(Thread):
     ) -> None:
         """Create an Updater.
 
-             Args:
-                 interval (float): Seconds between checks, pre-jitter.
-                 state (controls.state): state of the player.
-                 event (Event): Event which can be used to stop the update loop.
-                 lock (Lock): Optional. Lock to acquire before an update. If a
-                     lock is provided, it is only acquired when performing
-                     the update and not when checking if the update is
-                     necessary.
-                 scr (controls.screen): The screen object, used to indicate that device is updating.
-                 stop_on_exception (bool): Set to True to have the updater loop
-                     stop checking for updates if there is an exception in the
-                     update process.
-             NOTE The Updater will check every <interval> seconds, but only update
-                  every <min_time_between_updates> seconds. So we will check more often than we
-                  will actually do an update. That is because we don't want to update while playing.
-                  Is the "don't update while playing" worth the trouble?
+        Args:
+            interval (float): Seconds between checks, pre-jitter.
+            state (controls.state): state of the player.
+            event (Event): Event which can be used to stop the update loop.
+            lock (Lock): Optional. Lock to acquire before an update. If a
+                lock is provided, it is only acquired when performing
+                the update and not when checking if the update is
+                necessary.
+            scr (controls.screen): The screen object, used to indicate that device is updating.
+            stop_on_exception (bool): Set to True to have the updater loop
+                stop checking for updates if there is an exception in the
+                update process.
+        NOTE The Updater will check every <interval> seconds, but only update
+             every <min_time_between_updates> seconds. So we will check more often than we
+             will actually do an update. That is because we don't want to update while playing.
+             Is the "don't update while playing" worth the trouble?
         """
         super().__init__()
         self.interval = interval
