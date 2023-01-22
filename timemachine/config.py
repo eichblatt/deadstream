@@ -12,6 +12,8 @@ try:
     from timemachine import controls
 except NotImplementedError:
     logger.warning(f"Failied to import controls")
+except NameError:
+    logger.warning(f"Failied to import controls")
 
 OPTIONS_PATH = os.path.join(os.getenv("HOME"), ".timemachine_options.txt")
 DB_PATH = os.path.join(ROOT_DIR, "metadata")
