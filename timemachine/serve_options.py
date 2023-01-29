@@ -74,6 +74,7 @@ def get_os_version():
                 if split_line[0] == "VERSION_ID":
                     OS_VERSION = int(split_line[1].strip('"'))
         except Exception:
+            OS_VERSION = 0
             logger.warning("Failed to get OS Version")
     return OS_VERSION
 
@@ -94,6 +95,10 @@ def default_options():
     if get_os_version() > 10:
         d["PULSEAUDIO_ENABLE"] = "true"
         d["BLUETOOTH_ENABLE"] = "true"
+        d["BLUETOOTH_DEVICE"] = "None"
+    else:
+        d["PULSEAUDIO_ENABLE"] = "false"
+        d["BLUETOOTH_ENABLE"] = "false"
         d["BLUETOOTH_DEVICE"] = "None"
     d["DEFAULT_START_TIME"] = "15:00:00"
     d["TIMEZONE"] = "America/New_York"
@@ -427,8 +432,10 @@ class OptionsServer(object):
                 proper_collections.append(artist)
             elif artist.lower().strip() == "phish":
                 proper_collections.append("Phish")
+            elif artist.startswith('"') and artist.endswith('"'):
+                proper_collections.append(artist.replace('"', ""))
             else:
-                candidates = difflib.get_close_matches(artist, valid_collection_names, cutoff=0.8)
+                candidates = difflib.get_close_matches(artist, valid_collection_names, cutoff=0.7)
                 if len(candidates) > 0:
                     proper_collections.append(candidates[0])
                 else:
