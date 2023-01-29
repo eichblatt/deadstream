@@ -74,6 +74,7 @@ def get_os_version():
                 if split_line[0] == "VERSION_ID":
                     OS_VERSION = int(split_line[1].strip('"'))
         except Exception:
+            OS_VERSION = 0
             logger.warning("Failed to get OS Version")
     return OS_VERSION
 
@@ -94,6 +95,10 @@ def default_options():
     if get_os_version() > 10:
         d["PULSEAUDIO_ENABLE"] = "true"
         d["BLUETOOTH_ENABLE"] = "true"
+        d["BLUETOOTH_DEVICE"] = "None"
+    else:
+        d["PULSEAUDIO_ENABLE"] = "false"
+        d["BLUETOOTH_ENABLE"] = "false"
         d["BLUETOOTH_DEVICE"] = "None"
     d["DEFAULT_START_TIME"] = "15:00:00"
     d["TIMEZONE"] = "America/New_York"
@@ -177,9 +182,7 @@ class OptionsServer(object):
         opt_dict = read_optd()
         logger.debug(f"opt dict {opt_dict}")
         form_strings = [
-            self.get_form_item(x)
-            for x in opt_dict.items()
-            if x[0] not in ["TIMEZONE", "BLUETOOTH_DEVICE", "MODULE"]
+            self.get_form_item(x) for x in opt_dict.items() if x[0] not in ["TIMEZONE", "BLUETOOTH_DEVICE", "MODULE"]
         ]
         form_string = "\n".join(form_strings)
         logger.debug(f"form_string {form_string}")
@@ -192,15 +195,12 @@ class OptionsServer(object):
             "America/Anchorage",
             "Pacific/Honolulu",
         ]
-        tz_strings = [
-            f'<option value="{x}" {self.current_choice(opt_dict,"TIMEZONE",x)}>{x}</option>' for x in tz_list
-        ]
+        tz_strings = [f'<option value="{x}" {self.current_choice(opt_dict,"TIMEZONE",x)}>{x}</option>' for x in tz_list]
         tz_string = "\n".join(tz_strings)
         logger.debug(f"tz string {tz_string}")
         module_list = ["livemusic", "78rpm"]
         module_strings = [
-            f'<option value="{x}" {self.current_choice(opt_dict,"MODULE",x)}>{x}</option>'
-            for x in module_list
+            f'<option value="{x}" {self.current_choice(opt_dict,"MODULE",x)}>{x}</option>' for x in module_list
         ]
         module_string = "\n".join(module_strings)
         logger.debug(f"tz string {module_string}")
@@ -300,16 +300,13 @@ class OptionsServer(object):
     def bluetooth_settings(self):
 
         connected_string = (
-            f"<p> Currently connected to {bt_connected_device_name} </p>"
-            if len(bt_connected_device_name) > 0
-            else ""
+            f"<p> Currently connected to {bt_connected_device_name} </p>" if len(bt_connected_device_name) > 0 else ""
         )
 
         bt_list = [bt_connected_device_name] + [x["name"] for x in bt_devices]
         bt_list = list(dict.fromkeys(bt_list))
         bt_strings = [
-            f'<option value="{x}" {self.current_choice(opt_dict,"BLUETOOTH_DEVICE",x)}>{x}</option>'
-            for x in bt_list
+            f'<option value="{x}" {self.current_choice(opt_dict,"BLUETOOTH_DEVICE",x)}>{x}</option>' for x in bt_list
         ]
         bt_device = "\n".join(bt_strings)
         logger.debug(f"bluetooth devices {bt_device}")
@@ -327,9 +324,7 @@ class OptionsServer(object):
                 <select name="BLUETOOTH_DEVICE"> {bt_device} </select>
                 <button type="submit"> {bt_button_label} </button> </form>"""
 
-        return_button = (
-            """ <form method="get" action="index"> <button type="submit">Return</button> </form> """
-        )
+        return_button = """ <form method="get" action="index"> <button type="submit">Return</button> </form> """
 
         notes_string = """<h2> Note: Connecting to bluetooth is NOT intended to be possible while tripping!!! </h2>
             <h3> After connecting a bluetooth device, you will need to set the AUDIO SINK on the main page to send the audio to the connected bluetooth device </h3>
@@ -350,12 +345,12 @@ class OptionsServer(object):
 
     @cherrypy.expose
     def connect_bluetooth_device(self, BLUETOOTH_DEVICE=None):
-        """ set the bluetooth device """
+        """set the bluetooth device"""
         global bt_connected
-        return_button_success = (
-            """ <form method="get" action="index"> <button type="submit">Return</button> </form> """
+        return_button_success = """ <form method="get" action="index"> <button type="submit">Return</button> </form> """
+        return_button_fail = (
+            """ <form method="get" action="bluetooth_settings"> <button type="submit">Return</button> </form> """
         )
-        return_button_fail = """ <form method="get" action="bluetooth_settings"> <button type="submit">Return</button> </form> """
         if not BLUETOOTH_DEVICE:
             return return_button_success
 
@@ -371,9 +366,7 @@ class OptionsServer(object):
         if bt_connected:
             opt_dict["BLUETOOTH_DEVICE"] = BLUETOOTH_DEVICE
         return_string = (
-            f"Connected to {BLUETOOTH_DEVICE} :)"
-            if bt_connected
-            else f"Failed to connect to {BLUETOOTH_DEVICE} :("
+            f"Connected to {BLUETOOTH_DEVICE} :)" if bt_connected else f"Failed to connect to {BLUETOOTH_DEVICE} :("
         )
         return_string = return_string + (return_button_success if bt_connected else return_button_fail)
         return return_string
@@ -439,6 +432,8 @@ class OptionsServer(object):
                 proper_collections.append(artist)
             elif artist.lower().strip() == "phish":
                 proper_collections.append("Phish")
+            elif artist.startswith('"') and artist.endswith('"'):
+                proper_collections.append(artist.replace('"', ""))
             else:
                 candidates = difflib.get_close_matches(artist, valid_collection_names, cutoff=0.7)
                 if len(candidates) > 0:

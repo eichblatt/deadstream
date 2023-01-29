@@ -88,9 +88,7 @@ def sequential(func):
 
 
 def load_saved_state(state):
-    """ This function loads a subset of the fields from the state, which was saved with json
-        Not Yet Working !!!
-    """
+    """This function loads a subset of the fields from the state, which was saved with json"""
     state_path = os.path.join(config.DB_PATH, "etree_state.json")
     logger.info(f"Loading Saved State from {state_path}")
     if not os.path.exists(state_path):
@@ -137,9 +135,7 @@ def load_saved_state(state):
         elif current["DATE_READER"]:
             state.date_reader.m.steps = current["DATE_READER"].month
             state.date_reader.d.steps = current["DATE_READER"].day
-            state.date_reader.y.steps = current["DATE_READER"].year - min(
-                state.date_reader.archive.year_list()
-            )
+            state.date_reader.y.steps = current["DATE_READER"].year - min(state.date_reader.archive.year_list())
             state.date_reader.update()
 
         current["DATE_READER"] = state.date_reader
@@ -267,7 +263,7 @@ def select_button(button, state):
     current = state.get_current()
     if current["PLAY_STATE"] == config.ENDED:
         logger.debug("setting PLAY_STATE to READY")
-        if current['DATE'] == current['DATE_READER']:
+        if current["DATE"] == current["DATE_READER"]:
             logger.debug("setting autoplay to False")
             autoplay = False
         current["PLAY_STATE"] = config.READY
@@ -338,7 +334,7 @@ def play_pause_button(button, state):
         TMB.scr.show_playstate(staged_play=True, force=True)
         state.player.play()  # this is a blocking call. I could move the "wait_until_playing" to the event handler.
     elif current["PLAY_STATE"] in [config.READY, config.ENDED]:
-        if current['TAPE_ID'] != '':
+        if current["TAPE_ID"] != "":
             TMB.scr.wake_up()
             TMB.screen_event.set()
             tape = state.player.tape
@@ -430,9 +426,7 @@ def stop_button_longpress(button, state):
 def rewind_button(button, state):
     logger.debug("press of rewind")
     current = state.get_current()
-    if current["EXPERIENCE"] or (
-        current["ON_TOUR"] and current["TOUR_STATE"] in [config.READY, config.PLAYING]
-    ):
+    if current["EXPERIENCE"] or (current["ON_TOUR"] and current["TOUR_STATE"] in [config.READY, config.PLAYING]):
         current_volume = state.player.get_prop("volume")
         state.player._set_property("volume", max(current_volume * 0.9, 40))
         return
@@ -457,9 +451,7 @@ def rewind_button_longpress(button, state):
 def ffwd_button(button, state):
     logger.debug("press of ffwd")
     current = state.get_current()
-    if current["EXPERIENCE"] or (
-        current["ON_TOUR"] and current["TOUR_STATE"] in [config.READY, config.PLAYING]
-    ):
+    if current["EXPERIENCE"] or (current["ON_TOUR"] and current["TOUR_STATE"] in [config.READY, config.PLAYING]):
         current_volume = state.player.get_prop("volume")
         state.player._set_property("volume", min(current_volume * 1.1, 130))
         return
@@ -715,16 +707,16 @@ def refresh_venue(state):
         display_offset = 0 if (display_offset < screen_width) else display_offset
         TMB.scr.show_venue(display_string[display_offset:], color=id_color)
     else:
-        TMB.scr.show_venue(display_string[-1 * (screen_width - 1):], color=id_color)
+        TMB.scr.show_venue(display_string[-1 * (screen_width - 1) :], color=id_color)
 
     div, mod = divmod(venue_counter[1] + 1, n_subfields)
     venue_counter = (divmod(venue_counter[0] + div, n_fields)[1], mod)
 
 
 def test_update(state):
-    """ This function is run when the script has been updated. If it passes, then the code
-        in the temporary folder may be moved to the working directory (and be used as the latest version).
-        If this function fails, then the code should NOT be placed in the working directory """
+    """This function is run when the script has been updated. If it passes, then the code
+    in the temporary folder may be moved to the working directory (and be used as the latest version).
+    If this function fails, then the code should NOT be placed in the working directory"""
 
     current = state.get_current()
     current["EXPERIENCE"] = False
@@ -772,11 +764,7 @@ def show_venue_text(arg, color=(0, 255, 255), show_id=False, offset=0, force=Fal
     if isinstance(arg, controls.date_knob_reader):
         date_reader = arg
         archive = date_reader.archive
-        tapes = (
-            archive.tape_dates[date_reader.fmtdate()]
-            if date_reader.fmtdate() in archive.tape_dates.keys()
-            else []
-        )
+        tapes = archive.tape_dates[date_reader.fmtdate()] if date_reader.fmtdate() in archive.tape_dates.keys() else []
         num_events = len(date_reader.shows_available())
         venue_name = ""
         artist_name = ""
@@ -790,14 +778,10 @@ def show_venue_text(arg, color=(0, 255, 255), show_id=False, offset=0, force=Fal
         artist_name = tape.artist
         num_events = 1
     TMB.scr.clear_area(TMB.scr.venue_bbox)
-    TMB.scr.show_text(
-        venue_name, TMB.scr.venue_bbox.origin(), font=TMB.scr.boldsmall, color=color, force=force
-    )
+    TMB.scr.show_text(venue_name, TMB.scr.venue_bbox.origin(), font=TMB.scr.boldsmall, color=color, force=force)
     if len(config.optd["COLLECTIONS"]) > 1:
         TMB.scr.clear_area(TMB.scr.track1_bbox)
-        TMB.scr.show_text(
-            artist_name, TMB.scr.track1_bbox.origin(), font=TMB.scr.boldsmall, color=color, force=True
-        )
+        TMB.scr.show_text(artist_name, TMB.scr.track1_bbox.origin(), font=TMB.scr.boldsmall, color=color, force=True)
     if num_events > 1:
         TMB.scr.show_nevents(str(num_events), force=force)
 
@@ -837,9 +821,7 @@ def event_loop(state, lock):
             default_start = config.optd["DEFAULT_START_TIME"]
 
             if current["ON_TOUR"]:
-                if (
-                    current["TOUR_STATE"] == config.ENDED and now.hour < 1
-                ):  # reset ENDED to INIT after midnight.
+                if current["TOUR_STATE"] == config.ENDED and now.hour < 1:  # reset ENDED to INIT after midnight.
                     current["TOUR_STATE"] = config.INIT
                 if current["TOUR_STATE"] not in [config.PLAYING, config.ENDED]:
                     then_time = now.replace(year=current["TOUR_YEAR"])
@@ -851,12 +833,8 @@ def event_loop(state, lock):
                         current["TOUR_STATE"] = config.READY
                         state.player.stop()
                         current["TAPE_ID"] = None
-                        start_time = state.date_reader.archive.tape_start_time(
-                            then_time, default_start=default_start
-                        )
-                        TMB.scr.show_experience(
-                            text=f"ON_TOUR:{current['TOUR_YEAR']}\nWaiting for show", force=True
-                        )
+                        start_time = state.date_reader.archive.tape_start_time(then_time, default_start=default_start)
+                        TMB.scr.show_experience(text=f"ON_TOUR:{current['TOUR_YEAR']}\nWaiting for show", force=True)
                         then_date = then_time.date()
                         random.seed(then_date.year + then_date.month + then_date.day)
                         wait_time = random.randrange(60, 600)
@@ -865,18 +843,14 @@ def event_loop(state, lock):
                         )
                         sleep(10)
                         if now.time() >= (start_time + datetime.timedelta(seconds=wait_time)).time():
-                            point_in_show = (
-                                then_time - (start_time + datetime.timedelta(seconds=wait_time))
-                            ).seconds
+                            point_in_show = (then_time - (start_time + datetime.timedelta(seconds=wait_time))).seconds
                             play_on_tour(tape, state, seek_to=point_in_show)
                 if current["TOUR_STATE"] == config.PLAYING:
                     if current["PLAY_STATE"] == config.ENDED:
                         current["TOUR_STATE"] = config.ENDED
                         state.set(current)
                         track_event.set()
-                        logger.debug(
-                            f" ENDED!! TOUR_STATE is {current['TOUR_STATE']}, default_start: {default_start}"
-                        )
+                        logger.debug(f" ENDED!! TOUR_STATE is {current['TOUR_STATE']}, default_start: {default_start}")
 
             if TMB.screen_event.is_set():
                 TMB.scr.refresh()
@@ -927,15 +901,11 @@ def event_loop(state, lock):
                 track_event.set()
                 playstate_event.set()
                 save_state(state)
-                if (
-                    current["PLAY_STATE"] != config.PLAYING
-                ):  # deal with overnight pauses, which freeze the alsa player.
+                if current["PLAY_STATE"] != config.PLAYING:  # deal with overnight pauses, which freeze the alsa player.
                     if (now - config.PAUSED_AT).seconds > SLEEP_AFTER_SECONDS and state.player.get_prop(
                         "audio-device"
                     ) not in ["null", "pulse"]:
-                        logger.info(
-                            f"Paused at {config.PAUSED_AT}, sleeping after {SLEEP_AFTER_SECONDS}, now {now}"
-                        )
+                        logger.info(f"Paused at {config.PAUSED_AT}, sleeping after {SLEEP_AFTER_SECONDS}, now {now}")
                         TMB.scr.sleep()
                         state.player._set_property("audio-device", "null")
                         state.player.wait_for_property("audio-device", lambda x: x == "null")
@@ -1119,11 +1089,7 @@ TMB.y_button.when_held = lambda button: year_button_longpress(button, state)
 TMB.scr.clear_area(controls.Bbox(0, 0, 160, 100))
 TMB.scr.show_text("Powered by\n archive.org\n & phish.in", color=(0, 255, 255), force=True)
 TMB.scr.show_text(
-    str(len(archive.collection_list)).rjust(3),
-    font=TMB.scr.boldsmall,
-    loc=(120, 100),
-    color=(255, 100, 0),
-    force=True,
+    str(len(archive.collection_list)).rjust(3), font=TMB.scr.boldsmall, loc=(120, 100), color=(255, 100, 0), force=True
 )
 
 # save_pid()

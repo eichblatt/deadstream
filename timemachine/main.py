@@ -21,31 +21,18 @@ import os
 from timemachine import config, GD
 
 parser = optparse.OptionParser()
+parser.add_option("--box", dest="box", type="string", default="v1", help="v0 box has screen at 270. [default %default]")
 parser.add_option(
-    "--box", dest="box", type="string", default="v1", help="v0 box has screen at 270. [default %default]"
-)
-parser.add_option(
-    "--test_update",
-    action="store_true",
-    default=False,
-    help="test that software update succeeded[default %default]",
+    "--test_update", action="store_true", default=False, help="test that software update succeeded[default %default]"
 )
 parser.add_option(
     "--pid_to_kill", type="int", default=None, help="process id to kill during test_update [default %default]"
 )
 parser.add_option(
-    "-d",
-    "--debug",
-    type="int",
-    default=0,
-    help="If > 0, don't run the main script on loading [default %default]",
+    "-d", "--debug", type="int", default=0, help="If > 0, don't run the main script on loading [default %default]"
 )
 parser.add_option(
-    "-v",
-    "--verbose",
-    action="store_true",
-    default=False,
-    help="Print more verbose information [default %default]",
+    "-v", "--verbose", action="store_true", default=False, help="Print more verbose information [default %default]"
 )
 parms, remainder = parser.parse_args()
 
@@ -66,9 +53,9 @@ except Exception:
     logger.warning("Failed in loading options")
 try:
     config.RELOAD_COLLECTIONS = "__reload__" in [x.lower() for x in config.optd["COLLECTIONS"]]
-    config.UPDATE_COLLECTIONS = (
-        "__update__" in [x.lower() for x in config.optd["COLLECTIONS"]]
-    ) or config.optd["UPDATE_ARCHIVE_ON_STARTUP"]
+    config.UPDATE_COLLECTIONS = ("__update__" in [x.lower() for x in config.optd["COLLECTIONS"]]) or config.optd[
+        "UPDATE_ARCHIVE_ON_STARTUP"
+    ]
     config.optd["COLLECTIONS"] = [x for x in config.optd["COLLECTIONS"] if not x.lower() in ["__reload__"]]
     optd = config.optd.copy()
     config.save_options(optd)
