@@ -111,7 +111,7 @@ def get_os_version():
 
 
 class artist_knob_reader:
-    """ A set of knobs to read the year, and the artist """
+    """A set of knobs to read the year, and the artist"""
 
     def __init__(self, y: RotaryEncoder, m: RotaryEncoder, d: RotaryEncoder, archive=None):
         self.date = None
@@ -336,7 +336,7 @@ class decade_counter:
 
 
 class Time_Machine_Board:
-    """ TMB class describes and addresses the hardware of the Time Machine Board """
+    """TMB class describes and addresses the hardware of the Time Machine Board"""
 
     def __init__(self, mdy_bounds=[(0, 9), (0, 9), (0, 9)], upside_down=False):
         self.events = []
@@ -812,13 +812,13 @@ class screen:
             self.refresh(True)
 
     def scroll_venue(self, color=(0, 255, 255), stroke_width=0, inc=15):
-        """ This function can be called in a thread from the main.
-            eg.
-            venue_thread = threading.Thread(target=s.scroll_venue,name="venue_scroll",args=(),kwargs={'stroke_width':0,'inc':10})
-            venue_thread.start()
-            s.venue_name ="Fillmore West, San Francisco, CA"
+        """This function can be called in a thread from the main.
+        eg.
+        venue_thread = threading.Thread(target=s.scroll_venue,name="venue_scroll",args=(),kwargs={'stroke_width':0,'inc':10})
+        venue_thread.start()
+        s.venue_name ="Fillmore West, San Francisco, CA"
 
-            It works, but eats a lot of cycles. I'm not ready to go in this direction yet
+        It works, but eats a lot of cycles. I'm not ready to go in this direction yet
         """
         bbox = self.venue_bbox
         font = self.boldsmall

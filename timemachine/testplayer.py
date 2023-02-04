@@ -7,7 +7,7 @@ Archivary.logger.setLevel(10)
 
 
 track_event = Event()
-config.optd = {"COLLECTIONS": ["GratefulDead", "Phish", "PhilLeshandFriends"], "FAVORED_TAPER": "miller"}
+config.optd = {"COLLECTIONS": ["GratefulDead", "Phish", "PhilLeshandFriends"], "FAVORED_TAPER": "miller", "PLAY_LOSSLESS": "false"}
 
 archive = Archivary.GDArchive()
 tapedate = "1982-11-25"
