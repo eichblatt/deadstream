@@ -725,15 +725,22 @@ class screen:
         self.name = name
         self.active = False
         rotation_angle = 90 if not upside_down else 270
-        if psychedelic_row:  #
-            self.disp = st7735.ST7735R(
-                spi, rotation=rotation_angle, cs=cs_pin, dc=dc_pin, y_offset=1, rst=reset_pin, baudrate=BAUDRATE
-            )
-        else:
-            self.disp = st7735.ST7735R(
-                spi, rotation=rotation_angle, cs=cs_pin, dc=dc_pin, rst=reset_pin, baudrate=BAUDRATE
-            )
-
+        x_offset = y_offset = 0
+        if psychedelic_row:  # handle the weird screens
+            x_offset = 1
+            y_offset = 1
+        self.disp = st7735.ST7735R(
+            spi,
+            rotation=rotation_angle,
+            cs=cs_pin,
+            dc=dc_pin,
+            rst=reset_pin,
+            baudrate=BAUDRATE,
+            width=128 - x_offset,
+            height=160 - y_offset,
+            x_offset=x_offset,
+            y_offset=y_offset,
+        )
         self.bgcolor = color565(0, 0, 0)
         self.led = LED(config.screen_led_pin, initial_value=True)
         # --- swap width/height, if
