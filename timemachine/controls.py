@@ -726,7 +726,7 @@ class screen:
         logger.info(f"psychedelic_row {psychedelic_row}")
         x_offset = y_offset = 0
         if psychedelic_row:  # handle the weird screens
-            x_offset = 2
+            x_offset = 10
             y_offset = 1
         cs_pin = digitalio.DigitalInOut(board.CE0)
         dc_pin = digitalio.DigitalInOut(board.D24)
