@@ -716,7 +716,7 @@ class Bbox:
 
 
 class screen:
-    def __init__(self, upside_down=False, name="screen"):
+    def __init__(self, upside_down=False, name="screen", psychedelic_row=False):
         cs_pin = digitalio.DigitalInOut(board.CE0)
         dc_pin = digitalio.DigitalInOut(board.D24)
         reset_pin = digitalio.DigitalInOut(board.D25)
@@ -725,9 +725,14 @@ class screen:
         self.name = name
         self.active = False
         rotation_angle = 90 if not upside_down else 270
-        self.disp = st7735.ST7735R(
-            spi, rotation=rotation_angle, cs=cs_pin, dc=dc_pin, rst=reset_pin, x_offset=1, y_offset=1, baudrate=BAUDRATE
-        )
+        if psychedelic_row:  #
+            self.disp = st7735.ST7735R(
+                spi, rotation=rotation_angle, cs=cs_pin, dc=dc_pin, y_offset=1, rst=reset_pin, baudrate=BAUDRATE
+            )
+        else:
+            self.disp = st7735.ST7735R(
+                spi, rotation=rotation_angle, cs=cs_pin, dc=dc_pin, rst=reset_pin, baudrate=BAUDRATE
+            )
 
         self.bgcolor = color565(0, 0, 0)
         self.led = LED(config.screen_led_pin, initial_value=True)
