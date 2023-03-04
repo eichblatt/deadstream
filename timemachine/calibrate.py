@@ -158,7 +158,10 @@ def save_screen_desc():
     TMB.select_event.clear()
     screen_desc_path = os.path.join(os.getenv("HOME"), ".screen_desc")
     TMB.scr.show_text(
-        "Turn Month knob\nif colored row\nelse press select", font=TMB.scr.smallfont, force=True, clear=True
+        "Turn Month knob\nto remove\npsychedelic row.\nelse press select",
+        font=TMB.scr.smallfont,
+        force=True,
+        clear=True,
     )
     while (not TMB.m_knob_event.is_set()) and (not TMB.select_event.is_set()):
         sleep(1)
