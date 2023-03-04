@@ -156,10 +156,10 @@ def save_knob_sense(save_calibration=True):
 def save_screen_desc():
     TMB.m_knob_event.clear()
     TMB.select_event.clear()
+    TMB.scr.show_text(
+        "Turn Month knob\nif colored row\nelse press select", font=TMB.scr.smallfont, force=False, clear=True
+    )
     while (not TMB.m_knob_event.is_set()) and (not TMB.select_event.is_set()):
-        TMB.scr.show_text(
-            "Turn Month knob\nif colored row\nelse press select", font=TMB.scr.smallfont, force=False, clear=True
-        )
         sleep(1)
     if TMB.select_event.is_set():
         pass
