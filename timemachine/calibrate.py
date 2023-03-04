@@ -158,7 +158,7 @@ def save_screen_desc():
     TMB.select_event.clear()
     screen_desc_path = os.path.join(os.getenv("HOME"), ".screen_desc")
     TMB.scr.show_text(
-        "Turn Month knob\nto remove\npsychedelic row.\nelse press select",
+        "If screen has a\npsychedelic row,\nturn Month knob\nelse press any button",
         font=TMB.scr.smallfont,
         force=True,
         clear=True,
