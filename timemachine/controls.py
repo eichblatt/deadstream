@@ -724,8 +724,8 @@ class screen:
                 if ("psychedelic_row" in line) & ("true" in line.lower()):
                     psychedelic_row = True
         if psychedelic_row:  # handle the weird screens
-            x_offset = 1
-            y_offset = 1
+            x_offset = 10
+            y_offset = 10
         cs_pin = digitalio.DigitalInOut(board.CE0)
         dc_pin = digitalio.DigitalInOut(board.D24)
         reset_pin = digitalio.DigitalInOut(board.D25)
