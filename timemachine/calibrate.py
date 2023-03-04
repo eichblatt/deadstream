@@ -156,19 +156,21 @@ def save_knob_sense(save_calibration=True):
 def save_screen_desc():
     TMB.m_knob_event.clear()
     TMB.select_event.clear()
+    screen_desc_path = os.path.join(os.getenv("HOME"), ".screen_desc")
     TMB.scr.show_text(
-        "Turn Month knob\nif colored row\nelse press select", font=TMB.scr.smallfont, force=False, clear=True
+        "Turn Month knob\nif colored row\nelse press select", font=TMB.scr.smallfont, force=True, clear=True
     )
     while (not TMB.m_knob_event.is_set()) and (not TMB.select_event.is_set()):
         sleep(1)
     if TMB.select_event.is_set():
-        pass
+        f = open(screen_desc_path, "w")
+        f.write("psychedelic_row : false")
+        f.close()
     if TMB.m_knob_event.is_set():
-        screen_desc_path = os.path.join(os.getenv("HOME"), ".screen_desc")
         f = open(screen_desc_path, "w")
         f.write("psychedelic_row : true")
         f.close()
-        TMB.scr.show_text("colored row\nwill be \nremoved", font=TMB.scr.smallfont, force=False, clear=True)
+        TMB.scr.show_text("psychedelic row\nwill be \nremoved", font=TMB.scr.smallfont, force=True, clear=True)
         sleep(1)
     TMB.m_knob_event.clear()
     TMB.select_event.clear()
