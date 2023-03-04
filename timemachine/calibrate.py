@@ -162,12 +162,16 @@ def save_screen_desc():
         )
         sleep(1)
     if TMB.select_event.is_set():
-        return
+        pass
     if TMB.m_knob_event.is_set():
         screen_desc_path = os.path.join(os.getenv("HOME"), ".screen_desc")
         f = open(screen_desc_path, "w")
         f.write("psychedelic_row : true")
         f.close()
+        TMB.scr.show_text("colored row\nwill be \nremoved", font=TMB.scr.smallfont, force=False, clear=True)
+        sleep(1)
+    TMB.m_knob_event.clear()
+    TMB.select_event.clear()
     return
 
 
