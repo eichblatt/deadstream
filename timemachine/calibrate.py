@@ -160,15 +160,14 @@ def save_screen_desc():
         TMB.scr.show_text(
             "Turn Month knob\nif colored row\nelse press select", font=TMB.scr.smallfont, force=False, clear=True
         )
-    if TMB.select_event.is_set():
         sleep(1)
+    if TMB.select_event.is_set():
         return
     if TMB.m_knob_event.is_set():
         screen_desc_path = os.path.join(os.getenv("HOME"), ".screen_desc")
         f = open(screen_desc_path, "w")
-        f.write(str(new_knob_sense))
+        f.write("psychedelic_row : true")
         f.close()
-    sleep(1)
     return
 
 
