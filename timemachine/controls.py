@@ -716,7 +716,16 @@ class Bbox:
 
 
 class screen:
-    def __init__(self, upside_down=False, name="screen", psychedelic_row=False):
+    def __init__(self, upside_down=False, name="screen"):
+        disp_desc_path = os.path.join(os.getenv("HOME"), ".screen_desc")
+        psychedelic_row = False
+        if os.path.exists(disp_desc_path):
+            for line in open(disp_desc_path, "r").readlines():
+                if ("psychedelic_row" in line) & ("true" in line.lower()):
+                    psychedelic_row = True
+        if psychedelic_row:  # handle the weird screens
+            x_offset = 1
+            y_offset = 1
         cs_pin = digitalio.DigitalInOut(board.CE0)
         dc_pin = digitalio.DigitalInOut(board.D24)
         reset_pin = digitalio.DigitalInOut(board.D25)
@@ -726,9 +735,6 @@ class screen:
         self.active = False
         rotation_angle = 90 if not upside_down else 270
         x_offset = y_offset = 0
-        if psychedelic_row:  # handle the weird screens
-            x_offset = 1
-            y_offset = 1
         self.disp = st7735.ST7735R(
             spi,
             rotation=rotation_angle,
