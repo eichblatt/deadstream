@@ -137,7 +137,7 @@ def load_options():
                     logger.debug(f"lists k is {k}")
                     c = [x.strip() for x in tmpd[k].split(",") if x != ""]
                     if k == "FAVORED_TAPER":
-                        c = {x[0]: x[1] if len(x) > 1 else 1 for x in [x.split(":") for x in c]}
+                        c = {x[0]: float(x[1]) if len(x) > 1 else 1.0 for x in [x.split(":") for x in c]}
                     if k == "COLLECTIONS":
                         c = ["Phish" if x.lower() == "phish" else x for x in c]
                     tmpd[k] = c
