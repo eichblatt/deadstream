@@ -8,11 +8,13 @@ from timemachine import GD
 
 track_event = Event()
 
-config.optd = {
-    "COLLECTIONS": ["GratefulDead", "Phish", "PhilLeshandFriends", "TedeschiTrucksBand", "DeadAndCompany"],
-    "FAVORED_TAPER": {"UltraMatrix": 10, "miller": 5},
-    "PLAY_LOSSLESS": "false",
-}
+config.load_options()
+
+# config.optd = {
+#   "COLLECTIONS": ["GratefulDead", "Phish", "PhilLeshandFriends", "TedeschiTrucksBand", "DeadAndCompany"],
+#   "FAVORED_TAPER": {"UltraMatrix": 10, "miller": 5},
+#   "PLAY_LOSSLESS": "false",
+# }
 aa = Archivary.Archivary(collection_list=config.optd["COLLECTIONS"])
 
 
