@@ -108,6 +108,8 @@ def save_options(optd_to_save):
                 optd_to_save[arg] = ",".join(optd_to_save[arg])
             elif isinstance(optd_to_save[arg], (bool)):
                 optd_to_save[arg] = str(optd_to_save[arg]).lower()
+            elif isinstance(optd_to_save[arg], dict):
+                optd_to_save[arg] = ",".join([f"{k}:{v}" for k, v in optd_to_save[arg].items()])
             options[arg] = optd_to_save[arg]
     with open(OPTIONS_PATH, "w") as outfile:
         json.dump(options, outfile, indent=1)
