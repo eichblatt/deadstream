@@ -1190,7 +1190,7 @@ class GDTape(BaseTape):
         if "optd" in dir(config) and len(config.optd["FAVORED_TAPER"]) > 0:
             for taper, points in config.optd["FAVORED_TAPER"].items():
                 if taper.lower() in self.identifier.lower():
-                    score = score + points
+                    score = score + float(points)
         # This is now taken care of at the Archivary level.
         # if 'optd' in dir(config) and len(config.optd['COLLECTIONS']) > 1:
         #    colls = config.optd['COLLECTIONS']
