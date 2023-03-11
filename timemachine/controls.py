@@ -548,7 +548,7 @@ def select_option(TMB, counter, message, chooser):
         y_loc = y_origin
         step = divmod(counter.value, len(choices))[1]
 
-        text = "\n".join(choices[max(0, step - int(screen_height / 2)) : step])
+        text = "\n".join(choices[max(0, step - int(screen_height / 2)): step])
         (text_width, text_height) = scr.smallfont.getsize(text)
         scr.show_text(text, loc=(x_loc, y_loc), font=scr.smallfont, force=False)
         y_loc = y_loc + text_height * (1 + text.count("\n"))
@@ -561,7 +561,7 @@ def select_option(TMB, counter, message, chooser):
         scr.show_text(text, loc=(x_loc, y_loc), font=scr.smallfont, color=(0, 0, 255), force=False)
         y_loc = y_loc + text_height
 
-        text = "\n".join(choices[step + 1 : min(step + screen_height, len(choices))])
+        text = "\n".join(choices[step + 1: min(step + screen_height, len(choices))])
         (text_width, text_height) = scr.smallfont.getsize(text)
         scr.show_text(text, loc=(x_loc, y_loc), font=scr.smallfont, force=True)
 
@@ -612,7 +612,7 @@ def select_chars(TMB, counter, message, message2="So Far", character_set=string.
             x_loc = x_loc + text_width
 
             # print the white before the red, if applicable
-            text = character_set[max(0, -1 + counter.value - int(screen_width / 2)) : -1 + counter.value]
+            text = character_set[max(0, -1 + counter.value - int(screen_width / 2)): -1 + counter.value]
             for x in character_set[94:]:
                 text = text.replace(x, "\u25A1")
             (text_width, text_height) = scr.oldfont.getsize(text)
@@ -638,7 +638,7 @@ def select_chars(TMB, counter, message, message2="So Far", character_set=string.
             x_loc = x_loc + text_width
 
             # print the white after the red, if applicable
-            text = character_set[counter.value : min(-1 + counter.value + screen_width, len(character_set))]
+            text = character_set[counter.value: min(-1 + counter.value + screen_width, len(character_set))]
             for x in character_set[94:]:
                 text = text.replace(x, "\u25A1")
             (text_width, text_height) = scr.oldfont.getsize(text)
@@ -776,15 +776,15 @@ class screen:
         self.staged_date = None
         self.selected_date = None
 
-        self.staged_date_bbox = Bbox(0, 0, 160, 31)
-        self.selected_date_bbox = Bbox(0, 100, 160, 128)
-        self.venue_bbox = Bbox(0, 31, 160, 56)
-        self.nevents_bbox = Bbox(148, 31, 160, 56)
-        self.track1_bbox = Bbox(0 + y_offset, 55, 160, 77)
-        self.track2_bbox = Bbox(0 + y_offset, 78, 160, 100)
-        self.playstate_bbox = Bbox(130, 100, 160, 128)
-        self.sbd_bbox = Bbox(155, 100, 160, 108)
-        self.exp_bbox = Bbox(0, 55, 160, 100)
+        self.staged_date_bbox = Bbox(y_offset, x_offset, self.disp.height, 31)
+        self.selected_date_bbox = Bbox(y_offset, 100, self.disp.height, self.disp.width)
+        self.venue_bbox = Bbox(y_offset, 31, self.disp.height, 56)
+        self.nevents_bbox = Bbox(148, 31, self.disp.height, 56)
+        self.track1_bbox = Bbox(y_offset, 55, self.disp.height, 77)
+        self.track2_bbox = Bbox(y_offset, 78, self.disp.height, 100)
+        self.playstate_bbox = Bbox(130, 100, self.disp.height, self.disp.width)
+        self.sbd_bbox = Bbox(155, 100, self.disp.height, 108)
+        self.exp_bbox = Bbox(y_offset, 55, self.disp.height, 100)
 
         self.update_now = True
         self.sleeping = False
