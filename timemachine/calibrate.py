@@ -154,27 +154,31 @@ def save_knob_sense(save_calibration=True):
 
 
 def save_screen_desc():
-    TMB.m_knob_event.clear()
     TMB.button_event.clear()
+    TMB.m_knob_event.clear()
+    TMB.y_knob_event.clear()
     screen_desc_path = os.path.join(os.getenv("HOME"), ".screen_desc")
     TMB.scr.show_text(
-        "If screen has a\npsychedelic row,\nturn Month knob.\n\nelse press any\nbutton",
+        " psychedelic row?\n     Month knob.\n Crazy angle text?\n    Year knob\n ???? press any button",
         font=TMB.scr.smallfont,
         force=True,
         clear=True,
     )
-    while (not TMB.m_knob_event.is_set()) and (not TMB.button_event.is_set()):
+    while (not TMB.m_knob_event.is_set()) and (not TMB.y_knob_event.is_set()) and (not TMB.button_event.is_set()):
         sleep(1)
-    f = open(screen_desc_path, "w")
-    if TMB.button_event.is_set():
+    if TMB.y_knob_event.is_set():
+        f = open(screen_desc_path, "w")
         f.write("psychedelic_row : false")
         TMB.scr.show_text("Thank You!", font=TMB.scr.smallfont, force=True, clear=True)
+        f.close()
     if TMB.m_knob_event.is_set():
+        f = open(screen_desc_path, "w")
         f.write("psychedelic_row : true")
         TMB.scr.show_text("psychedelic row\nwill be \nremoved", font=TMB.scr.smallfont, force=True, clear=True)
+        f.close()
         sleep(1)
-    f.close()
     TMB.m_knob_event.clear()
+    TMB.y_knob_event.clear()
     TMB.button_event.clear()
     return
 
