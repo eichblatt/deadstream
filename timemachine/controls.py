@@ -743,8 +743,8 @@ class screen:
             dc=dc_pin,
             rst=reset_pin,
             baudrate=BAUDRATE,
-            width=128 - (x_offset if psychedelic_row else 0),
-            height=160,
+            width=128 + x_offset,
+            height=160 + y_offset,
             x_offset=x_offset,
             y_offset=y_offset,
         )
