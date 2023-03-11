@@ -102,6 +102,8 @@ if __name__ == "__main__":
         height=160,
         cs=digitalio.DigitalInOut(board.CE0),
         dc=digitalio.DigitalInOut(board.D24),
+        x_offset=1,
+        y_offset=1,
         rst=digitalio.DigitalInOut(board.D25),
         baudrate=40000000,
     )
