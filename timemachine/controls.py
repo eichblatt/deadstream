@@ -717,18 +717,8 @@ class Bbox:
 
 class screen:
     def __init__(self, screen_desc, name="screen"):
-        disp_desc_path = os.path.join(os.getenv("HOME"), ".screen_desc")
         self.desc = screen_desc
-        psychedelic_row_read = False  # Will be overridden if passed into function
-        try:
-            if os.path.exists(disp_desc_path):
-                for line in open(disp_desc_path, "r").readlines():
-                    if ("psychedelic_row" in line) & ("true" in line.lower()):
-                        psychedelic_row_read = True
-        except Exception:
-            pass
-        self.desc["psychedelic_row"] = self.desc.get("psychedelic_row", psychedelic_row_read)
-        logger.info(f"psychedelic_row {self.desc['psychedelic_row']}")
+        self.__set_psychedelic_row()
         x_offset = y_offset = 0
         if self.desc["psychedelic_row"]:  # handle the weird screens
             x_offset = 1
@@ -793,6 +783,21 @@ class screen:
 
         self.update_now = True
         self.sleeping = False
+
+    def __set_psychedelic_row(self):
+        if "psychedelic_row" in self.desc.keys():
+            return
+        self.desc["psychedelic_row"] = False
+        try:
+            disp_desc_path = os.path.join(os.getenv("HOME"), ".screen_desc")
+            if os.path.exists(disp_desc_path):
+                for line in open(disp_desc_path, "r").readlines():
+                    if ("psychedelic_row" in line) & ("true" in line.lower()):
+                        self.desc["psychedelic_row"] = True
+        except Exception:
+            pass
+        logger.info(f"psychedelic_row {self.desc['psychedelic_row']}")
+        return
 
     @with_semaphore
     def refresh(self, force=True):
