@@ -91,7 +91,9 @@ def retry_call(callable: Callable, *args, **kwargs):
 
 max_choices = len(string.printable)
 
-TMB = controls.Time_Machine_Board(mdy_bounds=[(0, 9), (0, 1 + divmod(max_choices - 1, 10)[0]), (0, 9)])
+TMB = controls.Time_Machine_Board(
+    mdy_bounds=[(0, 9), (0, 1 + divmod(max_choices - 1, 10)[0]), (0, 9)], screen_desc={"psychedelic_row": False}
+)
 
 TMB.rewind.when_pressed = lambda x: TMB.rewind_button(x)
 TMB.rewind.when_held = lambda x: TMB.rewind_button(x)
