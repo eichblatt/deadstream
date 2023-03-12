@@ -108,6 +108,8 @@ def save_options(optd_to_save):
                 optd_to_save[arg] = ",".join(optd_to_save[arg])
             elif isinstance(optd_to_save[arg], (bool)):
                 optd_to_save[arg] = str(optd_to_save[arg]).lower()
+            elif isinstance(optd_to_save[arg], dict):
+                optd_to_save[arg] = ",".join([f"{k}:{v}" for k, v in optd_to_save[arg].items()])
             options[arg] = optd_to_save[arg]
     with open(OPTIONS_PATH, "w") as outfile:
         json.dump(options, outfile, indent=1)
@@ -136,6 +138,8 @@ def load_options():
                 if k in ["COLLECTIONS", "FAVORED_TAPER"]:  # make lists from comma-separated strings.
                     logger.debug(f"lists k is {k}")
                     c = [x.strip() for x in tmpd[k].split(",") if x != ""]
+                    if k == "FAVORED_TAPER":
+                        c = {x[0]: float(x[1]) if len(x) > 1 else 1.0 for x in [x.split(":") for x in c]}
                     if k == "COLLECTIONS":
                         c = ["Phish" if x.lower() == "phish" else x for x in c]
                     tmpd[k] = c

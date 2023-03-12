@@ -1175,6 +1175,7 @@ class GDTape(BaseTape):
         self.avg_rating = float(raw_json.get("avg_rating", 2))
         self.num_reviews = int(raw_json.get("num_reviews", 1))
         self.downloads = int(raw_json.get("downloads", 1))
+        self.download_rate = self.downloads / max(100, (datetime.datetime.now() - self.addeddate).days)
 
     def stream_only(self):
         return "stream_only" in self.collection
@@ -1187,8 +1188,9 @@ class GDTape(BaseTape):
         if self.stream_only():
             score = score + 10
         if "optd" in dir(config) and len(config.optd["FAVORED_TAPER"]) > 0:
-            if any(x.lower() in self.identifier.lower() for x in config.optd["FAVORED_TAPER"]):
-                score = score + 3
+            for taper, points in config.optd["FAVORED_TAPER"].items():
+                if taper.lower() in self.identifier.lower():
+                    score = score + float(points)
         # This is now taken care of at the Archivary level.
         # if 'optd' in dir(config) and len(config.optd['COLLECTIONS']) > 1:
         #    colls = config.optd['COLLECTIONS']
@@ -1200,6 +1202,7 @@ class GDTape(BaseTape):
                 return -1
             score = score + 3 * (self.title_fraction() - 1)  # reduce score for tapes without titles.
             score = score + min(20, len(self._tracks)) / 4
+        score = score + self.download_rate
         score = score + math.log(1 + self.downloads)
         score = score + 0.5 * (
             self.avg_rating - 2.0 / math.sqrt(self.num_reviews)

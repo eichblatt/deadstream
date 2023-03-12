@@ -15,45 +15,63 @@ from timemachine import controls
 
 
 parser = optparse.OptionParser()
-parser.add_option('--wpa_path',
-                  dest='wpa_path',
-                  type="string",
-                  default='/etc/wpa_supplicant/wpa_supplicant.conf',
-                  help="path to wpa_supplicant file [default %default]")
-parser.add_option('-d', '--debug',
-                  dest='debug',
-                  type="int",
-                  default=0,
-                  help="If > 0, don't run the main script on loading [default %default]")
-parser.add_option('--options_path',
-                  dest='options_path',
-                  default=os.path.join(os.getenv('HOME'), '.timemachine_options.txt'),
-                  help="path to options file [default %default]")
-parser.add_option('--test',
-                  dest='test',
-                  action="store_true",
-                  default=False,
-                  help="Force reconnection (for testing) [default %default]")
-parser.add_option('--sleep_time',
-                  dest='sleep_time',
-                  type="int",
-                  default=10,
-                  help="how long to sleep before checking network status [default %default]")
-parser.add_option('-v', '--verbose',
-                  dest='verbose',
-                  action="store_true",
-                  default=False,
-                  help="Print more verbose information [default %default]")
+parser.add_option(
+    "--wpa_path",
+    dest="wpa_path",
+    type="string",
+    default="/etc/wpa_supplicant/wpa_supplicant.conf",
+    help="path to wpa_supplicant file [default %default]",
+)
+parser.add_option(
+    "-d",
+    "--debug",
+    dest="debug",
+    type="int",
+    default=0,
+    help="If > 0, don't run the main script on loading [default %default]",
+)
+parser.add_option(
+    "--options_path",
+    dest="options_path",
+    default=os.path.join(os.getenv("HOME"), ".timemachine_options.txt"),
+    help="path to options file [default %default]",
+)
+parser.add_option(
+    "--test",
+    dest="test",
+    action="store_true",
+    default=False,
+    help="Force reconnection (for testing) [default %default]",
+)
+parser.add_option(
+    "--sleep_time",
+    dest="sleep_time",
+    type="int",
+    default=10,
+    help="how long to sleep before checking network status [default %default]",
+)
+parser.add_option(
+    "-v",
+    "--verbose",
+    dest="verbose",
+    action="store_true",
+    default=False,
+    help="Print more verbose information [default %default]",
+)
 parms, remainder = parser.parse_args()
 
-knob_sense_path = os.path.join(os.getenv('HOME'), ".knob_sense")
+knob_sense_path = os.path.join(os.getenv("HOME"), ".knob_sense")
 
 CALIBRATED = os.path.exists(knob_sense_path)
 OS_VERSION = None
 
-logging.basicConfig(format='%(asctime)s.%(msecs)03d %(levelname)s: %(name)s %(message)s', level=logging.INFO, datefmt='%Y-%m-%d %H:%M:%S')
+logging.basicConfig(
+    format="%(asctime)s.%(msecs)03d %(levelname)s: %(name)s %(message)s",
+    level=logging.INFO,
+    datefmt="%Y-%m-%d %H:%M:%S",
+)
 logger = logging.getLogger(__name__)
-controlsLogger = logging.getLogger('timemachine.controls')
+controlsLogger = logging.getLogger("timemachine.controls")
 if parms.verbose:
     logger.setLevel(logging.DEBUG)
     controlsLogger.setLevel(logging.DEBUG)
@@ -62,7 +80,7 @@ else:
     controlsLogger.setLevel(logging.INFO)
 
 for k in parms.__dict__.keys():
-    print(F"{k:20s} : {parms.__dict__[k]}")
+    print(f"{k:20s} : {parms.__dict__[k]}")
 
 
 @retry(stop=stop_after_delay(10))
@@ -98,7 +116,9 @@ def get_knob_orientation(knob, label):
     bounds = knob.threshold_steps
     initial_value = knob.steps = int((bounds[0] + bounds[1]) / 2)
     TMB.scr.show_text("Calibrating knobs", font=TMB.scr.smallfont, force=False, clear=True)
-    TMB.scr.show_text(F"Rotate {label}\nclockwise", loc=(0, 40), font=TMB.scr.boldsmall, color=(0, 255, 255), force=True)
+    TMB.scr.show_text(
+        f"Rotate {label}\nclockwise", loc=(0, 40), font=TMB.scr.boldsmall, color=(0, 255, 255), force=True
+    )
     if label == "month":
         TMB.m_knob_event.wait()
     elif label == "day":
@@ -108,91 +128,140 @@ def get_knob_orientation(knob, label):
     TMB.m_knob_event.clear()
     TMB.d_knob_event.clear()
     TMB.y_knob_event.clear()
-    logger.info(f'AFTER: knob {label} is {knob.steps}, initial_value {initial_value}. {knob.steps > initial_value}')
+    logger.info(f"AFTER: knob {label} is {knob.steps}, initial_value {initial_value}. {knob.steps > initial_value}")
     return knob.steps > initial_value
 
 
 def save_knob_sense(save_calibration=True):
-    knob_senses = [get_knob_orientation(knob, label) for knob, label in [(TMB.m, "month"), (TMB.d, "day"), (TMB.y, "year")]]
+    knob_senses = [
+        get_knob_orientation(knob, label) for knob, label in [(TMB.m, "month"), (TMB.d, "day"), (TMB.y, "year")]
+    ]
     knob_sense_orig = TMB.get_knob_sense()
     knob_sense = 0
     for i in range(len(knob_senses)):
         knob_sense += 1 << i if knob_senses[i] else 0
     new_knob_sense = 7 & ~(knob_sense ^ knob_sense_orig)
-    logger.info(F"Knobs calibrated {new_knob_sense}")
+    logger.info(f"Knobs calibrated {new_knob_sense}")
     TMB.scr.show_text("Knobs\nCalibrated", font=TMB.scr.boldsmall, color=(0, 255, 255), force=False, clear=True)
-    TMB.scr.show_text(F"      {new_knob_sense}", font=TMB.scr.boldsmall, loc=(0, 60), force=True)
+    TMB.scr.show_text(f"      {new_knob_sense}", font=TMB.scr.boldsmall, loc=(0, 60), force=True)
     if save_calibration:
-        f = open(knob_sense_path, 'w')
+        f = open(knob_sense_path, "w")
         f.write(str(new_knob_sense))
         f.close()
     else:
-        TMB.scr.show_text(F"{new_knob_sense}", font=TMB.scr.boldsmall, loc=(0, 60), force=True)
+        TMB.scr.show_text(f"{new_knob_sense}", font=TMB.scr.boldsmall, loc=(0, 60), force=True)
         sleep(1)
+
+
+def save_screen_desc():
+    TMB.button_event.clear()
+    TMB.m_knob_event.clear()
+    TMB.y_knob_event.clear()
+    screen_desc_path = os.path.join(os.getenv("HOME"), ".screen_desc")
+    TMB.scr.show_text(
+        " psychedelic row?\n     Month knob.\n Crazy angle text?\n    Year knob\n ???? press any button",
+        font=TMB.scr.smallfont,
+        force=True,
+        clear=True,
+    )
+    while (not TMB.m_knob_event.is_set()) and (not TMB.y_knob_event.is_set()) and (not TMB.button_event.is_set()):
+        sleep(1)
+    if TMB.y_knob_event.is_set():
+        f = open(screen_desc_path, "w")
+        f.write("psychedelic_row : false")
+        TMB.scr.show_text("Thank You!", font=TMB.scr.smallfont, force=True, clear=True)
+        f.close()
+    if TMB.m_knob_event.is_set():
+        f = open(screen_desc_path, "w")
+        f.write("psychedelic_row : true")
+        TMB.scr.show_text("psychedelic row\nwill be \nremoved", font=TMB.scr.smallfont, force=True, clear=True)
+        f.close()
+        sleep(1)
+    TMB.m_knob_event.clear()
+    TMB.y_knob_event.clear()
+    TMB.button_event.clear()
+    return
 
 
 def test_buttons(event, label):
     event.clear()
     TMB.scr.show_text("Testing Buttons", font=TMB.scr.smallfont, force=False, clear=True)
-    TMB.scr.show_text(F"Press {label}", loc=(0, 40), font=TMB.scr.boldsmall, color=(0, 255, 255), force=True)
+    TMB.scr.show_text(f"Press {label}", loc=(0, 40), font=TMB.scr.boldsmall, color=(0, 255, 255), force=True)
     event.wait()
 
 
 def default_options():
     d = {}
-    d['COLLECTIONS'] = 'GratefulDead'
-    d['FAVORED_TAPER'] = 'miller'
-    d['AUTO_UPDATE_ARCHIVE'] = 'true'
-    d['UPDATE_ARCHIVE_ON_STARTUP'] = 'false'
-    d['ON_TOUR_ALLOWED'] = 'false'
-    d['PLAY_LOSSLESS'] = 'false'
-    d['PULSEAUDIO_ENABLE'] = 'false'
+    d["COLLECTIONS"] = "GratefulDead"
+    d["FAVORED_TAPER"] = "miller"
+    d["AUTO_UPDATE_ARCHIVE"] = "true"
+    d["UPDATE_ARCHIVE_ON_STARTUP"] = "false"
+    d["ON_TOUR_ALLOWED"] = "false"
+    d["PLAY_LOSSLESS"] = "false"
+    d["PULSEAUDIO_ENABLE"] = "false"
     if controls.get_os_version() > 10:
-        d['PULSEAUDIO_ENABLE'] = 'true'
-        d['BLUETOOTH_ENABLE'] = 'true'
-    d['DEFAULT_START_TIME'] = '15:00:00'
-    d['TIMEZONE'] = 'America/New_York'
+        d["PULSEAUDIO_ENABLE"] = "true"
+        d["BLUETOOTH_ENABLE"] = "true"
+    d["DEFAULT_START_TIME"] = "15:00:00"
+    d["TIMEZONE"] = "America/New_York"
     return d
 
 
 def configure_collections(parms):
-    """ is this a GratefulDead or a Phish Time Machine? """
-    collection = controls.select_option(TMB, counter, "Collection\nTurn Year, Select", ['GratefulDead', 'Phish', 'GratefulDead,Phish', 'no change', 'other'])
-    if collection == 'other':
-        collection = controls.select_chars(TMB, counter, "Collection?\nSelect. Stop to end", character_set=string.printable[36:62])
+    """is this a GratefulDead or a Phish Time Machine?"""
+    collection = controls.select_option(
+        TMB,
+        counter,
+        "Collection\nTurn Year, Select",
+        ["GratefulDead", "Phish", "GratefulDead,Phish", "no change", "other"],
+    )
+    if collection == "other":
+        collection = controls.select_chars(
+            TMB, counter, "Collection?\nSelect. Stop to end", character_set=string.printable[36:62]
+        )
     TMB.scr.show_text(f"Collection:\n{collection}", font=TMB.scr.smallfont, force=True, clear=True)
-    if collection == '' or collection == 'no change':
+    if collection == "" or collection == "no change":
         return collection
     sleep(2)
     tmpd = default_options()
     try:
-        tmpd = json.load(open(parms.options_path, 'r'))
+        tmpd = json.load(open(parms.options_path, "r"))
     except Exception:
-        logger.warning(F"Failed to read options from {parms.options_path}. Using defaults")
-    tmpd['COLLECTIONS'] = collection
+        logger.warning(f"Failed to read options from {parms.options_path}. Using defaults")
+    tmpd["COLLECTIONS"] = collection
     try:
-        with open(parms.options_path, 'w') as outfile:
+        with open(parms.options_path, "w") as outfile:
             json.dump(tmpd, outfile, indent=1)
     except Exception:
-        logger.warning(F"Failed to write options to {parms.options_path}")
+        logger.warning(f"Failed to write options to {parms.options_path}")
 
     return collection
 
 
 def test_sound(parms):
-    """ test that sound works """
+    """test that sound works"""
     try:
-        cmd = 'mpv --really-quiet ~/test_sound.ogg &'
+        cmd = "mpv --really-quiet ~/test_sound.ogg &"
         os.system(cmd)
     except Exception:
         logger.warning("Failed to play sound file ~/test_sound.ogg")
 
 
 def test_all_buttons(parms):
-    """ test that every button on the board works """
-    _ = [test_buttons(e, l) for e, l in
-         [(TMB.stop_event, "stop"), (TMB.rewind_event, "rewind"), (TMB.ffwd_event, "ffwd"), (TMB.select_event, "select"),
-          (TMB.play_pause_event, "play/pause"), (TMB.m_event, "month"), (TMB.d_event, "day"), (TMB.y_event, "year")]]
+    """test that every button on the board works"""
+    _ = [
+        test_buttons(e, l)
+        for e, l in [
+            (TMB.stop_event, "stop"),
+            (TMB.rewind_event, "rewind"),
+            (TMB.ffwd_event, "ffwd"),
+            (TMB.select_event, "select"),
+            (TMB.play_pause_event, "play/pause"),
+            (TMB.m_event, "month"),
+            (TMB.d_event, "day"),
+            (TMB.y_event, "year"),
+        ]
+    ]
     TMB.scr.show_text("Testing Buttons\nSucceeded!", font=TMB.scr.smallfont, force=True, clear=True)
 
 
@@ -200,19 +269,19 @@ def exit_success(status=0, sleeptime=0):
     TMB.scr.show_text("Please\n Stand By\n     . . . ", color=(0, 255, 255), force=True, clear=True)
     sleep(sleeptime)
     if status == 0:
-        os.system(f'kill {os.getpid()}')  # Killing the process like this will leave the message on the screen.
+        os.system(f"kill {os.getpid()}")  # Killing the process like this will leave the message on the screen.
     else:
         sys.exit(status)
 
 
 def check_factory_build():
-    home = os.getenv('HOME')
+    home = os.getenv("HOME")
     envs = get_envs()
-    if '.factory_env' not in envs:   # create one
+    if ".factory_env" not in envs:  # create one
         logger.info("creating factory build")
         srcdir = os.path.join(home, envs[0])
-        destdir = os.path.join(home, '.factory_env')
-        cmd = f'cp -r {srcdir} {destdir}'
+        destdir = os.path.join(home, ".factory_env")
+        cmd = f"cp -r {srcdir} {destdir}"
         os.system(cmd)
     else:
         logger.info("factory build present")
@@ -220,38 +289,42 @@ def check_factory_build():
 
 
 def get_envs():
-    home = os.getenv('HOME')
-    current_env = os.path.basename(os.readlink(os.path.join(home, 'timemachine')).rstrip('/'))
-    envs = [x for x in os.listdir(home) if os.path.isdir(os.path.join(home, x)) and (x.startswith('env_') or x == '.factory_env')]
+    home = os.getenv("HOME")
+    current_env = os.path.basename(os.readlink(os.path.join(home, "timemachine")).rstrip("/"))
+    envs = [
+        x
+        for x in os.listdir(home)
+        if os.path.isdir(os.path.join(home, x)) and (x.startswith("env_") or x == ".factory_env")
+    ]
     envs = sorted(envs, reverse=True)
-    envs.insert(0, envs.pop(envs.index(current_env)))    # put current_env first in the list.
+    envs.insert(0, envs.pop(envs.index(current_env)))  # put current_env first in the list.
     return envs
 
 
 def change_environment():
-    home = os.getenv('HOME')
+    home = os.getenv("HOME")
     envs = get_envs()
     new_env = controls.select_option(TMB, counter, "Select an environment to use", envs)
     logger.info(f"new env is {new_env}")
     if new_env == envs[0]:
         return
-    if new_env == '.factory_env':
+    if new_env == ".factory_env":
         factory_dir = os.path.join(home, new_env)
         # new_factory = f'env_{datetime.datetime.now().strftime("%Y%m%d.%H%M%S")}'
-        new_factory_tmp = 'env_recent_copy_tmp'    # Create a tmp dir, in case reboot occurs during the copy.
-        new_factory = 'env_recent_copy'    # by using a static name I avoid cleaning up old directories.
+        new_factory_tmp = "env_recent_copy_tmp"  # Create a tmp dir, in case reboot occurs during the copy.
+        new_factory = "env_recent_copy"  # by using a static name I avoid cleaning up old directories.
         new_dir_tmp = os.path.join(home, new_factory_tmp)
         new_dir = os.path.join(home, new_factory)
         TMB.scr.show_text("Resetting Factory\nenvironment", font=TMB.scr.smallfont, force=True, clear=True)
-        os.system(f'rm -rf {new_dir_tmp}')
-        cmd = f'cp -r {factory_dir} {new_dir_tmp}'
+        os.system(f"rm -rf {new_dir_tmp}")
+        cmd = f"cp -r {factory_dir} {new_dir_tmp}"
         fail = os.system(cmd)
         if fail != 0:
             TMB.scr.show_text("Failed to\nReset Factory\nenvironment", font=TMB.scr.smallfont, force=True, clear=True)
             return
-        cmd = f'rm -rf {new_dir}'
+        cmd = f"rm -rf {new_dir}"
         os.system(cmd)
-        cmd = f'mv {new_dir_tmp} {new_dir}'
+        cmd = f"mv {new_dir_tmp} {new_dir}"
         os.system(cmd)
     else:
         new_dir = os.path.join(home, new_env)
@@ -273,7 +346,14 @@ def welcome_alternatives():
     if CALIBRATED:
         TMB.scr.show_text("to recalibrate\n press play/pause", loc=(0, 30), font=TMB.scr.smallfont, force=False)
         TMB.scr.show_text("  spertilo.net/faq", loc=(0, 100), font=TMB.scr.smallfont, color=(0, 200, 200), force=True)
-    TMB.scr.show_text(f"{controls.get_version()}", loc=(10, 75), font=TMB.scr.smallfont, color=(255, 100, 0), stroke_width=1, force=True)
+    TMB.scr.show_text(
+        f"{controls.get_version()}",
+        loc=(10, 75),
+        font=TMB.scr.smallfont,
+        color=(255, 100, 0),
+        stroke_width=1,
+        force=True,
+    )
     check_factory_build()
     TMB.button_event.wait(parms.sleep_time)
     if TMB.rewind_event.is_set():
@@ -281,7 +361,7 @@ def welcome_alternatives():
         # remove wpa_supplicant.conf file
         remove_wpa = controls.select_option(TMB, counter, "Forget WiFi?", ["No", "Yes"])
         if remove_wpa == "Yes":
-            cmd = F"sudo rm {parms.wpa_path}"
+            cmd = f"sudo rm {parms.wpa_path}"
             _ = subprocess.check_output(cmd, shell=True)
         return True
     if TMB.stop_event.is_set():
@@ -312,9 +392,10 @@ def main():
                 test_sound(parms)
                 test_all_buttons(parms)
                 collection = configure_collections(parms)
-                save_knob_sense(collection != '')
+                save_knob_sense(collection != "")
+                save_screen_desc()
 
-                os.system('killall mpv')
+                os.system("killall mpv")
             except Exception:
                 logger.info("Failed to save knob sense...continuing")
     except Exception:
