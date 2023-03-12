@@ -740,7 +740,7 @@ class screen:
         spi = board.SPI()
         self.name = name
         self.active = False
-        rotation_angle = 90 if not self.screen_desc.get("upside_down", False) else 270
+        rotation_angle = 90 if not self.desc.get("upside_down", False) else 270
         self.disp = st7735.ST7735R(
             spi,
             rotation=rotation_angle,
