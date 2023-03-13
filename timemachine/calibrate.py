@@ -169,8 +169,8 @@ def save_screen_desc():
         f.write("psychedelic_row : true")
         TMB.scr.show_text("psychedelic row\nwill be \nremoved", font=TMB.scr.smallfont, force=True, clear=True)
         f.close()
-        sleep(1)
     TMB.clear_events()
+    sleep(1)
     return
 
 
