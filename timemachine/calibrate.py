@@ -17,8 +17,6 @@ from timemachine import controls
 parser = optparse.OptionParser()
 parser.add_option(
     "--wpa_path",
-    dest="wpa_path",
-    type="string",
     default="/etc/wpa_supplicant/wpa_supplicant.conf",
     help="path to wpa_supplicant file [default %default]",
 )
@@ -32,28 +30,23 @@ parser.add_option(
 )
 parser.add_option(
     "--options_path",
-    dest="options_path",
     default=os.path.join(os.getenv("HOME"), ".timemachine_options.txt"),
     help="path to options file [default %default]",
 )
 parser.add_option(
     "--test",
-    dest="test",
     action="store_true",
     default=False,
     help="Force reconnection (for testing) [default %default]",
 )
 parser.add_option(
     "--sleep_time",
-    dest="sleep_time",
-    type="int",
     default=10,
     help="how long to sleep before checking network status [default %default]",
 )
 parser.add_option(
     "-v",
     "--verbose",
-    dest="verbose",
     action="store_true",
     default=False,
     help="Print more verbose information [default %default]",
@@ -61,6 +54,7 @@ parser.add_option(
 parms, remainder = parser.parse_args()
 
 knob_sense_path = os.path.join(os.getenv("HOME"), ".knob_sense")
+screen_desc_path = os.path.join(os.getenv("HOME"), ".screen_desc")
 
 CALIBRATED = os.path.exists(knob_sense_path)
 OS_VERSION = None
@@ -91,7 +85,9 @@ def retry_call(callable: Callable, *args, **kwargs):
 
 max_choices = len(string.printable)
 
-TMB = controls.Time_Machine_Board(mdy_bounds=[(0, 9), (0, 1 + divmod(max_choices - 1, 10)[0]), (0, 9)])
+TMB = controls.Time_Machine_Board(
+    mdy_bounds=[(0, 9), (0, 1 + divmod(max_choices - 1, 10)[0]), (0, 9)], screen_desc={"psychedelic_row": False}
+)
 
 TMB.rewind.when_pressed = lambda x: TMB.rewind_button(x)
 TMB.rewind.when_held = lambda x: TMB.rewind_button(x)
@@ -154,10 +150,7 @@ def save_knob_sense(save_calibration=True):
 
 
 def save_screen_desc():
-    TMB.button_event.clear()
-    TMB.m_knob_event.clear()
-    TMB.y_knob_event.clear()
-    screen_desc_path = os.path.join(os.getenv("HOME"), ".screen_desc")
+    TMB.clear_events()
     TMB.scr.show_text(
         " psychedelic row?\n     Month knob.\n Crazy angle text?\n    Year knob\n ???? press any button",
         font=TMB.scr.smallfont,
@@ -176,10 +169,8 @@ def save_screen_desc():
         f.write("psychedelic_row : true")
         TMB.scr.show_text("psychedelic row\nwill be \nremoved", font=TMB.scr.smallfont, force=True, clear=True)
         f.close()
-        sleep(1)
-    TMB.m_knob_event.clear()
-    TMB.y_knob_event.clear()
-    TMB.button_event.clear()
+    TMB.clear_events()
+    sleep(1)
     return
 
 
@@ -363,6 +354,10 @@ def welcome_alternatives():
         if remove_wpa == "Yes":
             cmd = f"sudo rm {parms.wpa_path}"
             _ = subprocess.check_output(cmd, shell=True)
+        remove_screen_desc = controls.select_option(TMB, counter, "Forget screen info?", ["No", "Yes"])
+        if remove_screen_desc == "Yes":
+            cmd = f"sudo rm {screen_desc_path}"
+            _ = subprocess.check_output(cmd, shell=True)
         return True
     if TMB.stop_event.is_set():
         TMB.clear_events()
@@ -393,7 +388,8 @@ def main():
                 test_all_buttons(parms)
                 collection = configure_collections(parms)
                 save_knob_sense(collection != "")
-                save_screen_desc()
+                if not os.path.exists(screen_desc_path):
+                    save_screen_desc()
 
                 os.system("killall mpv")
             except Exception:

@@ -338,13 +338,13 @@ class decade_counter:
 class Time_Machine_Board:
     """TMB class describes and addresses the hardware of the Time Machine Board"""
 
-    def __init__(self, mdy_bounds=[(0, 9), (0, 9), (0, 9)], upside_down=False):
+    def __init__(self, mdy_bounds=[(0, 9), (0, 9), (0, 9)], screen_desc={"upside_down": False}):
         self.events = []
         self.setup_events()
         self.clear_events()
         self.setup_knobs(mdy_bounds)
         self.setup_buttons()
-        self.setup_screen(upside_down)
+        self.setup_screen(screen_desc)
 
     def setup_knobs(self, mdy_bounds):
         if mdy_bounds is None:
@@ -383,8 +383,8 @@ class Time_Machine_Board:
         self.select = retry_call(Button, config.select_pin, hold_time=2, hold_repeat=True)
         self.stop = retry_call(Button, config.stop_pin)
 
-    def setup_screen(self, upside_down=False):
-        self.scr = screen(upside_down)
+    def setup_screen(self, screen_desc):
+        self.scr = screen(screen_desc)
 
     def setup_events(self):
         self.button_event = Event()
@@ -548,7 +548,7 @@ def select_option(TMB, counter, message, chooser):
         y_loc = y_origin
         step = divmod(counter.value, len(choices))[1]
 
-        text = "\n".join(choices[max(0, step - int(screen_height / 2)): step])
+        text = "\n".join(choices[max(0, step - int(screen_height / 2)) : step])
         (text_width, text_height) = scr.smallfont.getsize(text)
         scr.show_text(text, loc=(x_loc, y_loc), font=scr.smallfont, force=False)
         y_loc = y_loc + text_height * (1 + text.count("\n"))
@@ -561,7 +561,7 @@ def select_option(TMB, counter, message, chooser):
         scr.show_text(text, loc=(x_loc, y_loc), font=scr.smallfont, color=(0, 0, 255), force=False)
         y_loc = y_loc + text_height
 
-        text = "\n".join(choices[step + 1: min(step + screen_height, len(choices))])
+        text = "\n".join(choices[step + 1 : min(step + screen_height, len(choices))])
         (text_width, text_height) = scr.smallfont.getsize(text)
         scr.show_text(text, loc=(x_loc, y_loc), font=scr.smallfont, force=True)
 
@@ -612,7 +612,7 @@ def select_chars(TMB, counter, message, message2="So Far", character_set=string.
             x_loc = x_loc + text_width
 
             # print the white before the red, if applicable
-            text = character_set[max(0, -1 + counter.value - int(screen_width / 2)): -1 + counter.value]
+            text = character_set[max(0, -1 + counter.value - int(screen_width / 2)) : -1 + counter.value]
             for x in character_set[94:]:
                 text = text.replace(x, "\u25A1")
             (text_width, text_height) = scr.oldfont.getsize(text)
@@ -638,7 +638,7 @@ def select_chars(TMB, counter, message, message2="So Far", character_set=string.
             x_loc = x_loc + text_width
 
             # print the white after the red, if applicable
-            text = character_set[counter.value: min(-1 + counter.value + screen_width, len(character_set))]
+            text = character_set[counter.value : min(-1 + counter.value + screen_width, len(character_set))]
             for x in character_set[94:]:
                 text = text.replace(x, "\u25A1")
             (text_width, text_height) = scr.oldfont.getsize(text)
@@ -716,16 +716,11 @@ class Bbox:
 
 
 class screen:
-    def __init__(self, upside_down=False, name="screen"):
-        disp_desc_path = os.path.join(os.getenv("HOME"), ".screen_desc")
-        psychedelic_row = False
-        if os.path.exists(disp_desc_path):
-            for line in open(disp_desc_path, "r").readlines():
-                if ("psychedelic_row" in line) & ("true" in line.lower()):
-                    psychedelic_row = True
-        logger.info(f"psychedelic_row {psychedelic_row}")
+    def __init__(self, screen_desc, name="screen"):
+        self.desc = screen_desc
+        self.__set_psychedelic_row()
         x_offset = y_offset = 0
-        if psychedelic_row:  # handle the weird screens
+        if self.desc["psychedelic_row"]:  # handle the weird screens
             x_offset = 1
             y_offset = 1
         cs_pin = digitalio.DigitalInOut(board.CE0)
@@ -735,7 +730,7 @@ class screen:
         spi = board.SPI()
         self.name = name
         self.active = False
-        rotation_angle = 90 if not upside_down else 270
+        rotation_angle = 90 if not self.desc.get("upside_down", False) else 270
         self.disp = st7735.ST7735R(
             spi,
             rotation=rotation_angle,
@@ -788,6 +783,21 @@ class screen:
 
         self.update_now = True
         self.sleeping = False
+
+    def __set_psychedelic_row(self):
+        if "psychedelic_row" in self.desc.keys():
+            return
+        self.desc["psychedelic_row"] = False
+        try:
+            disp_desc_path = os.path.join(os.getenv("HOME"), ".screen_desc")
+            if os.path.exists(disp_desc_path):
+                for line in open(disp_desc_path, "r").readlines():
+                    if ("psychedelic_row" in line) & ("true" in line.lower()):
+                        self.desc["psychedelic_row"] = True
+        except Exception:
+            pass
+        logger.info(f"psychedelic_row {self.desc['psychedelic_row']}")
+        return
 
     @with_semaphore
     def refresh(self, force=True):

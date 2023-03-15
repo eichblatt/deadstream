@@ -1274,6 +1274,7 @@ class GDTape(BaseTape):
             # This tape can not be played, and should be removed from the data.
             self.remove_from_archive(page_meta)
             return
+        self.created_date = datetime.datetime.fromtimestamp(page_meta.get("created", 0)).date()
         for ifile in page_meta["files"]:
             try:
                 if ifile["source"] == "original":
