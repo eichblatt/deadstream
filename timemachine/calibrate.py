@@ -152,7 +152,7 @@ def save_knob_sense(save_calibration=True):
 def save_screen_desc():
     TMB.clear_events()
     TMB.scr.show_text(
-        " psychedelic row?\n     Month knob.\n Crazy angle text?\n    Year knob\n ???? press any button",
+        " Unwanted Pixel Row?\n     Month knob.\n Crazy angle text?\n    Year knob\n ???? press any button",
         font=TMB.scr.smallfont,
         force=True,
         clear=True,
@@ -167,7 +167,7 @@ def save_screen_desc():
     if TMB.m_knob_event.is_set():
         f = open(screen_desc_path, "w")
         f.write("psychedelic_row : true")
-        TMB.scr.show_text("psychedelic row\nwill be \nremoved", font=TMB.scr.smallfont, force=True, clear=True)
+        TMB.scr.show_text("Unwanted row\nwill be \nremoved", font=TMB.scr.smallfont, force=True, clear=True)
         f.close()
     TMB.clear_events()
     sleep(1)
