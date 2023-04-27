@@ -11,7 +11,7 @@ logger = logging.getLogger(__name__)
 try:
     from timemachine import controls
 except Exception as e:
-    logger.warning(f"Failied to import controls")
+    logger.warning(f"Failed to import controls")
 
 OPTIONS_PATH = os.path.join(os.getenv("HOME"), ".timemachine_options.txt")
 DB_PATH = os.path.join(ROOT_DIR, "metadata")
