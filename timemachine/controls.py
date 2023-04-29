@@ -91,7 +91,7 @@ def with_semaphore(func):
     return inner
 
 
-OS_VERSION = None
+OS_VERSION = 11
 
 
 def get_os_version():
