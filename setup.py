@@ -31,6 +31,7 @@ setup(
         "aiohttp",
         "aiofiles",
         "cherrypy",
+        "Flask",
         "gpiozero",
         "pexpect",
         "Pillow",
