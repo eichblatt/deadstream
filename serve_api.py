@@ -24,26 +24,45 @@ aa = Archivary.Archivary(collection_list=config.optd["COLLECTIONS"])
 
 app = Flask(__name__)
 
-def get_tapes(date):
-    collection = request.args.get('collection',[])
-    if collection != [] and collection not in aa.collection_list:
-        return {'error':f'Invalid Collection {collection}'}
-    if isinstance(collection, str):
-        collection = [collection]
+
+
+def intersect(lis1, lis2):
+    return [x for x in lis1 if x in set(lis2)]
+
+def xcept(lis1, lis2):
+    return [x for x in lis1 if not x in set(lis2)]
+
+def get_all_tapes(date):
+    global aa
+    collections = request.args.get('collections',[]).split(',')
+    print(f"Collections is {collections}. Length {len(collections)}, aa.collection_list:{aa.collection_list}")
+    if isinstance(collections, str):
+        collections = [collections]
+    colls = intersect(collections, aa.collection_list)
+    if collections != [] and len(collections) > len(colls):
+        colls_to_add = xcept(collections, aa.collection_list)
+        print(f'Need to add collection {colls_to_add}')
+        config.optd['COLLECTIONS'] = config.optd['COLLECTIONS'] + colls_to_add
+        aa = Archivary.Archivary(collection_list=config.optd['COLLECTIONS'])
     tapes = aa.tape_dates[date]
     get_anything = True
+    tape_collections = []
     t = []
-    if len(collection) > 0:
+    if len(collections) > 0:
         get_anything = False
     for tape in tapes:
         if get_anything:
             t.append(tape)
-            collection.append(tape.collection[0])
-        elif collection[0] in tape.collection:
-            t.append(tape)
+            tape_collections.append(tape.collection[0])
+        else:
+            matches = intersect(collections, tape.collection)
+            if len(matches) > 0:
+                t.append(tape)
+                tape_collections.append(matches[0])
     if len(t) == 0:
-        return {'error':f'no tape for {collection} on {date}'}
-    return t, collection
+        print(f'no tape for {collections} on {date}')
+        return {'error':f'no tape for {collections} on {date}'}, []
+    return t, tape_collections
 
 def get_tape(date):
     collection = request.args.get('collection','')
@@ -67,10 +86,6 @@ def get_tape(date):
 @app.route("/")
 def index():
     return "Deadstream API"
-
-@app.route("/<name>")
-def hello(name):
-    return f"hello {escape(name)}"
 
 
 @app.route("/venue/<date>")
@@ -98,9 +113,30 @@ def urls(date):
 
 @app.route("/tape_ids/<date>")
 def tape_ids(date):
-    tapes,collections = get_tapes(date)
+    tapes,collections = get_all_tapes(date)
     tape_ids = [t.identifier for t in tapes]
     return dict(zip(tape_ids,collections))
+
+@app.route("/vcs/<collection>")
+def vcs(collection):
+    """
+    load an archive collection and return a super-compressed version of the
+    date, artist, venue, city, state
+    which can be loaded by the player to save memory.
+    """
+    print(f"in vcs, collection:{collection}")
+    coptd = config.optd['COLLECTIONS']
+    vcs_data = {}
+    try:
+        config.optd['COLLECTIONS'] = [collection]
+        a = Archivary.Archivary(collection_list=config.optd['COLLECTIONS'])
+        vcs_data = {d: a.tape_dates[d][0].venue() for d in a.dates}
+    except:
+        pass
+    finally:
+        config.optd['COLLECTIONS'] = coptd
+    return {collection:vcs_data}
+
 
 if __name__ == "main":
     app.run(debug=True, host="0.0.0.0")
