@@ -36,8 +36,6 @@ def get_all_tapes(date):
     global aa
     collections = request.args.get('collections',[]).split(',')
     print(f"Collections is {collections}. Length {len(collections)}, aa.collection_list:{aa.collection_list}")
-    if isinstance(collections, str):
-        collections = [collections]
     colls = intersect(collections, aa.collection_list)
     if collections != [] and len(collections) > len(colls):
         colls_to_add = xcept(collections, aa.collection_list)
@@ -65,21 +63,10 @@ def get_all_tapes(date):
     return t, tape_collections
 
 def get_tape(date):
-    collection = request.args.get('collection','')
-    if collection != '' and collection not in aa.collection_list:
-        return {'error':f'Invalid Collection {collection}'}
-    tapes = aa.tape_dates[date]
-    t = None
-    for tape in tapes:
-        if collection == '':
-            t = tape
-            collection = t.collection[0]
-            break
-        elif collection in tape.collection:
-            t = tape
-            break
-    if t is None:
-        return {'error':f'no tape for {collection} on {date}'}
+    tapes,tape_collections = get_all_tapes(date)
+    ntape = int(request.args.get('ntape',0))
+    collection = tape_collections[ntape]
+    t = tapes[ntape]
     return t, collection
 
 
