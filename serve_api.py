@@ -102,7 +102,7 @@ def urls(date):
 def tape_ids(date):
     tapes,collections = get_all_tapes(date)
     tape_ids = [t.identifier for t in tapes]
-    return dict(zip(tape_ids,collections))
+    return list(zip(collections,tape_ids))
 
 @app.route("/vcs/<collection>")
 def vcs(collection):
