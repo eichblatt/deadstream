@@ -110,6 +110,7 @@ def main_loop(coll_dict):
     current_track_index = -1
     current_track_name = next_track_name = '' 
     select_press_time = 0
+    power_press_time = 0
     ntape = 0
     valid_dates = set()
     for c in collections:
@@ -126,11 +127,15 @@ def main_loop(coll_dict):
             tm.pLED.value(PowerLED)
             tm.tft.off() if not PowerLED else tm.tft.on()
             if pPower_old:
-                # tm.tft.fill_circle(5 + 8, 108 + 8, 8, st7789.BLUE)
                 print("Power UP")
             else:
                 PowerLED = not PowerLED
-                # tm.tft.fill_circle(5 + 8, 108 + 8, 8, st7789.WHITE)
+                power_press_time = time.ticks_ms()
+                print("Power DOWN -- screen")
+
+        if not tm.pPower.value():
+            if (time.ticks_ms()-power_press_time) > 1_000:
+                select_press_time = time.ticks_ms()
                 print("Power DOWN -- exiting")
                 sys.exit()
 
