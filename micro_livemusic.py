@@ -13,8 +13,6 @@ import fonts.DejaVu_33 as large_font
 import fonts.NotoSans_18 as pfont_small
 import fonts.NotoSans_24 as pfont_med
 import fonts.NotoSans_32 as pfont_large
-import fonts.romanc as roman_font
-import fonts.romant as romant_font
 from machine import SPI, Pin
 from rotary_irq_esp import RotaryIRQ
 import network
