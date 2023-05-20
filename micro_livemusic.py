@@ -360,6 +360,9 @@ def main():
     utils.clear_screen()
     tm.tft.write(pfont_med, "Connecting", 0, 0, yellow_color)
     tm.tft.write(pfont_med, "WiFi...", 0, 30, yellow_color)
+    wifi = utils.connect_wifi()
+    ip_address = wifi.ifconfig()[0]
+    tm.tft.write(pfont_med, ip_address, 0, 60, st7789.WHITE)
 
     collection_list_path = 'collection_list.json'
     if utils.path_exists(collection_list_path):
