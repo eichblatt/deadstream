@@ -165,7 +165,7 @@ def main_loop(coll_dict):
                 select_press_time = time.ticks_ms()
                 print("Select DOWN")
 
-        if not tm.pSelect.value():
+        if not tm.pSelect.value():  # long press Select
             if (time.ticks_ms()-select_press_time) > 1_000:
                 select_press_time = time.ticks_ms()
                 if ntape == 0:
@@ -182,7 +182,14 @@ def main_loop(coll_dict):
                     display_str = display_str[:11] + display_str[-6:]
                 tm.tft.write(pfont_small, f"{display_str}", venue_bbox.x0, venue_bbox.y0, stage_date_color) # no need to clear this.
                 print(f"Select LONG_PRESS values is {tm.pSelect.value()}. ntape = {ntape}")
-
+        
+        vcs_line = ((time.ticks_ms() - select_press_time) % 10_000) % (1+len(vcs)//16)
+        if vcs_line > 0:
+                utils.clear_bbox(venue_bbox)
+                startchar = min(15 * vcs_line,len(vcs - 16))
+                tm.tft.write(pfont_small, f"{vcs[startchar:]}", venue_bbox.x0, venue_bbox.y0, stage_date_color) 
+        
+            
         
         if pPlayPause_old != tm.pPlayPause.value():
             pPlayPause_old = tm.pPlayPause.value()
