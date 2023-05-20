@@ -109,6 +109,7 @@ def main_loop(coll_dict):
     current_collection = ''
     current_track_index = -1
     current_track_name = next_track_name = '' 
+    vcs = ''
     select_press_time = 0
     power_press_time = 0
     ntape = 0
