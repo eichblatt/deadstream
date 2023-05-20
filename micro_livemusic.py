@@ -3,6 +3,7 @@ import json
 import os
 import re
 import network
+import sys
 import time
 from mrequests import mrequests as requests
 
@@ -130,7 +131,8 @@ def main_loop(coll_dict):
             else:
                 PowerLED = not PowerLED
                 # tm.tft.fill_circle(5 + 8, 108 + 8, 8, st7789.WHITE)
-                print("Power DOWN")
+                print("Power DOWN -- exiting")
+                sys.exit()
 
         if pSelect_old != tm.pSelect.value():
             pSelect_old = tm.pSelect.value()
