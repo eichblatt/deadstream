@@ -137,6 +137,7 @@ def main_loop(coll_dict):
             if (time.ticks_ms()-power_press_time) > 1_000:
                 select_press_time = time.ticks_ms()
                 print("Power DOWN -- exiting")
+                tm.tft.off() 
                 sys.exit()
 
         if pSelect_old != tm.pSelect.value():
