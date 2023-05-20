@@ -187,7 +187,7 @@ def main_loop(coll_dict):
         vcs_line = ((time.ticks_ms() - select_press_time) % 10_000) % (1+len(vcs)//16)
         if vcs_line > 0:
                 utils.clear_bbox(venue_bbox)
-                startchar = min(15 * vcs_line,len(vcs - 16))
+                startchar = min(15 * vcs_line,len(vcs) - 16)
                 tm.tft.write(pfont_small, f"{vcs[startchar:]}", venue_bbox.x0, venue_bbox.y0, stage_date_color) 
         
             
