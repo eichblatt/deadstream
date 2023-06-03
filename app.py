@@ -73,6 +73,11 @@ def get_tape(date):
 def index():
     return "Deadstream API"
 
+@app.route("/all_collection_names/")
+def get_all_collection_names():
+    collection_names = aa.get_all_collection_names()
+    return {'collection_names':collection_names}
+
 
 @app.route("/venue/<date>")
 def venue(date):
