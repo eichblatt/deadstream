@@ -21,7 +21,10 @@ import time
 
 
 # from timemachine.mpv import MPV
-from mpv import MPV
+try:
+    from mpv import MPV
+except:
+    pass
 from tenacity import retry
 from tenacity.stop import stop_after_delay, stop_after_attempt
 from tenacity.wait import wait_random
