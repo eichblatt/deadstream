@@ -11,7 +11,6 @@ from flask import request
 from flask import url_for
 from timemachine import Archivary
 from timemachine import config
-from timemachine import GD
 
 config.load_options()
 
