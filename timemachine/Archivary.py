@@ -566,14 +566,13 @@ class IATapeDownloader(BaseTapeDownloader):
             "fields": ",".join(fields),
         }
 
-    def get_all_collection_names(self, lower=True):
+    def get_all_collection_names(self):
         collection_path = os.path.join(os.getenv("HOME"), ".etree_collection_names.json")
         if not os.path.exists(collection_path):
             self.save_all_collection_names()
         json_data = json.load(open(collection_path, "r"))
         collection_names = [x['identifier'] for x in json_data['items']]
-        if lower:
-            collection_names = [x.lower() for x in collection_names]
+        # collection_names = [x.lower() for x in collection_names]
         return collection_names
 
     
