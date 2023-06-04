@@ -5,7 +5,6 @@ import logging
 import subprocess
 import time
 
-from timemachine.GD import ROOT_DIR
 
 logger = logging.getLogger(__name__)
 try:
@@ -13,6 +12,7 @@ try:
 except Exception as e:
     logger.warning(f"Failed to import controls")
 
+ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
 OPTIONS_PATH = os.path.join(os.getenv("HOME"), ".timemachine_options.txt")
 DB_PATH = os.path.join(ROOT_DIR, "metadata")
 
