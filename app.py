@@ -75,7 +75,7 @@ def index():
 
 @app.route("/all_collection_names/")
 def get_all_collection_names():
-    collection_names = aa.get_all_collection_names()
+    collection_names = aa.get_all_collection_names(lower=False)
     return {'collection_names':collection_names}
 
 
