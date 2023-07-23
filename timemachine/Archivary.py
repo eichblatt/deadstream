@@ -788,6 +788,7 @@ class LocalTapeDownloader(BaseTapeDownloader):
         self.parms = {"sort_attr": "date", "sort_dir": "desc"}
         self.collection_list = collection_list
         self.collection_dirs = []
+        self.shows = []
 
     def extract_show_data(self, collection_dirs):
         shows = []
@@ -795,7 +796,7 @@ class LocalTapeDownloader(BaseTapeDownloader):
         tmp_dict = {}
         for coll_dir in collection_dirs:
             collection = os.path.basename(coll_dir)
-            tmp_dict['collection'] = {} 
+            tmp_dict[collection] = {} 
             coll_dates = [x for x in os.listdir(coll_dir) if re.match('\d\d\d\d\.\d\d\.\d\d',x)]
             coll_dates = [x for x in coll_dates if os.path.isdir(os.path.join(coll_dir,x))]
             for date in coll_dates:
@@ -813,11 +814,9 @@ class LocalTapeDownloader(BaseTapeDownloader):
         collections = [x for x in os.listdir(self.api) if os.path.isdir(os.path.join(self.api,x))]
         self.collection_dirs = [os.path.join(self.api,x) for x in collections]
 
-        shows = self.extract_show_data(self.collection_dirs)
-        total = len(shows)
-        self.store_metadata(iddir, shows)
-
-        return total
+        self.shows = self.extract_show_data(self.collection_dirs)
+        # self.store_metadata(iddir, shows)
+        return self.shows
 
     def get_all_collection_names(self):
         return self.collection_dirs
@@ -1087,6 +1086,12 @@ class LocalArchive(BaseArchive):
         logger.debug("begin loading tapes from local archive")
         all_tapes_count = 0
         all_loaded_tapes = []
+        archive_path = self.url.replace("file://","")
+
+        tapes = self.downloader.get_all_tapes(meta_path, date_range=self.date_range)
+        self.tapes = [LocalTape(self.dbpath, tape, self.set_data) for tape in tapes]
+
+        """
         for meta_path in self.idpath:
             n_tapes = 0
             loaded_tapes, max_addeddate = self.load_current_tapes(reload_ids, meta_path=meta_path)
@@ -1114,6 +1119,7 @@ class LocalArchive(BaseArchive):
         ):  # The tapes have already been written, and nothing was added
             return self.tapes
         self.tapes = [GDTape(self.dbpath, tape, self.set_data) for tape in all_loaded_tapes]
+        """
         return self.tapes
 
     def best_tape(self, date, resort=True):
