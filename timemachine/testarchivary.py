@@ -11,7 +11,7 @@ track_event = Event()
 config.load_options()
 
 # config.optd = {
-#   "COLLECTIONS": ["GratefulDead", "Phish", "PhilLeshandFriends", "TedeschiTrucksBand", "DeadAndCompany"],
+#   "COLLECTIONS": ["GratefulDead", "Phish", "PhilLeshandFriends", "TedeschiTrucksBand", "Local:DeadAndCompany"],
 #   "FAVORED_TAPER": {"UltraMatrix": 10, "miller": 5},
 #   "PLAY_LOSSLESS": "false",
 # }

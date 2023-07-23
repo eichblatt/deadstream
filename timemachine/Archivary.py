@@ -154,12 +154,16 @@ class Archivary:
         self.archives = []
         phishin_archive = None
         ia_archive = None
-        ia_collections = [x for x in self.collection_list if x != "Phish"]
+        local_archive = None
+        ia_collections = [x for x in self.collection_list if ((x != "Phish") and (not x.startswith("Local:")))]
+        local_collections = [x for x in self.collection_list if x.startswith("Local:")]
         if "Phish" in self.collection_list:
             try:
                 phishin_archive = PhishinArchive(dbpath=dbpath, reload_ids=reload_ids, with_latest=with_latest)
             except Exception:
                 pass
+        if len(local_collections) > 0:
+            local_archive = LocalArchive()
         if len(ia_collections) > 0:
             ia_archive = GDArchive(
                 dbpath=dbpath,
@@ -168,7 +172,7 @@ class Archivary:
                 collection_list=ia_collections,
                 date_range=date_range,
             )
-        self.archives = remove_none([ia_archive, phishin_archive])
+        self.archives = remove_none([ia_archive, phishin_archive,local_archive])
         self.tape_dates = self.get_tape_dates()
         self.dates = sorted(self.tape_dates.keys())
 
@@ -299,7 +303,7 @@ class BaseArchive(abc.ABC):
             if self.collection_list[0] == "Phish":
                 self.idpath = self.idpath[0]
                 self.downloader = PhishinTapeDownloader(url, collection_list=collection_list[0])
-            elif self.collection_list[0].startswith("Local_"):
+            elif self.collection_list[0].startswith("Local:"):
                 self.downloader = LocalTapeDownloader(url, collection_list=collection_list[0])
             else:
                 self.downloader = IATapeDownloader(url, collection_list=collection_list[0])
@@ -307,7 +311,7 @@ class BaseArchive(abc.ABC):
             self.idpath = [os.path.join(self.dbpath, f"{x}_ids") for x in self.collection_list]
             self.idpath = [os.path.join(self.dbpath, f"{x}_ids") for x in self.collection_list]
             # self.idpath = os.path.join(self.dbpath, 'etree_ids')
-            if self.collection_list[0].startswith("Local_"):
+            if self.collection_list[0].startswith("Local:"):
                 self.downloader = LocalTapeDownloader(url)
             else:
                 self.downloader = IATapeDownloader(url)
@@ -778,7 +782,7 @@ class IATapeDownloader(BaseTapeDownloader):
 class LocalTapeDownloader(BaseTapeDownloader):
     """Synchronous Local Tape Downloader"""
 
-    def __init__(self, url="file:///mnt/usb/archive/", collection_list=[]):
+    def __init__(self, url="file:///home/deadhead/archive/", collection_list=[]):
         self.url = url
         self.api = self.url.replace("file://","")
         self.parms = {"sort_attr": "date", "sort_dir": "desc"}
@@ -1050,7 +1054,7 @@ class LocalArchive(BaseArchive):
 
     def __init__(
         self,
-        url="file:///mnt/usb",
+        url="file:///home/deadhead/archive",
         dbpath=os.path.join(ROOT_DIR, "metadata"),
         reload_ids=False,
         with_latest=True,
@@ -1112,6 +1116,20 @@ class LocalArchive(BaseArchive):
             return self.tapes
         self.tapes = [GDTape(self.dbpath, tape, self.set_data) for tape in all_loaded_tapes]
         return self.tapes
+
+    def best_tape(self, date, resort=True):
+        if date not in self.dates:
+            logger.info(f"No Tape for date {date}")
+            return None
+        # if resort:
+        #    bt = remove_none([a.best_tape(date, resort) for a in self.archives])
+        # else:
+        bt = self.tape_dates[date]
+        return bt[0]
+
+    def year_artists(self, year, other_year=None):
+        id_dict = {1983: "Phish"}
+        return id_dict
 
  
 
