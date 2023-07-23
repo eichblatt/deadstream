@@ -125,6 +125,12 @@ class BaseTapeDownloader(abc.ABC):
         """Get a list of all tapes."""
         pass
 
+    @abc.abstractmethod
+    def get_all_collection_names(self):
+        """Get a list of all tapes."""
+        pass
+
+
 
 def remove_none(lis):
     return [a for a in lis if a is not None]
@@ -253,6 +259,11 @@ class Archivary:
             if tmp:
                 return tmp
 
+    def get_all_collection_names(self):
+        all_collection_names = {}
+        for a in self.archives:
+            all_collection_names[a.archive_type] = a.get_all_collection_names()
+        return all_collection_names
 
 class BaseArchive(abc.ABC):
     """Abstract base class for an Archive.
@@ -288,12 +299,18 @@ class BaseArchive(abc.ABC):
             if self.collection_list[0] == "Phish":
                 self.idpath = self.idpath[0]
                 self.downloader = PhishinTapeDownloader(url, collection_list=collection_list[0])
+            elif self.collection_list[0].startswith("Local_"):
+                self.downloader = LocalTapeDownloader(url, collection_list=collection_list[0])
             else:
                 self.downloader = IATapeDownloader(url, collection_list=collection_list[0])
         else:
             self.idpath = [os.path.join(self.dbpath, f"{x}_ids") for x in self.collection_list]
+            self.idpath = [os.path.join(self.dbpath, f"{x}_ids") for x in self.collection_list]
             # self.idpath = os.path.join(self.dbpath, 'etree_ids')
-            self.downloader = IATapeDownloader(url)
+            if self.collection_list[0].startswith("Local_"):
+                self.downloader = LocalTapeDownloader(url)
+            else:
+                self.downloader = IATapeDownloader(url)
         self.set_data = None
 
     def __str__(self):
@@ -361,6 +378,9 @@ class BaseArchive(abc.ABC):
                     logger.exception(f"{e}")
                     logger.warning(f"Failed to sort tapes on {k}")
         return self.tape_dates
+
+    def get_all_collection_names(self):
+        return self.downloader.get_all_collection_names()
 
     @abc.abstractmethod
     def load_archive(self, reload_ids, with_latest):
@@ -522,6 +542,8 @@ class PhishinTapeDownloader(BaseTapeDownloader):
             raise Exception("Download", "Error {} collection".format(r.status_code))
         return r
 
+    def get_all_collection_names(self):
+        return ["Phish"]
 
 class IATapeDownloader(BaseTapeDownloader):
     """Synchronous Grateful Dead Tape Downloader"""
@@ -556,6 +578,16 @@ class IATapeDownloader(BaseTapeDownloader):
             "fields": ",".join(fields),
         }
 
+    def get_all_collection_names(self):
+        collection_path = os.path.join(os.getenv("HOME"), ".etree_collection_names.json")
+        if not os.path.exists(collection_path):
+            self.save_all_collection_names()
+        json_data = json.load(open(collection_path, "r"))
+        collection_names = [x['identifier'] for x in json_data['items']]
+        # collection_names = [x.lower() for x in collection_names]
+        return collection_names
+
+    
     def save_all_collection_names(self):
         """
         get a list of all collection names within archive.org's etree collection.
@@ -592,6 +624,7 @@ class IATapeDownloader(BaseTapeDownloader):
             logger.debug(f"removing {tmpfile}")
             os.remove(tmpfile)
         logger.info(f"saved {current_rows} collection names to {collection_path}")
+        return j
 
     def get_all_tapes(self, iddir, min_addeddate=None, date_range=None, collection=None):
         """Get a list of all tapes.  Write all tapes to a folder by time period
@@ -742,6 +775,50 @@ class IATapeDownloader(BaseTapeDownloader):
             raise Exception("Download", f"Error {r.status_code} collection")
         return r
 
+class LocalTapeDownloader(BaseTapeDownloader):
+    """Synchronous Local Tape Downloader"""
+
+    def __init__(self, url="file:///mnt/usb/archive/", collection_list=[]):
+        self.url = url
+        self.api = self.url.replace("file://","")
+        self.parms = {"sort_attr": "date", "sort_dir": "desc"}
+        self.headers = {"Accept": "application/json", "Authorization": f"Bearer {self.apikey}"}
+        self.collection_list = collection_list
+        self.collection_dirs = []
+
+    def extract_show_data(self, collection_dirs):
+        shows = []
+        fields = ["collection", "id", "date", "venue_name"]
+        tmp_dict = {}
+        for coll_dir in collection_dirs:
+            collection = os.path.basename(coll_dir)
+            tmp_dict['collection'] = {} 
+            coll_dates = [x for x in os.listdir(coll_dir) if re.match('\d\d\d\d\.\d\d\.\d\d',x)]
+            coll_dates = [x for x in coll_dates if os.path.isdir(os.path.join(coll_dir,x))]
+            for date in coll_dates:
+                identifier = os.path.join(coll_dir,date)
+                tmp_dict['collection'][date] = identifier
+            shows.append(tmp_dict)
+        return shows
+
+    def get_all_tapes(self, iddir, min_addeddate=None, date_range=None):
+        """Get a list of all locally archived shows
+        Write all tapes to a folder by time period
+        """
+
+        # No need to update if we already have a show from today.
+        collections = [x for x in os.listdir(self.api) if os.path.isdir(os.path.join(self.api,x))]
+        self.collection_dirs = [os.path.join(self.api,x) for x in collections]
+
+        shows = self.extract_show_data(self.collection_dirs)
+        total = len(shows)
+        self.store_metadata(iddir, shows)
+
+        return total
+
+    def get_all_collection_names(self):
+        return self.collection_dirs
+
 
 class PhishinArchive(BaseArchive):
     def __init__(
@@ -842,6 +919,8 @@ class PhishinArchive(BaseArchive):
     def year_artists(self, year, other_year=None):
         id_dict = {1983: "Phish"}
         return id_dict
+
+
 
 
 class PhishinTape(BaseTape):
@@ -966,6 +1045,75 @@ class PhishinTrack(BaseTrack):
             d["url"] = f'file://{d["path"]}'
         self.files.append(d)
 
+class LocalArchive(BaseArchive):
+    """A Local Archive"""
+
+    def __init__(
+        self,
+        url="file:///mnt/usb",
+        dbpath=os.path.join(ROOT_DIR, "metadata"),
+        reload_ids=False,
+        with_latest=True,
+        collection_list=["GratefulDead"],
+        date_range=None,
+    ):
+        """Create a new GDArchive.
+
+        Parameters:
+
+          dbpath: Path to filesystem location where data are stored
+          url: Base path for the files
+          reload_ids: If True, force re-download of tape data
+          with_latest: If True, query archive for recently added tapes, and append them.
+          collection_list: A list of collections to load
+        """
+        collection_list = [f"Local:{x}" for x in collection_list]
+        super().__init__(url, dbpath, reload_ids, with_latest, collection_list, date_range)
+        self.archive_type = "Local Archive"
+        self.set_data = GDSetBreaks(self.collection_list)
+        self.date_range = date_range
+        self.load_archive(reload_ids, with_latest)
+
+    def load_archive(self, reload_ids=False, with_latest=False):
+        self.tapes = self.load_tapes(reload_ids, with_latest)
+        self.tape_dates = self.get_tape_dates()
+        self.dates = sorted(self.tape_dates.keys())
+
+    def load_tapes(self):  # Local
+        """Load the tapes, then add anything which has been added since the tapes were saved"""
+        logger.debug("begin loading tapes from local archive")
+        all_tapes_count = 0
+        all_loaded_tapes = []
+        for meta_path in self.idpath:
+            n_tapes = 0
+            loaded_tapes, max_addeddate = self.load_current_tapes(reload_ids, meta_path=meta_path)
+            if len(loaded_tapes) == 0:  # e.g. in case of an invalid collection
+                continue
+            logger.debug(f"max addeddate {max_addeddate}")
+            if with_latest:
+                min_download_addeddate = (datetime.datetime.fromisoformat(max_addeddate[:-1])) - datetime.timedelta(
+                    hours=1
+                )
+                # min_download_addeddate = datetime.datetime.strftime(min_download_addeddate, "%Y-%m-%dT%H:%M:%SZ")
+                logger.debug(
+                    f"Refreshing Tapes\nmax addeddate {max_addeddate}\nmin_download_addeddate {min_download_addeddate}"
+                )
+                n_tapes = self.downloader.get_all_tapes(meta_path, min_download_addeddate)
+                if n_tapes > 0:
+                    logger.info(f"Loaded {n_tapes} new tapes from archive {meta_path}")
+            if n_tapes > 0:
+                logger.info(f"Adding {n_tapes} tapes")
+                loaded_tapes, _ = self.load_current_tapes(meta_path=meta_path)
+            all_loaded_tapes.extend(loaded_tapes)
+            all_tapes_count = all_tapes_count + n_tapes
+        if (all_tapes_count == 0) and (
+            len(self.tapes) > 0
+        ):  # The tapes have already been written, and nothing was added
+            return self.tapes
+        self.tapes = [GDTape(self.dbpath, tape, self.set_data) for tape in all_loaded_tapes]
+        return self.tapes
+
+ 
 
 class GDArchive(BaseArchive):
     """The Grateful Dead Collection on Archive.org"""
@@ -1027,6 +1175,7 @@ class GDArchive(BaseArchive):
         else:
             tapes = self.tape_dates[date]
         return tapes[0]
+
 
     def load_current_tapes(self, reload_ids=False, meta_path=None):  # IA
         """Load current tapes or download them from archive.org if they are not already loaded"""
@@ -1138,7 +1287,6 @@ class GDArchive(BaseArchive):
         for kv in kvlist:
             id_dict.setdefault(kv[0], []).append(kv[1])
         return id_dict
-
 
 class GDTape(BaseTape):
     """A Grateful Dead Identifier Item -- does not contain tracks"""
