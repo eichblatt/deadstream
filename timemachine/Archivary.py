@@ -163,7 +163,7 @@ class Archivary:
             except Exception:
                 pass
         if len(local_collections) > 0:
-            local_archive = LocalArchive()
+            local_archive = LocalArchive(collection_list=local_collections)
         if len(ia_collections) > 0:
             ia_archive = GDArchive(
                 dbpath=dbpath,
@@ -782,7 +782,7 @@ class IATapeDownloader(BaseTapeDownloader):
 class LocalTapeDownloader(BaseTapeDownloader):
     """Synchronous Local Tape Downloader"""
 
-    def __init__(self, url="file:///home/deadhead/archive/", collection_list=[]):
+    def __init__(self, url=f"file://{os.getenv('HOME')}/archive/", collection_list=[]):
         self.url = url
         self.api = self.url.replace("file://","")
         self.parms = {"sort_attr": "date", "sort_dir": "desc"}
@@ -791,18 +791,16 @@ class LocalTapeDownloader(BaseTapeDownloader):
         self.shows = []
 
     def extract_show_data(self, collection_dirs):
-        shows = []
+        shows = {}
         fields = ["collection", "id", "date", "venue_name"]
-        tmp_dict = {}
         for coll_dir in collection_dirs:
             collection = os.path.basename(coll_dir)
-            tmp_dict[collection] = {} 
-            coll_dates = [x for x in os.listdir(coll_dir) if re.match('\d\d\d\d\.\d\d\.\d\d',x)]
+            shows[collection] = {} 
+            coll_dates = [x for x in os.listdir(coll_dir) if re.match('\d\d\d\d.\d\d.\d\d',x)]
             coll_dates = [x for x in coll_dates if os.path.isdir(os.path.join(coll_dir,x))]
             for date in coll_dates:
                 identifier = os.path.join(coll_dir,date)
-                tmp_dict['collection'][date] = identifier
-            shows.append(tmp_dict)
+                shows[collection][date] = identifier
         return shows
 
     def get_all_tapes(self, iddir, min_addeddate=None, date_range=None):
@@ -1052,11 +1050,11 @@ class LocalArchive(BaseArchive):
 
     def __init__(
         self,
-        url="file:///home/deadhead/archive",
+        url=f"file://{os.getenv('HOME')}/archive",
         dbpath=os.path.join(ROOT_DIR, "metadata"),
         reload_ids=False,
         with_latest=True,
-        collection_list=["GratefulDead"],
+        collection_list=["Local:ALL"],
         date_range=None,
     ):
         """Create a new GDArchive.
@@ -1069,7 +1067,6 @@ class LocalArchive(BaseArchive):
           with_latest: If True, query archive for recently added tapes, and append them.
           collection_list: A list of collections to load
         """
-        collection_list = [f"Local:{x}" for x in collection_list]
         super().__init__(url, dbpath, reload_ids, with_latest, collection_list, date_range)
         self.archive_type = "Local Archive"
         self.set_data = GDSetBreaks(self.collection_list)
@@ -1084,11 +1081,15 @@ class LocalArchive(BaseArchive):
     def load_tapes(self, reload_ids=False, with_latest=False):  # Local
         """Load the tapes, then add anything which has been added since the tapes were saved"""
         logger.debug("begin loading tapes from local archive")
-        all_tapes_count = 0
-        all_loaded_tapes = []
         archive_path = self.url.replace("file://","")
 
-        tapes = self.downloader.get_all_tapes(meta_path, date_range=self.date_range)
+        tapes = self.downloader.get_all_tapes(None)
+        import pdb;
+        pdb.set_trace()
+        for collection,tapedict in tapes.items():
+            if ("Local:ALL" in self.collection_list) or (f'Local:{collection}' in self.collection_list):
+               logger.info(f"Parsing Local Collection: {collection}")
+            pass
         self.tapes = [LocalTape(self.dbpath, tape, self.set_data) for tape in tapes]
 
         """
@@ -1139,8 +1140,11 @@ class LocalArchive(BaseArchive):
 class LocalTape(BaseTape):
     """A Local tape"""
 
-    def __init__(self, dbpath, raw_json, set_data):
-        super().__init__(dbpath, raw_json, set_data)
+    def __init__(self, dbpath, meta_dict, set_data):
+        import pdb;
+        pdb.set_trace()
+        super().__init__(dbpath, meta_dict, set_data)
+        collections = list(meta_dict.keys())
         attribs = ["date", "id", "sbd", "venue_name", "venue_location"]
         for k, v in raw_json.items():
             if k in attribs:
@@ -1321,7 +1325,7 @@ class GDArchive(BaseArchive):
         meta_path = self.idpath if meta_path is None else meta_path
         tapes = []
         addeddates = []
-        collection_path = os.path.join(os.getenv("HOME"), ".etree_collection_names.json")
+        collection_path = os.path.join(os.getenv('HOME'), ".etree_collection_names.json")
         yearly_collections = ["etree", "georgeblood"]  # should this be in config?
 
         if not self.date_range:

@@ -10,8 +10,10 @@ from timemachine.GD import ROOT_DIR
 logger = logging.getLogger(__name__)
 try:
     from timemachine import controls
+    os_version = controls.get_os_version()
 except Exception as e:
     logger.warning(f"Failed to import controls")
+    os_version = 11
 
 OPTIONS_PATH = os.path.join(os.getenv("HOME"), ".timemachine_options.txt")
 DB_PATH = os.path.join(ROOT_DIR, "metadata")
@@ -84,7 +86,7 @@ def default_options():
     d["PLAY_LOSSLESS"] = False
     d["ON_TOUR_ALLOWED"] = False
     d["PULSEAUDIO_ENABLE"] = False
-    if controls.get_os_version() > 10:
+    if os_version > 10:
         d["PULSEAUDIO_ENABLE"] = True
         d["BLUETOOTH_ENABLE"] = True
     d["DEFAULT_START_TIME"] = datetime.time(15, 0)
