@@ -786,7 +786,6 @@ class LocalTapeDownloader(BaseTapeDownloader):
         self.url = url
         self.api = self.url.replace("file://","")
         self.parms = {"sort_attr": "date", "sort_dir": "desc"}
-        self.headers = {"Accept": "application/json", "Authorization": f"Bearer {self.apikey}"}
         self.collection_list = collection_list
         self.collection_dirs = []
 
@@ -1083,7 +1082,7 @@ class LocalArchive(BaseArchive):
         self.tape_dates = self.get_tape_dates()
         self.dates = sorted(self.tape_dates.keys())
 
-    def load_tapes(self):  # Local
+    def load_tapes(self, reload_ids=False, with_latest=False):  # Local
         """Load the tapes, then add anything which has been added since the tapes were saved"""
         logger.debug("begin loading tapes from local archive")
         all_tapes_count = 0
@@ -1130,6 +1129,121 @@ class LocalArchive(BaseArchive):
     def year_artists(self, year, other_year=None):
         id_dict = {1983: "Phish"}
         return id_dict
+
+class LocalTape(BaseTape):
+    """A Local tape"""
+
+    def __init__(self, dbpath, raw_json, set_data):
+        super().__init__(dbpath, raw_json, set_data)
+        attribs = ["date", "id", "sbd", "venue_name", "venue_location"]
+        for k, v in raw_json.items():
+            if k in attribs:
+                setattr(self, k, v)
+        self.identifier = f"local_{self.id}"
+        self.set_data = None
+        self.collection = None
+        self.artist = self.collection
+        delattr(self, "id")
+        date = to_date(self.date).date()
+        self.meta_path = os.path.join(self.dbpath, str(date.year), str(date.month), self.identifier + ".json")
+
+    def stream_only(self):
+        return False
+
+    def compute_score(self):
+        return 5
+
+    def venue(self, tracknum=0):
+        """return the venue, city, state"""
+        return f"{self.venue_name},{self.venue_location}"
+
+    def get_metadata(self, only_if_cached=False):
+        if self.meta_loaded:
+            return
+        if only_if_cached and not os.path.exists(self.meta_path):
+            return
+        self._tracks = []
+        try:  # I used to check if file exists, but it may also be corrupt, so this is safer.
+            page_meta = json.load(open(self.meta_path, "r"))
+        except Exception:
+            parms = self.parms.copy()
+            parms["page"] = 1
+            r = requests.get(self.url_metadata, headers=self.headers)
+            logger.debug(f"url is {r.url}")
+            if r.status_code != 200:
+                logger.warning(f"error pulling data for {self.identifier}")
+                raise Exception("Download", f"Error {r.status_code} url {self.url_metadata}")
+            try:
+                page_meta = r.json()
+            except ValueError:
+                logger.warning(f"Json Error {r.url}")
+                return None
+            except Exception:
+                logger.warning("Error getting metadata (json?)")
+                return None
+
+        if page_meta["total_pages"] > 1:
+            logger.warning(
+                f"More than 1 page in metadata for show on {page_meta['data']['date']}. There are {page_meta['total_pages']} pages"
+            )
+
+        data = page_meta["data"]
+        for itrack, track_data in enumerate(data["tracks"]):
+            set_name = track_data["set"]
+            if itrack == 0:
+                current_set = set_name
+            if set_name != current_set:
+                self._tracks.append(PhishinTrack(track_data, self.identifier, break_track=True))
+                current_set = set_name
+            self._tracks.append(PhishinTrack(track_data, self.identifier))
+
+        os.makedirs(os.path.dirname(self.meta_path), exist_ok=True)
+        json.dump(page_meta, open(self.meta_path, "w"))
+        self.meta_loaded = True
+        # return page_meta
+        for track in self._tracks:
+            track.title = re.sub(r"gd\d{2}(?:\d{2})?-\d{2}-\d{2}[ ]*([td]\d*)*", "", track.title).strip()
+            track.title = re.sub(r"(.flac)|(.mp3)|(.ogg)$", "", track.title).strip()
+        return
+
+
+class LocalTrack(BaseTrack):
+    """A track from a Local recording"""
+
+    def __init__(self, tdict, parent_id, break_track=False):
+        super().__init__(tdict, parent_id, break_track)
+        attribs = ["set", "venue_name", "venue_location", "title", "position", "duration", "mp3", "updated_at"]
+        for k, v in tdict.items():
+            if k in attribs:
+                setattr(self, k, v)
+        self.format = "MP3"
+        self.track = self.position
+        self.files = []
+        self.add_file(tdict, break_track)
+
+    def add_file(self, tdict, break_track=False):
+        d = {}
+        d["source"] = "local"
+        if not break_track:
+            d["name"] = self.title
+            d["format"] = "MP3"
+            d["size"] = self.duration
+            d["path"] = ""
+            d["url"] = self.mp3
+        else:
+            logger.debug("adding break track in Phishin")
+            d["name"] = ""
+            if self.set == "E":
+                d["path"] = pkg_resources.resource_filename("timemachine.metadata", "silence0.ogg")
+                self.title = "Encore Break"
+            else:
+                d["path"] = pkg_resources.resource_filename("timemachine.metadata", "silence600.ogg")
+                logger.debug(f"path is {d['path']}")
+                self.title = "Set Break"
+            d["format"] = "Ogg Vorbis"
+            # d['url'] = 'file://'+os.path.join(d['path'], d['name'])
+            d["url"] = f'file://{d["path"]}'
+        self.files.append(d)
 
  
 
