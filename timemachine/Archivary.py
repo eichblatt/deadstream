@@ -309,8 +309,6 @@ class BaseArchive(abc.ABC):
                 self.downloader = IATapeDownloader(url, collection_list=collection_list[0])
         else:
             self.idpath = [os.path.join(self.dbpath, f"{x}_ids") for x in self.collection_list]
-            self.idpath = [os.path.join(self.dbpath, f"{x}_ids") for x in self.collection_list]
-            # self.idpath = os.path.join(self.dbpath, 'etree_ids')
             if self.collection_list[0].startswith("Local:"):
                 self.downloader = LocalTapeDownloader(url)
             else:
@@ -787,20 +785,15 @@ class LocalTapeDownloader(BaseTapeDownloader):
         self.api = self.url.replace("file://","")
         self.parms = {"sort_attr": "date", "sort_dir": "desc"}
         self.collection_list = collection_list
-        self.collection_dirs = []
-        self.shows = []
 
-    def extract_show_data(self, collection_dirs):
-        shows = {}
-        fields = ["collection", "id", "date", "venue_name"]
-        for coll_dir in collection_dirs:
-            collection = os.path.basename(coll_dir)
-            shows[collection] = {} 
-            coll_dates = [x for x in os.listdir(coll_dir) if re.match('\d\d\d\d.\d\d.\d\d',x)]
-            coll_dates = [x for x in coll_dates if os.path.isdir(os.path.join(coll_dir,x))]
-            for date in coll_dates:
-                identifier = os.path.join(coll_dir,date)
-                shows[collection][date] = identifier
+    def extract_show_data(self, tapelist,collection):
+        shows = []
+        for tape in tapelist:
+            date = re.search(r'\d\d\d\d.\d\d.\d\d',tape).group()
+            identifier = tape
+            shows.append({'collection':collection,'identifier':identifier,
+                          'date':date, 'venue_name':'Unknown', 
+                          'venue_location':'Unknown', 'sbd':False})
         return shows
 
     def get_all_tapes(self, iddir, min_addeddate=None, date_range=None):
@@ -809,12 +802,25 @@ class LocalTapeDownloader(BaseTapeDownloader):
         """
 
         # No need to update if we already have a show from today.
-        collections = [x for x in os.listdir(self.api) if os.path.isdir(os.path.join(self.api,x))]
-        self.collection_dirs = [os.path.join(self.api,x) for x in collections]
+        # collections = [x for x in os.listdir(self.api) if os.path.isdir(os.path.join(self.api,x))]
+        collection = os.path.basename(iddir).replace("_ids", "").replace("Local:","")
+        collection_dir = os.path.join(self.api,collection)
+        tapelist_path = os.path.join(collection_dir,"tapelist.txt")
+        os.system(f'rm {tapelist_path}')
+        if not os.path.exists(tapelist_path):
+            logger.info(f"creating path {tapelist_path}")
+            os.system(f"find {collection_dir} -mindepth 2 -maxdepth 2 > {tapelist_path}")
+            tapelist = [x.strip() for x in open(tapelist_path, 'r').readlines()]
+        else:
+            os.system(f"find {collection_dir} -mindepth 2 -maxdepth 2 -cnewer {tapelist_path} >> {tapelist_path}.tmp")
+            tapelist = [x.strip() for x in open(f"{tapelist_path}.tmp", 'r').readlines()]
+            os.system(f"cat {tapelist_path}.tmp >> {tapelist_path}; rm {tapelist_path}.tmp")
 
-        self.shows = self.extract_show_data(self.collection_dirs)
-        # self.store_metadata(iddir, shows)
-        return self.shows
+        tapelist = [x for x in tapelist if re.search('\d\d\d\d.\d\d.\d\d',x)]
+
+        shows = self.extract_show_data(tapelist,collection)
+        self.store_metadata(iddir, shows)
+        return shows
 
     def get_all_collection_names(self):
         return self.collection_dirs
@@ -1054,10 +1060,10 @@ class LocalArchive(BaseArchive):
         dbpath=os.path.join(ROOT_DIR, "metadata"),
         reload_ids=False,
         with_latest=True,
-        collection_list=["Local:ALL"],
+        collection_list=["Local:DeadAndCompany"],
         date_range=None,
     ):
-        """Create a new GDArchive.
+        """Create a new LocalArchive.
 
         Parameters:
 
@@ -1082,45 +1088,12 @@ class LocalArchive(BaseArchive):
         """Load the tapes, then add anything which has been added since the tapes were saved"""
         logger.debug("begin loading tapes from local archive")
         archive_path = self.url.replace("file://","")
+        all_tapes = []
 
-        tapes = self.downloader.get_all_tapes(None)
-        import pdb;
-        pdb.set_trace()
-        for collection,tapedict in tapes.items():
-            if ("Local:ALL" in self.collection_list) or (f'Local:{collection}' in self.collection_list):
-               logger.info(f"Parsing Local Collection: {collection}")
-            pass
-        self.tapes = [LocalTape(self.dbpath, tape, self.set_data) for tape in tapes]
-
-        """
         for meta_path in self.idpath:
-            n_tapes = 0
-            loaded_tapes, max_addeddate = self.load_current_tapes(reload_ids, meta_path=meta_path)
-            if len(loaded_tapes) == 0:  # e.g. in case of an invalid collection
-                continue
-            logger.debug(f"max addeddate {max_addeddate}")
-            if with_latest:
-                min_download_addeddate = (datetime.datetime.fromisoformat(max_addeddate[:-1])) - datetime.timedelta(
-                    hours=1
-                )
-                # min_download_addeddate = datetime.datetime.strftime(min_download_addeddate, "%Y-%m-%dT%H:%M:%SZ")
-                logger.debug(
-                    f"Refreshing Tapes\nmax addeddate {max_addeddate}\nmin_download_addeddate {min_download_addeddate}"
-                )
-                n_tapes = self.downloader.get_all_tapes(meta_path, min_download_addeddate)
-                if n_tapes > 0:
-                    logger.info(f"Loaded {n_tapes} new tapes from archive {meta_path}")
-            if n_tapes > 0:
-                logger.info(f"Adding {n_tapes} tapes")
-                loaded_tapes, _ = self.load_current_tapes(meta_path=meta_path)
-            all_loaded_tapes.extend(loaded_tapes)
-            all_tapes_count = all_tapes_count + n_tapes
-        if (all_tapes_count == 0) and (
-            len(self.tapes) > 0
-        ):  # The tapes have already been written, and nothing was added
-            return self.tapes
-        self.tapes = [GDTape(self.dbpath, tape, self.set_data) for tape in all_loaded_tapes]
-        """
+            tapes = self.downloader.get_all_tapes(meta_path)
+            all_tapes.extend(tapes)
+        self.tapes = [LocalTape(self.dbpath, tape, self.set_data) for tape in all_tapes]
         return self.tapes
 
     def best_tape(self, date, resort=True):
@@ -1144,16 +1117,12 @@ class LocalTape(BaseTape):
         import pdb;
         pdb.set_trace()
         super().__init__(dbpath, meta_dict, set_data)
-        collections = list(meta_dict.keys())
-        attribs = ["date", "id", "sbd", "venue_name", "venue_location"]
-        for k, v in raw_json.items():
+        attribs = ["date", "identifier", "collection", "sbd", "venue_name", "venue_location"]
+        for k, v in meta_dict.items():
             if k in attribs:
                 setattr(self, k, v)
-        self.identifier = f"local_{self.id}"
-        self.set_data = None
-        self.collection = None
+        # self.set_data = set_data
         self.artist = self.collection
-        delattr(self, "id")
         date = to_date(self.date).date()
         self.meta_path = os.path.join(self.dbpath, str(date.year), str(date.month), self.identifier + ".json")
 
