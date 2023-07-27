@@ -155,8 +155,8 @@ class Archivary:
         phishin_archive = None
         ia_archive = None
         local_archive = None
-        ia_collections = [x for x in self.collection_list if ((x != "Phish") and (not x.startswith("Local:")))]
-        local_collections = [x for x in self.collection_list if x.startswith("Local:")]
+        ia_collections = [x for x in self.collection_list if ((x != "Phish") and (not x.startswith("Local_")))]
+        local_collections = [x for x in self.collection_list if x.startswith("Local_")]
         if "Phish" in self.collection_list:
             try:
                 phishin_archive = PhishinArchive(dbpath=dbpath, reload_ids=reload_ids, with_latest=with_latest)
@@ -212,7 +212,7 @@ class Archivary:
             cdict[c] = []
         for t in tapes:
             for c in self.collection_list:
-                if c in t.collection:
+                if c.replace("Local_","") in t.collection:
                     cdict[c].append(t)
 
         result = []
@@ -224,17 +224,24 @@ class Archivary:
         return result
 
     def get_tape_dates(self, sort_across=True):  # Archivary
+        _ = [a.get_tape_dates() for a in self.archives]
         td = self.archives[0].tape_dates
         for a in self.archives[1:]:
+            logger.info(f"getting tapes from {a}")
             for date, tapes in a.tape_dates.items():
+                if a.archive_type == "Local Archive":
+                    import pdb;
+                    pdb.set_trace()
                 if date in td.keys():
                     for t in tapes:
                         td[date].append(t)
                 else:
                     td[date] = tapes
+        logger.info(f"lenght of td is {len(td)}")
         if (not sort_across) or (len(self.archives) == 1):
             return td
         td = {date: self.sort_across_collection(tapes) for date, tapes in td.items()}
+        logger.info(f"lenght of td is {len(td)}")
         return td
 
     def resort_tape_date(self, date):
@@ -303,13 +310,13 @@ class BaseArchive(abc.ABC):
             if self.collection_list[0] == "Phish":
                 self.idpath = self.idpath[0]
                 self.downloader = PhishinTapeDownloader(url, collection_list=collection_list[0])
-            elif self.collection_list[0].startswith("Local:"):
+            elif self.collection_list[0].startswith("Local_"):
                 self.downloader = LocalTapeDownloader(url, collection_list=collection_list[0])
             else:
                 self.downloader = IATapeDownloader(url, collection_list=collection_list[0])
         else:
             self.idpath = [os.path.join(self.dbpath, f"{x}_ids") for x in self.collection_list]
-            if self.collection_list[0].startswith("Local:"):
+            if self.collection_list[0].startswith("Local_"):
                 self.downloader = LocalTapeDownloader(url)
             else:
                 self.downloader = IATapeDownloader(url)
@@ -803,7 +810,7 @@ class LocalTapeDownloader(BaseTapeDownloader):
 
         # No need to update if we already have a show from today.
         # collections = [x for x in os.listdir(self.api) if os.path.isdir(os.path.join(self.api,x))]
-        collection = os.path.basename(iddir).replace("_ids", "").replace("Local:","")
+        collection = os.path.basename(iddir).replace("_ids", "").replace("Local_","")
         collection_dir = os.path.join(self.api,collection)
         tapelist_path = os.path.join(collection_dir,"tapelist.txt")
         os.system(f'rm {tapelist_path}')
@@ -1060,7 +1067,7 @@ class LocalArchive(BaseArchive):
         dbpath=os.path.join(ROOT_DIR, "metadata"),
         reload_ids=False,
         with_latest=True,
-        collection_list=["Local:DeadAndCompany"],
+        collection_list=["Local_DeadAndCompany"],
         date_range=None,
     ):
         """Create a new LocalArchive.
@@ -1128,7 +1135,7 @@ class LocalTape(BaseTape):
         return False
 
     def compute_score(self):
-        return 5
+        return 500
 
     def venue(self, tracknum=0):
         """return the venue, city, state"""
