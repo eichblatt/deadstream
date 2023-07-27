@@ -398,6 +398,15 @@ class BaseArchive(abc.ABC):
     def year_artists(self, year):
         pass
 
+    def resort_tape_date(self, date):
+        if isinstance(date, datetime.date):
+            date = date.strftime("%Y-%m-%d")
+        if date not in self.dates:
+            return [None]
+        tapes = self.tape_dates[date]
+        return tapes
+
+
 
 class BaseTape(abc.ABC):
     def __init__(self, dbpath, raw_json, set_data=None):
