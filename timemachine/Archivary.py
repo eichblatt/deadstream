@@ -1151,9 +1151,15 @@ class LocalTape(BaseTape):
             page_meta = self.make_metadata(self.identifier, self.meta_path)
             logger.warning(f"creating metadata for {self.identifier} in {self.meta_path}")
 
-        for itrack, track_data in enumerate(page_meta["tracks"]):
-            track_data['venue_name'] = self.venue_name
-            track_data['venue_location'] = self.venue_location
+        track_meta = page_meta["data"]
+        if not "venue" in track_meta.keys():
+            track_meta["venue"] = {}
+            track_meta["venue"]["venue_name"] = self.venue_name
+            track_meta["venue"]["venue_location"] = self.venue_location
+        else:
+            self.venue_name = track_meta["venue"]["venue_name"] 
+            self.venue_location = track_meta["venue"]["venue_location"] 
+        for itrack, track_data in enumerate(page_meta["data"]["tracks"]):
             set_name = track_data.get("set",1)
             if itrack == 0:
                 current_set = set_name
@@ -1163,7 +1169,7 @@ class LocalTape(BaseTape):
             self._tracks.append(LocalTrack(track_data, self.identifier))
 
         os.makedirs(os.path.dirname(self.meta_path), exist_ok=True)
-        json.dump(page_meta, open(self.meta_path, "w"))
+        json.dump(page_meta, open(self.meta_path, "w"),indent=4)
         self.meta_loaded = True
         # return page_meta
         for track in self._tracks:
