@@ -1087,13 +1087,12 @@ class LocalArchive(BaseArchive):
     def load_tapes(self, reload_ids=False, with_latest=False):  # Local
         """Load the tapes, then add anything which has been added since the tapes were saved"""
         logger.debug("begin loading tapes from local archive")
-        archive_path = self.url.replace("file://","")
         all_tapes = []
 
         for meta_path in self.idpath:
             tapes = self.downloader.get_all_tapes(meta_path)
             all_tapes.extend(tapes)
-        self.tapes = [LocalTape(self.dbpath, tape, self.set_data) for tape in all_tapes]
+        self.tapes = [LocalTape(self.idpath, tape, self.set_data) for tape in all_tapes]
         return self.tapes
 
     def best_tape(self, date, resort=True):
@@ -1114,8 +1113,6 @@ class LocalTape(BaseTape):
     """A Local tape"""
 
     def __init__(self, dbpath, meta_dict, set_data):
-        import pdb;
-        pdb.set_trace()
         super().__init__(dbpath, meta_dict, set_data)
         attribs = ["date", "identifier", "collection", "sbd", "venue_name", "venue_location"]
         for k, v in meta_dict.items():
@@ -1123,8 +1120,9 @@ class LocalTape(BaseTape):
                 setattr(self, k, v)
         # self.set_data = set_data
         self.artist = self.collection
-        date = to_date(self.date).date()
-        self.meta_path = os.path.join(self.dbpath, str(date.year), str(date.month), self.identifier + ".json")
+        # date = to_date(self.date).date()
+        self.meta_path = os.path.join(self.identifier,"metadata.json")
+        self.set_data = set_data.get_date(self.collection, self.date)
 
     def stream_only(self):
         return False
@@ -1134,6 +1132,11 @@ class LocalTape(BaseTape):
 
     def venue(self, tracknum=0):
         """return the venue, city, state"""
+        try:
+            self.venue_name = self.set_data.location[0]
+            self.venue_location = f"{self.set_data.location[1]},{self.set_data.location[2]}"
+        except:
+            pass
         return f"{self.venue_name},{self.venue_location}"
 
     def get_metadata(self, only_if_cached=False):
@@ -1145,36 +1148,19 @@ class LocalTape(BaseTape):
         try:  # I used to check if file exists, but it may also be corrupt, so this is safer.
             page_meta = json.load(open(self.meta_path, "r"))
         except Exception:
-            parms = self.parms.copy()
-            parms["page"] = 1
-            r = requests.get(self.url_metadata, headers=self.headers)
-            logger.debug(f"url is {r.url}")
-            if r.status_code != 200:
-                logger.warning(f"error pulling data for {self.identifier}")
-                raise Exception("Download", f"Error {r.status_code} url {self.url_metadata}")
-            try:
-                page_meta = r.json()
-            except ValueError:
-                logger.warning(f"Json Error {r.url}")
-                return None
-            except Exception:
-                logger.warning("Error getting metadata (json?)")
-                return None
+            page_meta = self.make_metadata(self.identifier, self.meta_path)
+            logger.warning(f"creating metadata for {self.identifier} in {self.meta_path}")
 
-        if page_meta["total_pages"] > 1:
-            logger.warning(
-                f"More than 1 page in metadata for show on {page_meta['data']['date']}. There are {page_meta['total_pages']} pages"
-            )
-
-        data = page_meta["data"]
-        for itrack, track_data in enumerate(data["tracks"]):
-            set_name = track_data["set"]
+        for itrack, track_data in enumerate(page_meta["tracks"]):
+            track_data['venue_name'] = self.venue_name
+            track_data['venue_location'] = self.venue_location
+            set_name = track_data.get("set",1)
             if itrack == 0:
                 current_set = set_name
             if set_name != current_set:
-                self._tracks.append(PhishinTrack(track_data, self.identifier, break_track=True))
+                self._tracks.append(LocalTrack(track_data, self.identifier, break_track=True))
                 current_set = set_name
-            self._tracks.append(PhishinTrack(track_data, self.identifier))
+            self._tracks.append(LocalTrack(track_data, self.identifier))
 
         os.makedirs(os.path.dirname(self.meta_path), exist_ok=True)
         json.dump(page_meta, open(self.meta_path, "w"))
@@ -1185,18 +1171,24 @@ class LocalTape(BaseTape):
             track.title = re.sub(r"(.flac)|(.mp3)|(.ogg)$", "", track.title).strip()
         return
 
+    def make_metadata(self):
+        import pdb;
+        pdb.set_trace()
+        return None
+
 
 class LocalTrack(BaseTrack):
     """A track from a Local recording"""
 
     def __init__(self, tdict, parent_id, break_track=False):
         super().__init__(tdict, parent_id, break_track)
-        attribs = ["set", "venue_name", "venue_location", "title", "position", "duration", "mp3", "updated_at"]
+        attribs = ["set", "venue_name", "venue_location", "title", "position", "path"]
         for k, v in tdict.items():
             if k in attribs:
                 setattr(self, k, v)
         self.format = "MP3"
         self.track = self.position
+        self.url = f"file://{parent_id}/{self.path}"
         self.files = []
         self.add_file(tdict, break_track)
 
@@ -1206,11 +1198,9 @@ class LocalTrack(BaseTrack):
         if not break_track:
             d["name"] = self.title
             d["format"] = "MP3"
-            d["size"] = self.duration
-            d["path"] = ""
-            d["url"] = self.mp3
+            d["url"] = self.url
         else:
-            logger.debug("adding break track in Phishin")
+            logger.debug("adding break track")
             d["name"] = ""
             if self.set == "E":
                 d["path"] = pkg_resources.resource_filename("timemachine.metadata", "silence0.ogg")
@@ -1220,7 +1210,6 @@ class LocalTrack(BaseTrack):
                 logger.debug(f"path is {d['path']}")
                 self.title = "Set Break"
             d["format"] = "Ogg Vorbis"
-            # d['url'] = 'file://'+os.path.join(d['path'], d['name'])
             d["url"] = f'file://{d["path"]}'
         self.files.append(d)
 
