@@ -229,9 +229,6 @@ class Archivary:
         for a in self.archives[1:]:
             logger.info(f"getting tapes from {a}")
             for date, tapes in a.tape_dates.items():
-                if a.archive_type == "Local Archive":
-                    import pdb;
-                    pdb.set_trace()
                 if date in td.keys():
                     for t in tapes:
                         td[date].append(t)
