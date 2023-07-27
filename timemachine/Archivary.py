@@ -1148,7 +1148,7 @@ class LocalTape(BaseTape):
         try:  # I used to check if file exists, but it may also be corrupt, so this is safer.
             page_meta = json.load(open(self.meta_path, "r"))
         except Exception:
-            page_meta = self.make_metadata(self.identifier, self.meta_path)
+            page_meta = self.create_metadata(self.identifier, self.meta_path)
             logger.warning(f"creating metadata for {self.identifier} in {self.meta_path}")
 
         track_meta = page_meta["data"]
@@ -1160,7 +1160,7 @@ class LocalTape(BaseTape):
             self.venue_name = track_meta["venue"]["venue_name"] 
             self.venue_location = track_meta["venue"]["venue_location"] 
         for itrack, track_data in enumerate(page_meta["data"]["tracks"]):
-            set_name = track_data.get("set",1)
+            set_name = track_data.get("set","1")
             if itrack == 0:
                 current_set = set_name
             if set_name != current_set:
@@ -1177,7 +1177,7 @@ class LocalTape(BaseTape):
             track.title = re.sub(r"(.flac)|(.mp3)|(.ogg)$", "", track.title).strip()
         return
 
-    def make_metadata(self):
+    def create_metadata(self):
         import pdb;
         pdb.set_trace()
         return None
