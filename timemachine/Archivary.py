@@ -234,11 +234,9 @@ class Archivary:
                         td[date].append(t)
                 else:
                     td[date] = tapes
-        logger.info(f"lenght of td is {len(td)}")
         if (not sort_across) or (len(self.archives) == 1):
             return td
         td = {date: self.sort_across_collection(tapes) for date, tapes in td.items()}
-        logger.info(f"lenght of td is {len(td)}")
         return td
 
     def resort_tape_date(self, date):
