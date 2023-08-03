@@ -10,11 +10,16 @@ track_event = Event()
 
 config.load_options()
 
+laa = Archivary.Archivary(collection_list=['Local_DeadAndCompany'])
+la = laa.archives[0]
+la.tapes[0].get_metadata()
+
 # config.optd = {
 #   "COLLECTIONS": ["GratefulDead", "Phish", "PhilLeshandFriends", "TedeschiTrucksBand", "Local:DeadAndCompany"],
 #   "FAVORED_TAPER": {"UltraMatrix": 10, "miller": 5},
 #   "PLAY_LOSSLESS": "false",
 # }
+
 aa = Archivary.Archivary(collection_list=config.optd["COLLECTIONS"])
 
 

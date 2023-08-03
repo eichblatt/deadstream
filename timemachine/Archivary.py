@@ -1159,7 +1159,7 @@ class LocalTape(BaseTape):
         try:  # I used to check if file exists, but it may also be corrupt, so this is safer.
             page_meta = json.load(open(self.meta_path, "r"))
         except Exception:
-            page_meta = self.create_metadata(self.identifier, self.meta_path)
+            page_meta = self.create_metadata()
             logger.warning(f"creating metadata for {self.identifier} in {self.meta_path}")
 
         track_meta = page_meta["data"]
@@ -1189,9 +1189,71 @@ class LocalTape(BaseTape):
         return
 
     def create_metadata(self):
-        import pdb;
-        pdb.set_trace()
-        return None
+        id = self.identifier
+        path = self.meta_path
+        vcs = ""
+        set_num = 1
+        all_files = sorted(os.listdir(id))
+        mp3_files = [x for x in all_files if x.endswith(".mp3")]
+        ogg_files = [x for x in all_files if x.endswith(".ogg")]
+        audio_files = ogg_files
+        file_ext = r".ogg$"
+        if len(mp3_files) >= len(ogg_files):
+            audio_files = mp3_files
+            file_ext = r".mp3$"
+        if len(audio_files) == 0:
+            logger.warning(f"No audio files found in {id}")
+            return 
+
+        page_meta = {}
+        page_meta["data"] = {"venue":{}, "tracks":[]} 
+        titles = [re.sub(file_ext,'',re.sub(r"^\d*\. ","",x)) for x in audio_files]
+        tracklines = []
+        tracklist_path = os.path.join(id,"tracklist.txt")
+        if os.path.exists(tracklist_path):
+            with open(tracklist_path,"r") as f:
+                tracklines = [x.strip() for x in f.readlines()]
+            tracklines = [x for x in tracklines if len(x)>0]  # remove empty lines
+        vcs = re.match(r"(.*),(.*,.*)$",tracklines[0]) if len(tracklines) > 0 else None
+        if vcs:
+            page_meta["data"]["venue"] = {"venue_name":vcs.group(1), "venue_location":vcs.group(2)}
+            tracklines = tracklines[1:]
+        else:
+            del page_meta["data"]["venue"]
+        file_tuples = []
+        if len(tracklines) >= len(audio_files):
+            pos = 0
+            for line in tracklines:
+                match = re.match(r"Set (\d*)",line, re.IGNORECASE)
+                if match:
+                    set_num = match.group(1)
+                    continue 
+                match = re.match(r"Set Break",line, re.IGNORECASE)
+                if match:
+                    set_num = set_num + 1
+                    continue
+                if re.match(r"Encore",line, re.IGNORECASE):
+                    continue
+                pos = pos + 1
+                title = re.sub(r"^\d*","",line).strip()
+                file_tuples.append((pos,set_num,title))
+        if len(file_tuples) == len(audio_files):
+            page_meta["data"]["tracks"] = []
+            for i,ft in enumerate(file_tuples):
+                pos, set_num, title = ft
+                audio_file = audio_files[i]
+                page_meta["data"]["tracks"].append({"position":pos,"set":set_num,"path":audio_file,"title":title})
+        else:
+            logger.info(f"file_tuples length ({len(file_tuples)}) != number of audio files {len(audio_files)}")
+            for i,audio_file in enumerate(audio_files):
+                page_meta["data"]["tracks"].append({"position":i+1,"set":set_num,"path":audio_file,"title":titles[i]})
+
+        try:
+            json.dump(page_meta,open(path,'w'),indent=4)
+            logger.info(f"Metadata written to {path}")
+        except Exception:
+            logger.warning(f"Failed to write metadata to {path}")
+        return page_meta
 
 
 class LocalTrack(BaseTrack):
