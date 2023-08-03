@@ -33,7 +33,7 @@ setup(
         "cherrypy",
         "gpiozero",
         "pexpect",
-        "Pillow",
+        "Pillow==9.5.0",
         "pre-commit",
         "pulsectl",
         "python-mpv==0.5.2",
