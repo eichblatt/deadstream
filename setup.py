@@ -27,7 +27,8 @@ setup(
     ],
     install_requires=[
         "adafruit-blinka",
-        "adafruit-circuitpython-rgb-display==3.10.19",
+        # "adafruit-circuitpython-rgb-display==3.10.19",
+        "adafruit-circuitpython-rgb-display",
         "aiohttp",
         "aiofiles",
         "cherrypy",
