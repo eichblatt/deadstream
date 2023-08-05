@@ -1141,7 +1141,7 @@ class LocalTape(BaseTape):
     def compute_score(self):
         folder_match = re.match(r'.*/tape(\d*)$',self.identifier)
         if folder_match:
-            return folder_match.group(1)
+            return int(folder_match.group(1))
         return 0
 
     def venue(self, tracknum=0):
