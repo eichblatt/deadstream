@@ -825,7 +825,7 @@ class LocalTapeDownloader(BaseTapeDownloader):
         else:
             os.system(f"find {collection_dir} -mindepth 2 -maxdepth 2 -cnewer {tapelist_path} >>! {tapelist_path}.tmp")
             tapelist = [x.strip() for x in open(f"{tapelist_path}.tmp", 'r').readlines()]
-            os.system(f"cat {tapelist_path}.tmp >> {tapelist_path}; rm {tapelist_path}.tmp")
+            os.system(f"cat {tapelist_path}.tmp >>! {tapelist_path}; sudo rm -f {tapelist_path}.tmp")
 
         tapelist = [x for x in tapelist if re.search('\d\d\d\d.\d\d.\d\d',x)]
 
