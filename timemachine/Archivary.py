@@ -1015,7 +1015,7 @@ class PhishinTape(BaseTape):
             self._tracks.append(PhishinTrack(track_data, self.identifier))
 
         os.makedirs(os.path.dirname(self.meta_path), exist_ok=True)
-        json.dump(page_meta, open(self.meta_path, "w"))
+        json.dump(page_meta, open(self.meta_path, "w"),indent=2)
         self.meta_loaded = True
         # return page_meta
         for track in self._tracks:
@@ -1661,7 +1661,7 @@ class GDTape(BaseTape):
 
     def write_metadata(self, page_meta):
         os.makedirs(os.path.dirname(self.meta_path), exist_ok=True)
-        json.dump(page_meta, open(self.meta_path, "w"))
+        json.dump(page_meta, open(self.meta_path, "w"),indent=2)
         self.meta_loaded = True
 
     def append_track(self, tdict, orig_titles={}, orig_tracks={}):
