@@ -1158,9 +1158,14 @@ class LocalTape(BaseTape):
         self._tracks = []
         try:  # I used to check if file exists, but it may also be corrupt, so this is safer.
             page_meta = json.load(open(self.meta_path, "r"))
-        except Exception:
+        except FileNotFoundError:
             logger.warning(f"creating metadata for {self.identifier} in {self.meta_path}")
             page_meta = self.create_metadata()
+        except Exception as e:
+            raise e
+
+        if page_meta is None:
+            raise Exception(f"Failed to load metadata from {self.meta_path}")
 
         track_meta = page_meta["data"]
         if not "venue" in track_meta.keys():
