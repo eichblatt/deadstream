@@ -110,7 +110,7 @@ class BaseTapeDownloader(abc.ABC):
                 logger.info(f"Writing {len(period_tapes)} tapes to {outpath}")
                 try:
                     tmpfile = tempfile.mkstemp(".json")[1]
-                    json.dump(period_tapes, open(tmpfile, "w"))
+                    json.dump(period_tapes, open(tmpfile, "w"), indent=4)
                     os.rename(tmpfile, outpath)
                     logger.debug(f"renamed {tmpfile} to {outpath}")
                 except Exception:
@@ -1139,10 +1139,16 @@ class LocalTape(BaseTape):
         return False
 
     def compute_score(self):
-        return 500
+        folder_match = re.match(r'.*/tape(\d*)$',self.identifier)
+        if folder_match:
+            return folder_match.group(1)
+        return 0
 
     def venue(self, tracknum=0):
         """return the venue, city, state"""
+        self.get_metadata()
+        if self.venue_name.lower() != "unknown":
+            return f"{self.venue_name},{self.venue_location}"
         try:
             self.venue_name = self.set_data.location[0]
             self.venue_location = f"{self.set_data.location[1]},{self.set_data.location[2]}"
