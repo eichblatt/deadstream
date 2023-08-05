@@ -1159,8 +1159,8 @@ class LocalTape(BaseTape):
         try:  # I used to check if file exists, but it may also be corrupt, so this is safer.
             page_meta = json.load(open(self.meta_path, "r"))
         except Exception:
-            page_meta = self.create_metadata()
             logger.warning(f"creating metadata for {self.identifier} in {self.meta_path}")
+            page_meta = self.create_metadata()
 
         track_meta = page_meta["data"]
         if not "venue" in track_meta.keys():
@@ -1199,12 +1199,12 @@ class LocalTape(BaseTape):
         m4a_files = [x for x in all_files if x.endswith(".m4a")]
         audio_files = ogg_files
         file_ext = r".ogg$"
-        if len(m4a_files) >= len(ogg_files):
-            audio_files = m4a_files
-            file_ext = r".m4a$"
-        elif len(mp3_files) >= len(ogg_files):
+        if len(mp3_files) > len(ogg_files):
             audio_files = mp3_files
             file_ext = r".mp3$"
+        elif len(m4a_files) > len(ogg_files):
+            audio_files = m4a_files
+            file_ext = r".m4a$"
         if len(audio_files) == 0:
             logger.warning(f"No audio files found in {id}")
             return 
