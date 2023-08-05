@@ -1196,9 +1196,13 @@ class LocalTape(BaseTape):
         all_files = sorted(os.listdir(id))
         mp3_files = [x for x in all_files if x.endswith(".mp3")]
         ogg_files = [x for x in all_files if x.endswith(".ogg")]
+        m4a_files = [x for x in all_files if x.endswith(".m4a")]
         audio_files = ogg_files
         file_ext = r".ogg$"
-        if len(mp3_files) >= len(ogg_files):
+        if len(m4a_files) >= len(ogg_files):
+            audio_files = m4a_files
+            file_ext = r".m4a$"
+        elif len(mp3_files) >= len(ogg_files):
             audio_files = mp3_files
             file_ext = r".mp3$"
         if len(audio_files) == 0:
