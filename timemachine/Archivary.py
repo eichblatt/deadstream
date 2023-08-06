@@ -110,7 +110,7 @@ class BaseTapeDownloader(abc.ABC):
                 logger.info(f"Writing {len(period_tapes)} tapes to {outpath}")
                 try:
                     tmpfile = tempfile.mkstemp(".json")[1]
-                    json.dump(period_tapes, open(tmpfile, "w"), indent=4)
+                    json.dump(period_tapes, open(tmpfile, "w"), indent=2)
                     os.rename(tmpfile, outpath)
                     logger.debug(f"renamed {tmpfile} to {outpath}")
                 except Exception:
@@ -1084,8 +1084,18 @@ class LocalArchive(BaseArchive):
           with_latest: If True, query archive for recently added tapes, and append them.
           collection_list: A list of collections to load
         """
+        # If the archive is not present, or empty, return None and move on.
+        self.base_directory = url.replace("file://","")
+        if not os.path.exists(self.base_directory):
+            self = None
+            return
+        if len(os.listdir(self.base_directory)) == 0:
+            self = None
+            return
+
         super().__init__(url, dbpath, reload_ids, with_latest, collection_list, date_range)
         self.archive_type = "Local Archive"
+
         self.set_data = GDSetBreaks(self.collection_list)
         self.date_range = date_range
         self.load_archive(reload_ids, with_latest)
@@ -1141,7 +1151,7 @@ class LocalTape(BaseTape):
     def compute_score(self):
         folder_match = re.match(r'.*/tape(\d*)$',self.identifier)
         if folder_match:
-            return int(folder_match.group(1))
+            return float(folder_match.group(1))
         return 0
 
     def venue(self, tracknum=0):
@@ -1529,10 +1539,14 @@ class GDTape(BaseTape):
         score = 3
         if self.stream_only():
             score = score + 10
-        if "optd" in dir(config) and len(config.optd["FAVORED_TAPER"]) > 0:
-            for taper, points in config.optd["FAVORED_TAPER"].items():
-                if taper.lower() in self.identifier.lower():
-                    score = score + float(points)
+        if "optd" in dir(config):
+            fav_taper = config.optd.get("FAVORED_TAPER",[])
+            if isinstance(fav_taper,(list,tuple)):
+                fav_taper = {x:1 for x in fav_taper}
+            if len(fav_taper) > 0:
+                for taper, points in fav_taper.items():
+                    if taper.lower() in self.identifier.lower():
+                        score = score + float(points)
         # This is now taken care of at the Archivary level.
         # if 'optd' in dir(config) and len(config.optd['COLLECTIONS']) > 1:
         #    colls = config.optd['COLLECTIONS']
