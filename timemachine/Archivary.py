@@ -845,7 +845,7 @@ class LocalTapeDownloader(BaseTapeDownloader):
             tapelist = [x.strip() for x in open(f"{tapelist_path}.tmp", 'r').readlines()]
             os.system(f"cat {tapelist_path}.tmp >>! {tapelist_path}; sudo rm -f {tapelist_path}.tmp")
 
-        tapelist = [x for x in tapelist if re.search('\d\d\d\d.\d\d.\d\d',x)]
+        tapelist = [x for x in tapelist if re.search(r'\d\d\d\d.\d\d.\d\d',x)]
 
         shows = self.extract_show_data(tapelist,collection)
         self.store_metadata(iddir, shows)
@@ -1037,7 +1037,8 @@ class PhishinTape(BaseTape):
         self.meta_loaded = True
         # return page_meta
         for track in self._tracks:
-            track.title = re.sub(r"gd\d{2}(?:\d{2})?-\d{2}-\d{2}[ ]*([td]\d*)*", "", track.title).strip()
+            # track.title = re.sub(r"gd\d{2}(?:\d{2})?-\d{2}-\d{2}[ ]*([td]\d*)*", "", track.title).strip()
+            track.title = re.sub(r"^[a-zA-Z]{2,5}_*\d{2}(?:\d{2})?[-.]\d{2}[-.]\d{2}[ ]*([td]\d*)*", "", track.title).strip()
             track.title = re.sub(r"(.flac)|(.mp3)|(.ogg)$", "", track.title).strip()
         return
 
@@ -1219,7 +1220,7 @@ class LocalTape(BaseTape):
         self.meta_loaded = True
         # return page_meta
         for track in self._tracks:
-            track.title = re.sub(r"gd\d{2}(?:\d{2})?-\d{2}-\d{2}[ ]*([td]\d*)*", "", track.title).strip()
+            track.title = re.sub(r"^[a-zA-Z]{2,5}_*\d{2}(?:\d{2})?[-.]\d{2}[-.]\d{2}[ ]*([td]\d*)*", "", track.title).strip()
             track.title = re.sub(r"(.flac)|(.mp3)|(.ogg)|(.m4a)$", "", track.title).strip()
         return
 
@@ -1232,6 +1233,7 @@ class LocalTape(BaseTape):
         mp3_files = [x for x in all_files if x.endswith(".mp3")]
         ogg_files = [x for x in all_files if x.endswith(".ogg")]
         m4a_files = [x for x in all_files if x.endswith(".m4a")]
+        flac_files = [x for x in all_files if x.endswith(".flac")]
         audio_files = ogg_files
         file_ext = r".ogg$"
         if len(mp3_files) > len(ogg_files):
@@ -1240,6 +1242,9 @@ class LocalTape(BaseTape):
         elif len(m4a_files) > len(ogg_files):
             audio_files = m4a_files
             file_ext = r".m4a$"
+        elif len(flac_files) > len(ogg_files):
+            audio_files = flac_files
+            file_ext = r".flac$"
         if len(audio_files) == 0:
             logger.warning(f"No audio files found in {id}")
             return 
@@ -1680,7 +1685,8 @@ class GDTape(BaseTape):
         for track in self._tracks:
             if not isinstance(track.title, (str, bytes)):
                 track.title = ""
-            track.title = re.sub(r"gd\d{2}(?:\d{2})?-\d{2}-\d{2}[ ]*([td]\d*)*", "", track.title).strip()
+            # track.title = re.sub(r"gd\d{2}(?:\d{2})?-\d{2}-\d{2}[ ]*([td]\d*)*", "", track.title).strip()
+            track.title = re.sub(r"^[a-zA-Z]{2,5}_*\d{2}(?:\d{2})?[-.]\d{2}[-.]\d{2}[ ]*([td]\d*)*", "", track.title).strip()
             track.title = re.sub(r"(.flac)|(.mp3)|(.ogg)$", "", track.title).strip()
         self.insert_breaks()
         return

@@ -17,6 +17,14 @@ def test_local():
     print(f"Local tape {tape} has track list {tape.tracks()}")
     assert len(tape.tracks()) > 0
 
+def test_local_multiple():
+    collection_list=['Local_DeadAndCompany',"Local_BobDylan"]
+    laa = Archivary.Archivary(collection_list=collection_list)
+    la = laa.archives[0]
+    artists = [t.artist for t in la.tapes]
+    assert sorted(set(artists)) == sorted(set([x.replace("Local_","") for x in collection_list]))
+
+
 def test_local_badhome():
     laa = Archivary.Archivary(collection_list=['Local_DeadAndCompany'], local_home=os.path.join(os.getenv("HOME"),"non_existant_archive"))
     assert laa.archives == []
