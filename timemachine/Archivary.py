@@ -172,6 +172,9 @@ class Archivary:
                 collection_list=ia_collections,
                 date_range=date_range,
             )
+
+        if len(local_archive.dates) == 0: # eg, if the USB stick is not plugged in!
+            local_archive = None
         self.archives = remove_none([ia_archive, phishin_archive,local_archive])
         self.tape_dates = self.get_tape_dates()
         self.dates = sorted(self.tape_dates.keys())
@@ -816,6 +819,8 @@ class LocalTapeDownloader(BaseTapeDownloader):
         # collections = [x for x in os.listdir(self.api) if os.path.isdir(os.path.join(self.api,x))]
         collection = os.path.basename(iddir).replace("_ids", "").replace("Local_","")
         collection_dir = os.path.join(self.api,collection)
+        if not os.path.exists(collection_dir):
+            return []
         tapelist_path = os.path.join(collection_dir,"tapelist.txt")
         os.system(f'rm {tapelist_path}')
         if not os.path.exists(tapelist_path):
@@ -1085,14 +1090,6 @@ class LocalArchive(BaseArchive):
           collection_list: A list of collections to load
         """
         # If the archive is not present, or empty, return None and move on.
-        self.base_directory = url.replace("file://","")
-        if not os.path.exists(self.base_directory):
-            self = None
-            return
-        if len(os.listdir(self.base_directory)) == 0:
-            self = None
-            return
-
         super().__init__(url, dbpath, reload_ids, with_latest, collection_list, date_range)
         self.archive_type = "Local Archive"
 
@@ -1101,8 +1098,12 @@ class LocalArchive(BaseArchive):
         self.load_archive(reload_ids, with_latest)
 
     def load_archive(self, reload_ids=False, with_latest=False):
-        self.tapes = self.load_tapes(reload_ids, with_latest)
-        self.tape_dates = self.get_tape_dates()
+        try:
+            self.tapes = self.load_tapes(reload_ids, with_latest)
+            self.tape_dates = self.get_tape_dates()
+        except FileNotFoundError:
+            self.tapes = []
+            self.tape_dates = {}
         self.dates = sorted(self.tape_dates.keys())
 
     def load_tapes(self, reload_ids=False, with_latest=False):  # Local
@@ -1201,7 +1202,7 @@ class LocalTape(BaseTape):
             self._tracks.append(LocalTrack(track_data, self.identifier))
 
         os.makedirs(os.path.dirname(self.meta_path), exist_ok=True)
-        json.dump(page_meta, open(self.meta_path, "w"),indent=4)
+        json.dump(page_meta, open(self.meta_path, "w"),indent=2)
         self.meta_loaded = True
         # return page_meta
         for track in self._tracks:
@@ -1274,7 +1275,7 @@ class LocalTape(BaseTape):
                 page_meta["data"]["tracks"].append({"position":i+1,"set":set_num,"path":audio_file,"title":titles[i]})
 
         try:
-            json.dump(page_meta,open(path,'w'),indent=4)
+            json.dump(page_meta,open(path,'w'),indent=2)
             logger.info(f"Metadata written to {path}")
         except Exception:
             logger.warning(f"Failed to write metadata to {path}")
