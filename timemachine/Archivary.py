@@ -146,6 +146,7 @@ class Archivary:
         with_latest=False,
         collection_list=["GratefulDead"],
         date_range=None,
+        local_home=os.path.join(os.getenv("HOME"),"archive")
     ):
         # if 'rElOaD' in collection_list:
         #     self.reload_ids = True
@@ -163,7 +164,7 @@ class Archivary:
             except Exception:
                 pass
         if len(local_collections) > 0:
-            local_archive = LocalArchive(collection_list=local_collections)
+            local_archive = LocalArchive(collection_list=local_collections, url=f"file://{local_home}")
         if len(ia_collections) > 0:
             ia_archive = GDArchive(
                 dbpath=dbpath,
@@ -173,11 +174,19 @@ class Archivary:
                 date_range=date_range,
             )
 
-        if len(local_archive.dates) == 0: # eg, if the USB stick is not plugged in!
+        if (local_archive is not None) and len(local_archive.dates) == 0: # eg, if the USB stick is not plugged in!
             local_archive = None
+
+        if (ia_archive is not None) and len(ia_archive.dates) == 0: # eg, if the only collection doesn't exist
+            ia_archive = None
         self.archives = remove_none([ia_archive, phishin_archive,local_archive])
-        self.tape_dates = self.get_tape_dates()
-        self.dates = sorted(self.tape_dates.keys())
+        if len(self.archives) == 0:
+            logger.warning(f"All archives for collections {collection_list} are empty -- check the system!")
+            self.tape_dates = {}
+            self.dates = []
+        else:
+            self.tape_dates = self.get_tape_dates()
+            self.dates = sorted(self.tape_dates.keys())
 
     def year_list(self):
         t = [a.year_list() for a in self.archives]
@@ -324,7 +333,11 @@ class BaseArchive(abc.ABC):
         return self.__repr__()
 
     def __repr__(self):
-        retstr = f"{self.collection_list} Archive with {len(self.tapes)} tapes on {len(self.dates)} dates from {self.dates[0]} to {self.dates[-1]} "
+        Ntapes = len(self.tapes)
+        Ndates = len(self.dates)
+        retstr = f"{self.collection_list} Archive with {Ntapes} tapes on {Ndates} dates "
+        if Ndates > 0:
+            retstr += f"from {self.dates[0]} to {self.dates[-1]} "
         return retstr
 
     def year_list(self):
@@ -794,7 +807,7 @@ class IATapeDownloader(BaseTapeDownloader):
 class LocalTapeDownloader(BaseTapeDownloader):
     """Synchronous Local Tape Downloader"""
 
-    def __init__(self, url=f"file://{os.getenv('HOME')}/archive/", collection_list=[]):
+    def __init__(self, url, collection_list=[]):
         self.url = url
         self.api = self.url.replace("file://","")
         self.parms = {"sort_attr": "date", "sort_dir": "desc"}
@@ -1476,7 +1489,7 @@ class GDArchive(BaseArchive):
             len(self.tapes) > 0
         ):  # The tapes have already been written, and nothing was added
             return self.tapes
-        self.tapes = [GDTape(self.dbpath, tape, self.set_data) for tape in all_loaded_tapes]
+        self.tapes = [GDTape(self.dbpath, tape, self.set_data, self.collection_list) for tape in all_loaded_tapes]
         return self.tapes
 
     def year_artists(self, year, other_year=None):
@@ -1496,7 +1509,7 @@ class GDArchive(BaseArchive):
 class GDTape(BaseTape):
     """A Grateful Dead Identifier Item -- does not contain tracks"""
 
-    def __init__(self, dbpath, raw_json, set_data):
+    def __init__(self, dbpath, raw_json, set_data, collection_list):
         super().__init__(dbpath, raw_json, set_data)
         self.meta_loaded = False
         self.venue_name = None
@@ -1517,7 +1530,7 @@ class GDTape(BaseTape):
         if isinstance(self.date, list):
             self.date = self.date[0]
         self.date = self.date[:10]
-        colls = config.optd["COLLECTIONS"]
+        colls = collection_list
         self.artist = (
             colls[min([colls.index(c) if c in colls else 100 for c in self.collection])] if len(colls) > 1 else colls[0]
         )
@@ -1542,16 +1555,14 @@ class GDTape(BaseTape):
             score = score + 10
         if "optd" in dir(config):
             fav_taper = config.optd.get("FAVORED_TAPER",[])
+            if isinstance(fav_taper,str):
+                fav_taper = [fav_taper]
             if isinstance(fav_taper,(list,tuple)):
                 fav_taper = {x:1 for x in fav_taper}
             if len(fav_taper) > 0:
                 for taper, points in fav_taper.items():
                     if taper.lower() in self.identifier.lower():
                         score = score + float(points)
-        # This is now taken care of at the Archivary level.
-        # if 'optd' in dir(config) and len(config.optd['COLLECTIONS']) > 1:
-        #    colls = config.optd['COLLECTIONS']
-        #    score = score + 5 * (len(colls) - min([colls.index(c) if c in colls else 100 for c in self.collection]))
         self.get_metadata(only_if_cached=True)
         if self.meta_loaded:
             if not self.contains_sound():
