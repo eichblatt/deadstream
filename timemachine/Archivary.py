@@ -1228,6 +1228,7 @@ class LocalTape(BaseTape):
         # return page_meta
         for track in self._tracks:
             track.title = re.sub(r"^[a-zA-Z]{2,5}_*\d{2}(?:\d{2})?[-.]\d{2}[-.]\d{2}[ ]*([td]\d*)*", "", track.title).strip()
+            track.title = re.sub(r"^[dD]\d{1,2} \d{1,2}","", track.title).strip()
             track.title = re.sub(r"(.flac)|(.mp3)|(.ogg)|(.m4a)$", "", track.title).strip()
         return
 
