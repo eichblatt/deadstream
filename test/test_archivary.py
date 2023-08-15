@@ -66,6 +66,12 @@ def test_bad_local_archive():
     local = Archivary.LocalArchive(collection_list=["Local_JJJJJXX_ASDF"])
     assert len(local.dates) == 0
 
+def test_archivary_local_archive_bad_folder():
+    # test case where there is a folder in the date which matches date, eg 2000-11-01-disk1
+    local = Archivary.LocalArchive(collection_list=["Local_BadFolder"])
+
+    assert False
+
 def test_gd():
     gd = Archivary.GDArchive()
     tapedate = '1982-11-25'

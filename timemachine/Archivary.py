@@ -835,13 +835,13 @@ class LocalTapeDownloader(BaseTapeDownloader):
         if not os.path.exists(collection_dir):
             return []
         tapelist_path = os.path.join(collection_dir,"tapelist.txt")
-        os.system(f'rm {tapelist_path}')
+        os.system(f'sudo rm -rf {tapelist_path}')
         if not os.path.exists(tapelist_path):
             logger.info(f"creating path {tapelist_path}")
-            os.system(f"find {collection_dir} -mindepth 2 -maxdepth 2 > {tapelist_path}")
+            os.system(f"sudo find {collection_dir} -mindepth 2 -maxdepth 2 > {tapelist_path}")
             tapelist = [x.strip() for x in open(tapelist_path, 'r').readlines()]
         else:
-            os.system(f"find {collection_dir} -mindepth 2 -maxdepth 2 -cnewer {tapelist_path} >! {tapelist_path}.tmp")
+            os.system(f"sudo find {collection_dir} -mindepth 2 -maxdepth 2 -cnewer {tapelist_path} > {tapelist_path}.tmp")
             tapelist = [x.strip() for x in open(f"{tapelist_path}.tmp", 'r').readlines()]
             os.system(f"cat {tapelist_path}.tmp >>! {tapelist_path}; sudo rm -f {tapelist_path}.tmp")
 
