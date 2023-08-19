@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 """
-    Grateful Dead Time Machine -- copyright 2021 Steve Eichblatt
+    Live Music Time Machine -- copyright 2021, 2023 spertilo.net
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by

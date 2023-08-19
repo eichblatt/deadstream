@@ -38,6 +38,7 @@ from typing import Callable, Optional
 
 import pkg_resources
 from timemachine import config
+from timemachine import utils
 
 logging.basicConfig(
     format="%(asctime)s.%(msecs)03d %(levelname)s: %(name)s %(message)s",
@@ -135,7 +136,6 @@ class BaseTapeDownloader(abc.ABC):
 def remove_none(lis):
     return [a for a in lis if a is not None]
 
-
 class Archivary:
     """A collection of Archive objects"""
 
@@ -158,14 +158,20 @@ class Archivary:
         local_archive = None
         ia_collections = [x for x in self.collection_list if ((x != "Phish") and (not x.startswith("Local_")))]
         local_collections = [x for x in self.collection_list if x.startswith("Local_")]
-        if "Phish" in self.collection_list:
+
+        local_mode = utils.get_local_mode()
+
+        if ("Phish" in self.collection_list) & (local_mode < 3):
             try:
                 phishin_archive = PhishinArchive(dbpath=dbpath, reload_ids=reload_ids, with_latest=with_latest)
             except Exception:
                 pass
         if len(local_collections) > 0:
-            local_archive = LocalArchive(collection_list=local_collections, url=f"file://{local_home}")
-        if len(ia_collections) > 0:
+            if utils.is_writable(local_home):
+                local_archive = LocalArchive(collection_list=local_collections, url=f"file://{local_home}")
+            else:
+                logger.error(f"Unable to initialize the local archive. {local_home} not writable")
+        if (len(ia_collections) > 0) & (local_mode < 3):
             ia_archive = GDArchive(
                 dbpath=dbpath,
                 reload_ids=reload_ids,
@@ -840,14 +846,14 @@ class LocalTapeDownloader(BaseTapeDownloader):
             logger.info(f"creating path {tapelist_path}")
             logger.info(f"sudo touch {tapelist_path}")
             os.system(f"sudo touch {tapelist_path}")
-            logger.info(f"find {collection_dir} -mindepth 2 -maxdepth 2 > /home/deadhead/taplist")
-            os.system(f"find {collection_dir} -mindepth 2 -maxdepth 2 > /home/deadhead/taplist")
+            logger.info(f"find {collection_dir} -mindepth 2 -maxdepth 2 -type d > /home/deadhead/taplist")
+            os.system(f"find {collection_dir} -mindepth 2 -maxdepth 2 -type d > /home/deadhead/taplist")
             logger.info(f"sudo mv /home/deadhead/taplist {tapelist_path}")
             os.system(f"sudo mv /home/deadhead/taplist {tapelist_path}")
             tapelist = [x.strip() for x in open(tapelist_path, 'r').readlines()]
         else:
-            logger.info(f"sudo find {collection_dir} -mindepth 2 -maxdepth 2 -cnewer {tapelist_path} > {tapelist_path}.tmp")
-            os.system(f"sudo find {collection_dir} -mindepth 2 -maxdepth 2 -cnewer {tapelist_path} > {tapelist_path}.tmp")
+            logger.info(f"sudo find {collection_dir} -mindepth 2 -maxdepth 2 -type d -cnewer {tapelist_path} > {tapelist_path}.tmp")
+            os.system(f"sudo find {collection_dir} -mindepth 2 -maxdepth 2 -type d -cnewer {tapelist_path} > {tapelist_path}.tmp")
             tapelist = [x.strip() for x in open(f"{tapelist_path}.tmp", 'r').readlines()]
             logger.info(f"sudo cat {tapelist_path}.tmp >> {tapelist_path}; sudo rm -f {tapelist_path}.tmp")
             os.system(f"sudo cat {tapelist_path}.tmp >> {tapelist_path}; sudo rm -f {tapelist_path}.tmp")
