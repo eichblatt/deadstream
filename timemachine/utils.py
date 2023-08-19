@@ -87,8 +87,8 @@ def mount_local_archive(path='/home/deadhead/archive'):
     try:
         os.system(cmd)
         os.symlink("/mnt/usb",path)
-    except Exception:
-        logger.warning("Failed to mount local archive")
+    except Exception as e:
+        logger.warning(f"Failed to mount local archive {e}")
     
 
 
@@ -106,6 +106,9 @@ def get_local_mode():
     partitions = psutil.disk_partitions()
     try:
         mount_local_archive()
+    except Exception:
+        pass
+    try:
         for p in partitions:
             if (p.mountpoint == "/mnt/usb") & is_writable(archive_dir):
                 local_mode = 1
