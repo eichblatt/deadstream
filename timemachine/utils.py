@@ -81,6 +81,17 @@ def is_writable(path):
     except FileNotFoundError:
         return False
 
+def mount_local_archive(path='/home/deadhead/archive'):
+    cmd = "sudo mount -ouser,umask=000 /dev/sda1 /mnt/usb"
+    logger.info(f"cmd is {cmd}")
+    try:
+        os.system(cmd)
+        os.symlink("/mnt/usb",path)
+    except Exception:
+        logger.warning("Failed to mount local archive")
+    
+
+
 
 def get_local_mode():
     # Return the "local_mode". Modes are:
@@ -94,6 +105,7 @@ def get_local_mode():
     options_file = os.path.join(os.getenv("HOME"),".timemachine_options.txt")
     partitions = psutil.disk_partitions()
     try:
+        mount_local_archive()
         for p in partitions:
             if (p.mountpoint == "/mnt/usb") & is_writable(archive_dir):
                 local_mode = 1
