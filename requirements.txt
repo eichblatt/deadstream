@@ -6,6 +6,7 @@ aiofiles
 aiohttp
 python-mpv
 cherrypy
+psutil
 requests
 RPi.GPIO
 adafruit-blinka

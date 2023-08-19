@@ -35,6 +35,7 @@ setup(
         "gpiozero",
         "pexpect",
         "Pillow",
+        "psutil",
         "pre-commit",
         "pulsectl",
         "python-mpv==0.5.2",
