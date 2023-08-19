@@ -119,4 +119,5 @@ def get_local_mode():
             if get_ip() is None:
                 local_mode = 3
     except Exception:
+        logger.warning(f"Failed to get local mode. {local_mode} -")
         return local_mode
