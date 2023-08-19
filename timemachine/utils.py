@@ -101,8 +101,8 @@ def mount_local_archive():
     try:
         os.system(cmd)
         os.symlink("/mnt/usb",archive_dir)
-    except Exception as e:
-        logger.warning(f"Failed to mount local archive {e}")
+    except Exception:
+        pass
     
 
 
@@ -118,8 +118,8 @@ def get_local_mode():
     options_file = os.path.join(os.getenv("HOME"),".timemachine_options.txt")
     try:
         mount_local_archive()
-    except Exception:
-        pass
+    except Exception as e:
+        logger.warning(f"Failed to mount local archive {e}")
     try:
         if usb_mounted():
             local_mode = 1
@@ -131,6 +131,8 @@ def get_local_mode():
         if local_mode == 2:  # Are we disconnected from wifi?
             if get_ip() is None:
                 local_mode = 3
+        logger.info(f"Local mode is set to {local_mode}")
+        return local_mode
     except Exception:
         logger.warning(f"Failed to get local mode. {local_mode} -")
         return local_mode
