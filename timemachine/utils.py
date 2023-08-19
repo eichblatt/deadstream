@@ -80,13 +80,27 @@ def is_writable(path):
         return os.access(path, os.W_OK)
     except FileNotFoundError:
         return False
+        
 
-def mount_local_archive(path='/home/deadhead/archive'):
+def usb_mounted():
+    archive_dir = os.path.join(os.getenv("HOME"),"archive")
+    partitions = psutil.disk_partitions()
+    try:
+        for p in partitions:
+            if (p.mountpoint == "/mnt/usb") & is_writable(archive_dir):
+                return True
+    except Exception:
+        return False
+
+    return False
+
+def mount_local_archive():
+    archive_dir = os.path.join(os.getenv("HOME"),"archive")
     cmd = "sudo mount -ouser,umask=000 /dev/sda1 /mnt/usb"
     logger.info(f"cmd is {cmd}")
     try:
         os.system(cmd)
-        os.symlink("/mnt/usb",path)
+        os.symlink("/mnt/usb",archive_dir)
     except Exception as e:
         logger.warning(f"Failed to mount local archive {e}")
     
@@ -101,18 +115,14 @@ def get_local_mode():
     # 3 -- local archive selected, and no internet connectivity
     # 
     local_mode = 0
-    archive_dir = os.path.join(os.getenv("HOME"),"archive")
     options_file = os.path.join(os.getenv("HOME"),".timemachine_options.txt")
-    partitions = psutil.disk_partitions()
     try:
         mount_local_archive()
     except Exception:
         pass
     try:
-        for p in partitions:
-            if (p.mountpoint == "/mnt/usb") & is_writable(archive_dir):
-                local_mode = 1
-                break 
+        if usb_mounted():
+            local_mode = 1
         if local_mode > 0:  # Are there any Local_ collections?
             opts_dict = json.load(open(options_file,'r'))
             for coll in opts_dict["COLLECTIONS"].split(","):
