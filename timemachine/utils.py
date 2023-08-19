@@ -100,7 +100,7 @@ def mount_local_archive():
     logger.info(f"cmd is {cmd}")
     try:
         os.system(cmd)
-        os.symlink("/mnt/usb",archive_dir)
+        os.symlink("/mnt/usb/archive",archive_dir)
     except Exception:
         pass
     
