@@ -10,6 +10,7 @@ track_event = Event()
 
 config.load_options()
 
+
 def test_local():
     laa = Archivary.Archivary(collection_list=['Local_DeadAndCompany'])
     la = laa.archives[0]
@@ -102,6 +103,13 @@ def test_phish():
     assert len(aa.archives) == 1
     assert len(aa.archives[0].tapes) > 1600
 
+def test_format_1():
+    laa = Archivary.Archivary(collection_list=['Local_BobDylan'])
+    la = laa.archives[0]
+    tape = la.tape_dates['1987-10-12'][0]
+    tracks = tape.tracks()
+    assert tracks[0].title == "Like A Rolling Stone"
+ 
 def XXXtest_player(tape):
     p = GD.GDPlayer(tape)
 

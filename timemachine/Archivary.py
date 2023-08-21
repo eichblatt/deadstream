@@ -1239,10 +1239,25 @@ class LocalTape(BaseTape):
             track.title = re.sub(r"(.flac)|(.mp3)|(.ogg)|(.m4a)$", "", track.title).strip()
         return
 
+    def parse_into_clauses(self,tracklines):
+        seen_text = False
+        clauses = []
+        current_clause = []
+        for line in tracklines:
+            if (len(line) == 0) and seen_text:
+                clauses.append(current_clause)
+                current_clause = []
+            elif len(line) > 0:
+                seen_text = True
+                current_clause.append(line) 
+        clauses.append(current_clause) if len(current_clause) > 0 else None
+        return clauses
+
+
     def create_metadata(self):
+        # In case there is no metadata, create it.
         id = self.identifier
         path = self.meta_path
-        vcs = ""
         set_num = 1
         all_files = sorted(os.listdir(id))
         mp3_files = [x for x in all_files if x.endswith(".mp3")]
@@ -1272,40 +1287,50 @@ class LocalTape(BaseTape):
         if os.path.exists(tracklist_path):
             with open(tracklist_path,"r") as f:
                 tracklines = [x.strip() for x in f.readlines()]
-            tracklines = [x for x in tracklines if len(x)>0]  # remove empty lines
-        vcs = re.match(r"(.*),(.*,.*)$",tracklines[0]) if len(tracklines) > 0 else None
-        if vcs:
+
+        clauses = self.parse_into_clauses(tracklines)
+
+        vcs = None
+        for line in clauses[0]:
+            vcs = re.match(r"(.*),(.*,.*)$",line) 
+            if vcs:
+                break
+
+        if vcs is not None:
             page_meta["data"]["venue"] = {"venue_name":vcs.group(1), "venue_location":vcs.group(2)}
             tracklines = tracklines[1:]
+            start_clause = 1
         else:
+            start_clause = 0
             del page_meta["data"]["venue"]
         file_tuples = []
         if len(tracklines) >= len(audio_files):
             pos = 0
-            for line in tracklines:
-                match = re.match(r"Set (\d*)",line, re.IGNORECASE)
-                if match:
-                    set_num = match.group(1)
-                    continue 
-                match = re.match(r"Set Break",line, re.IGNORECASE)
-                if match:
-                    set_num = set_num + 1
-                    continue
-                if re.match(r"Encore",line, re.IGNORECASE):
-                    continue
-                pos = pos + 1
-                title = re.sub(r"^\d*","",line).strip()
-                file_tuples.append((pos,set_num,title))
-        if len(file_tuples) == len(audio_files):
-            page_meta["data"]["tracks"] = []
-            for i,ft in enumerate(file_tuples):
-                pos, set_num, title = ft
-                audio_file = audio_files[i]
-                page_meta["data"]["tracks"].append({"position":pos,"set":set_num,"path":audio_file,"title":title})
-        else:
-            logger.info(f"file_tuples length ({len(file_tuples)}) != number of audio files {len(audio_files)}")
-            for i,audio_file in enumerate(audio_files):
-                page_meta["data"]["tracks"].append({"position":i+1,"set":set_num,"path":audio_file,"title":titles[i]})
+            for clause in clauses[start_clause:]:
+                for line in clause:
+                    match = re.match(r"Set (\d*)",line, re.IGNORECASE)
+                    if match:
+                        set_num = match.group(1)
+                        continue 
+                    match = re.match(r"Set Break",line, re.IGNORECASE)
+                    if match:
+                        set_num = set_num + 1
+                        continue
+                    if re.match(r"Encore",line, re.IGNORECASE):
+                        continue
+                    pos = pos + 1
+                    title = re.sub(r"^\d*","",line).strip()
+                    file_tuples.append((pos,set_num,title))
+            if len(file_tuples) == len(audio_files):
+                page_meta["data"]["tracks"] = []
+                for i,ft in enumerate(file_tuples):
+                    pos, set_num, title = ft
+                    audio_file = audio_files[i]
+                    page_meta["data"]["tracks"].append({"position":pos,"set":set_num,"path":audio_file,"title":title})
+            else:
+                logger.info(f"file_tuples length ({len(file_tuples)}) != number of audio files {len(audio_files)}")
+                for i,audio_file in enumerate(audio_files):
+                    page_meta["data"]["tracks"].append({"position":i+1,"set":set_num,"path":audio_file,"title":titles[i]})
 
         try:
             json.dump(page_meta,open(path,'w'),indent=2)
