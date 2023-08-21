@@ -846,10 +846,11 @@ class LocalTapeDownloader(BaseTapeDownloader):
             logger.info(f"creating path {tapelist_path}")
             logger.info(f"sudo touch {tapelist_path}")
             os.system(f"sudo touch {tapelist_path}")
-            logger.info(f"find {collection_dir} -mindepth 2 -maxdepth 2 -type d > /home/deadhead/taplist")
-            os.system(f"find {collection_dir} -mindepth 2 -maxdepth 2 -type d > /home/deadhead/taplist")
-            logger.info(f"sudo mv /home/deadhead/taplist {tapelist_path}")
-            os.system(f"sudo mv /home/deadhead/taplist {tapelist_path}")
+            homedir = os.getenv('HOME')
+            logger.info(f"find {collection_dir} -mindepth 2 -maxdepth 2 -type d > {homedir}/tapelist")
+            os.system(f"find {collection_dir} -mindepth 2 -maxdepth 2 -type d > {homedir}/tapelist")
+            logger.info(f"sudo mv {homedir}/tapelist {tapelist_path}")
+            os.system(f"sudo mv {homedir}/tapelist {tapelist_path}")
             tapelist = [x.strip() for x in open(tapelist_path, 'r').readlines()]
         else:
             logger.info(f"sudo find {collection_dir} -mindepth 2 -maxdepth 2 -type d -cnewer {tapelist_path} > {tapelist_path}.tmp")

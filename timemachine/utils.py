@@ -38,21 +38,37 @@ ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
 
 OS_VERSION = None
 
+def get_os_info(field="VERSION_ID"):
+    retval = None
+    try:
+        cmd = "cat /etc/os-release"
+        lines = subprocess.check_output(cmd, shell=True)
+        lines = lines.decode().split("\n")
+        for line in lines:
+            split_line = line.split("=")
+            if split_line[0] == field:
+                retval = split_line[1].strip('"')
+                return retval
+    except Exception as e:
+        logger.warning(f"Failed to get OS info {e}")
+        return retval
+
 def get_os_version():
     global OS_VERSION  # cache the value of os version
     if OS_VERSION is None:
         try:
-            cmd = "cat /etc/os-release"
-            lines = subprocess.check_output(cmd, shell=True)
-            lines = lines.decode().split("\n")
-            for line in lines:
-                split_line = line.split("=")
-                if split_line[0] == "VERSION_ID":
-                    OS_VERSION = int(split_line[1].strip('"'))
-        except Exception:
-            logger.warning("Failed to get OS Version")
+            OS_VERSION = float(get_os_info("VERSION_ID"))
+        except:
+            pass
     return OS_VERSION
 
+def get_os_name():
+    os_name = "UNKNOWN"
+    try:
+        os_name = get_os_info("NAME")
+    except:
+        pass
+    return os_name
 
 def get_version():
     __version__ = "v1.0"
@@ -83,6 +99,10 @@ def is_writable(path):
         
 
 def usb_mounted():
+    logger.info("Checking USB Mounted")
+    if get_os_name() == "Ubuntu":  # in this case, look for archive in filesystem
+        return is_writable(os.path.join(os.getenv("HOME"),'archive'))
+
     archive_dir = os.path.join(os.getenv("HOME"),"archive")
     partitions = psutil.disk_partitions()
     try:
@@ -95,6 +115,8 @@ def usb_mounted():
     return False
 
 def mount_local_archive():
+    if usb_mounted():
+        return 
     archive_dir = os.path.join(os.getenv("HOME"),"archive")
     cmd = "sudo mount -ouser,umask=000 /dev/sda1 /mnt/usb"
     logger.info(f"cmd is {cmd}")
@@ -124,7 +146,8 @@ def get_local_mode():
         if usb_mounted():
             local_mode = 1
         if local_mode > 0:  # Are there any Local_ collections?
-            opts_dict = json.load(open(options_file,'r'))
+            config.load_options()
+            opts_dict = config.optd
             for coll in opts_dict["COLLECTIONS"].split(","):
                 if "Local_" in coll:
                     local_mode = 2
