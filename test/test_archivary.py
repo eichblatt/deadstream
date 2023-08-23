@@ -10,11 +10,19 @@ track_event = Event()
 
 config.load_options()
 
-
+def test_format_3():
+    laa = Archivary.Archivary(collection_list=['Local_BobDylan'])
+    la = laa.archives[0]
+    tape = la.tape_dates['1974-01-31'][0]
+    os.system(f"rm {tape.meta_path}")
+    tracks = tape.tracks()
+    assert tracks[21].title == 'Set Break'
+ 
 def test_format_2():
     laa = Archivary.Archivary(collection_list=['Local_BobDylan'])
     la = laa.archives[0]
     tape = la.tape_dates['2006-04-03'][0]
+    os.system(f"rm {tape.meta_path}")
     tracks = tape.tracks()
     assert tracks[0].title == 'Intro'
  
@@ -118,32 +126,3 @@ def test_format_1():
     tracks = tape.tracks()
     assert tracks[0].title == "Like A Rolling Stone"
  
-def XXXtest_player(tape):
-    p = GD.GDPlayer(tape)
-
-    p.play()
-    p.seek_to(1, 0.0)
-
-    p.fseek(300)
-
-    # Start playback.
-    p.play()
-
-    time.sleep(10)
-
-    p.pause()
-
-    p.seek_to(8, 100.0)
-
-    p.status()
-    p.play()
-    for i in range(3):
-        p.fseek(-30)
-
-
-    @p.property_observer("playlist-pos")
-    def on_track_event(_name, value):
-        track_event.set()
-        if value == None:
-            pass
-        print(f"in track event callback {_name}, {value}")

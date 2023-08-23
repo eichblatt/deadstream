@@ -1289,12 +1289,12 @@ class LocalTape(BaseTape):
                 tracklines = [x.strip() for x in f.readlines()]
 
         clauses = self.parse_into_clauses(tracklines)
-
         vcs = None
-        for line in clauses[0]:
-            vcs = re.match(r"(.*),(.*,.*)$",line) 
-            if vcs:
-                break
+        if len(clauses) > 0:
+            for line in clauses[0]:
+                vcs = re.match(r"(.*),(.*,.*)$",line) 
+                if vcs:
+                    break
 
         if vcs is not None:
             page_meta["data"]["venue"] = {"venue_name":vcs.group(1), "venue_location":vcs.group(2)}
