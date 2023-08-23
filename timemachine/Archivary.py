@@ -1306,8 +1306,12 @@ class LocalTape(BaseTape):
         file_tuples = []
         if len(tracklines) >= len(audio_files):
             pos = 0
+            number_starts = False
             for clause in clauses[start_clause:]:
                 for line in clause:
+                    if vcs is None:
+                        vcs = re.match(r"(.*),(.*,.*)$",line) 
+                        continue
                     match = re.match(r"Set (\d*)",line, re.IGNORECASE)
                     if match:
                         set_num = match.group(1)
@@ -1316,12 +1320,29 @@ class LocalTape(BaseTape):
                     if match:
                         set_num = set_num + 1
                         continue
-                    if re.match(r"Encore",line, re.IGNORECASE):
+                    if number_starts and not re.match(r"(^\d+).*",line):
                         continue
+                    if re.search(r"Encore",line, re.IGNORECASE):
+                        continue
+                    if re.match(r"Dis[ck]",line, re.IGNORECASE):
+                        continue
+                    # Screen out spurious titles BEFORE numbered tracks.
+                    rxtnum = re.match(r"(^\d+).*",line)
+                    if (not number_starts) and rxtnum:
+                        if (pos < 2) and int(rxtnum.groups()[0]) == 1:
+                            number_starts = True
+                            if pos > 0:
+                                file_tuples = []  # start over. Up to now titles were wrong.
+                                pos = 0
                     pos = pos + 1
-                    title = re.sub(r"^\d*","",line).strip()
-                    file_tuples.append((pos,set_num,title))
-            if len(file_tuples) == len(audio_files):
+                    title = re.sub(r"^\d*[\.)>]*","",line).strip()
+                    file_tuples.append((pos,set_num, title))
+#                    file_tuples.append((pos,set_num,title))
+#            if len(file_tuples) == len(audio_files):
+            if len(audio_files) == len(file_tuples) + 1:
+                if os.path.getsize(os.path.join(self.identifier,audio_files[0])) < 2_000_000:
+                    file_tuples.insert(0,(1,0,"Intro"))
+            if len(audio_files) == len(file_tuples):
                 page_meta["data"]["tracks"] = []
                 for i,ft in enumerate(file_tuples):
                     pos, set_num, title = ft
