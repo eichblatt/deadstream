@@ -1218,8 +1218,8 @@ class LocalTape(BaseTape):
             track_meta["venue"]["venue_name"] = self.venue_name
             track_meta["venue"]["venue_location"] = self.venue_location
         else:
-            self.venue_name = track_meta["venue"]["venue_name"] 
-            self.venue_location = track_meta["venue"]["venue_location"] 
+            self.venue_name = track_meta["venue"].get("venue_name","Unknown")
+            self.venue_location = track_meta["venue"].get("venue_location","Unknown")
         for itrack, track_data in enumerate(page_meta["data"]["tracks"]):
             set_name = track_data.get("set","1")
             if itrack == 0:
@@ -1289,26 +1289,36 @@ class LocalTape(BaseTape):
                 tracklines = [x.strip() for x in f.readlines()]
 
         clauses = self.parse_into_clauses(tracklines)
-        vcs = None
-        if len(clauses) > 0:
+        vcs = venue = city_state = None
+        if len(clauses) > 1:
             for line in clauses[0]:
                 vcs = re.match(r"(.*),(.*,.*)$",line) 
                 if vcs:
                     break
+                venue_match = re.match(r'(.*hall|arena|theater|venue)',line,re.IGNORECASE)
+                if venue_match:
+                    venue = venue_match.groups()[0] 
+                city_state_match = re.match(r'^(.*,.*)$',line,re.IGNORECASE)
+                if city_state_match:
+                    city_state = city_state_match.groups()[0] 
+
 
         if vcs is not None:
             page_meta["data"]["venue"] = {"venue_name":vcs.group(1), "venue_location":vcs.group(2)}
             tracklines = tracklines[1:]
             start_clause = 1
-        else:
+        elif (venue is not None) and (city_state is not None):
             start_clause = 0
-            del page_meta["data"]["venue"]
+            page_meta["data"]["venue"] = {"venue_name":venue, "venue_location":city_state}
+        else: 
+            start_clause = 0
+
         file_tuples = []
         if len(tracklines) >= len(audio_files):
             pos = 0
             number_starts = False
-            for clause in clauses[start_clause:]:
-                for line in clause:
+            for i_clause,clause in enumerate(clauses[start_clause:]):
+                for i_line,line in enumerate(clause):
                     if vcs is None:
                         vcs = re.match(r"(.*),(.*,.*)$",line) 
                         continue
@@ -1329,7 +1339,7 @@ class LocalTape(BaseTape):
                     # Screen out spurious titles BEFORE numbered tracks.
                     rxtnum = re.match(r"(^\d+).*",line)
                     if (not number_starts) and rxtnum:
-                        if (pos < 2) and int(rxtnum.groups()[0]) == 1:
+                        if ((pos < 4) or (i_line < 2)) and int(rxtnum.groups()[0]) == 1:
                             number_starts = True
                             if pos > 0:
                                 file_tuples = []  # start over. Up to now titles were wrong.

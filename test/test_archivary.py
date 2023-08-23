@@ -10,6 +10,22 @@ track_event = Event()
 
 config.load_options()
 
+def test_format_5():
+    laa = Archivary.Archivary(collection_list=['Local_BobDylan'])
+    la = laa.archives[0]
+    tape = la.tape_dates['1988-10-19'][0]
+    os.system(f"rm {tape.meta_path}")
+    tracks = tape.tracks()
+    assert tracks[2].title == 'John Brown'
+ 
+def test_format_4():
+    laa = Archivary.Archivary(collection_list=['Local_BobDylan'])
+    la = laa.archives[0]
+    tape = la.tape_dates['1988-10-16'][0]
+    os.system(f"rm {tape.meta_path}")
+    tracks = tape.tracks()
+    assert tracks[11].title == 'In The Garden'
+ 
 def test_format_3():
     laa = Archivary.Archivary(collection_list=['Local_BobDylan'])
     la = laa.archives[0]
@@ -82,11 +98,17 @@ def test_bad_local_archive():
     local = Archivary.LocalArchive(collection_list=["Local_JJJJJXX_ASDF"])
     assert len(local.dates) == 0
 
-def test_archivary_local_archive_bad_folder():
+def test_archivary_local_archive_missing_collection():
     # test case where there is a folder in the date which matches date, eg 2000-11-01-disk1
-    local = Archivary.LocalArchive(collection_list=["Local_BadFolder"])
+    local = Archivary.LocalArchive(collection_list=["Local_NonExistentCollection"])
+    assert len(local.tape_dates) == 0
 
-    assert False
+
+#def test_archivary_local_archive_bad_folder():
+#    # test case where there is a folder in the date which matches date, eg 2000-11-01-disk1
+#    local = Archivary.LocalArchive(collection_list=["Local_BadFolder"])
+#
+#    assert False
 
 def test_gd():
     gd = Archivary.GDArchive()
