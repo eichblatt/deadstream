@@ -1321,7 +1321,8 @@ class LocalTape(BaseTape):
                 for i_line,line in enumerate(clause):
                     if vcs is None:
                         vcs = re.match(r"(.*),(.*,.*)$",line) 
-                        continue
+                        if vcs:
+                            continue
                     match = re.match(r"Set (\d*)",line, re.IGNORECASE)
                     if match:
                         set_num = match.group(1)
@@ -1334,6 +1335,9 @@ class LocalTape(BaseTape):
                         continue
                     if re.search(r"Encore",line, re.IGNORECASE):
                         continue
+                    if re.match(r"Dis[ck] [One|1]",line, re.IGNORECASE):
+                        file_tuples = []  # start over. Up to now titles were wrong.
+                        pos = 0
                     if re.match(r"Dis[ck]",line, re.IGNORECASE):
                         continue
                     # Screen out spurious titles BEFORE numbered tracks.
