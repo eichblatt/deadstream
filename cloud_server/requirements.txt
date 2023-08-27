@@ -1,0 +1,10 @@
+# pip install -r requirements.txt
+
+pytest
+git+https://github.com/eichblatt/deadstream.git@dev
+Flask
+gunicorn
+requests
+tenacity
+pre-commit
+wheel
