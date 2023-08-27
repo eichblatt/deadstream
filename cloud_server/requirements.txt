@@ -3,6 +3,7 @@
 pytest
 git+https://github.com/eichblatt/deadstream.git@dev
 Flask
+google-cloud-storage
 gunicorn
 requests
 tenacity
