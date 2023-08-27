@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 """
-    Live Music Time Machine -- copyright 2021, 2023 spertilo.net
+    Grateful Dead Time Machine -- copyright 2021 Steve Eichblatt
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -106,6 +106,7 @@ def get_os_version():
                 if split_line[0] == "VERSION_ID":
                     OS_VERSION = int(split_line[1].strip('"'))
         except Exception:
+            OS_VERSION = 10
             logger.warning("Failed to get OS Version")
     return OS_VERSION
 
@@ -512,13 +513,6 @@ class Time_Machine_Board:
         self.y_event.set()
 
 
-def _getfontsize(fnt, message):
-    text_left, text_top, text_right, text_bottom = fnt.getbbox(message)
-    text_width = abs(text_right - text_left)
-    text_height = abs(text_bottom - text_top)
-    return text_width, text_height
-
-
 def select_option(TMB, counter, message, chooser):
     if type(chooser) == type(lambda: None):
         choices = chooser()
@@ -537,10 +531,9 @@ def select_option(TMB, counter, message, chooser):
     TMB.select_event.clear()
 
     scr.show_text(message, loc=(0, 0), font=scr.smallfont, color=(0, 255, 255), force=True)
-    # (text_width, text_height) = scr.smallfont.getsize(message)
-    text_width, text_height = _getfontsize(scr.smallfont, message)
-    text_height = text_height + 1
+    (text_width, text_height) = scr.smallfont.getsize(message)
 
+    text_height = text_height + 1
     y_origin = text_height * (1 + message.count("\n"))
     selection_bbox = Bbox(0, y_origin, 160, 128)
 
@@ -556,9 +549,8 @@ def select_option(TMB, counter, message, chooser):
         y_loc = y_origin
         step = divmod(counter.value, len(choices))[1]
 
-        text = "\n".join(choices[max(0, step - int(screen_height / 2)): step])
-        # (text_width, text_height) = scr.smallfont.getsize(text)
-        text_width, text_height = _getfontsize(scr.smallfont, text)
+        text = "\n".join(choices[max(0, step - int(screen_height / 2)) : step])
+        (text_width, text_height) = scr.smallfont.getsize(text)
         scr.show_text(text, loc=(x_loc, y_loc), font=scr.smallfont, force=False)
         y_loc = y_loc + text_height * (1 + text.count("\n"))
 
@@ -566,14 +558,12 @@ def select_option(TMB, counter, message, chooser):
             text = ">" + ".." + choices[step][-13:]
         else:
             text = ">" + choices[step]
-        # (text_width, text_height) = scr.smallfont.getsize(text)
-        text_width, text_height = _getfontsize(scr.smallfont, text)
+        (text_width, text_height) = scr.smallfont.getsize(text)
         scr.show_text(text, loc=(x_loc, y_loc), font=scr.smallfont, color=(0, 0, 255), force=False)
         y_loc = y_loc + text_height
 
-        text = "\n".join(choices[step + 1: min(step + screen_height, len(choices))])
-        # (text_width, text_height) = scr.smallfont.getsize(text)
-        text_width, text_height = _getfontsize(scr.smallfont, text)
+        text = "\n".join(choices[step + 1 : min(step + screen_height, len(choices))])
+        (text_width, text_height) = scr.smallfont.getsize(text)
         scr.show_text(text, loc=(x_loc, y_loc), font=scr.smallfont, force=True)
 
         sleep(0.01)
@@ -598,8 +588,7 @@ def select_chars(TMB, counter, message, message2="So Far", character_set=string.
     TMB.select_event.clear()
 
     scr.show_text(message, loc=(0, 0), font=scr.smallfont, color=(0, 255, 255), force=True)
-    # (text_width, text_height) = scr.smallfont.getsize(message)
-    text_width, text_height = _getfontsize(scr.smallfont, text)
+    (text_width, text_height) = scr.smallfont.getsize(message)
 
     y_origin = text_height * (1 + message.count("\n"))
     selection_bbox = Bbox(0, y_origin, 160, y_origin + 22)
@@ -613,8 +602,7 @@ def select_chars(TMB, counter, message, message2="So Far", character_set=string.
             y_loc = y_origin
 
             text = "DEL"
-            # (text_width, text_height) = scr.oldfont.getsize(text)
-            text_width, text_height = _getfontsize(scr.oldfont, text)
+            (text_width, text_height) = scr.oldfont.getsize(text)
             if counter.value == 0:  # we are deleting
                 scr.show_text(text, loc=(x_loc, y_loc), font=scr.oldfont, color=(0, 0, 255), force=False)
                 scr.show_text(
@@ -625,11 +613,10 @@ def select_chars(TMB, counter, message, message2="So Far", character_set=string.
             x_loc = x_loc + text_width
 
             # print the white before the red, if applicable
-            text = character_set[max(0, -1 + counter.value - int(screen_width / 2)): -1 + counter.value]
+            text = character_set[max(0, -1 + counter.value - int(screen_width / 2)) : -1 + counter.value]
             for x in character_set[94:]:
                 text = text.replace(x, "\u25A1")
-            # (text_width, text_height) = scr.oldfont.getsize(text)
-            text_width, text_height = _getfontsize(scr.oldfont, text)
+            (text_width, text_height) = scr.oldfont.getsize(text)
             scr.show_text(text, loc=(x_loc, y_loc), font=scr.oldfont, force=False)
             x_loc = x_loc + text_width
 
@@ -647,17 +634,15 @@ def select_chars(TMB, counter, message, message2="So Far", character_set=string.
                 text = "\\v"
             elif text == "\x0c":
                 text = "\\f"
-            # (text_width, text_height) = scr.oldfont.getsize(text)
-            text_width, text_height = _getfontsize(scr.oldfont, text)
+            (text_width, text_height) = scr.oldfont.getsize(text)
             scr.show_text(text, loc=(x_loc, y_loc), font=scr.oldfont, color=(0, 0, 255), force=False)
             x_loc = x_loc + text_width
 
             # print the white after the red, if applicable
-            text = character_set[counter.value: min(-1 + counter.value + screen_width, len(character_set))]
+            text = character_set[counter.value : min(-1 + counter.value + screen_width, len(character_set))]
             for x in character_set[94:]:
                 text = text.replace(x, "\u25A1")
-            # (text_width, text_height) = scr.oldfont.getsize(text)
-            text_width, text_height = _getfontsize(scr.oldfont, text)
+            (text_width, text_height) = scr.oldfont.getsize(text)
             scr.show_text(text, loc=(x_loc, y_loc), font=scr.oldfont, force=True)
             x_loc = x_loc + text_width
 
@@ -850,8 +835,7 @@ class screen:
             text = " "
         if font is None:
             font = self.font
-        # (text_width, text_height) = font.getsize(text)
-        text_width, text_height = _getfontsize(font, text)
+        (text_width, text_height) = font.getsize(text)
         logger.debug(f" show_text {text}. text_size {text_height},{text_width}")
         if clear:
             self.clear()
@@ -873,8 +857,7 @@ class screen:
         self.clear_area(bbox)
         while True:
             text = self.venue_name
-            # (text_width, text_height) = font.getsize(text)
-            text_width, text_height = _getfontsize(font, text)
+            (text_width, text_height) = font.getsize(text)
             excess = text_width - bbox.width()
             self.draw.text(bbox.origin(), text, font=font, fill=color, stroke_width=stroke_width)
             if excess > 0:
