@@ -15,14 +15,13 @@ from timemachine import config
 config.load_options()
 
 config.optd = {
-"COLLECTIONS": ["GratefulDead", "Phish", "PhilLeshandFriends", "TedeschiTrucksBand", "DeadAndCompany"],
+"COLLECTIONS": ["DeadAndCompany"], 
 "FAVORED_TAPER": {"UltraMatrix": 10, "miller": 5},
 "PLAY_LOSSLESS": "false",
 }
 aa = Archivary.Archivary(collection_list=config.optd["COLLECTIONS"])
 
 app = Flask(__name__)
-
 
 
 def intersect(lis1, lis2):

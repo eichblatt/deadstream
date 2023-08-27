@@ -32,3 +32,5 @@ input_selector.py
 poti.py
 timemachine/testradio.py
 timemachine/testvinyl.py
+cloud_server/env/*
+*.swp

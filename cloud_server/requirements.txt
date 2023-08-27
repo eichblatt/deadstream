@@ -1,20 +1,10 @@
 # pip install -r requirements.txt
 
-tox
 pytest
-aiofiles
-aiohttp
-git+https://github.com/eichblatt/deadstream.git@api_server
-python-mpv
-cherrypy
+git+https://github.com/eichblatt/deadstream.git@dev
 Flask
 gunicorn
 requests
-RPi.GPIO
-adafruit-blinka
-adafruit-circuitpython-rgb-display
-Pillow
-gpiozero
 tenacity
 pre-commit
 wheel
