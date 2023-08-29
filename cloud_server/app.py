@@ -25,6 +25,7 @@ config.optd = {
 aa = Archivary.Archivary(collection_list=config.optd["COLLECTIONS"])
 storage_client = storage.Client(project='able-folio-397115')
 bucket = storage_client.bucket("spertilo-data")
+SAVE_TO_CLOUD = True
 
 app = Flask(__name__)
 
@@ -35,8 +36,20 @@ def intersect(lis1, lis2):
 def xcept(lis1, lis2):
     return [x for x in lis1 if not x in set(lis2)]
     
+def save_tapeids_in_cloud(tids,date, collection):
+    if not SAVE_TO_CLOUD:
+        return ''
+    tids_string = json.dumps(tids,indent=1)
+    if len(tids_string) == 0:
+        return tids_string
+    tids_blob_name = f"tapes/{collection}/{date}/tape_ids.json"
+    tids_blob = bucket.blob(tids_blob_name)
+    tids_blob.upload_from_string(tids_string)
+    return tids_string 
 
-def save_blob_data(t,date, collection, i_tape):
+def save_tape_data_in_cloud(t,date, collection, i_tape):
+    if not SAVE_TO_CLOUD:
+        return ''
     id = t.identifier
     tracks = t.tracks()
     trackdata = {'id':id, 'collection':collection, 'venue':t.venue(), 'track_url':{x.title:x.files[0]['url'] for x in tracks}}
@@ -46,12 +59,7 @@ def save_blob_data(t,date, collection, i_tape):
         trackdata_blob_name = f"tapes/{collection}/{date}/{id}/trackdata.json"
         trackdata_blob = bucket.blob(trackdata_blob_name)
         trackdata_blob.upload_from_string(trackdata_string)
-        if i_tape == 0:
-            trackdata_blob_name = f"tapes/{collection}/{date}/0/trackdata.json"
-            trackdata_blob = bucket.blob(trackdata_blob_name)
-            trackdata_blob.upload_from_string(trackdata_string)
-
-    return 0
+    return ''
 
 def get_all_tapes(date):
     global aa
@@ -75,17 +83,21 @@ def get_all_tapes(date):
             t.append(tape)
             this_collection = tape.collection[0]
             tape_collections.append(this_collection)
-            save_blob_data(tape,date,this_collection, i_tape)
+            save_tape_data_in_cloud(tape,date,this_collection, i_tape)
         else:
             matches = intersect(collections, tape.collection)
             if len(matches) > 0:
                 this_collection = matches[0]
                 t.append(tape)
                 tape_collections.append(this_collection)
-                save_blob_data(tape,date,this_collection, i_tape)
+                save_tape_data_in_cloud(tape,date,this_collection, i_tape)
     if len(t) == 0:
         print(f'no tape for {collections} on {date}')
         return {'error':f'no tape for {collections} on {date}'}, []
+    else:
+        tids = {x.identifier:x.compute_score() for x in t}
+        save_tapeids_in_cloud(tids,date,this_collection)
+
     return t, tape_collections
 
 def get_tape(date):
