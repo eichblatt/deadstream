@@ -5,10 +5,11 @@ import logging
 import subprocess
 import time
 
-from timemachine.GD import ROOT_DIR
 
 logger = logging.getLogger(__name__)
 try:
+    from timemachine.GD import ROOT_DIR
+    DB_PATH = os.path.join(ROOT_DIR, "metadata")
     from timemachine import controls
     os_version = controls.get_os_version()
 except Exception as e:
@@ -16,7 +17,6 @@ except Exception as e:
     os_version = 11
 
 OPTIONS_PATH = os.path.join(os.getenv("HOME"), ".timemachine_options.txt")
-DB_PATH = os.path.join(ROOT_DIR, "metadata")
 
 optd = {}
 
