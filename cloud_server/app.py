@@ -52,7 +52,8 @@ def save_tape_data_in_cloud(t,date, collection, i_tape):
         return ''
     id = t.identifier
     tracks = t.tracks()
-    trackdata = {'id':id, 'collection':collection, 'venue':t.venue(), 'track_url':{x.title:x.files[0]['url'] for x in tracks}}
+    trackdata = {'id':id, 'collection':collection, 'venue':t.venue(), 'tracklist':[x.title for x in tracks], 
+                 'urls':[x.files[0]['url'] for x in tracks]}
     trackdata_string = json.dumps(trackdata,indent=1)
 
     if len(trackdata_string)>0:
@@ -95,7 +96,7 @@ def get_all_tapes(date):
         print(f'no tape for {collections} on {date}')
         return {'error':f'no tape for {collections} on {date}'}, []
     else:
-        tids = {x.identifier:x.compute_score() for x in t}
+        tids = [[x.identifier,x.compute_score()] for x in t]
         save_tapeids_in_cloud(tids,date,this_collection)
 
     return t, tape_collections
