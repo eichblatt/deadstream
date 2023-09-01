@@ -62,6 +62,18 @@ def save_tape_data_in_cloud(t,date, collection, i_tape):
         trackdata_blob.upload_from_string(trackdata_string)
     return ''
 
+def save_vcs_in_cloud(vcs_data,collection):
+    if not SAVE_TO_CLOUD:
+        return ''
+    vcs_string = json.dumps(vcs_data,indent=1)
+
+    if len(vcs_string)>0:
+        vcs_blob_name = f"vcs/{collection}_vcs.json"
+        vcs_blob = bucket.blob(vcs_blob_name)
+        vcs_blob.upload_from_string(vcs_string)
+    return ''
+
+
 def get_all_tapes(date):
     global aa
     collections = request.args.get('collections',[]).split(',')
@@ -160,6 +172,7 @@ def vcs(collection):
         config.optd['COLLECTIONS'] = [collection]
         a = Archivary.Archivary(collection_list=config.optd['COLLECTIONS'])
         vcs_data = {d: a.tape_dates[d][0].venue() for d in a.dates}
+        save_vcs_in_cloud(vcs_data,collection)
     except:
         pass
     finally:
