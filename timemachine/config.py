@@ -4,16 +4,16 @@ import os
 import logging
 import subprocess
 import time
+import utils
 
 
 logger = logging.getLogger(__name__)
 try:
     from timemachine.GD import ROOT_DIR
     DB_PATH = os.path.join(ROOT_DIR, "metadata")
-    from timemachine import controls
-    os_version = controls.get_os_version()
+    os_version = utils.get_os_version()
 except Exception as e:
-    logger.warning(f"Failed to import controls")
+    logger.warning(f"Failed to read os version")
     os_version = 11
 
 OPTIONS_PATH = os.path.join(os.getenv("HOME"), ".timemachine_options.txt")
@@ -153,6 +153,8 @@ def load_options():
     except Exception:
         logger.warning(f"Failed to read options from {OPTIONS_PATH}. Using defaults")
     optd.update(tmpd)  # update defaults with those read from the file.
+    if utils.get_os_name() == "Ubuntu":
+        return
     logger.info(f"in load_options, optd {optd}")
     os.environ["TZ"] = optd["TIMEZONE"]
     time.tzset()
