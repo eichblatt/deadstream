@@ -83,6 +83,20 @@ def get_version():
     finally:
         return __version__
 
+def get_board_version():
+    if get_os_name() == "Ubuntu":
+        return 1
+    try:
+        cmd = "board_version.sh"
+        raw = subprocess.check_output(cmd, shell=True)
+        raw = raw.decode()
+        if raw == "version 2\n":
+            return 2
+    except Exception:
+        return 1
+
+
+
 def get_ip():
     cmd = "hostname -I"
     ip = subprocess.check_output(cmd, shell=True)
