@@ -4,7 +4,7 @@ import os
 import logging
 import subprocess
 import time
-import utils
+from timemachine import utils
 
 
 logger = logging.getLogger(__name__)
