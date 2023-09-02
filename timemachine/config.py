@@ -4,7 +4,7 @@ import os
 import logging
 import subprocess
 import time
-from timemachine import utils
+import utils
 
 
 logger = logging.getLogger(__name__)
@@ -19,6 +19,18 @@ except Exception as e:
 OPTIONS_PATH = os.path.join(os.getenv("HOME"), ".timemachine_options.txt")
 
 optd = {}
+
+
+def get_board_version():
+    try:
+        cmd = "board_version.sh"
+        raw = subprocess.check_output(cmd, shell=True)
+        raw = raw.decode()
+        if raw == "version 2\n":
+            return 2
+    except Exception:
+        return 1
+
 
 # State variables
 NOT_READY = -1
@@ -58,7 +70,7 @@ select_pin = 4  # pin 4 ok w/ Sound card
 play_pause_pin = 20  # pin 18 interferes with sound card
 stop_pin = 2  # from the I2C bus (may need to connect to ground)
 ffwd_pin = 26  # pin 26 ok with sound card.
-if utils.get_board_version() == 2:
+if get_board_version() == 2:
     rewind_pin = 21
 else:
     rewind_pin = 3

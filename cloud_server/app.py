@@ -26,6 +26,7 @@ aa = Archivary.Archivary(collection_list=config.optd["COLLECTIONS"])
 storage_client = storage.Client(project='able-folio-397115')
 bucket = storage_client.bucket("spertilo-data")
 SAVE_TO_CLOUD = True
+SAVE_TO_CLOUD = False
 
 app = Flask(__name__)
 
@@ -65,6 +66,7 @@ def save_tape_data_in_cloud(t,date, collection, i_tape):
 def save_vcs_in_cloud(vcs_data,collection):
     if not SAVE_TO_CLOUD:
         return ''
+    print (vcs_data)
     vcs_string = json.dumps(vcs_data,indent=1)
 
     if len(vcs_string)>0:
@@ -166,17 +168,18 @@ def vcs(collection):
     which can be loaded by the player to save memory.
     """
     print(f"in vcs, collection:{collection}")
-    coptd = config.optd['COLLECTIONS']
+    # coptd = config.optd['COLLECTIONS']
     vcs_data = {}
     try:
-        config.optd['COLLECTIONS'] = [collection]
-        a = Archivary.Archivary(collection_list=config.optd['COLLECTIONS'])
+        # config.optd['COLLECTIONS'] = [collection]
+        a = Archivary.Archivary(collection_list=collection)
         vcs_data = {d: a.tape_dates[d][0].venue() for d in a.dates}
         save_vcs_in_cloud(vcs_data,collection)
     except:
         pass
     finally:
-        config.optd['COLLECTIONS'] = coptd
+        pass
+        # config.optd['COLLECTIONS'] = coptd
     return {collection:vcs_data}
 
 
