@@ -26,7 +26,7 @@ aa = Archivary.Archivary(collection_list=config.optd["COLLECTIONS"])
 storage_client = storage.Client(project='able-folio-397115')
 bucket = storage_client.bucket("spertilo-data")
 SAVE_TO_CLOUD = True
-SAVE_TO_CLOUD = False
+# SAVE_TO_CLOUD = False
 
 app = Flask(__name__)
 
@@ -139,6 +139,16 @@ def venue(date):
     venue = t.venue()
     return {'collection':collection,'venue':venue}
 
+@app.route("/track_urls/<date>")
+def tracklist(date):
+    t,collection = get_tape(date)
+    t.get_metadata()
+    trks = t.tracks()
+    tl = [x.title for x in trks]
+    urls = [x.files[0]['url'] for x in trks]
+    return {'collection':collection,'tracklist':tl, 'urls':urls}
+
+
 @app.route("/tracklist/<date>")
 def tracklist(date):
     t,collection = get_tape(date)
@@ -168,11 +178,11 @@ def vcs(collection):
     which can be loaded by the player to save memory.
     """
     print(f"in vcs, collection:{collection}")
-    # coptd = config.optd['COLLECTIONS']
+    coptd = config.optd['COLLECTIONS']
     vcs_data = {}
     try:
-        # config.optd['COLLECTIONS'] = [collection]
-        a = Archivary.Archivary(collection_list=collection)
+        config.optd['COLLECTIONS'] = [collection]
+        a = Archivary.Archivary(collection_list=config.optd['COLLECTIONS'])
         vcs_data = {d: a.tape_dates[d][0].venue() for d in a.dates}
         save_vcs_in_cloud(vcs_data,collection)
     except:
