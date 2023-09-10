@@ -112,12 +112,17 @@ def is_writable(path):
         return False
         
 
-def usb_mounted():
+def usb_mounted(archive_dir):
     logger.info("Checking USB Mounted")
-    if get_os_name() == "Ubuntu":  # in this case, look for archive in filesystem
-        return is_writable(os.path.join(os.getenv("HOME"),'archive'))
 
-    archive_dir = os.path.join(os.getenv("HOME"),"archive")
+    if get_os_name() == "Ubuntu":  # in this case, look for archive in filesystem
+        return is_writable(archive_dir)
+
+    # Make sure that the archive_dir points to the USB archive.
+    if os.path.islink(archive_dir):
+        os.unlink(archive_dir)
+        os.symlink("/mnt/usb/archive",archive_dir)
+
     partitions = psutil.disk_partitions()
     try:
         for p in partitions:
@@ -128,10 +133,9 @@ def usb_mounted():
 
     return False
 
-def mount_local_archive():
-    if usb_mounted():
+def mount_local_archive(archive_dir):
+    if usb_mounted(archive_dir):
         return 
-    archive_dir = os.path.join(os.getenv("HOME"),"archive")
     cmd = "sudo mount -ouser,umask=000 /dev/sda1 /mnt/usb"
     logger.info(f"cmd is {cmd}")
     try:
@@ -152,12 +156,13 @@ def get_local_mode():
     # 
     local_mode = 0
     options_file = os.path.join(os.getenv("HOME"),".timemachine_options.txt")
+    archive_dir = os.path.join(os.getenv("HOME"),"archive")
     try:
-        mount_local_archive()
+        mount_local_archive(archive_dir)
     except Exception as e:
         logger.warning(f"Failed to mount local archive {e}")
     try:
-        if usb_mounted():
+        if usb_mounted(archive_dir):
             local_mode = 1
         if local_mode > 0:  # Are there any Local_ collections?
             config.load_options()
