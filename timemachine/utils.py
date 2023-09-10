@@ -136,6 +136,8 @@ def usb_mounted(archive_dir):
 def mount_local_archive(archive_dir):
     if usb_mounted(archive_dir):
         return 
+    cmd = "sudo mkdir /mnt/usb"
+    os.system(cmd)
     cmd = "sudo mount -ouser,umask=000 /dev/sda1 /mnt/usb"
     logger.info(f"cmd is {cmd}")
     try:
