@@ -10,6 +10,14 @@ track_event = Event()
 
 config.load_options()
 
+def test_format_notitles():
+    laa = Archivary.Archivary(collection_list=['Local_BobDylan'])
+    la = laa.archives[0]
+    tape = la.tape_dates['1997-11-02'][0]  # no numbers, clause 4
+    os.system(f"rm {tape.meta_path}")
+    tracks = tape.tracks()
+    assert tracks[9].title == 'Audio Track'
+ 
 def test_format_6():
     laa = Archivary.Archivary(collection_list=['Local_BobDylan'])
     la = laa.archives[0]

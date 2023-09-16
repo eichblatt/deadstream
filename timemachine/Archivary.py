@@ -1317,7 +1317,13 @@ class LocalTape(BaseTape):
             start_clause = 0
 
         file_tuples = []
-        if len(tracklines) >= len(audio_files):
+        if len(tracklines) == 0:
+            set_num = 1
+            for pos in range(len(titles)):
+                audio_file = audio_files[pos]
+                title = titles[pos]
+                page_meta["data"]["tracks"].append({"position":pos,"set":set_num,"path":audio_file,"title":title})
+        elif len(tracklines) >= len(audio_files):
             pos = 0
             number_starts = False
             for i_clause,clause in enumerate(clauses[start_clause:]):
