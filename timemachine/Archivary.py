@@ -1201,16 +1201,19 @@ class LocalTape(BaseTape):
         if only_if_cached and not os.path.exists(self.meta_path):
             return
         self._tracks = []
-        try:  # I used to check if file exists, but it may also be corrupt, so this is safer.
+        if os.path.exists(self.meta_path):
             page_meta = json.load(open(self.meta_path, "r"))
-        except FileNotFoundError:
+        else:  # I used to check if file exists, but it may also be corrupt, so this is safer.
             logger.warning(f"creating metadata for {self.identifier} in {self.meta_path}")
-            page_meta = self.create_metadata()
-        except Exception as e:
-            raise e
+            try:
+                page_meta = self.create_metadata()
+            except Exception as e:
+                logger.warning(e)
 
         if page_meta is None:
-            raise Exception(f"Failed to load metadata from {self.meta_path}")
+            page_meta = {"data":{"venue":{},"tracks":[]}}
+            logger.warning(f"Failed to load metadata from {self.meta_path}")
+            # raise Exception(f"Failed to load metadata from {self.meta_path}")
 
         track_meta = page_meta["data"]
         if not "venue" in track_meta.keys():
