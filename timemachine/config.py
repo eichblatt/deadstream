@@ -4,31 +4,21 @@ import os
 import logging
 import subprocess
 import time
+from timemachine import utils
 
-from timemachine.GD import ROOT_DIR
 
 logger = logging.getLogger(__name__)
 try:
-    from timemachine import controls
+    from timemachine.GD import ROOT_DIR
+    DB_PATH = os.path.join(ROOT_DIR, "metadata")
+    os_version = utils.get_os_version()
 except Exception as e:
-    logger.warning(f"Failed to import controls")
+    logger.warning(f"Failed to read os version")
+    os_version = 11
 
 OPTIONS_PATH = os.path.join(os.getenv("HOME"), ".timemachine_options.txt")
-DB_PATH = os.path.join(ROOT_DIR, "metadata")
 
 optd = {}
-
-
-def get_board_version():
-    try:
-        cmd = "board_version.sh"
-        raw = subprocess.check_output(cmd, shell=True)
-        raw = raw.decode()
-        if raw == "version 2\n":
-            return 2
-    except Exception:
-        return 1
-
 
 # State variables
 NOT_READY = -1
@@ -68,7 +58,7 @@ select_pin = 4  # pin 4 ok w/ Sound card
 play_pause_pin = 20  # pin 18 interferes with sound card
 stop_pin = 2  # from the I2C bus (may need to connect to ground)
 ffwd_pin = 26  # pin 26 ok with sound card.
-if get_board_version() == 2:
+if utils.get_board_version() == 2:
     rewind_pin = 21
 else:
     rewind_pin = 3
@@ -84,7 +74,7 @@ def default_options():
     d["PLAY_LOSSLESS"] = False
     d["ON_TOUR_ALLOWED"] = False
     d["PULSEAUDIO_ENABLE"] = False
-    if controls.get_os_version() > 10:
+    if os_version > 10:
         d["PULSEAUDIO_ENABLE"] = True
         d["BLUETOOTH_ENABLE"] = True
     d["DEFAULT_START_TIME"] = datetime.time(15, 0)
@@ -151,6 +141,8 @@ def load_options():
     except Exception:
         logger.warning(f"Failed to read options from {OPTIONS_PATH}. Using defaults")
     optd.update(tmpd)  # update defaults with those read from the file.
+    if utils.get_os_name() == "Ubuntu":
+        return
     logger.info(f"in load_options, optd {optd}")
     os.environ["TZ"] = optd["TIMEZONE"]
     time.tzset()

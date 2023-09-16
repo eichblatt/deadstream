@@ -1,0 +1,11 @@
+# pip install -r requirements.txt
+
+pytest
+git+https://github.com/eichblatt/deadstream.git@dev
+Flask
+google-cloud-storage
+gunicorn
+requests
+tenacity
+pre-commit
+wheel

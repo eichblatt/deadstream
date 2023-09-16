@@ -1,3 +1,18 @@
+"""
+    Live Music Time Machine -- copyright 2021, 2023 spertilo.net
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <https://www.gnu.org/licenses/>.
+"""
 import logging
 import optparse
 import os
@@ -13,6 +28,7 @@ from tenacity.wait import wait_random
 from typing import Callable
 
 from timemachine import controls
+from timemachine import utils
 
 
 parser = optparse.OptionParser()
@@ -201,15 +217,6 @@ def get_mac_address():
     return eth_mac_address
 
 
-def get_ip():
-    cmd = "hostname -I"
-    ip = subprocess.check_output(cmd, shell=True)
-    ip = ip.decode().split(" ")[0]
-    if not re.match(r"\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}", ip):
-        ip = None
-    return ip
-
-
 def exit_success(status=0, sleeptime=5):
     sleep_or_button(sleeptime)
     sys.exit(status)
@@ -280,10 +287,14 @@ def main():
         os.system(cmd)
         cmd = "sudo ifconfig wlan0 up"
         os.system(cmd)
-        ip = get_ip()
+        ip = utils.get_ip()
         connected = ip is not None
         if not connected:
             connected = wifi_connected(max_attempts=4)
+
+        if os.path.exists(parms.wpa_path): # We have connected at least once?
+            if utils.get_local_mode() >= 2:
+                connected = True   # as in "connected to the local archive". Rename?
 
         eth_mac_address = get_mac_address()
         TMB.scr.show_text(
@@ -329,7 +340,7 @@ def main():
     if connected or wifi_connected():
         i = 0
         while ip is None and i < 5:
-            ip = get_ip()
+            ip = utils.get_ip()
             i = i + 1
             sleep_or_button(2)
         logger.info(f"Wifi connected\n{ip}")
