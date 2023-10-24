@@ -140,7 +140,7 @@ def venue(date):
     return {'collection':collection,'venue':venue}
 
 @app.route("/track_urls/<date>")
-def tracklist(date):
+def track_urls(date):
     t,collection = get_tape(date)
     t.get_metadata()
     trks = t.tracks()
