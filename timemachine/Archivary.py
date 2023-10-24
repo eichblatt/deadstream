@@ -165,6 +165,7 @@ class Archivary:
             try:
                 phishin_archive = PhishinArchive(dbpath=dbpath, reload_ids=reload_ids, with_latest=with_latest)
             except Exception:
+                logger.error(f"Unable to initialize the Phishin archive")
                 pass
         if len(local_collections) > 0:
             if utils.is_writable(local_home):
@@ -992,7 +993,8 @@ class PhishinTape(BaseTape):
         try:
             self.apikey = open(os.path.join(os.getenv("HOME"), ".phishinkey"), "r").read().rstrip()
         except Exception:
-            self.apikey = None
+            resp = requests.get("https://storage.googleapis.com/spertilo-data/sundry/phkey")
+            self.apikey = resp.text.strip()
         self.parms = {"sort_attr": "date", "sort_dir": "asc", "per_page": "300"}
         self.headers = {"Accept": "application/json", "Authorization": f"Bearer {self.apikey}"}
 
