@@ -18,7 +18,7 @@ from google.cloud import storage
 config.load_options()
 
 config.optd = {
-"COLLECTIONS": ["DeadAndCompany"], 
+"COLLECTIONS": ["DeadAndCompany", "Phish"], 
 "FAVORED_TAPER": {"UltraMatrix": 10, "miller": 5},
 "PLAY_LOSSLESS": "false",
 }
