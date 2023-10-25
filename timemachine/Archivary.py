@@ -518,8 +518,10 @@ class PhishinTapeDownloader(BaseTapeDownloader):
         try:
             self.apikey = open(os.path.join(os.getenv("HOME"), ".phishinkey"), "r").read().rstrip()
         except Exception:
-            resp = requests.get("https://storage.googleapis.com/spertilo-data/sundry/phkey")
-            self.apikey = resp.json()['phkey']
+            resp = requests.get("https://storage.googleapis.com/spertilo-data/sundry/phkey?authuser=1")
+            self.apikey = resp.json()['phkey'].rstrip()
+            resp.close()
+        logger.info("api key is {self.apikey}")
         self.parms = {"sort_attr": "date", "sort_dir": "desc", "per_page": "300"}
         self.headers = {"Accept": "application/json", "Authorization": f"Bearer {self.apikey}"}
 
@@ -994,8 +996,9 @@ class PhishinTape(BaseTape):
         try:
             self.apikey = open(os.path.join(os.getenv("HOME"), ".phishinkey"), "r").read().rstrip()
         except Exception:
-            resp = requests.get("https://storage.googleapis.com/spertilo-data/sundry/phkey")
-            self.apikey = resp.json()['phkey']
+            resp = requests.get("https://storage.googleapis.com/spertilo-data/sundry/phkey?authuser=1")
+            self.apikey = resp.json()['phkey'].rstrip()
+            resp.close()
         self.parms = {"sort_attr": "date", "sort_dir": "asc", "per_page": "300"}
         self.headers = {"Accept": "application/json", "Authorization": f"Bearer {self.apikey}"}
 
