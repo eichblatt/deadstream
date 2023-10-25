@@ -519,7 +519,6 @@ class PhishinTapeDownloader(BaseTapeDownloader):
             self.apikey = open(os.path.join(os.getenv("HOME"), ".phishinkey"), "r").read().rstrip()
         except Exception:
             self.apikey = '8003bcd8c378844cfb69aad8b0981309f289e232fb417df560f7192edd295f1d49226ef6883902e59b465991d0869c77'
-        logger.info("api key is {self.apikey}")
         self.parms = {"sort_attr": "date", "sort_dir": "desc", "per_page": "300"}
         self.headers = {"Accept": "application/json", "Authorization": f"Bearer {self.apikey}"}
 
