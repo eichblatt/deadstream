@@ -994,7 +994,7 @@ class PhishinTape(BaseTape):
             self.apikey = open(os.path.join(os.getenv("HOME"), ".phishinkey"), "r").read().rstrip()
         except Exception:
             resp = requests.get("https://storage.googleapis.com/spertilo-data/sundry/phkey")
-            self.apikey = resp.text.strip()
+            self.apikey = resp.json()['phkey']
         self.parms = {"sort_attr": "date", "sort_dir": "asc", "per_page": "300"}
         self.headers = {"Accept": "application/json", "Authorization": f"Bearer {self.apikey}"}
 
