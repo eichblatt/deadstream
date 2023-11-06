@@ -165,6 +165,7 @@ class Archivary:
             try:
                 phishin_archive = PhishinArchive(dbpath=dbpath, reload_ids=reload_ids, with_latest=with_latest)
             except Exception:
+                logger.error(f"Unable to initialize the Phishin archive")
                 pass
         if len(local_collections) > 0:
             if utils.is_writable(local_home):
@@ -517,7 +518,7 @@ class PhishinTapeDownloader(BaseTapeDownloader):
         try:
             self.apikey = open(os.path.join(os.getenv("HOME"), ".phishinkey"), "r").read().rstrip()
         except Exception:
-            self.apikey = None
+            self.apikey = '8003bcd8c378844cfb69aad8b0981309f289e232fb417df560f7192edd295f1d49226ef6883902e59b465991d0869c77'
         self.parms = {"sort_attr": "date", "sort_dir": "desc", "per_page": "300"}
         self.headers = {"Accept": "application/json", "Authorization": f"Bearer {self.apikey}"}
 
@@ -992,7 +993,7 @@ class PhishinTape(BaseTape):
         try:
             self.apikey = open(os.path.join(os.getenv("HOME"), ".phishinkey"), "r").read().rstrip()
         except Exception:
-            self.apikey = None
+            self.apikey = '8003bcd8c378844cfb69aad8b0981309f289e232fb417df560f7192edd295f1d49226ef6883902e59b465991d0869c77'
         self.parms = {"sort_attr": "date", "sort_dir": "asc", "per_page": "300"}
         self.headers = {"Accept": "application/json", "Authorization": f"Bearer {self.apikey}"}
 

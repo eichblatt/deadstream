@@ -4,6 +4,8 @@ entrypoint: gunicorn -b :$PORT app:app
 
 runtime_config:
   operating_system: ubuntu22
+  runtime_version: "3.10"
+
 
 manual_scaling:
   instances: 1

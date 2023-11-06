@@ -18,9 +18,9 @@ from google.cloud import storage
 config.load_options()
 
 config.optd = {
-"COLLECTIONS": ["DeadAndCompany"], 
+"COLLECTIONS": ["DeadAndCompany", "Phish"], 
 "FAVORED_TAPER": {"UltraMatrix": 10, "miller": 5},
-"PLAY_LOSSLESS": "false",
+"PLAY_LOSSLESS": False,
 }
 aa = Archivary.Archivary(collection_list=config.optd["COLLECTIONS"])
 storage_client = storage.Client(project='able-folio-397115')
@@ -140,7 +140,7 @@ def venue(date):
     return {'collection':collection,'venue':venue}
 
 @app.route("/track_urls/<date>")
-def tracklist(date):
+def track_urls(date):
     t,collection = get_tape(date)
     t.get_metadata()
     trks = t.tracks()
