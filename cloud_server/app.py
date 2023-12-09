@@ -159,7 +159,7 @@ def track_urls(date):
     trks = t.tracks()
     tl = [x.title for x in trks]
     urls = [x.files[0]["url"] for x in trks]
-    return {"collection": collection, "tracklist": tl, "urls": urls}
+    return {"collection": collection, "tracklist": tl, "urls": urls, "tape_id": t.identifier}
 
 
 @app.route("/tracklist/<date>")
