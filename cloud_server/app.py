@@ -15,7 +15,7 @@ from timemachine import config
 
 from google.cloud import storage
 
-config.load_options()
+config.load_options(on_cloud=True)
 
 config.optd = {
     "COLLECTIONS": ["DeadAndCompany"],
@@ -24,6 +24,8 @@ config.optd = {
 }
 print(config.optd)
 aa = Archivary.Archivary(collection_list=config.optd["COLLECTIONS"])
+
+print(f"Archivary instantiated {aa}")
 storage_client = storage.Client(project="able-folio-397115")
 bucket = storage_client.bucket("spertilo-data")
 SAVE_TO_CLOUD = True

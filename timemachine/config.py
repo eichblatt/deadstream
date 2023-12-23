@@ -10,6 +10,7 @@ from timemachine import utils
 logger = logging.getLogger(__name__)
 try:
     from timemachine.GD import ROOT_DIR
+
     DB_PATH = os.path.join(ROOT_DIR, "metadata")
     os_version = utils.get_os_version()
 except Exception as e:
@@ -105,11 +106,13 @@ def save_options(optd_to_save):
         json.dump(options, outfile, indent=1)
 
 
-def load_options():
+def load_options(on_cloud=False):
     global optd
     optd = default_options()
     tmpd = {}
     try:
+        if on_cloud:
+            raise NotImplementedError("Cannot load options on Cloud")
         f = open(OPTIONS_PATH, "r")
         tmpd = json.loads(f.read())
         for k in optd.keys():
@@ -141,6 +144,8 @@ def load_options():
     except Exception:
         logger.warning(f"Failed to read options from {OPTIONS_PATH}. Using defaults")
     optd.update(tmpd)  # update defaults with those read from the file.
+    if on_cloud:
+        return
     if utils.get_os_name() == "Ubuntu":
         return
     logger.info(f"in load_options, optd {optd}")
