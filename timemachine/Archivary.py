@@ -19,6 +19,7 @@ import codecs
 import csv
 import datetime
 import difflib
+import io
 import json
 import logging
 import math
@@ -51,12 +52,17 @@ VERBOSE = 5
 logging.addLevelName(VERBOSE, "VERBOSE")
 logger = logging.getLogger(__name__)
 
-storage_client = storage.Client(project="able-folio-397115")
-bucket = storage_client.bucket("spertilo-data")
-SAVE_TO_CLOUD = True
-SAVE_TO_CLOUD = False
+logging.getLogger("google.auth").setLevel(logging.WARNING)
+logging.getLogger("urllib3.connectionpool").setLevel(logging.WARNING)
 
-ROOT_DIR = "/gcloud/spertilo-data" if SAVE_TO_CLOUD else os.path.dirname(os.path.abspath(__file__))
+storage_client = storage.Client(project="able-folio-397115")
+BUCKET_NAME = "spertilo-data"
+CLOUD_PATH = "https://storage.googleapis.com/spertilo-data"
+bucket = storage_client.bucket(BUCKET_NAME)
+SAVE_TO_CLOUD = True
+# SAVE_TO_CLOUD = False
+
+ROOT_DIR = BUCKET_NAME if SAVE_TO_CLOUD else os.path.dirname(os.path.abspath(__file__))
 #
 
 
@@ -73,46 +79,113 @@ def save_tapeids_in_cloud(tids, date, collection):
     return tids_string
 
 
+def download_blob_to_stream(bucket_name, source_blob_name, file_obj):
+    """Downloads a blob to a stream or other file-like object."""
+    # from https://cloud.google.com/storage/docs/samples/storage-stream-file-download
+
+    # Construct a client-side representation of a blob.
+    # Note `Bucket.blob` differs from `Bucket.get_blob` in that it doesn't
+    # retrieve metadata from Google Cloud Storage. As we don't use metadata in
+    # this example, using `Bucket.blob` is preferred here.
+    blob = bucket.blob(source_blob_name)
+    blob.download_to_file(file_obj)
+    file_obj.seek(0)
+
+    return file_obj
+
+
 def path_exists(path):
     if SAVE_TO_CLOUD:
-        raise NotImplementedError(f"Not yet implemented -- {path}")
+        path = path.replace(BUCKET_NAME + "/", "")
+        try:
+            resp = requests.get(os.path.join(CLOUD_PATH, path))
+            return resp.status_code == 200
+        except:
+            return False
+        """
+        if storage.Blob(bucket=bucket, name=path).exists(storage_client):
+            return True
+        elif path_isdir(path):
+            return True
+        else:
+            return False
+        """
     else:
         return os.path.exists(path)
 
 
 def path_isdir(path):
     if SAVE_TO_CLOUD:
-        raise NotImplementedError(f"Not yet implemented -- {path}")
+        path = path.replace(BUCKET_NAME + "/", "")
+        blobs = storage_client.list_blobs(BUCKET_NAME, prefix=path, delimiter="/")
+        for b in blobs:
+            pass  # This is so that the blobs generator will get filled out.
+        return len(blobs.prefixes) > 0
     else:
         return os.path.isdir(path)
 
 
 def listdir(path):
     if SAVE_TO_CLOUD:
-        raise NotImplementedError(f"Not yet implemented -- {path}")
+        contents = []
+        path = path.replace(BUCKET_NAME + "/", "")
+        blobs = storage_client.list_blobs(BUCKET_NAME, prefix=path, delimiter=None)
+        for b in blobs:
+            blobname = b.name
+            blobname = blobname.replace(path, "")
+            blobname = blobname[1:] if blobname.startswith("/") else blobname
+            if len(blobname) > 0:
+                contents.append(blobname)
+        return contents
+        # raise NotImplementedError(f"listdir Not yet implemented -- {path}")
     else:
         return os.listdir(path)
 
 
-def makedirs(path):
+def makedirs(path, **kwargs):
     if SAVE_TO_CLOUD:
-        raise NotImplementedError(f"Not yet implemented -- {path}")
+        path = path.replace(BUCKET_NAME + "/", "")
+        logger.warning(f"makedirs Not yet implemented -- {path}")
+        # raise NotImplementedError(f"Not yet implemented -- {path}")
     else:
         os.makedirs(os.path.dirname(path), exist_ok=True)
 
 
 def json_dump(obj, path, **kwargs):
+    print(f"in json_dump path is {path}")
     if SAVE_TO_CLOUD:
-        raise NotImplementedError(f"Not yet implemented -- {path}")
+        path = path.replace(BUCKET_NAME + "/", "")
+        logger.info(f"json dumping {path}")
+
+        obj_string = json.dumps(obj, indent=1)
+        if len(obj_string) == 0:
+            return obj_string
+        blob = bucket.blob(path)
+        blob.upload_from_string(obj_string)
     else:
-        json.dump(obj, open(path,"w"), kwargs)
+        try:
+            tmpfile = tempfile.mkstemp(".json")[1]
+            json.dump(obj, open(tmpfile, "w"), **kwargs)
+            os.rename(tmpfile, path)
+        except Exception:
+            logger.debug(f"removing {tmpfile}")
+            os.remove(tmpfile)
 
 
 def json_load(path):
     if SAVE_TO_CLOUD:
-        raise NotImplementedError(f"Not yet implemented -- {path}")
+        path = path.replace(BUCKET_NAME + "/", "")
+        logger.info(f"json loading {path}")
+        try:
+            resp = requests.get(os.path.join(CLOUD_PATH, path))
+            chunk = resp.json()
+            resp.close()
+        except:
+            handle = io.BytesIO()
+            handle = download_blob_to_stream(BUCKET_NAME, path, handle)
+            chunk = json.loads(handle.read())
     else:
-        chunk = json.load(open(path,"r"))
+        chunk = json.load(open(path, "r"))
     return chunk
 
 
@@ -171,14 +244,7 @@ class BaseTapeDownloader(abc.ABC):
             n_tapes_added = n_tapes_added + n_period_tapes_added
             if n_period_tapes_added > 0:  # NOTE This condition prevents updates for _everything_ unless there are new tapes.
                 logger.info(f"Writing {len(period_tapes)} tapes to {outpath}")
-                try:
-                    tmpfile = tempfile.mkstemp(".json")[1]
-                    json_dump(period_tapes, tmpfile, indent=2)
-                    os.rename(tmpfile, outpath)
-                    logger.debug(f"renamed {tmpfile} to {outpath}")
-                except Exception:
-                    logger.debug(f"removing {tmpfile}")
-                    os.remove(tmpfile)
+                json_dump(period_tapes, outpath, indent=2)
         if n_tapes_added > 0:
             logger.info(f"added {n_tapes_added} tapes by period")
         return n_tapes_added
@@ -660,7 +726,10 @@ class IATapeDownloader(BaseTapeDownloader):
         }
 
     def get_all_collection_names(self):
-        collection_path = os.path.join(os.getenv("HOME"), ".etree_collection_names.json")
+        if SAVE_TO_CLOUD:
+            collection_path = os.path.join(BUCKET_NAME, "sundry/etree_collection_names.json")
+        else:
+            collection_path = os.path.join(os.getenv("HOME"), ".etree_collection_names.json")
         if not path_exists(collection_path):
             self.save_all_collection_names()
         json_data = json_load(collection_path)
@@ -695,14 +764,11 @@ class IATapeDownloader(BaseTapeDownloader):
             logger.warning(f"Not all collection names were downloaded. Total:{total} downloaded:{current_rows}")
             # if/when we see this, we need to loop over downloads.
 
-        collection_path = os.path.join(os.getenv("HOME"), ".etree_collection_names.json")
-        try:
-            tmpfile = tempfile.mkstemp(".json")[1]
-            json_dump(j, tmpfile)
-            os.rename(tmpfile, collection_path)
-        except Exception:
-            logger.debug(f"removing {tmpfile}")
-            os.remove(tmpfile)
+        if SAVE_TO_CLOUD:
+            collection_path = os.path.join(BUCKET_NAME, "sundry/etree_collection_names.json")
+        else:
+            collection_path = os.path.join(os.getenv("HOME"), ".etree_collection_names.json")
+        json_dump(j, tmpfile)
         logger.info(f"saved {current_rows} collection names to {collection_path}")
         return j
 
@@ -1154,7 +1220,10 @@ class GDArchive(BaseArchive):
         meta_path = self.idpath if meta_path is None else meta_path
         tapes = []
         addeddates = []
-        collection_path = os.path.join(os.getenv("HOME"), ".etree_collection_names.json")
+        if SAVE_TO_CLOUD:
+            collection_path = os.path.join(BUCKET_NAME, "sundry/etree_collection_names.json")
+        else:
+            collection_path = os.path.join(os.getenv("HOME"), ".etree_collection_names.json")
         yearly_collections = ["etree", "georgeblood"]  # should this be in config?
 
         if not self.date_range:
@@ -1361,6 +1430,8 @@ class GDTape(BaseTape):
 
     def get_metadata(self, only_if_cached=False):
         if self.meta_loaded:
+            return
+        if SAVE_TO_CLOUD:
             return
         if only_if_cached and not path_exists(self.meta_path):  # we don't have it cached, so return.
             return

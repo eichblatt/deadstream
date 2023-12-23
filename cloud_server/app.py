@@ -28,8 +28,8 @@ aa = Archivary.Archivary(collection_list=config.optd["COLLECTIONS"])
 print(f"Archivary instantiated {aa}")
 storage_client = storage.Client(project="able-folio-397115")
 bucket = storage_client.bucket("spertilo-data")
-SAVE_TO_CLOUD = True
-# SAVE_TO_CLOUD = False
+# SAVE_TO_CLOUD = True
+SAVE_TO_CLOUD = False
 
 app = Flask(__name__)
 
