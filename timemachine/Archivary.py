@@ -400,9 +400,10 @@ class Archivary:
                 return tmp
 
     def get_all_collection_names(self):
-        all_collection_names = {"Phishin Archive": "Phish"}
+        all_collection_names = {"Phishin Archive": ["Phish"]}
         ia_archive = GDArchive(collection_list=[])
         all_collection_names["Internet Archive"] = ia_archive.get_all_collection_names()
+
         return all_collection_names
 
 
