@@ -1431,10 +1431,11 @@ class GDTape(BaseTape):
     def get_metadata(self, only_if_cached=False):
         if self.meta_loaded:
             return
-        if SAVE_TO_CLOUD:
-            return
-        if only_if_cached and not path_exists(self.meta_path):  # we don't have it cached, so return.
-            return
+        if only_if_cached:
+            if SAVE_TO_CLOUD:  # Too expensive to check path
+                return
+            if not path_exists(self.meta_path):  # we don't have it cached, so return.
+                return
         self._tracks = []
         try:  # I used to check if file exists, but it may also be corrupt, so this is safer.
             page_meta = json_load(self.meta_path)

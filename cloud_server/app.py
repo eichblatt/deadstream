@@ -18,7 +18,7 @@ from google.cloud import storage
 config.load_options(on_cloud=True)
 
 config.optd = {
-    "COLLECTIONS": ["DeadAndCompany"],
+    "COLLECTIONS": [],
     "FAVORED_TAPER": {"UltraMatrix": 10, "miller": 5, "fix": 1, "prefm": 4},
     "PLAY_LOSSLESS": False,
 }
@@ -28,8 +28,8 @@ aa = Archivary.Archivary(collection_list=config.optd["COLLECTIONS"])
 print(f"Archivary instantiated {aa}")
 storage_client = storage.Client(project="able-folio-397115")
 bucket = storage_client.bucket("spertilo-data")
-# SAVE_TO_CLOUD = True
-SAVE_TO_CLOUD = False
+SAVE_TO_CLOUD = True
+# SAVE_TO_CLOUD = False
 
 app = Flask(__name__)
 
@@ -99,6 +99,8 @@ def get_all_tapes(date):
         config.optd["COLLECTIONS"] = config.optd["COLLECTIONS"] + colls_to_add
         aa = Archivary.Archivary(collection_list=config.optd["COLLECTIONS"])
     tapes = aa.tape_dates[date]
+
+    print(f"len(tape):{len(tapes)}")
     get_anything = True
     tape_collections = []
     t = []
@@ -113,6 +115,7 @@ def get_all_tapes(date):
             save_tape_data_in_cloud(tape, date, this_collection, i_tape)
         else:
             matches = intersect(collections, tape.collection)
+            print(f"len(matches):{len(matches)}")
             if len(matches) > 0:
                 this_collection = matches[0]
                 t.append(tape)
@@ -132,6 +135,7 @@ def get_tape(date):
     tapes, tape_collections = get_all_tapes(date)
     ntape = int(request.args.get("ntape", 0))
     collection = tape_collections[ntape]
+    print(f"len tapes is {len(tapes)} -- tape[{ntape}]: {tapes[ntape]}")
     t = tapes[ntape]
     return t, collection
 
