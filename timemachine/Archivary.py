@@ -400,9 +400,9 @@ class Archivary:
                 return tmp
 
     def get_all_collection_names(self):
-        all_collection_names = {}
-        for a in self.archives:
-            all_collection_names[a.archive_type] = a.get_all_collection_names()
+        all_collection_names = {"Phishin Archive": "Phish"}
+        ia_archive = GDArchive(collection_list=[])
+        all_collection_names["Internet Archive"] = ia_archive.get_all_collection_names()
         return all_collection_names
 
 
@@ -742,6 +742,9 @@ class IATapeDownloader(BaseTapeDownloader):
         get a list of all collection names within archive.org's etree collection.
         This should leverage the _get_piece function
         """
+        import ipdb
+
+        ipdb.set_trace()
         current_rows = 0
         parms = {
             "debug": "false",
@@ -768,7 +771,7 @@ class IATapeDownloader(BaseTapeDownloader):
             collection_path = os.path.join(BUCKET_NAME, "sundry/etree_collection_names.json")
         else:
             collection_path = os.path.join(os.getenv("HOME"), ".etree_collection_names.json")
-        json_dump(j, tmpfile)
+        json_dump(j, collection_path)
         logger.info(f"saved {current_rows} collection names to {collection_path}")
         return j
 
