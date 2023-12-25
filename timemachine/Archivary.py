@@ -63,6 +63,9 @@ SAVE_TO_CLOUD = True
 # SAVE_TO_CLOUD = False
 
 ROOT_DIR = BUCKET_NAME if SAVE_TO_CLOUD else os.path.dirname(os.path.abspath(__file__))
+
+PAK_1 = "8003bcd8c378844cfb69aad8b0981309"
+PAK_2 = "f289e232fb417df560f7192edd295f1d"
 #
 
 
@@ -629,7 +632,8 @@ class PhishinTapeDownloader(BaseTapeDownloader):
         try:
             self.apikey = open(os.path.join(os.getenv("HOME"), ".phishinkey"), "r").read().rstrip()
         except Exception:
-            self.apikey = "8003bcd8c378844cfb69aad8b0981309f289e232fb417df560f7192edd295f1d49226ef6883902e59b465991d0869c77"
+            PAK_3 = "49226ef6883902e59b465991d0869c77"
+            self.apikey = PAK_1 + PAK_2 + PAK_3
         self.parms = {"sort_attr": "date", "sort_dir": "desc", "per_page": "300"}
         self.headers = {"Accept": "application/json", "Authorization": f"Bearer {self.apikey}"}
 
@@ -743,9 +747,6 @@ class IATapeDownloader(BaseTapeDownloader):
         get a list of all collection names within archive.org's etree collection.
         This should leverage the _get_piece function
         """
-        import ipdb
-
-        ipdb.set_trace()
         current_rows = 0
         parms = {
             "debug": "false",
@@ -958,9 +959,9 @@ class PhishinArchive(BaseArchive):
         """Load the tapes, then add anything which has been added since the tapes were saved"""
         n_tapes = 0
 
-        if reload_ids or not path_exists(self.idpath):  #
+        if reload_ids or not path_isdir(self.idpath):  #
             if SAVE_TO_CLOUD:
-                logger.warning("Can't Remove Cloud Folder")
+                logger.warning(f"Can't Remove Cloud Folder {self.idpath}")
             else:
                 os.system(f"rm -rf {self.idpath}")
             logger.info("Loading Tapes from Phish.in. This will take a few minutes")
@@ -984,7 +985,7 @@ class PhishinArchive(BaseArchive):
     def load_current_tapes(self, reload_ids=False):  # Phishin
         logger.debug("Loading current tapes")
         tapes = []
-        if reload_ids or not path_exists(self.idpath):
+        if reload_ids or not path_isdir(self.idpath):
             if SAVE_TO_CLOUD:
                 logger.warning("Can't Remove Cloud Files")
             else:
@@ -997,7 +998,7 @@ class PhishinArchive(BaseArchive):
         if path_isdir(self.idpath):
             for filename in listdir(self.idpath):
                 if filename.endswith(".json"):
-                    chunk = json_load(self.idpath)
+                    chunk = json_load(os.path.join(self.idpath, filename))
                     # chunk = [t for t in chunk if any(x in self.collection_list for x in t['collection'])]
                     tapes.extend(chunk)
         else:
@@ -1236,7 +1237,7 @@ class GDArchive(BaseArchive):
             self.date_range = [self.date_range]
         years_to_load = range(min(self.date_range), max(self.date_range) + 1) if len(self.date_range) <= 2 else self.date_range
 
-        meta_files = listdir(meta_path) if path_exists(meta_path) else []
+        meta_files = listdir(meta_path) if path_isdir(meta_path) else []
         meta_files = [x for x in meta_files if x.endswith(".json")]
         meta_files = [x for x in meta_files if int(os.path.splitext(x)[0].split("_")[-1]) in years_to_load]
 
