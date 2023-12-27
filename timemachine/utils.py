@@ -95,12 +95,10 @@ def get_board_version():
         cmd = "board_version.sh"
         raw = subprocess.check_output(cmd, shell=True)
         raw = raw.decode()
-        if raw == "version 1\n":
-            return 1
-        else:
+        if raw == "version 2\n":
             return 2
     except Exception:
-        return 1
+        return 2
 
 
 def get_ip():
