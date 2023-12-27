@@ -38,6 +38,7 @@ ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
 
 OS_VERSION = None
 
+
 def get_os_info(field="VERSION_ID"):
     retval = None
     try:
@@ -53,6 +54,7 @@ def get_os_info(field="VERSION_ID"):
         logger.warning(f"Failed to get OS info {e}")
         return retval
 
+
 def get_os_version():
     global OS_VERSION  # cache the value of os version
     if OS_VERSION is None:
@@ -62,6 +64,7 @@ def get_os_version():
             pass
     return OS_VERSION
 
+
 def get_os_name():
     os_name = "UNKNOWN"
     try:
@@ -69,6 +72,7 @@ def get_os_name():
     except:
         pass
     return os_name
+
 
 def get_version():
     __version__ = "v1.0"
@@ -83,6 +87,7 @@ def get_version():
     finally:
         return __version__
 
+
 def get_board_version():
     if get_os_name() == "Ubuntu":
         return 1
@@ -90,11 +95,10 @@ def get_board_version():
         cmd = "board_version.sh"
         raw = subprocess.check_output(cmd, shell=True)
         raw = raw.decode()
-        if raw == "version 2\n":
-            return 2
+        if raw == "version 1\n":
+            return 1
     except Exception:
-        return 1
-
+        return 2
 
 
 def get_ip():
@@ -105,12 +109,13 @@ def get_ip():
         ip = None
     return ip
 
+
 def is_writable(path):
     try:
         return os.access(path, os.W_OK)
     except FileNotFoundError:
         return False
-        
+
 
 def usb_mounted(archive_dir):
     logger.info("Checking USB Mounted")
@@ -121,7 +126,7 @@ def usb_mounted(archive_dir):
     # Make sure that the archive_dir points to the USB archive.
     if os.path.islink(archive_dir):
         os.unlink(archive_dir)
-        os.symlink("/mnt/usb/archive",archive_dir)
+        os.symlink("/mnt/usb/archive", archive_dir)
 
     partitions = psutil.disk_partitions()
     try:
@@ -133,20 +138,19 @@ def usb_mounted(archive_dir):
 
     return False
 
+
 def mount_local_archive(archive_dir):
     if usb_mounted(archive_dir):
-        return 
+        return
     cmd = "sudo mkdir /mnt/usb"
     os.system(cmd)
     cmd = "sudo mount -ouser,umask=000 /dev/sda1 /mnt/usb"
     logger.info(f"cmd is {cmd}")
     try:
         os.system(cmd)
-        os.symlink("/mnt/usb/archive",archive_dir)
+        os.symlink("/mnt/usb/archive", archive_dir)
     except Exception:
         pass
-    
-
 
 
 def get_local_mode():
@@ -155,10 +159,10 @@ def get_local_mode():
     # 1 -- local archive exists and is playable
     # 2 -- local archive playable, and some local COLLECTIONS selected
     # 3 -- local archive selected, and no internet connectivity
-    # 
+    #
     local_mode = 0
-    options_file = os.path.join(os.getenv("HOME"),".timemachine_options.txt")
-    archive_dir = os.path.join(os.getenv("HOME"),"archive")
+    options_file = os.path.join(os.getenv("HOME"), ".timemachine_options.txt")
+    archive_dir = os.path.join(os.getenv("HOME"), "archive")
     try:
         mount_local_archive(archive_dir)
     except Exception as e:
