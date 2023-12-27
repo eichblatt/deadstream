@@ -26,7 +26,7 @@ __pycache__/
 /prof/
 other_setlists/*
 timemachine/metadata_orig/*
-docs/*
+docs/_resources
 download_urls.py
 input_selector.py
 poti.py
