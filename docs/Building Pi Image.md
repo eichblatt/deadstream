@@ -8,8 +8,7 @@
   - [Send audio to headphone jack](#send-audio-to-headphone-jack)
   - [Change the hostname to `timemachinev5`](#change-the-hostname-to-timemachinev5)
   - [Clone the repo](#clone-the-repo)
-  - [Install libmpv-dev](#install-libmpv-dev)
-  - [Install mpv](#install-mpv)
+  - [Install libmpv-dev and mpv](#install-libmpv-dev-and-mpv)
     - [NOTE](#note)
   - [Install the package locally](#install-the-package-locally)
   - [Update the code](#update-the-code)
@@ -30,7 +29,7 @@ deadhead@timemachinev5:~ $ sudo systemctl enable ssh
 ## Enable SPI
 
 sudo raspi-config
-SPI
+Interface options, SPI
 Enable Yes
 
 ## Disable GUI on Raspberry Pi
@@ -53,11 +52,9 @@ deadhead@raspberrypi:~ $ sudo vi /etc/hostname
 deadhead@timemachinev3:~ $ git clone https://github.com/eichblatt/deadstream.git
 `
 
-## Install libmpv-dev
+## Install libmpv-dev and mpv
 
 sudo apt-get install libmpv-dev
-
-## Install mpv
 
 sudo apt-get install mpv
 
@@ -76,6 +73,8 @@ deadhead@timemachinev3:~/deadstream $ source env/bin/activate
 ## Update the code
 
 To install the package on the machine, ie, to run it on startup, run the update.sh script
+cd deadstream/timemachine/bin
+bash ./update.sh
 
 ## Getting Bluetooth to work
 
