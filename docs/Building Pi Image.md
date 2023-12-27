@@ -11,8 +11,10 @@
   - [Install libmpv-dev and mpv](#install-libmpv-dev-and-mpv)
     - [NOTE](#note)
   - [Install the package locally](#install-the-package-locally)
+  - [Version 2](#version-2)
   - [Update the code](#update-the-code)
   - [Getting Bluetooth to work](#getting-bluetooth-to-work)
+    - [Set the default sink to bluetooth](#set-the-default-sink-to-bluetooth)
   - [Creating an SD Image](#creating-an-sd-image)
 
 ## Create the Deadhead User
@@ -70,6 +72,11 @@ deadhead@timemachinev3:~/deadstream $ source env/bin/activate
 (env) deadhead@timemachinev3:~/deadstream $ pip install ipython
 (env) deadhead@timemachinev3:~/deadstream $ ipython -i timemachine/main.py
 
+## Version 2
+
+In order for the rewind button to work, we need to be in version 2 boards.
+Add `dtoverlay=gpio-shutdown` to the file `/boot/config.txt`
+
 ## Update the code
 
 To install the package on the machine, ie, to run it on startup, run the update.sh script
@@ -86,6 +93,42 @@ Advanced options, Audio setup, Choose pulseaudio
 
 <https://www.collabora.com/news-and-blog/blog/2022/09/02/using-a-raspberry-pi-as-a-bluetooth-speaker-with-pipewire-wireplumber/>
 
+### Set the default sink to bluetooth
+
+pacmd list-sinks
+pacmd set-default-sink 1
+
+See <https://askubuntu.com/questions/71863/how-to-change-pulseaudio-sink-with-pacmd-set-default-sink-during-playback>
+
+And add this to /etc/dbus-1/system.d/pulse.conf
+
+```
+<!DOCTYPE busconfig PUBLIC
+ "-//freedesktop//DTD D-BUS Bus Configuration 1.0//EN"
+ "http://www.freedesktop.org/standards/dbus/1.0/busconfig.dtd">
+<busconfig>
+	<policy user="root">
+		<allow own="org.pulseaudio.Server"/>
+                <allow send_destination="org.bluez"/>
+                <allow send_interface="org.bluez.Manager"/>
+	</policy>
+	<policy user="pulse">
+		<allow own="org.pulseaudio.Server"/>
+                <allow send_destination="org.bluez"/>
+                <allow send_interface="org.bluez.Manager"/>
+	</policy>
+	<policy context="default">
+                <deny own="org.pulseaudio.Server"/>
+                <deny send_destination="org.bluez"/>
+                <deny send_interface="org.bluez.Manager"/>
+        </policy>
+</busconfig>
+```
+or  /etc/dbus-1/system.d/bluetooth.conf
+
+and
+
+`chmod -x /usr/bin/start-pulseaudio-x11`
 ## Creating an SD Image
 
 See the file ~/timemachine/images/make_image.sh
