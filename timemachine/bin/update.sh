@@ -49,8 +49,7 @@ cleanup_old_envs () {
 }
 
 # get the tag, to check if an update is required
-# git_branch=main    # Make this a command-line option!
-git_branch=new_pi_firmware 
+git_branch=main    # Make this a command-line option!
 if [ -f $TIMEMACHINE/.latest_tag ]; then
     local_tag=`cat $TIMEMACHINE/.latest_tag | cut -f1 -d"-"`
 else
@@ -64,6 +63,8 @@ if [[ $HOSTNAME == deadstream* ]]; then
    git_branch=dev
 elif [[ $HOSTNAME == project* ]]; then
    git_branch=projectM
+elif [[ $HOSTNAME == timemachinev5 ]]; then
+   git_branch=new_pi_firmware
 else
    system "sudo systemctl disable ssh"
 fi
