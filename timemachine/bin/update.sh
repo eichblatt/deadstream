@@ -49,7 +49,8 @@ cleanup_old_envs () {
 }
 
 # get the tag, to check if an update is required
-git_branch=main    # Make this a command-line option!
+# git_branch=main    # Make this a command-line option!
+git_branch=new_pi_firmware 
 if [ -f $TIMEMACHINE/.latest_tag ]; then
     local_tag=`cat $TIMEMACHINE/.latest_tag | cut -f1 -d"-"`
 else
