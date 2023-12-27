@@ -97,8 +97,10 @@ def get_board_version():
         raw = raw.decode()
         if raw == "version 1\n":
             return 1
+        else:
+            return 2
     except Exception:
-        return 2
+        return 1
 
 
 def get_ip():
