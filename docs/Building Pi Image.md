@@ -15,6 +15,7 @@
   - [Update the code](#update-the-code)
   - [Getting Bluetooth to work](#getting-bluetooth-to-work)
     - [Set the default sink to bluetooth](#set-the-default-sink-to-bluetooth)
+  - [Install jackd](#install-jackd)
   - [Creating an SD Image](#creating-an-sd-image)
 
 ## Create the Deadhead User
@@ -102,33 +103,40 @@ See <https://askubuntu.com/questions/71863/how-to-change-pulseaudio-sink-with-pa
 
 And add this to /etc/dbus-1/system.d/pulse.conf
 
-```
+```{verbatim}
 <!DOCTYPE busconfig PUBLIC
  "-//freedesktop//DTD D-BUS Bus Configuration 1.0//EN"
  "http://www.freedesktop.org/standards/dbus/1.0/busconfig.dtd">
 <busconfig>
-	<policy user="root">
-		<allow own="org.pulseaudio.Server"/>
+ <policy user="root">
+  <allow own="org.pulseaudio.Server"/>
                 <allow send_destination="org.bluez"/>
                 <allow send_interface="org.bluez.Manager"/>
-	</policy>
-	<policy user="pulse">
-		<allow own="org.pulseaudio.Server"/>
+ </policy>
+ <policy user="pulse">
+  <allow own="org.pulseaudio.Server"/>
                 <allow send_destination="org.bluez"/>
                 <allow send_interface="org.bluez.Manager"/>
-	</policy>
-	<policy context="default">
+ </policy>
+ <policy context="default">
                 <deny own="org.pulseaudio.Server"/>
                 <deny send_destination="org.bluez"/>
                 <deny send_interface="org.bluez.Manager"/>
         </policy>
 </busconfig>
 ```
+
 or  /etc/dbus-1/system.d/bluetooth.conf
 
 and
 
 `chmod -x /usr/bin/start-pulseaudio-x11`
+
+## Install jackd
+
+Totally not sure if this will help, but I'm desperate
+sudo apt-get install jackd
+
 ## Creating an SD Image
 
 See the file ~/timemachine/images/make_image.sh
