@@ -45,7 +45,7 @@ def retry_call(callable: Callable, *args, **kwargs):
 
 
 def return_last_value(retry_state):
-    """ return the result of the last call made in a tenacity retry """
+    """return the result of the last call made in a tenacity retry"""
     return retry_state.outcome.result()
 
 
@@ -88,7 +88,7 @@ def to_decade(datestring):
 
 
 class GDPlayer(MPV):
-    """ A media player to play a GDTape """
+    """A media player to play a GDTape"""
 
     def __init__(self, tape=None):
         super().__init__()
@@ -209,7 +209,8 @@ class GDPlayer(MPV):
         logger.debug("pausing")
         self._set_property("pause", True)
         if wait:
-            self.wait_until_paused()
+            pass
+            # self.wait_until_paused()
 
     def stop(self):
         self.playlist_pos = 0
@@ -243,10 +244,10 @@ class GDPlayer(MPV):
         return time_remaining
 
     def seek_in_tape_to(self, destination, ticking=True, threshold=1):
-        """ Seek to a time position in a tape. Since this can take some
-            time, the ticking option allows to take into account the time
-            required to seek (the slippage).
-            destination -- seconds from current tape location (from beginning?)
+        """Seek to a time position in a tape. Since this can take some
+        time, the ticking option allows to take into account the time
+        required to seek (the slippage).
+        destination -- seconds from current tape location (from beginning?)
         """
         logger.debug(f"seek_in_tape_to {destination}")
 
@@ -299,9 +300,7 @@ class GDPlayer(MPV):
                 self.play()
             time_pos = self.get_prop("time-pos")
             if abs(time_pos - destination) > threshold:
-                raise Exception(
-                    f"Not close enough: time_pos {time_pos} - destination ({time_pos - destination})>{threshold}"
-                )
+                raise Exception(f"Not close enough: time_pos {time_pos} - destination ({time_pos - destination})>{threshold}")
         except Exception as e:
             logger.warning(e)
         finally:
@@ -357,4 +356,3 @@ class GDPlayer(MPV):
 
     def close(self):
         self.terminate()
-

@@ -63,6 +63,8 @@ if [[ $HOSTNAME == deadstream* ]]; then
    git_branch=dev
 elif [[ $HOSTNAME == project* ]]; then
    git_branch=projectM
+elif [[ $HOSTNAME == timemachinev5 ]]; then
+   git_branch=new_pi_firmware
 else
    system "sudo systemctl disable ssh"
 fi
