@@ -1,7 +1,7 @@
 # Building Pi Image
 
 - [Building Pi Image](#building-pi-image)
-  - [Create the Deadhead User](#create-the-deadhead-user)
+  - [Create the deadhead User](#create-the-deadhead-user)
   - [Enable SSH (for debugging only)](#enable-ssh-for-debugging-only)
   - [Enable SPI](#enable-spi)
   - [Disable GUI on Raspberry Pi](#disable-gui-on-raspberry-pi)
@@ -16,9 +16,10 @@
   - [Getting Bluetooth to work](#getting-bluetooth-to-work)
     - [Set the default sink to bluetooth](#set-the-default-sink-to-bluetooth)
   - [Install jackd](#install-jackd)
+  - [Disable SSH](#disable-ssh)
   - [Creating an SD Image](#creating-an-sd-image)
 
-## Create the Deadhead User
+## Create the deadhead User
 
 Once logged into the pi, with a deadhead username:
 
@@ -136,6 +137,10 @@ and
 
 Totally not sure if this will help, but I'm desperate
 sudo apt-get install jackd
+
+## Disable SSH
+
+sudo systemctl disable ssh
 
 ## Creating an SD Image
 
