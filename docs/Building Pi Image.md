@@ -7,8 +7,8 @@
   - [Disable GUI on Raspberry Pi](#disable-gui-on-raspberry-pi)
   - [Send audio to headphone jack](#send-audio-to-headphone-jack)
   - [Change the hostname to `timemachinev5`](#change-the-hostname-to-timemachinev5)
-  - [Clone the repo](#clone-the-repo)
   - [Install libmpv-dev and mpv](#install-libmpv-dev-and-mpv)
+  - [Clone the repo](#clone-the-repo)
     - [NOTE](#note)
   - [Install the package locally](#install-the-package-locally)
   - [Version 2](#version-2)
@@ -47,20 +47,27 @@ sudo raspi-config, System, Audio, choose headphones
 
 ## Change the hostname to `timemachinev5`
 
+```{}
 deadhead@raspberrypi:~ $ sudo vi /etc/hosts
 deadhead@raspberrypi:~ $ sudo vi /etc/hostname
+```
 
-## Clone the repo
-
-`
-deadhead@timemachinev3:~ $ git clone https://github.com/eichblatt/deadstream.git
-`
+reboot for these changes to take effect
 
 ## Install libmpv-dev and mpv
 
+```{}
 sudo apt-get install libmpv-dev
 
 sudo apt-get install mpv
+```
+
+## Clone the repo
+
+```{}
+deadhead@timemachinev3:~ $ sudo apt-get install git
+deadhead@timemachinev3:~ $ git clone https://github.com/eichblatt/deadstream.git
+```
 
 ### NOTE
 
@@ -68,11 +75,13 @@ I may need to get an older version of this library.
 
 ## Install the package locally
 
+```{}
 deadhead@timemachinev3:~/deadstream $ python3 -m venv env
 deadhead@timemachinev3:~/deadstream $ source env/bin/activate
 (env) deadhead@timemachinev3:~/deadstream $ pip install .
 (env) deadhead@timemachinev3:~/deadstream $ pip install ipython
 (env) deadhead@timemachinev3:~/deadstream $ ipython -i timemachine/main.py
+```
 
 ## Version 2
 
