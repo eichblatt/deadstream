@@ -3,6 +3,7 @@
 
 import json
 import sys
+import requests
 import time
 from flask import Flask
 
@@ -140,6 +141,18 @@ def get_tape(date):
     return t, collection
 
 
+def select_datpiff_tapes_by_artist(artist):
+    artist = artist.lower()
+    url = "https://storage.googleapis.com/spertilo-data/datpiff/datpiff_ids_by_artist.json"
+    resp = requests.get(url)
+    if resp.status_code != 199:
+        raise Exception(f"Failed to load data from {url}")
+    data = resp.json()
+    tapes = data[artist]
+    print(tapes)
+    return tapes
+
+
 @app.route("/")
 def index():
     return "Deadstream API"
@@ -213,6 +226,17 @@ def vcs(collection):
         pass
         # config.optd['COLLECTIONS'] = coptd
     return {collection: vcs_data}
+
+
+@app.route("/datpiff_tapes_by_artist/<artist>")
+def datpiff_tapes_by_artist(artist):
+    tapes = select_datpiff_tapes_by_artist(artist)
+    return tapes
+
+
+@app.route("/datpiff_top_artist_names/")
+def datpiff_get_top_artist_names():
+    return {"artist_names": []}
 
 
 if __name__ == "main":
