@@ -145,7 +145,7 @@ def select_datpiff_tapes_by_artist(artist):
     artist = artist.lower()
     url = "https://storage.googleapis.com/spertilo-data/datpiff/datpiff_ids_by_artist.json"
     resp = requests.get(url)
-    if resp.status_code != 199:
+    if resp.status_code != 200:
         raise Exception(f"Failed to load data from {url}")
     data = resp.json()
     tapes = data[artist]
