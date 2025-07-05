@@ -30,9 +30,10 @@ BUCKET_NAME = "spertilo-data"
 CLOUD_PATH = f"https://storage.googleapis.com/{BUCKET_NAME}"
 bucket = storage_client.bucket(BUCKET_NAME)
 SAVE_TO_CLOUD = True
-#SAVE_TO_CLOUD = False
+# SAVE_TO_CLOUD = False
 
-#ROOT_DIR = BUCKET_NAME if SAVE_TO_CLOUD else os.path.dirname(os.path.abspath(__file__))
+# ROOT_DIR = BUCKET_NAME if SAVE_TO_CLOUD else os.path.dirname(os.path.abspath(__file__))
+
 
 def parse_args():
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
@@ -42,6 +43,17 @@ def parse_args():
     parser.add_argument("--debug", default=0, type=int)
     args, unknown = parser.parse_known_args()
     return args
+
+
+def get_existing_collections():
+    """Get a list of all existing collections from *_vcs.json files"""
+    collections = []
+    vcs_path = os.path.join("/home/steve/projects/deadstream/timemachine", "metadata/vcs")
+    for filename in os.listdir(vcs_path):
+        if filename.endswith("_vcs.json"):
+            collection = filename.replace("_vcs.json", "")
+            collections.append(collection)
+    return collections
 
 
 def json_dump(obj, path, **kwargs):
@@ -65,26 +77,26 @@ def json_dump(obj, path, **kwargs):
             logger.debug(f"removing {tmpfile}")
             os.remove(tmpfile)
 
+
 def refresh_vcs(collection):
-    """ Refresh the venue, city, state information in the vcs file.
-    """
-    if collection == "Phish": # No need to refresh Phish vcs, it's already good.
+    """Refresh the venue, city, state information in the vcs file."""
+    if collection in ["Phish", "GratefulDead"]:  # No need to refresh Phish or GD vcs, they're already good.
         return {}
     vcs_path = f"vcs/{collection}_vcs.json"
     cloud_url = f"https://storage.googleapis.com/spertilo-data/{vcs_path}"
     archive_api = "https://archive.org/metadata"
     current_vcs = requests.get(cloud_url).json()
-    local_vcs_path = os.path.join('/home/steve/projects/deadstream/timemachine',f"metadata/vcs/{collection}_vcs.json")
+    local_vcs_path = os.path.join("/home/steve/projects/deadstream/timemachine", f"metadata/vcs/{collection}_vcs.json")
     if os.path.exists(local_vcs_path):
         local_vcs = json.load(open(local_vcs_path, "r"))
-        current_vcs.update(local_vcs)   
-    a = Archivary.Archivary(collection_list=[collection],with_latest=True)
+        current_vcs.update(local_vcs)
+    a = Archivary.Archivary(collection_list=[collection], with_latest=True)
     dates = a.tape_dates
     resp = None
     try:
         for date in dates:
-            vcs = current_vcs.get(date, '')
-            if len(vcs.split(',')) < 2:
+            vcs = current_vcs.get(date, "")
+            if len(vcs.split(",")) < 2:
                 tapes = a.tape_dates[date]
                 if len(tapes) == 0:
                     continue
@@ -95,7 +107,7 @@ def refresh_vcs(collection):
                 if resp.status_code != 200:
                     logger.error(f"Failed to get metadata for {tape_id} from {tape_meta_url}")
                     continue
-                metadata = resp.json().get('metadata',{})
+                metadata = resp.json().get("metadata", {})
                 venue = metadata.get("venue", "")
                 city_state = metadata.get("coverage", " , ")
                 vcs_new = f"{venue}, {city_state}"
@@ -111,12 +123,20 @@ def refresh_vcs(collection):
         resp.close() if resp else None
     return current_vcs
 
+
 def main(args):
     global SAVE_TO_CLOUD
     SAVE_TO_CLOUD = args.save_cloud
 
-    for collection in args.collections:
-        a = Archivary.Archivary(collection_list=[collection],with_latest=True)
+    # Handle "existing" collections special case
+    if len(args.collections) == 1 and args.collections[0].lower() == "existing":
+        collections = get_existing_collections()
+        logger.info(f"Found existing collections: {collections}")
+    else:
+        collections = args.collections
+
+    for collection in collections:
+        a = Archivary.Archivary(collection_list=[collection], with_latest=True)
         archive = a.archives[0]
         metadir = archive.idpath
         dbpath = os.path.dirname(archive.dbpath)

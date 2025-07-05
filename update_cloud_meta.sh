@@ -1,20 +1,35 @@
 #! /bin/bash
 
-collections="Phish"
+collections="existing"   #"Phish"
+skip_authenticate=1  # Skip authentication by default
 
 help()
 {
-    echo "Syntax: update_cloud_meta.sh [-c collections | -n | -h]"
+    echo "Syntax: update_cloud_meta.sh [-c collections | -a | -h]"
 }
 
-while getopts "hc:n" option; do 
+while getopts "hc:a" option; do 
     case $option in 
         h) help; exit;;
         c) collections=${OPTARG};;
-        n) skip_authenticate=0;;
+        a) skip_authenticate=0;;
         \?) echo "Error, invalid option";exit;;
     esac
 done
+
+CONDA_PATH="$HOME/miniconda3/bin/conda" 
+# Check if conda environment 'myenv' is active
+if [[ "${CONDA_DEFAULT_ENV}" != "myenv" ]]; then
+    # Initialize conda for bash shell
+    echo "Activating myenv conda environment"
+    # source "$(conda info --base)/etc/profile.d/conda.sh"
+    source "$(dirname $CONDA_PATH)/../etc/profile.d/conda.sh"
+    conda activate myenv
+    if [[ "${CONDA_DEFAULT_ENV}" != "myenv" ]]; then
+        echo "Failed to activate 'myenv' conda environment"
+        exit 1
+    fi
+fi
 
 echo "source $HOME/projects/cld_srv/cloudenv/bin/activate"
 source $HOME/projects/cld_srv/cloudenv/bin/activate
