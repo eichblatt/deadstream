@@ -80,7 +80,7 @@ def json_dump(obj, path, **kwargs):
 
 def refresh_vcs(collection):
     """Refresh the venue, city, state information in the vcs file."""
-    if collection in ["Phish", "GratefulDead"]:  # No need to refresh Phish or GD vcs, they're already good.
+    if collection in ["GratefulDead"]:  # No need to refresh Phish or GD vcs, they're already good.
         return {}
     vcs_path = f"vcs/{collection}_vcs.json"
     cloud_url = f"https://storage.googleapis.com/spertilo-data/{vcs_path}"
@@ -96,21 +96,24 @@ def refresh_vcs(collection):
     try:
         for date in dates:
             vcs = current_vcs.get(date, "")
-            if len(vcs.split(",")) < 2:
+            if (len(vcs.split(",")) < 2) or len(vcs.replace(" ", "")) < 4:
                 tapes = a.tape_dates[date]
                 if len(tapes) == 0:
                     continue
                 tape = tapes[0]
-                tape_id = tape.identifier
-                tape_meta_url = f"{archive_api}/{tape_id}"
-                resp = requests.get(tape_meta_url)
-                if resp.status_code != 200:
-                    logger.error(f"Failed to get metadata for {tape_id} from {tape_meta_url}")
-                    continue
-                metadata = resp.json().get("metadata", {})
-                venue = metadata.get("venue", "")
-                city_state = metadata.get("coverage", " , ")
-                vcs_new = f"{venue}, {city_state}"
+                if collection == "Phish":
+                    vcs_new = tape.venue()
+                else:
+                    tape_id = tape.identifier
+                    tape_meta_url = f"{archive_api}/{tape_id}"
+                    resp = requests.get(tape_meta_url)
+                    if resp.status_code != 200:
+                        logger.error(f"Failed to get metadata for {tape_id} from {tape_meta_url}")
+                        continue
+                    metadata = resp.json().get("metadata", {})
+                    venue = metadata.get("venue", "")
+                    city_state = metadata.get("coverage", " , ")
+                    vcs_new = f"{venue}, {city_state}"
                 if len(vcs_new) > 4:
                     current_vcs[date] = vcs_new
                     logger.info(f"Updated vcs for {date} in {collection}: {vcs_new}")
