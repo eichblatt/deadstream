@@ -1,6 +1,5 @@
 [project]
 name = "deadstream"
-dynamic = ["version"]
 authors = [
     {name = "Steve Eichblatt", email = "info@spertilo.net"},
 ]
@@ -18,6 +17,3 @@ dependencies = [
 [build-system]
 requires = ["setuptools>=42", "wheel"]
 build-backend = "setuptools.build_meta"
-
-[tool.setuptools.dynamic]
-version = {file = "timemachine/.latest_tag"}
