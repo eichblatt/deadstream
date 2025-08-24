@@ -1,5 +1,5 @@
 [project]
-name = "timemachine"
+name = "deadstream"
 dynamic = ["version"]
 authors = [
     {name = "Steve Eichblatt", email = "info@spertilo.net"},
