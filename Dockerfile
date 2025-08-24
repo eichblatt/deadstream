@@ -1,20 +1,24 @@
 FROM python:3.11-slim
 
-ENV PYTHONDONTWRITEBYTECODE=1 \
-    PYTHONUNBUFFERED=1
-
-WORKDIR /app
-
-# 1. Install system deps (git for yourlib)
+# 1. Install git (and optionally build tools) for pip to fetch Git deps
 RUN apt-get update \
     && apt-get install -y --no-install-recommends git \
     && rm -rf /var/lib/apt/lists/*
 
-# 2. Copy pyproject, build & install
-COPY pyproject.toml ./
+WORKDIR /app
+
+# 2. Copy only pyproject.toml (leverages Docker cache)
+COPY pyproject.toml .
+
+# 3. Install pip dependencies from pyproject.toml
 RUN pip install --upgrade pip \
     && pip install --no-cache-dir .
 
-# 3. Copy source and start Gunicorn
+# 4. Copy your application code
 COPY . .
-CMD ["gunicorn", "--bind", "0.0.0.0:${PORT}", "--workers", "2", "main:app"]
+
+# 5. Expose the port your app uses
+EXPOSE 8080
+
+# 6. Launch your FastAPI app with Gunicorn
+CMD ["gunicorn", "--bind", "0.0.0.0:8080", "deadstream.main:app"]
