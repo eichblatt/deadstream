@@ -31,6 +31,7 @@ import tempfile
 import time
 from threading import Event, Lock, Thread
 
+from io import StringIO
 from operator import methodcaller
 from typing import Callable, Optional
 
@@ -966,10 +967,10 @@ class PhishinTrack(BaseTrack):
             logger.debug("adding break track in Phishin")
             d["name"] = ""
             if self.set == "E":
-                d["path"] = "https://storage.cloud.google.com/spertilo-data/sundry/silence0.ogg"
+                d["path"] = "https://storage.googleapis.com/spertilo-data/sundry/silence0.ogg"
                 self.title = "Encore Break"
             else:
-                d["path"] = "https://storage.cloud.google.com/spertilo-data/sundry/silence600.ogg"
+                d["path"] = "https://storage.googleapis.com/spertilo-data/sundry/silence600.ogg"
                 logger.debug(f"path is {d['path']}")
                 self.title = "Set Break"
             d["format"] = "Ogg Vorbis"
@@ -1418,7 +1419,7 @@ class GDTape(BaseTape):
             return
         if not breaks:
             breaks = self._compute_breaks()
-        longbreak_path = "https://storage.cloud.google.com/spertilo-data/sundry/silence600.ogg"
+        longbreak_path = "https://storage.googleapis.com/spertilo-data/sundry/silence600.ogg"
         breakd = {
             "track": -1,
             "original": "setbreak",
@@ -1579,9 +1580,10 @@ class GDSetBreaks:
         # if 'GratefulDead' not in self.collection_list:
         #    self.set_data = set_data
         #    return
-        set_breaks = "https://storage.cloud.google.com/spertilo-data/sundry/set_breaks.csv"
-        utf8_reader = codecs.getreader("utf-8")
-        r = [r for r in csv.reader(utf8_reader(set_breaks))]
+        response = requests.get("https://storage.googleapis.com/spertilo-data/sundry/set_breaks.csv")
+        response.raise_for_status()
+        csv_buffer = StringIO(response.text)
+        r = list(csv.reader(csv_buffer))
         headers = r[0]
         for row in r[1:]:
             d = dict(zip(headers, row))

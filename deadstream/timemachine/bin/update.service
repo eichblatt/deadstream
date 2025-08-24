@@ -1,9 +1,0 @@
-[Unit]
-Description=Update the Grateful Dead Time Machine
-Requires=connect_network.service
-[Service]
-Type=simple
-User=deadhead
-ExecStart=/home/deadhead/timemachine/bin/update.sh
-[Install]
-WantedBy=multi-user.target
