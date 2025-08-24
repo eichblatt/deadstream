@@ -1,18 +1,18 @@
 #!/usr/bin/python3
 """
-    Grateful Dead Time Machine -- copyright 2021 Steve Eichblatt
+Grateful Dead Time Machine -- copyright 2021 Steve Eichblatt
 
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
-    along with this program.  If not, see <https://www.gnu.org/licenses/>.
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
 import abc
 import codecs
@@ -32,8 +32,6 @@ import time
 from threading import Event, Lock, Thread
 
 from operator import methodcaller
-from tenacity import retry
-from tenacity.stop import stop_after_delay
 from typing import Callable, Optional
 
 import pkg_resources
@@ -49,12 +47,6 @@ logging.addLevelName(VERBOSE, "VERBOSE")
 logger = logging.getLogger(__name__)
 ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
 BIN_DIR = os.path.join(os.path.dirname(ROOT_DIR), "bin")
-
-
-@retry(stop=stop_after_delay(30))
-def retry_call(callable: Callable, *args, **kwargs):
-    """Retry a call."""
-    return callable(*args, **kwargs)
 
 
 def flatten(lis):
@@ -104,9 +96,7 @@ class BaseTapeDownloader(abc.ABC):
             period_tapes = [x for x in orig_tapes if not x["identifier"] in new_ids] + tapes_from_period
             n_period_tapes_added = len(period_tapes) - len(orig_tapes)
             n_tapes_added = n_tapes_added + n_period_tapes_added
-            if (
-                n_period_tapes_added > 0
-            ):  # NOTE This condition prevents updates for _everything_ unless there are new tapes.
+            if n_period_tapes_added > 0:  # NOTE This condition prevents updates for _everything_ unless there are new tapes.
                 logger.info(f"Writing {len(period_tapes)} tapes to {outpath}")
                 try:
                     tmpfile = tempfile.mkstemp(".json")[1]
@@ -258,6 +248,7 @@ class Archivary:
         for a in self.archives:
             all_collection_names[a.archive_type] = a.get_all_collection_names()
         return all_collection_names
+
 
 class BaseArchive(abc.ABC):
     """Abstract base class for an Archive.
@@ -533,6 +524,7 @@ class PhishinTapeDownloader(BaseTapeDownloader):
     def get_all_collection_names(self):
         return ["Phish"]
 
+
 class IATapeDownloader(BaseTapeDownloader):
     """Synchronous Grateful Dead Tape Downloader"""
 
@@ -571,11 +563,10 @@ class IATapeDownloader(BaseTapeDownloader):
         if not os.path.exists(collection_path):
             self.save_all_collection_names()
         json_data = json.load(open(collection_path, "r"))
-        collection_names = [x['identifier'] for x in json_data['items']]
+        collection_names = [x["identifier"] for x in json_data["items"]]
         # collection_names = [x.lower() for x in collection_names]
         return collection_names
 
-    
     def save_all_collection_names(self):
         """
         get a list of all collection names within archive.org's etree collection.
@@ -865,8 +856,6 @@ class PhishinArchive(BaseArchive):
         return id_dict
 
 
-
-
 class PhishinTape(BaseTape):
     """A Phishin tape"""
 
@@ -1051,7 +1040,6 @@ class GDArchive(BaseArchive):
             tapes = self.tape_dates[date]
         return tapes[0]
 
-
     def load_current_tapes(self, reload_ids=False, meta_path=None):  # IA
         """Load current tapes or download them from archive.org if they are not already loaded"""
         logger.debug("Loading current tapes")
@@ -1065,9 +1053,7 @@ class GDArchive(BaseArchive):
             self.date_range = [1880, datetime.datetime.now().year]
         elif isinstance(self.date_range, int):
             self.date_range = [self.date_range]
-        years_to_load = (
-            range(min(self.date_range), max(self.date_range) + 1) if len(self.date_range) <= 2 else self.date_range
-        )
+        years_to_load = range(min(self.date_range), max(self.date_range) + 1) if len(self.date_range) <= 2 else self.date_range
 
         meta_files = os.listdir(meta_path) if os.path.exists(meta_path) else []
         meta_files = [x for x in meta_files if x.endswith(".json")]
@@ -1077,15 +1063,11 @@ class GDArchive(BaseArchive):
             if reload_ids:
                 os.system(f"rm -rf {meta_path}")
             logger.info("Loading Tapes from the Archive...this will take a few minutes")
-            n_tapes = self.downloader.get_all_tapes(
-                meta_path, date_range=self.date_range
-            )  # this will write chunks to folder
+            n_tapes = self.downloader.get_all_tapes(meta_path, date_range=self.date_range)  # this will write chunks to folder
             if n_tapes > 0:
                 logger.info(f"Loaded {n_tapes} tapes from archive {meta_path}")
 
-        elif (len(meta_files) < len(years_to_load)) and os.path.basename(meta_path).replace(
-            "_ids", ""
-        ) in yearly_collections:
+        elif (len(meta_files) < len(years_to_load)) and os.path.basename(meta_path).replace("_ids", "") in yearly_collections:
             for year in years_to_load:
                 if len([x for x in meta_files if f"{year}" in x]) == 0:
                     n_tapes = self.downloader.get_all_tapes(meta_path, date_range=[year])
@@ -1127,9 +1109,7 @@ class GDArchive(BaseArchive):
                 continue
             logger.debug(f"max addeddate {max_addeddate}")
             if with_latest:
-                min_download_addeddate = (datetime.datetime.fromisoformat(max_addeddate[:-1])) - datetime.timedelta(
-                    hours=1
-                )
+                min_download_addeddate = (datetime.datetime.fromisoformat(max_addeddate[:-1])) - datetime.timedelta(hours=1)
                 # min_download_addeddate = datetime.datetime.strftime(min_download_addeddate, "%Y-%m-%dT%H:%M:%SZ")
                 logger.debug(
                     f"Refreshing Tapes\nmax addeddate {max_addeddate}\nmin_download_addeddate {min_download_addeddate}"
@@ -1142,9 +1122,7 @@ class GDArchive(BaseArchive):
                 loaded_tapes, _ = self.load_current_tapes(meta_path=meta_path)
             all_loaded_tapes.extend(loaded_tapes)
             all_tapes_count = all_tapes_count + n_tapes
-        if (all_tapes_count == 0) and (
-            len(self.tapes) > 0
-        ):  # The tapes have already been written, and nothing was added
+        if (all_tapes_count == 0) and (len(self.tapes) > 0):  # The tapes have already been written, and nothing was added
             return self.tapes
         self.tapes = [GDTape(self.dbpath, tape, self.set_data) for tape in all_loaded_tapes]
         return self.tapes
@@ -1162,6 +1140,7 @@ class GDArchive(BaseArchive):
         for kv in kvlist:
             id_dict.setdefault(kv[0], []).append(kv[1])
         return id_dict
+
 
 class GDTape(BaseTape):
     """A Grateful Dead Identifier Item -- does not contain tracks"""
@@ -1303,9 +1282,7 @@ class GDTape(BaseTape):
                 if ifile["source"] == "original":
                     try:
                         orig_titles[ifile["name"]] = (
-                            ifile["title"]
-                            if ("title" in ifile.keys() and ifile["title"] != "unknown")
-                            else ifile["name"]
+                            ifile["title"] if ("title" in ifile.keys() and ifile["title"] != "unknown") else ifile["name"]
                         )
                         if ifile.get("track", None):
                             orig_tracknums[ifile["name"]] = ifile["track"]
@@ -1587,7 +1564,9 @@ class GDDate_info:
                 self.shortbreaks.append(row.song)
 
     def __repr__(self):
-        retstr = f"{self.date} {self.location} -- {self.n_sets} Rows. Long breaks:{self.longbreaks}. Short breaks {self.shortbreaks}"
+        retstr = (
+            f"{self.date} {self.location} -- {self.n_sets} Rows. Long breaks:{self.longbreaks}. Short breaks {self.shortbreaks}"
+        )
         return retstr
 
 

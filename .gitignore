@@ -35,3 +35,5 @@ timemachine/testvinyl.py
 cloud_server/env/*
 *.swp
 dist
+timemachine/metadata/vcs/*
+vvvscode/*

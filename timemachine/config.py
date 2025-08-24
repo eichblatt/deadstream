@@ -7,10 +7,6 @@ import time
 
 
 logger = logging.getLogger(__name__)
-try:
-    from timemachine import controls
-except Exception as e:
-    logger.warning(f"Failed to import controls")
 
 ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
 OPTIONS_PATH = os.path.join(os.getenv("HOME"), ".timemachine_options.txt")
@@ -84,9 +80,6 @@ def default_options():
     d["PLAY_LOSSLESS"] = False
     d["ON_TOUR_ALLOWED"] = False
     d["PULSEAUDIO_ENABLE"] = False
-    if controls.get_os_version() > 10:
-        d["PULSEAUDIO_ENABLE"] = True
-        d["BLUETOOTH_ENABLE"] = True
     d["DEFAULT_START_TIME"] = datetime.time(15, 0)
     d["TIMEZONE"] = "America/New_York"
     return d
