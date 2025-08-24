@@ -63,3 +63,11 @@ REPOSITORY                                                                TAG   
 us-central1-docker.pkg.dev/able-folio-397115/deadstream-repo/deadstream   latest    c97f2494ba17   5 minutes ago   1.08GB
 hello-world                                                               latest    1b44b5a3e06a   2 weeks ago     10.1kB
 ```
+
+## Running the Service in CloudRun
+
+See https://console.cloud.google.com/run?invt=Ab6V4w&project=able-folio-397115&supportedpurview=project to give an overview of the containers that we know of.
+
+Click `Edit and deploy new revision`, at the top of the screen, to modify the running service (that is connected to the URL in the code).
+I have modified the current version to be drastically simpler. But it doesn't upload the results to the cloud, which will drastically reduce cost.
+
