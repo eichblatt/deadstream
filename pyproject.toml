@@ -10,9 +10,10 @@ requires-python = ">=3.6"
 dependencies = [
     "aiohttp",
     "aiofiles",
+    "requests",
     "Flask",
-    "gunicorn>=20.1.0",
-    "deadstream @ git+https://github.com/eichblatt/deadstream.git@api_server"
+    "gunicorn>=20.1.0"
+    # "deadstream @ git+https://github.com/eichblatt/deadstream.git@api_server"
 ]
 
 [build-system]

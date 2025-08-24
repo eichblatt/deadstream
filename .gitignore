@@ -25,7 +25,6 @@ __pycache__/
 # pytest profiler output
 /prof/
 other_setlists/*
-timemachine/metadata_orig/*
 docs/*
 download_urls.py
 input_selector.py
@@ -35,5 +34,5 @@ timemachine/testvinyl.py
 cloud_server/env/*
 *.swp
 dist
-timemachine/metadata/vcs/*
+deadstream/timemachine/metadata/vcs/*
 vvvscode/*

@@ -9,8 +9,8 @@ from flask import Flask
 from markupsafe import escape
 from flask import request
 from flask import url_for
-from timemachine import Archivary
-from timemachine import config
+from deadstream.timemachine import Archivary
+from deadstream.timemachine import config
 
 config.load_options()
 
