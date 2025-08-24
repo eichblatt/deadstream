@@ -1,5 +1,6 @@
 [project]
 name = "deadstream"
+version="0.1.0"
 authors = [
     {name = "Steve Eichblatt", email = "info@spertilo.net"},
 ]
