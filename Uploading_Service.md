@@ -13,6 +13,8 @@ sudo usermod -aG docker $USER
 exec su -l $USER
 ```
 
+: /home/steve/.venv ~/projects/deadstream ; newgrp docker
+
 ## Create the image and upload it to Google Cloud Artifactory
 
 ### Create an artifactory location for this project.
@@ -64,10 +66,28 @@ us-central1-docker.pkg.dev/able-folio-397115/deadstream-repo/deadstream   latest
 hello-world                                                               latest    1b44b5a3e06a   2 weeks ago     10.1kB
 ```
 
+### Build a Test Docker Image
+
+```{}
+: /home/steve/.venv ~/projects/deadstream ; docker build -t test .
+: /home/steve/.venv ~/projects/deadstream ; docker run --rm -it test /bin/bash
+then
+root@09a3a630d371:/app# flask --app deadstream/app.py run --host 0.0.0.0 --port 8080
+```
+
+
 ## Running the Service in CloudRun
 
 See https://console.cloud.google.com/run?invt=Ab6V4w&project=able-folio-397115&supportedpurview=project to give an overview of the containers that we know of.
 
 Click `Edit and deploy new revision`, at the top of the screen, to modify the running service (that is connected to the URL in the code).
 I have modified the current version to be drastically simpler. But it doesn't upload the results to the cloud, which will drastically reduce cost.
+
+## Cleaning up Docker Images, etc
+
+`: /home/steve/.venv ~/projects/deadstream ; docker system prune -a --volumes` cleans up cached images and containers.
+
+`: /home/steve/.venv ~/projects/deadstream ; docker image prune`
+
+and the classic: `: /home/steve/.venv ~/projects/deadstream ; docker image ls` and `: /home/steve/.venv ~/projects/deadstream ; docker rmi <image>`
 

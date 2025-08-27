@@ -459,9 +459,10 @@ class PhishinTapeDownloader(BaseTapeDownloader):
         self.url = url
         self.api = f"{self.url}/api/v1/shows"
         try:
+            raise Exception("force default key")
             self.apikey = open(os.path.join(os.getenv("HOME"), ".phishinkey"), "r").read().rstrip()
         except Exception:
-            self.apikey = None
+            self.apikey = "8003bcd8c378844cfb69aad8b0981309f289e232fb417df560f7192edd295f1d49226ef6883902e59b465991d0869c77"
         self.parms = {"sort_attr": "date", "sort_dir": "desc", "per_page": "300"}
         self.headers = {"Accept": "application/json", "Authorization": f"Bearer {self.apikey}"}
 
@@ -1700,8 +1701,6 @@ class Archivary_Updater(Thread):
         Returns:
             (bool) True if AUTO_UPDATE and the player is currently not playing
         """
-        if not config.optd["AUTO_UPDATE_ARCHIVE"]:
-            return False
         logger.debug("Checking for updates.")
         time_since_last_update = (datetime.datetime.now() - self.last_update_time).seconds
         playing = playstate == config.PLAYING

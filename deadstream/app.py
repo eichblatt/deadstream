@@ -1,16 +1,23 @@
 # to run this:
 # flask --app serve_api run --host 0.0.0.0
 
-import sys
-import time
+import json
+import logging
+import threading
 from flask import Flask
 
 
+from functools import lru_cache
 from markupsafe import escape
 from flask import request
 from flask import url_for
 from deadstream.timemachine import Archivary
 from deadstream.timemachine import config
+
+from google.cloud import storage
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 config.load_options()
 
@@ -21,6 +28,25 @@ config.optd = {
 }
 aa = Archivary.Archivary(collection_list=config.optd["COLLECTIONS"])
 
+SAVE_TO_CLOUD = True
+# SAVE_TO_CLOUD = False
+
+
+@lru_cache(maxsize=1)
+def get_bucket():
+    global SAVE_TO_CLOUD
+    if not SAVE_TO_CLOUD:
+        return None, None
+    try:
+        storage_client = storage.Client(project="able-folio-397115")
+        bucket = storage_client.bucket("spertilo-data")
+        return bucket
+    except Exception as e:
+        print(f"could not connect to cloud storage: {e}")
+        SAVE_TO_CLOUD = False
+        return None
+
+
 app = Flask(__name__)
 
 
@@ -30,6 +56,96 @@ def intersect(lis1, lis2):
 
 def xcept(lis1, lis2):
     return [x for x in lis1 if not x in set(lis2)]
+
+
+def save_tapeids_in_cloud(tids, date, collection):
+    if not SAVE_TO_CLOUD:
+        return ""
+
+    def _save_to_cloud():
+        try:
+            bucket = get_bucket()
+            if not bucket:
+                logger.error("Failed to get bucket")
+                return
+
+            tids_string = json.dumps(tids, indent=1)
+            if len(tids_string) == 0:
+                return tids_string
+            tids_blob_name = f"tapes/{collection}/{date}/tape_ids.json"
+            tids_blob = bucket.blob(tids_blob_name)
+            tids_blob.upload_from_string(tids_string)
+            logger.info(f"Successfully saved tape IDs for {collection}/{date}")
+        except Exception as e:
+            logger.error(f"Error saving tape IDs to cloud: {str(e)}", exc_info=True)
+
+    thread = threading.Thread(target=_save_to_cloud)
+    thread.daemon = True
+    thread.start()
+    return ""
+
+
+def save_tape_data_in_cloud(t, date, collection, i_tape):
+    if not SAVE_TO_CLOUD:
+        return ""
+
+    def _save_to_cloud():
+        try:
+            bucket = get_bucket()
+            if not bucket:
+                logger.error("Failed to get bucket")
+                return
+
+            id = t.identifier
+            tracks = t.tracks()
+            trackdata = {
+                "id": id,
+                "collection": collection,
+                "venue": t.venue(),
+                "tracklist": [x.title for x in tracks],
+                "urls": [x.files[0]["url"] for x in tracks],
+            }
+            trackdata_string = json.dumps(trackdata, indent=1)
+
+            if len(trackdata_string) > 0:
+                trackdata_blob_name = f"tapes/{collection}/{date}/{id}/trackdata.json"
+                trackdata_blob = bucket.blob(trackdata_blob_name)
+                trackdata_blob.upload_from_string(trackdata_string)
+            logger.info(f"Successfully saved tape data for {collection}/{date}/{id}")
+        except Exception as e:
+            logger.error(f"Error saving tape data to cloud: {str(e)}", exc_info=True)
+
+    thread = threading.Thread(target=_save_to_cloud)
+    thread.daemon = True
+    thread.start()
+    return ""
+
+
+def save_vcs_in_cloud(vcs_data, collection):
+    if not SAVE_TO_CLOUD:
+        return ""
+
+    def _save_to_cloud():
+        try:
+            bucket = get_bucket()
+            if not bucket:
+                logger.error("Failed to get bucket")
+                return
+
+            vcs_string = json.dumps(vcs_data, indent=1)
+
+            if len(vcs_string) > 0:
+                vcs_blob_name = f"vcs/{collection}_vcs.json"
+                vcs_blob = bucket.blob(vcs_blob_name)
+                vcs_blob.upload_from_string(vcs_string)
+            logger.info(f"Successfully saved VCS data for {collection}")
+        except Exception as e:
+            logger.error(f"Error saving VCS data to cloud: {str(e)}", exc_info=True)
+
+    thread = threading.Thread(target=_save_to_cloud)
+    thread.daemon = True
+    thread.start()
+    return ""
 
 
 def get_all_tapes(date):
@@ -46,20 +162,29 @@ def get_all_tapes(date):
     get_anything = True
     tape_collections = []
     t = []
+
     if len(collections) > 0:
         get_anything = False
-    for tape in tapes:
+    for i_tape, tape in enumerate(tapes):
         if get_anything:
             t.append(tape)
-            tape_collections.append(tape.collection[0])
+            this_collection = tape.collection[0]
+            tape_collections.append(this_collection)
+            save_tape_data_in_cloud(tape, date, this_collection, i_tape)
         else:
             matches = intersect(collections, tape.collection)
             if len(matches) > 0:
+                this_collection = matches[0]
                 t.append(tape)
-                tape_collections.append(matches[0])
+                tape_collections.append(this_collection)
+                save_tape_data_in_cloud(tape, date, this_collection, i_tape)
     if len(t) == 0:
         print(f"no tape for {collections} on {date}")
         return {"error": f"no tape for {collections} on {date}"}, []
+    else:
+        tids = [[x.identifier, x.compute_score()] for x in t]
+        save_tapeids_in_cloud(tids, date, this_collection)
+
     return t, tape_collections
 
 
@@ -120,7 +245,8 @@ def urls(date):
 def tape_ids(date):
     tapes, collections = get_all_tapes(date)
     tape_ids = [t.identifier for t in tapes]
-    return list(zip(collections, tape_ids))
+    # return list(zip(collections, tape_ids))
+    return dict(zip(collections, tape_ids))
 
 
 @app.route("/vcs/<collection>")
@@ -137,10 +263,12 @@ def vcs(collection):
         config.optd["COLLECTIONS"] = [collection]
         a = Archivary.Archivary(collection_list=config.optd["COLLECTIONS"])
         vcs_data = {d: a.tape_dates[d][0].venue() for d in a.dates}
+        save_vcs_in_cloud(vcs_data, collection)
     except:
         pass
     finally:
-        config.optd["COLLECTIONS"] = coptd
+        pass
+        # config.optd['COLLECTIONS'] = coptd
     return {collection: vcs_data}
 
 
