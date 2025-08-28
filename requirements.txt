@@ -1,0 +1,7 @@
+aiohttp
+aiofiles
+requests
+Flask
+gunicorn>=20.1.0
+google-cloud-storage
+# "deadstream @ git+https://github.com/eichblatt/deadstream.git@api_server"

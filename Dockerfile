@@ -9,12 +9,14 @@ RUN apt-get update \
  && rm -rf /var/lib/apt/lists/*
 
 # Copy your application code
+COPY requirements.txt .
+COPY setup.py .
 COPY deadstream/ ./deadstream/
-COPY pyproject.toml .
 
 # Install pip dependencies from pyproject.toml
 RUN pip install --upgrade pip \
-    && pip install --no-cache-dir .
+    && pip install --no-cache-dir -r requirements.txt \
+    && pip install -e .
 
 # 5. Expose the port your app uses
 EXPOSE 8080
