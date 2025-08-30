@@ -37,14 +37,10 @@ from typing import Callable, Optional
 
 from deadstream.timemachine import config
 
-logging.basicConfig(
-    format="%(asctime)s.%(msecs)03d %(levelname)s: %(name)s %(message)s",
-    level=logging.INFO,
-    datefmt="%Y-%m-%d %H:%M:%S",
-)
 VERBOSE = 5
 logging.addLevelName(VERBOSE, "VERBOSE")
 logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
 ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
 BIN_DIR = os.path.join(os.path.dirname(ROOT_DIR), "bin")
 
