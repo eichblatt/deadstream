@@ -51,16 +51,15 @@ quickstart-python-repo   PYTHON  STANDARD_REPOSITORY  Python package repository 
 
 ### Upload the Image to the Cloud
 
-`: /home/steve/myenv ~/projects/deadstream ; docker push us-central1-docker.pkg.dev/able-folio-397115/deadstream-repo/deadstream:latest`
-
-If this gives permission errors (as it just did), this can help:
+First, get permissions:
 
 ```{}
 : /home/steve/.venv ~/projects/deadstream ; ACCESS_TOKEN=$(gcloud auth print-access-token)
 : /home/steve/.venv ~/projects/deadstream ; docker login -u oauth2accesstoken -p "$ACCESS_TOKEN" https://us-central1-docker.pkg.dev
 ```
 
-Then the push works.
+Then Push
+`: /home/steve/myenv ~/projects/deadstream ; docker push us-central1-docker.pkg.dev/able-folio-397115/deadstream-repo/deadstream:latest`
 
 ### Verify that the Image has been uploaded to the artifact registry
 

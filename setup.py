@@ -12,8 +12,8 @@ setup(
     install_requires=required_packages,
     entry_points={
         "console_scripts": [
-            "api_server=deadstream.connect_network:main",
             "timemachine=deadstream.main:main",
+            "update-cloud-meta=deadstream.update_cloud_meta:main_cli",
         ],
     },
 )
