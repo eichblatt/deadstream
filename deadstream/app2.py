@@ -9,7 +9,7 @@ from flask import Flask
 from markupsafe import escape
 from flask import request
 from flask import url_for
-from deadstream.timemachine import Archivary
+from deadstream.timemachine import MetaAPI
 from deadstream.timemachine import config
 from deadstream.timemachine import cloud_utils
 

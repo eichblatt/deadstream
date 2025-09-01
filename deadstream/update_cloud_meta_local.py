@@ -11,7 +11,6 @@ from google.cloud import storage
 
 from timemachine import Archivary
 from timemachine import config
-from timemachine import cloud_utils
 
 config.load_options()
 
@@ -26,13 +25,12 @@ logger = logging.getLogger(__name__)
 logging.getLogger("google.auth").setLevel(logging.WARNING)
 logging.getLogger("urllib3.connectionpool").setLevel(logging.WARNING)
 
-# storage_client = storage.Client(project="able-folio-397115")
-# BUCKET_NAME = "spertilo-data"
-# CLOUD_PATH = f"https://storage.googleapis.com/{BUCKET_NAME}"
-# bucket = storage_client.bucket(BUCKET_NAME)
-# SAVE_TO_CLOUD = True
+storage_client = storage.Client(project="able-folio-397115")
+BUCKET_NAME = "spertilo-data"
+CLOUD_PATH = f"https://storage.googleapis.com/{BUCKET_NAME}"
+bucket = storage_client.bucket(BUCKET_NAME)
+SAVE_TO_CLOUD = True
 # SAVE_TO_CLOUD = False
-cloud_utils.SAVE_TO_CLOUD = False
 
 # ROOT_DIR = BUCKET_NAME if SAVE_TO_CLOUD else os.path.dirname(os.path.abspath(__file__))
 
@@ -60,9 +58,15 @@ def get_existing_collections():
 
 def json_dump(obj, path, **kwargs):
     print(f"in json_dump path is {path}")
-    if cloud_utils.SAVE_TO_CLOUD:
-        path = path.replace(cloud_utils.BUCKET_NAME + "/", "")
-        cloud_utils.write_json(obj, path)
+    if SAVE_TO_CLOUD:
+        path = path.replace(BUCKET_NAME + "/", "")
+        logger.info(f"json dumping {path}")
+
+        obj_string = json.dumps(obj, indent=1)
+        if len(obj_string) == 0:
+            return obj_string
+        blob = bucket.blob(path)
+        blob.upload_from_string(obj_string)
     else:
         try:
             tmpfile = tempfile.mkstemp(".json")[1]
@@ -117,14 +121,15 @@ def refresh_vcs(collection):
                     logger.warning(f"No valid vcs found for {date} in {collection}")
     finally:
         json.dump(current_vcs, open(local_vcs_path, "w"), indent=1)
-        if cloud_utils.SAVE_TO_CLOUD:
+        if SAVE_TO_CLOUD:
             json_dump(current_vcs, vcs_path, indent=1)
         resp.close() if resp else None
     return current_vcs
 
 
 def main(args):
-    cloud_utils.SAVE_TO_CLOUD = args.save_cloud
+    global SAVE_TO_CLOUD
+    SAVE_TO_CLOUD = args.save_cloud
 
     # Handle "existing" collections special case
     if len(args.collections) == 1 and args.collections[0].lower() == "existing":
