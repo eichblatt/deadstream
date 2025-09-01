@@ -135,7 +135,22 @@ class PhishinAPI(MetaAPI):
 
     def get_track_urls(self, date):
         raw_meta = self._get_raw_meta(date)
-        track_urls = {m["title"]: m["mp3_url"] for m in raw_meta["tracks"]}
+        previous_set_name = "Set 1"
+        track_urls = {"tracklist": [], "urls": []}
+        for m in raw_meta["tracks"]:
+            track_name = m.get("title", "unknown")
+            set_name = m.get("set_name", "Set 1")
+            url = m.get("mp3_url", "")
+            if set_name != previous_set_name:
+                previous_set_name = set_name
+                if set_name.startswith("Encore"):
+                    track_urls["tracklist"].append("Encore Break")
+                    track_urls["urls"].append("https://storage.googleapis.com/spertilo-data/sundry/silence0.ogg")
+                else:
+                    track_urls["tracklist"].append("Set Break")
+                    track_urls["urls"].append("https://storage.googleapis.com/spertilo-data/sundry/silence600.ogg")
+            track_urls["tracklist"].append(track_name)
+            track_urls["urls"].append(url)
         return track_urls
 
     @lru_cache(maxsize=32)
@@ -235,13 +250,60 @@ class ArchiveAPI(MetaAPI):
     def get_track_urls(self, tape):
         # Getting the tape files is slow. We should return immediately, and do this in the background.
         tracks = self.get_tracks(tape.id)
-        track_urls = {t["title"]: t["url"] for t in tracks}
+        tracks = self.insert_set_breaks(tape.date, tracks)
+        track_urls = {"tracklist": [t["title"] for t in tracks], "urls": [t["url"] for t in tracks]}
         return track_urls
         """
         score = score + 3 * (self.title_fraction() - 1)  # reduce score for tapes without titles.
         score = score + min(20, len(tracks)) / 4
         return score
         """
+
+    def insert_set_breaks(self, date, tracks):
+        tlist = [t["title"] for t in tracks]
+        set_breaks_already_in_tape = difflib.get_close_matches("Set Break", tlist, cutoff=0.6)
+        if len(set_breaks_already_in_tape) > 0:
+            return tracks
+
+        replacements = {
+            "GDTRFB": "Going Down the Road Feeling Bad",
+            "FOTD": "Friend of the Devil",
+            "EOTW": "Eyes of the World",
+        }
+        tlist = [replacements.get(n, n) for n in tlist]
+
+        sb = SetBreaks()
+        pre_longbreak_tracks = sb.longbreaks(self.collection, date)
+        pre_shortbreak_tracks = sb.shortbreaks(self.collection, date)
+        if len(pre_longbreak_tracks) + len(pre_shortbreak_tracks) == 0:
+            return tracks
+
+        def strings_match_case_insensitive(s1, s2, threshold=0.7):
+            s1 = s1.lower()
+            s2 = s2.lower()
+            ratio = difflib.SequenceMatcher(None, s1, s2).ratio()
+            return ratio >= threshold
+
+        tracks_with_breaks = []
+        longbreak_path = "https://storage.googleapis.com/spertilo-data/sundry/silence600.ogg"
+        shortbreak_path = "https://storage.googleapis.com/spertilo-data/sundry/silence0.ogg"
+        for i, track in enumerate(tracks[:-1]):
+            tracks_with_breaks.append(track)
+            track_name = track["title"].lower()
+
+            # Check if this track should be followed by a set break
+            for break_track in pre_longbreak_tracks:
+                if strings_match_case_insensitive(break_track, track_name, threshold=0.7):
+                    # Insert a set break after this track
+                    tracks_with_breaks.append({"track": None, "title": "Set Break", "url": longbreak_path})
+                    break
+            for break_track in pre_shortbreak_tracks:
+                if strings_match_case_insensitive(break_track, track_name, threshold=0.7):
+                    # Insert a set break after this track
+                    tracks_with_breaks.append({"track": None, "title": "Encore Break", "url": shortbreak_path})
+                    break
+        tracks_with_breaks.append(tracks[-1])
+        return tracks_with_breaks
 
     def get_tracks(self, identifier):
         meta_url = f"https://archive.org/metadata/{identifier}"
@@ -363,3 +425,138 @@ class ArchiveAPI(MetaAPI):
 
     def get_all_collection_names(self):
         raise NotImplementedError
+
+
+class SetBreaks:
+    """Set Information from a Grateful Dead date"""
+
+    def __init__(self):
+        self.asd = {}
+        self.set_rows = []
+        response = requests.get("https://storage.googleapis.com/spertilo-data/sundry/set_breaks.csv")
+        response.raise_for_status()
+        csv_buffer = StringIO(response.text)
+        r = list(csv.reader(csv_buffer))
+        headers = r[0]
+        for row in r[1:]:
+            d = dict(zip(headers, row))
+            current_row = Set_row(d)
+            self.set_rows.append(current_row)
+
+        # self.set_data = set_data
+
+    def __str__(self):
+        return self.__repr__()
+
+    def __repr__(self):
+        retstr = "Set Data"
+        return retstr
+
+    def get_artist_set_dict(self, artist):
+        if artist in self.asd.keys():
+            return self.asd[artist]
+
+        self.asd[artist] = {}
+        artist_rows = [sd for sd in self.set_rows if sd.artist == artist]
+        for s in artist_rows:
+            if not s.date in self.asd[artist].keys():
+                self.asd[artist][s.date] = [s]
+            else:
+                self.asd[artist][s.date].append(s)
+
+        return self.asd[artist]
+
+    def get_date(self, artist, date):
+        return Date_info(self.get_artist_set_dict(artist).get(date, []))
+
+    def multi_location(self, artist, date):
+        d = self.get_date(artist, date)
+        return d.n_locations > 1
+
+    def location(self, artist, date):
+        d = self.get_date(artist, date)
+        return d.location
+
+    def shortbreaks(self, artist, date):
+        d = self.get_date(artist, date)
+        return d.shortbreaks
+
+    def longbreaks(self, artist, date):
+        d = self.get_date(artist, date)
+        return d.longbreaks
+
+    def location2(self, artist, date):
+        d = self.get_date(artist, date)
+        if self.multi_location(artist, date):
+            return d.location2
+        else:
+            return None
+
+    def locationbreaks(self, artist, date):
+        d = self.get_date(artist, date)
+        if self.multi_location(artist, date):
+            return d.locationbreak
+        else:
+            return None
+
+
+class Set_row:
+    """Set Information from a Grateful Dead or (other collection) date"""
+
+    def __init__(self, data_row):
+        for elem in [
+            "date",
+            "artist",
+            "time",
+            "song",
+            "venue",
+            "city",
+            "state",
+            "break_length",
+            "show_set",
+            "time",
+            "song_n",
+            "isong",
+            "next_set",
+            "Nevents",
+            "ievent",
+        ]:
+            setattr(self, elem, data_row.get(elem, ""))
+        self.start_time = datetime.time.fromisoformat(self.time) if len(self.time) > 0 else None
+
+    def __repr__(self):
+        retstr = f"{self.artist} {self.date}: {self.venue} {self.city}, {self.state}. {self.show_set} {self.song} "
+        return retstr
+
+
+class Date_info:
+    """Date Information from a Grateful Dead or (other collection) date"""
+
+    def __init__(self, set_rows):
+        self.n_sets = len(set_rows)
+        self.date = set_rows[0].date if self.n_sets > 0 else ""
+        self.locationbreak = []
+        self.longbreaks = []
+        self.shortbreaks = []
+        self.location = ()
+        self.n_locations = 0
+        for row in set_rows:
+            prevsong = ""
+            if int(row.ievent) == 1:
+                self.location = (row.venue, row.city, row.state)
+                self.n_locations = 1
+                prevsong = row.song
+            if int(row.ievent) == 2:
+                self.n_locations = 2
+                self.location2 = (row.venue, row.city, row.state)
+                self.locationbreak = [prevsong]
+            if row.break_length == "long":
+                self.longbreaks.append(row.song)
+            if row.break_length == "short":
+                self.shortbreaks.append(row.song)
+
+    def __repr__(self):
+        retstr = (
+            f"{self.date} {self.location} -- {self.n_sets} Rows. Long breaks:{self.longbreaks}. Short breaks {self.shortbreaks}"
+        )
+        return retstr
