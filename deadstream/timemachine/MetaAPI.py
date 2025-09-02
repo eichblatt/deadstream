@@ -35,7 +35,7 @@ from io import StringIO
 from operator import methodcaller
 from typing import Callable, Optional
 
-from deadstream.timemachine import config
+from deadstream.timemachine import cloud_utils
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -74,7 +74,7 @@ class MetaAPI(abc.ABC):
             return
         raise NotImplementedError
 
-    def get_tapes(self, date, collection=None, tape_no=0):
+    def get_tapes(self, date, collection=None):
         if collection is None:
             collection = list(self.api_dict.keys())[0]
         tapes = self.api_dict[collection].get_tapes(date)  # From the archive, not from cache
@@ -83,17 +83,17 @@ class MetaAPI(abc.ABC):
     def track_urls(self, date, collection=None, tape_no=0):
         if collection is None:
             collection = list(self.api_dict.keys())[0]
-        tapes = self.get_tapes(date, collection, tape_no)
+        tapes = self.get_tapes(date, collection)
         if len(tapes) == 0:
-            return {}
+            return {"tracklist": [], "urls": []}
         if tape_no >= len(tapes):
             tape_no = 0
-        tape = tapes[tape_no]
-        track_urls = tape.track_urls  # This may be None if not yet loaded.
-        if track_urls is None:
-            track_urls = self.api_dict[collection].get_track_urls(tape)
+
+        for tape in tapes:
+            if tape.track_urls is None:
+                tape.track_urls = self.api_dict[collection].get_track_urls(tape)
         self.save_tapes_to_cloud(collection, date, tapes)  # Make non-blocking
-        return track_urls
+        return tapes[tape_no].track_urls
 
     def save_tapes_to_cloud(self, collection, date, tapes):
         # Save the tape info to the metadata cache on the cloud. Non-blocking!
@@ -117,7 +117,7 @@ class Tape:
         self.track_urls = track_urls
 
     def __repr__(self):
-        return f"Tape(id={self.id}, date={self.date}, score={self.score}, n_tracks={len(self.track_urls) if self.track_urls else 0})"
+        return f"Tape(id={self.id}, date={self.date}, score={self.score}, n_tracks={len(self.track_urls['tracklist']) if self.track_urls else None})"
 
 
 class PhishinAPI(MetaAPI):
@@ -247,17 +247,18 @@ class ArchiveAPI(MetaAPI):
 
         return Tape(id, date, score, None)
 
+    def modify_tape_sore(self, tape):
+        score = tape.score
+        tracks = tape.track_urls["tracklist"] if tape.track_urls else []
+        score = score + 3 * (self.title_fraction(tracks) - 1)  # reduce score for tapes without titles.
+        score = score + min(20, len(tracks)) / 4
+
     def get_track_urls(self, tape):
         # Getting the tape files is slow. We should return immediately, and do this in the background.
         tracks = self.get_tracks(tape.id)
         tracks = self.insert_set_breaks(tape.date, tracks)
         track_urls = {"tracklist": [t["title"] for t in tracks], "urls": [t["url"] for t in tracks]}
         return track_urls
-        """
-        score = score + 3 * (self.title_fraction() - 1)  # reduce score for tapes without titles.
-        score = score + min(20, len(tracks)) / 4
-        return score
-        """
 
     def insert_set_breaks(self, date, tracks):
         tlist = [t["title"] for t in tracks]
@@ -345,6 +346,10 @@ class ArchiveAPI(MetaAPI):
                         trackno = matching_orig["track"]
                     else:
                         title = fileinfo.get("title", name)
+                        if not isinstance(title, (str, bytes)):
+                            title = ""
+                        title = re.sub(r"gd\d{2}(?:\d{2})?-\d{2}-\d{2}[ ]*([td]\d*)*", "", title).strip()
+                        title = re.sub(r"(.flac)|(.mp3)|(.ogg)$", "", title).strip()
                         try:
                             trackno = int(fileinfo.get("track"))
                         except (ValueError, TypeError):
@@ -366,28 +371,17 @@ class ArchiveAPI(MetaAPI):
             # logger.warn(f"Failed to read venue, city, state from metadata. {self.meta_path}")
             pass
 
-        for track in self._tracks:
-            if not isinstance(track.title, (str, bytes)):
-                track.title = ""
-            track.title = re.sub(r"gd\d{2}(?:\d{2})?-\d{2}-\d{2}[ ]*([td]\d*)*", "", track.title).strip()
-            track.title = re.sub(r"(.flac)|(.mp3)|(.ogg)$", "", track.title).strip()
-        self.insert_breaks()
-
         return music_tracks
         """
 
     def _make_track(self, ifile, orig_titles, orig_tracknums):
         raise NotImplementedError
 
-    def title_fraction(self):
-        n_tracks = len(self._tracks)
+    def title_fraction(self, tracklist):
+        n_tracks = len(tracklist)
         lc = string.ascii_lowercase
         n_known = len(
-            [
-                t
-                for t in self._tracks
-                if t.title is not None and t.title != "unknown" and sum([x in lc for x in t.title.lower()]) > 4
-            ]
+            [t for t in tracklist if t is not None and t != "unknown" and sum([x in lc for x in t.title.lower()]) > 4]
         )
         return (1 + n_known) / (1 + n_tracks)
 

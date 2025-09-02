@@ -26,6 +26,15 @@ def test_dead_urls():
     assert show["urls"][0].endswith(".ogg")
 
 
+def test_other_urls():
+    mapi = MetaAPI.MetaAPI("OteilAndFriends")
+    show = mapi.track_urls("2023-07-28")
+    assert isinstance(show, dict)
+    assert len(show["tracklist"]) == len(show["urls"])
+    assert show["tracklist"][0] == "crowd/tuning"
+    assert show["urls"][0].endswith(".mp3")
+
+
 def test_dead_urls_noshow():
     mapi = MetaAPI.MetaAPI("GratefulDead")
     show = mapi.track_urls("1975-08-12")  # No show on this date
