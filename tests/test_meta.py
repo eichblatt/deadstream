@@ -137,3 +137,28 @@ def test_set_breaks():
     assert set_breaks.longbreaks("GratefulDead", "1975-08-13")[0] == "Stronger Than Dirt"
     assert set_breaks.longbreaks("GratefulDead", "1977-05-08")[0] == "Dancin' In The Streets"
     assert set_breaks.shortbreaks("GratefulDead", "1977-05-08")[0] == "Morning Dew"
+
+
+def test_tape_score():
+    tape_id = "gd1990-03-29.127385.mtx.eichorn.flac16"
+    mapi = MetaAPI.MetaAPI("GratefulDead")
+    tapes = mapi.get_tapes("1990-03-29")
+    for tape in tapes:
+        if tape.id == tape_id:
+            break
+    score = tape.score
+    tracks = mapi.api_dict["GratefulDead"].get_track_urls(tape)
+    new_score = tape.score
+    assert len(tracks["tracklist"]) == 25
+    assert new_score > score
+
+
+def test_track_name_cleanup():
+    tape_id = "gd1990-12-30.141864.UltraMatrix.sbd.cm.miller.flac1644"
+    mapi = MetaAPI.MetaAPI("GratefulDead")
+    tapes = mapi.get_tapes("1990-12-30")
+    for tape in tapes:
+        if tape.id == tape_id:
+            break
+    tracks = mapi.api_dict["GratefulDead"].get_track_urls(tape)
+    assert not tracks["tracklist"][0].startswith("01")

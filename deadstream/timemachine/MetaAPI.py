@@ -247,17 +247,23 @@ class ArchiveAPI(MetaAPI):
 
         return Tape(id, date, score, None)
 
-    def modify_tape_sore(self, tape):
+    def update_tape_score(self, tape):
         score = tape.score
-        tracks = tape.track_urls["tracklist"] if tape.track_urls else []
+        if tape.track_urls is None:
+            track_urls = self.get_track_urls(tape)
+        tracks = tape.track_urls["tracklist"]
         score = score + 3 * (self.title_fraction(tracks) - 1)  # reduce score for tapes without titles.
         score = score + min(20, len(tracks)) / 4
+        tape.score = score
+        return score
 
     def get_track_urls(self, tape):
         # Getting the tape files is slow. We should return immediately, and do this in the background.
-        tracks = self.get_tracks(tape.id)
-        tracks = self.insert_set_breaks(tape.date, tracks)
-        track_urls = {"tracklist": [t["title"] for t in tracks], "urls": [t["url"] for t in tracks]}
+        track_data = self.get_track_data(tape)
+        track_data = self.insert_set_breaks(tape.date, track_data)
+        track_urls = {"tracklist": [t["title"] for t in track_data], "urls": [t["url"] for t in track_data]}
+        tape.track_urls = track_urls
+        self.update_tape_score(tape)
         return track_urls
 
     def insert_set_breaks(self, date, tracks):
@@ -306,7 +312,8 @@ class ArchiveAPI(MetaAPI):
         tracks_with_breaks.append(tracks[-1])
         return tracks_with_breaks
 
-    def get_tracks(self, identifier):
+    def get_track_data(self, tape):
+        identifier = tape.id
         meta_url = f"https://archive.org/metadata/{identifier}"
         resp = requests.get(meta_url)
         resp.raise_for_status()
@@ -354,6 +361,7 @@ class ArchiveAPI(MetaAPI):
                             trackno = int(fileinfo.get("track"))
                         except (ValueError, TypeError):
                             trackno = fileinfo.get("track")
+                    title = re.sub(r"^\d+[\s\.\-_]+", "", title).strip()
                     download = f"https://archive.org/download/{identifier}/{name}"
                     music_tracks.append({"track": trackno, "title": title, "url": download})
                 if len(music_tracks) > 0:
@@ -380,9 +388,7 @@ class ArchiveAPI(MetaAPI):
     def title_fraction(self, tracklist):
         n_tracks = len(tracklist)
         lc = string.ascii_lowercase
-        n_known = len(
-            [t for t in tracklist if t is not None and t != "unknown" and sum([x in lc for x in t.title.lower()]) > 4]
-        )
+        n_known = len([t for t in tracklist if t is not None and t != "unknown" and sum([x in lc for x in t.lower()]) > 4])
         return (1 + n_known) / (1 + n_tracks)
 
     @lru_cache(maxsize=32)
