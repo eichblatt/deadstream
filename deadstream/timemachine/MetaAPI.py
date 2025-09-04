@@ -14,7 +14,6 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
-import abc
 import csv
 import datetime
 import difflib
@@ -43,7 +42,7 @@ logger.setLevel(logging.INFO)
 FAVORED_TAPER = {"UltraMatrix": 10, "miller": 5}
 
 
-class MetaAPI(abc.ABC):
+class MetaAPI:
     """A class to pull metadata about a given collection from multiple archives,
     and save the metadata in our google cloud storage."""
 
@@ -110,17 +109,20 @@ class MetaAPI(abc.ABC):
 class Tape:
     """A simple class to store tape data. we may also need to add vcs data"""
 
-    def __init__(self, id: str, date: str, score: float, track_urls: dict):
+    def __init__(self, id, collection, date, score: float, vcs, track_urls: dict, title=""):
         self.id = id
+        self.collection = collection
+        self.title = title
         self.date = date
         self.score = score
+        self.vcs = ""
         self.track_urls = track_urls
 
     def __repr__(self):
-        return f"Tape(id={self.id}, date={self.date}, score={self.score}, n_tracks={len(self.track_urls['tracklist']) if self.track_urls else None})"
+        return f"Tape(id={self.id}, collection={self.collection}, date={self.date}, title={self.title}, score={self.score}, vcs={self.vcs}, n_tracks={len(self.track_urls['tracklist']) if self.track_urls else None})"
 
 
-class PhishinAPI(MetaAPI):
+class PhishinAPI:
     """For dealing with Phish.in API"""
 
     def __init__(self, collection="Phish"):
@@ -130,7 +132,8 @@ class PhishinAPI(MetaAPI):
 
     def get_tapes(self, date):
         raw_meta = self._get_raw_meta(date)
-        tapes = [Tape(f'phishin_{raw_meta["id"]}', date, 5.0, self.get_track_urls(date))]
+        vcs = ""
+        tapes = [Tape(f'phishin_{raw_meta["id"]}', "Phish", date, 5.0, vcs, self.get_track_urls(date))]
         return tapes
 
     def get_track_urls(self, date):
@@ -166,7 +169,7 @@ class PhishinAPI(MetaAPI):
         return [self.collection]
 
 
-class ArchiveAPI(MetaAPI):
+class ArchiveAPI:
     """This class queries the archive.org API for metadata, generally about a given collection"""
 
     def __init__(self, collection="GratefulDead"):
@@ -224,9 +227,7 @@ class ArchiveAPI(MetaAPI):
             elif not isinstance(meta_item["addeddate"], datetime.datetime):
                 raise ValueError(f"Unexpected addeddate type: {type(meta_item['addeddate'])}")
 
-        colls = meta_item.get("collection", [])
-        artist = self.collection
-        # How to add in set breaks?
+        collection = self.collection
 
         stream_only = "stream_only" in meta_item["collection"]
         avg_rating = float(meta_item.get("avg_rating", 2))
@@ -245,7 +246,7 @@ class ArchiveAPI(MetaAPI):
         # down-weigh avg_rating: it's usually about the show, not the tape.
         score = score + 0.5 * (avg_rating - 2.0 / math.sqrt(num_reviews))
 
-        return Tape(id, date, score, None)
+        return Tape(id, collection, date, score, "", None)
 
     def update_tape_score(self, tape):
         score = tape.score
@@ -312,15 +313,21 @@ class ArchiveAPI(MetaAPI):
         tracks_with_breaks.append(tracks[-1])
         return tracks_with_breaks
 
-    def get_track_data(self, tape):
-        identifier = tape.id
-        meta_url = f"https://archive.org/metadata/{identifier}"
+    def _get_track_data(self, tape_id):
+        meta_url = f"https://archive.org/metadata/{tape_id}"
         resp = requests.get(meta_url)
         resp.raise_for_status()
         data = resp.json()
+        return data
+
+    def get_track_data(self, tape):
+        data = self._get_track_data(tape.id)
         tape_files = data.get("files", [])
         orig_tracks = []
         music_tracks = []
+        venue = data.get("metadata", {}).get("venue", "")
+        city_state = data.get("metadata", {}).get("coverage", " , ")
+        tape.vcs = f"{venue}, {city_state}"
         orig_files = [x for x in tape_files if x.get("source") == "original" and x.get("format") in self._audio_formats]
         for fileinfo in orig_files:
             name = fileinfo["name"]
@@ -329,7 +336,7 @@ class ArchiveAPI(MetaAPI):
                 trackno = int(fileinfo.get("track"))
             except (ValueError, TypeError):
                 trackno = fileinfo.get("track")
-            download = f"https://archive.org/download/{identifier}/{name}"
+            download = f"https://archive.org/download/{tape.id}/{name}"
             orig_tracks.append({"track": trackno, "title": title, "url": download})
 
         while len(music_tracks) == 0:
@@ -362,7 +369,7 @@ class ArchiveAPI(MetaAPI):
                         except (ValueError, TypeError):
                             trackno = fileinfo.get("track")
                     title = re.sub(r"^\d+[\s\.\-_]+", "", title).strip()
-                    download = f"https://archive.org/download/{identifier}/{name}"
+                    download = f"https://archive.org/download/{tape.id}/{name}"
                     music_tracks.append({"track": trackno, "title": title, "url": download})
                 if len(music_tracks) > 0:
                     break

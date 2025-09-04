@@ -162,3 +162,31 @@ def test_track_name_cleanup():
             break
     tracks = mapi.api_dict["GratefulDead"].get_track_urls(tape)
     assert not tracks["tracklist"][0].startswith("01")
+
+
+def test_track_data():
+    tape_id = "gd1990-03-29.127385.mtx.eichorn.flac16"
+    mapi = MetaAPI.MetaAPI("GratefulDead")
+    track_data = mapi.api_dict["GratefulDead"]._get_track_data(tape_id)
+    assert track_data["metadata"]["date"] == "1990-03-29"
+    assert track_data["metadata"]["venue"] == "Nassau Coliseum"
+    assert track_data["metadata"]["coverage"] == "Uniondale, NY"
+    assert track_data["metadata"]["title"] == "Grateful Dead Live at Nassau Coliseum on 1990-03-29"
+
+    tapes = mapi.get_tapes("1990-12-30")
+    for tape in tapes:
+        if tape.id == tape_id:
+            break
+
+    tracks = mapi.api_dict["GratefulDead"].get_track_data(tape)
+    # The tape should be populated now.
+    assert tape.vcs == "Nassau Coliseum, Uniondale, NY"
+    assert tape.title == "Grateful Dead Live at Nassau Coliseum on 1990-03-29"
+
+
+def test_date_meta():
+    mapi = MetaAPI.MetaAPI("GratefulDead")
+    date = "1990-03-29"
+    date_meta = mapi.api_dict["GratefulDead"]._get_date_meta(date)
+    for item in date_meta["items"]:
+        assert "identifier" in item.keys()
