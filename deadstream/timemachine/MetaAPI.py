@@ -31,7 +31,7 @@ from typing import Callable, Optional
 from deadstream.timemachine import cloud_utils
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
+logger.setLevel(logging.INFO)
 
 FAVORED_TAPER = {"UltraMatrix": 10, "miller": 5}
 
@@ -43,9 +43,7 @@ class MetaAPI:
     def __init__(self, collections=["GratefulDead"], save_to_cloud=False, bucket_name=None):
         self.api_dict = self.set_api_dict(collections)
         cloud_utils.SAVE_TO_CLOUD = save_to_cloud
-        self.bucket_name = bucket_name
-        if self.bucket_name is None:
-            self.bucket_name = cloud_utils.BUCKET_NAME
+        self.bucket_name = bucket_name if self.bucket_name is not None else cloud_utils.BUCKET_NAME
 
     def set_bucket_name(self, bucket_name):
         self.bucket_name = bucket_name
@@ -91,10 +89,14 @@ class MetaAPI:
         return outpath
 
     def get_tapes(self, date, collection=None):
-        if collection is None:
-            collection = list(self.api_dict.keys())[0]
-        tapes = self.api_dict[collection].get_tapes(date)  # From the archive, not from cache
-        return tapes
+        collections = list(self.api_dict.keys())
+        tape_dict = {}
+        for collection in collections:
+            tapes = self.api_dict[collection].get_tapes(date)  # From the archive, not from cache
+            tape_dict[collection] = tapes
+        if len(collections) == 1:
+            return tape_dict[collections[0]]
+        return tape_dict
 
     def track_urls(self, date, collection=None, tape_no=0):
         if collection is None:
@@ -103,7 +105,15 @@ class MetaAPI:
         tapes = self.get_tapes(date, collection)
         if len(tapes) == 0:
             logger.debug(f"No tapes found for {date} in {collection}")
-            return {"tracklist": [], "urls": []}
+            return Tape(
+                id="none",
+                collection=collection,
+                date=date,
+                score=0,
+                vcs="",
+                track_urls={"tracklist": [], "urls": []},
+                title="No Tape Found",
+            )
         if tape_no >= len(tapes):
             tape_no = 0
 
@@ -111,7 +121,7 @@ class MetaAPI:
             if tape.track_urls is None:
                 tape.track_urls = self.api_dict[collection].get_track_urls(tape)
         self.save_tapes_to_cloud(tapes)  # Make non-blocking
-        return tapes[tape_no].track_urls
+        return tapes[tape_no]
 
     def save_tapes_to_cloud(self, tapes):
         # Save the tape info to the metadata cache on the cloud. Non-blocking!
@@ -143,7 +153,16 @@ class MetaAPI:
         collection_names = []
         for api in [PhishinAPI(), ArchiveAPI("GratefulDead")]:
             collection_names.extend(api.get_all_collection_names())
+        # self.save_collection_names_to_cloud(collection_names)
         return collection_names
+
+    def save_collection_names_to_cloud(self, collection_names):
+        if not cloud_utils.SAVE_TO_CLOUD:
+            return
+        filename = f"sundry/etree_collection_names.json"
+        all_collection_names = {"items": collection_names}
+        cloud_utils.write_json(all_collection_names, filename, bucket_name=self.bucket_name)
+        return all_collection_names
 
 
 class Tape:
