@@ -43,7 +43,7 @@ class MetaAPI:
     def __init__(self, collections=["GratefulDead"], save_to_cloud=False, bucket_name=None):
         self.api_dict = self.set_api_dict(collections)
         cloud_utils.SAVE_TO_CLOUD = save_to_cloud
-        self.bucket_name = bucket_name if self.bucket_name is not None else cloud_utils.BUCKET_NAME
+        self.bucket_name = bucket_name if bucket_name is not None else cloud_utils.BUCKET_NAME
 
     def set_bucket_name(self, bucket_name):
         self.bucket_name = bucket_name
