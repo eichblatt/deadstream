@@ -5,7 +5,6 @@ import os
 import requests
 import tempfile
 import time
-from threading import Event
 
 from google.cloud import storage
 

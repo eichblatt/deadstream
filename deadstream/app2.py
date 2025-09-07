@@ -16,18 +16,6 @@ from deadstream.timemachine import cloud_utils
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-config.load_options()
-
-config.optd = {
-    "COLLECTIONS": ["DeadAndCompany"],
-    "FAVORED_TAPER": {"UltraMatrix": 10, "miller": 5},
-    "PLAY_LOSSLESS": "false",
-}
-aa = Archivary.Archivary(collection_list=config.optd["COLLECTIONS"])
-
-cloud_utils.SAVE_TO_CLOUD = True
-# cloud_utils.SAVE_TO_CLOUD = False
-
 app = Flask(__name__)
 
 
@@ -118,13 +106,6 @@ def get_all_collection_names():
     return {"collection_names": collection_names}
 
 
-@app.route("/venue/<date>")
-def venue(date):
-    t, collection = get_tape(date)
-    venue = t.venue()
-    return {"collection": collection, "venue": venue}
-
-
 @app.route("/track_urls/<date>")
 def track_urls(date):
     t, collection = get_tape(date)
@@ -135,53 +116,12 @@ def track_urls(date):
     return {"collection": collection, "tracklist": tl, "urls": urls, "tape_id": t.identifier}
 
 
-@app.route("/tracklist/<date>")
-def tracklist(date):
-    t, collection = get_tape(date)
-    t.get_metadata()
-    tl = [x.title for x in t.tracks()]
-    return {"collection": collection, "tracklist": tl}
-
-
-@app.route("/urls/<date>")
-def urls(date):
-    t, collection = get_tape(date)
-    t.get_metadata()
-    trks = t.tracks()
-    result = [x.files[0]["url"] for x in trks]
-    return {"collection": collection, "urls": result}
-
-
 @app.route("/tape_ids/<date>")
 def tape_ids(date):
     tapes, collections = get_all_tapes(date)
     tape_ids = [t.identifier for t in tapes]
     # return list(zip(collections, tape_ids))
     return dict(zip(collections, tape_ids))
-
-
-@app.route("/vcs/<collection>")
-def vcs(collection):
-    """
-    load an archive collection and return a super-compressed version of the
-    date, artist, venue, city, state
-    which can be loaded by the player to save memory.
-    """
-    print(f"in vcs, collection:{collection}")
-    coptd = config.optd["COLLECTIONS"]
-    vcs_data = {}
-    try:
-        config.optd["COLLECTIONS"] = [collection]
-        a = Archivary.Archivary(collection_list=config.optd["COLLECTIONS"])
-        vcs_data = {d: a.tape_dates[d][0].venue() for d in a.dates}
-        vcs_blob_name = f"vcs/{collection}_vcs.json"
-        cloud_utils.write_json(vcs_data, vcs_blob_name)
-    except:
-        pass
-    finally:
-        pass
-        # config.optd['COLLECTIONS'] = coptd
-    return {collection: vcs_data}
 
 
 if __name__ == "main":
