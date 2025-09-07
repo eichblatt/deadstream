@@ -15,29 +15,23 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
 import csv
-import datetime
 import difflib
-import json
 import logging
 import math
 import os
-import random
 import re
+import datetime
 import requests
 import string
-import tempfile
-import time
 from functools import lru_cache
-from threading import Event, Lock, Thread
 
 from io import StringIO
-from operator import methodcaller
 from typing import Callable, Optional
 
 from deadstream.timemachine import cloud_utils
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
+logger.setLevel(logging.DEBUG)
 
 FAVORED_TAPER = {"UltraMatrix": 10, "miller": 5}
 
@@ -46,9 +40,16 @@ class MetaAPI:
     """A class to pull metadata about a given collection from multiple archives,
     and save the metadata in our google cloud storage."""
 
-    def __init__(self, collections=["GratefulDead"], save_to_cloud=False):
+    def __init__(self, collections=["GratefulDead"], save_to_cloud=False, bucket_name=None):
         self.api_dict = self.set_api_dict(collections)
-        self.save_to_cloud = save_to_cloud
+        cloud_utils.SAVE_TO_CLOUD = save_to_cloud
+        self.bucket_name = bucket_name
+        if self.bucket_name is None:
+            self.bucket_name = cloud_utils.BUCKET_NAME
+
+    def set_bucket_name(self, bucket_name):
+        self.bucket_name = bucket_name
+        return self.bucket_name
 
     def set_api_dict(self, collections):
         if isinstance(collections, str):
@@ -60,18 +61,34 @@ class MetaAPI:
     def collections(self):
         return list(self.api_dict.keys())
 
-    def get_vcs(self):
+    def get_collection_vcs(self, clobber=False):
+        vcs_dict = {}
         for collection, api in self.api_dict.items():
             logger.info(f"Getting vcs for {collection}")
-            vcs = api.get_vcs(collection)
-            self.save_vcs_to_cloud(vcs)
-        return vcs
+            existing_data = {}
+            if not clobber:
+                try:
+                    cloudpath = f"vcs/{collection}_vcs.json"
+                    existing_data = cloud_utils.read_json(cloudpath)
+                except Exception as e:
+                    logger.info(f"No existing vcs data for {collection}: {e}")
+            new_vcs = api.get_collection_vcs(collection, existing_data)
+            vcs = existing_data | new_vcs
+            outpath = self.save_collection_vcs_to_cloud(collection, vcs)
+            vcs_dict[collection] = vcs
+        return vcs_dict
 
-    def save_vcs_to_cloud(self, vcs):
+    def save_collection_vcs_to_cloud(self, collection, vcs):
         # Save the vcs info to the metadata cache on the cloud. Non-blocking!
-        if not self.save_to_cloud:
-            return
-        raise NotImplementedError
+        if len(vcs) == 0:
+            logger.warning(f"No vcs data to save for {collection}")
+        outpath = f"vcs/{collection}_vcs.json"
+        assert isinstance(vcs, dict)
+        if not cloud_utils.SAVE_TO_CLOUD:
+            return outpath
+        logger.debug(f"Saving vcs for {collection} to {outpath} on cloud")
+        cloud_utils.write_json(vcs, outpath, bucket_name=self.bucket_name)
+        return outpath
 
     def get_tapes(self, date, collection=None):
         if collection is None:
@@ -82,8 +99,10 @@ class MetaAPI:
     def track_urls(self, date, collection=None, tape_no=0):
         if collection is None:
             collection = list(self.api_dict.keys())[0]
+        logger.debug(f"Getting track URLs for {date} from {collection}, tape_no {tape_no}")
         tapes = self.get_tapes(date, collection)
         if len(tapes) == 0:
+            logger.debug(f"No tapes found for {date} in {collection}")
             return {"tracklist": [], "urls": []}
         if tape_no >= len(tapes):
             tape_no = 0
@@ -91,32 +110,61 @@ class MetaAPI:
         for tape in tapes:
             if tape.track_urls is None:
                 tape.track_urls = self.api_dict[collection].get_track_urls(tape)
-        self.save_tapes_to_cloud(collection, date, tapes)  # Make non-blocking
+        self.save_tapes_to_cloud(tapes)  # Make non-blocking
         return tapes[tape_no].track_urls
 
-    def save_tapes_to_cloud(self, collection, date, tapes):
+    def save_tapes_to_cloud(self, tapes):
         # Save the tape info to the metadata cache on the cloud. Non-blocking!
-        if not self.save_to_cloud:
+        if not cloud_utils.SAVE_TO_CLOUD:
             return
-        raise NotImplementedError
+        seen = set()
+        for tape in tapes:
+            dirname = f"tapes/{tape.collection}/{tape.date}"
+            if dirname not in seen:
+                seen.add(dirname)
+                # Write tape_ids.json to dirname
+                tape_ids = [[t.id, t.score] for t in tapes]
+                outpath = f"{dirname}/tape_ids.json"
+                logger.info(f"Saving tape {tape_ids} to {outpath} on cloud")
+                cloud_utils.write_json(tape_ids, outpath, bucket_name=self.bucket_name)
+            tape_data = {
+                "id": tape.id,
+                "collection": tape.collection,
+                "venue": tape.vcs,
+                "tracklist": tape.tracklist,
+                "urls": tape.urls,
+            }
+            filename = f"{dirname}/{tape.id}/trackdata.json"
+            logger.debug(f"Saving tape {tape_data} to {filename} on cloud")
+            cloud_utils.write_json(tape_data, filename, bucket_name=self.bucket_name)
+        # raise NotImplementedError
 
     def get_all_collection_names(self):
         collection_names = []
-        for api in self.api_dict.values():
+        for api in [PhishinAPI(), ArchiveAPI("GratefulDead")]:
             collection_names.extend(api.get_all_collection_names())
+        return collection_names
 
 
 class Tape:
     """A simple class to store tape data. we may also need to add vcs data"""
 
-    def __init__(self, id, collection, date, score: float, vcs, track_urls: dict, title=""):
+    def __init__(self, id, collection, date, score: float, vcs, track_urls: Optional[dict] = None, title=""):
         self.id = id
         self.collection = collection
         self.title = title
         self.date = date
         self.score = score
-        self.vcs = ""
+        self.vcs = vcs
         self.track_urls = track_urls
+
+    @property
+    def tracklist(self):
+        return self.track_urls.get("tracklist", [])
+
+    @property
+    def urls(self):
+        return self.track_urls.get("urls", [])
 
     def __repr__(self):
         return f"Tape(id={self.id}, collection={self.collection}, date={self.date}, title={self.title}, score={self.score}, vcs={self.vcs}, n_tracks={len(self.track_urls['tracklist']) if self.track_urls else None})"
@@ -131,9 +179,16 @@ class PhishinAPI:
         self.tapes = None
 
     def get_tapes(self, date):
+        logger.debug(f"PhishinAPI: Getting tapes for {date}")
         raw_meta = self._get_raw_meta(date)
-        vcs = ""
-        tapes = [Tape(f'phishin_{raw_meta["id"]}', "Phish", date, 5.0, vcs, self.get_track_urls(date))]
+        venue_meta = raw_meta.get("venue", {})
+        vcs = (
+            f"{venue_meta.get('name','Unknown venue')}, {venue_meta.get('city','location')} {venue_meta.get('state','Unknown')}"
+        )
+        title = raw_meta.get("tour_name", "Unknown Tour")
+        tapes = [
+            Tape(f'phishin_{raw_meta["id"]}', "Phish", date, 5.0, vcs=vcs, track_urls=self.get_track_urls(date), title=title)
+        ]
         return tapes
 
     def get_track_urls(self, date):
@@ -159,14 +214,51 @@ class PhishinAPI:
     @lru_cache(maxsize=32)
     def _get_raw_meta(self, date):
         url = f"{self.api}/shows/{date}"
-        r = requests.get(url)
-        if r.status_code != 200:
-            raise Exception("Download", f"Error {r.status_code} collecting data")
-        raw_meta = r.json()
+        response = requests.get(url)
+        response.raise_for_status()
+        raw_meta = response.json()
         return raw_meta
 
     def get_all_collection_names(self):
         return [self.collection]
+
+    def get_collection_vcs(self, collection, existing_data):
+        logger.debug(f"getting vcs for {collection} from phish.in")
+
+        max_date = "1970-01-01"
+        if existing_data:
+            max_date = max(existing_data.keys())
+        start_date = (datetime.datetime.fromisoformat(max_date) + datetime.timedelta(days=1)).date().isoformat()
+        logger.debug(f"start date is {start_date}")
+
+        per_page = 1000
+        page = 1
+        total_pages = 1
+        while page <= total_pages:
+            params = {
+                "page": f"{page}",
+                "per_page": f"{per_page}",
+                "sort": "date:desc",
+                "audio_status": "any",
+                "start_date": start_date,
+                "liked_by_user": "false",
+            }
+            logger.debug(f"Getting vcs data from {self.api}/shows with params {params}")
+
+            response = requests.get(f"{self.api}/shows", params=params)
+            response.raise_for_status()
+            json_data = response.json()
+            total_pages = int(json_data.get("total_pages", 1))
+            page = page + 1
+            vcs_data = {}
+            for show in json_data["shows"]:
+                date = show["date"]
+                venue = show.get("venue", {})
+                vcs_data[date] = (
+                    f"{venue.get('name','Unknown venue')}, {venue.get('city','location')} {venue.get('state','Unknown')}"
+                )
+        return vcs_data
+        # Return all vcs info between start and end_date for this collection
 
 
 class ArchiveAPI:
@@ -199,12 +291,10 @@ class ArchiveAPI:
         first_time = True
         while first_time or current_rows < total:
             first_time = False
-            r = requests.get(f"{self.api}/scrape", params=params)
-            logger.debug(f"url is {r.url}")
-            if r.status_code != 200:
-                logger.error(f"Error {r.status_code} collecting data")
-                raise Exception("Download", f"Error {r.status_code} collection")
-            j = r.json()
+            response = requests.get(f"{self.api}/scrape", params=params)
+            response.raise_for_status()
+            logger.debug(f"url is {response.url}")
+            j = response.json()
             current_rows += j["count"]
             collection_names.extend([x["identifier"] for x in j["items"]])
 
@@ -212,7 +302,7 @@ class ArchiveAPI:
         return collection_names
 
     def get_tapes(self, date):
-        raw_meta = self._get_date_meta(date)
+        raw_meta = self._get_meta_date_range(date, date)
         items = raw_meta.get("items", [])
         logger.info(f"Found {len(items)} tapes for {self.collection} on {date}")
         tapes = [self.make_tape(item, date) for item in items]
@@ -246,7 +336,9 @@ class ArchiveAPI:
         # down-weigh avg_rating: it's usually about the show, not the tape.
         score = score + 0.5 * (avg_rating - 2.0 / math.sqrt(num_reviews))
 
-        return Tape(id, collection, date, score, "", None)
+        tape = Tape(id, collection, date, score, vcs="", track_urls=None, title="")
+        logger.debug(f"Made tape: {tape}")
+        return tape
 
     def update_tape_score(self, tape):
         score = tape.score
@@ -260,6 +352,7 @@ class ArchiveAPI:
 
     def get_track_urls(self, tape):
         # Getting the tape files is slow. We should return immediately, and do this in the background.
+        logger.debug(f"ArchiveAPI: Getting track URLs for tape {tape.id}")
         track_data = self.get_track_data(tape)
         track_data = self.insert_set_breaks(tape.date, track_data)
         track_urls = {"tracklist": [t["title"] for t in track_data], "urls": [t["url"] for t in track_data]}
@@ -268,6 +361,7 @@ class ArchiveAPI:
         return track_urls
 
     def insert_set_breaks(self, date, tracks):
+        logger.debug(f"ArchiveAPI: Inserting set breaks for tape on {date}")
         tlist = [t["title"] for t in tracks]
         set_breaks_already_in_tape = difflib.get_close_matches("Set Break", tlist, cutoff=0.6)
         if len(set_breaks_already_in_tape) > 0:
@@ -315,12 +409,13 @@ class ArchiveAPI:
 
     def _get_track_data(self, tape_id):
         meta_url = f"https://archive.org/metadata/{tape_id}"
-        resp = requests.get(meta_url)
-        resp.raise_for_status()
-        data = resp.json()
+        response = requests.get(meta_url)
+        response.raise_for_status()
+        data = response.json()
         return data
 
     def get_track_data(self, tape):
+        logger.debug(f"ArchiveAPI: Getting track data for tape {tape.id}")
         data = self._get_track_data(tape.id)
         tape_files = data.get("files", [])
         orig_tracks = []
@@ -399,7 +494,7 @@ class ArchiveAPI:
         return (1 + n_known) / (1 + n_tracks)
 
     @lru_cache(maxsize=32)
-    def _get_date_meta(self, date):
+    def _get_meta_date_range(self, start_date, end_date):
         url = f"{self.api}/scrape"
         fields = ",".join(
             [
@@ -420,18 +515,50 @@ class ArchiveAPI:
             ]
         )
         sorts = ",".join(["date asc", "avg_rating desc", "num_favorites desc", "downloads desc"])
-        query = f"collection:{self.collection} AND date:[{date} TO {date}]"
+        query = f"collection:{self.collection} AND date:[{start_date} TO {end_date}]"
         params = self.params | {"sorts": sorts, "fields": fields, "q": query}
-        r = requests.get(url, params=params)
-        if r.status_code != 200:
-            raise Exception("Download", f"Error {r.status_code} collecting data")
-        raw_meta = r.json()
+        logger.debug(f"in _get_meta_date_range, url is {url} with params {params}")
+        response = requests.get(url, params=params)
+        response.raise_for_status()
+        raw_meta = response.json()
         if raw_meta["count"] < raw_meta["total"]:
-            logger.warning(f"Only {raw_meta['count']} of {raw_meta['total']} tapes found for {self.collection} on {date}")
+            logger.warning(f"Only {raw_meta['count']} of {raw_meta['total']} tapes found for {self.collection}")
         return raw_meta
 
-    def get_all_collection_names(self):
-        raise NotImplementedError
+    def get_collection_vcs(self, collection, existing_data):
+        """Get the venue, city, state (vcs) info for all shows in this collection.
+        Because getting this info is so slow, we will initially only save the dates and tape_ids. We can
+        update the vcs info later by getting the tape info for the first tape on each date"""
+
+        logger.debug(f"getting vcs for {collection} from archive.org")
+        max_date = "1900-01-01"
+        if existing_data:
+            max_date = max(existing_data.keys())
+            logger.debug(f"max date in existing data is {max_date}")
+        start_date = (datetime.datetime.fromisoformat(max_date) + datetime.timedelta(days=1)).date().isoformat()
+
+        total = 1
+        count = 0
+        vcs_data = {}
+
+        while count < total:
+            collection_meta = self._get_meta_date_range(start_date, datetime.date.max.isoformat())
+            total = collection_meta["total"]
+            count = collection_meta["count"]
+            for item in collection_meta.get("items", []):
+                date = item["date"]
+                if "T" in date:
+                    date = date.split("T")[0]
+                try:
+                    dt = datetime.datetime.fromisoformat(date)
+                    date = dt.date().isoformat()
+                except ValueError:
+                    logger.warning(f"Invalid date format: {date}")
+                    continue
+                vcs_data[date] = item["identifier"]
+
+        logger.debug(f"in get_collection_vcs, found {len(vcs_data)} new vcs entries for {collection}")
+        return vcs_data
 
 
 class SetBreaks:

@@ -12,9 +12,9 @@ BUCKET_NAME = "spertilo-data"
 
 
 @lru_cache(maxsize=3)
-def get_bucket(bucket_name=BUCKET_NAME):
+def get_bucket(bucket_name=BUCKET_NAME, read_only=False):
     global SAVE_TO_CLOUD
-    if not SAVE_TO_CLOUD:
+    if not SAVE_TO_CLOUD and not read_only:
         return None, None
     try:
         storage_client = storage.Client(project="able-folio-397115")
@@ -26,13 +26,13 @@ def get_bucket(bucket_name=BUCKET_NAME):
         return None
 
 
-def write_json(data, filepath):
+def write_json(data, filepath, bucket_name=BUCKET_NAME):
     if not SAVE_TO_CLOUD:
         return ""
 
     def _save_to_cloud():
         try:
-            bucket = get_bucket()
+            bucket = get_bucket(bucket_name)
             if not bucket:
                 logger.error("Failed to get bucket")
                 return
@@ -43,7 +43,7 @@ def write_json(data, filepath):
             tids_blob_name = filepath
             tids_blob = bucket.blob(tids_blob_name)
             tids_blob.upload_from_string(tids_string)
-            logger.info(f"Successfully saved tape IDs for {filepath}")
+            logger.info(f"Successfully saved tape IDs for {bucket_name}/{filepath}")
         except Exception as e:
             logger.error(f"Error saving tape IDs to cloud: {str(e)}", exc_info=True)
 
@@ -75,9 +75,9 @@ def list_bucket_contents(bucket_name=BUCKET_NAME, prefix=None, delimiter="/"):
     return files, folders
 
 
-def read_file(bucket_name, file_name):
+def read_file(file_name, bucket_name=BUCKET_NAME):
     """Reads a file from a Google Cloud Storage bucket and returns its content."""
-    bucket = get_bucket(bucket_name)
+    bucket = get_bucket(bucket_name, read_only=True)
     blob = bucket.blob(file_name)
 
     try:
@@ -89,21 +89,18 @@ def read_file(bucket_name, file_name):
         return None
 
 
-def read_json(bucket_name, file_name):
+def read_json(file_name, bucket_name=BUCKET_NAME):
     """
     Reads a JSON file from a Google Cloud Storage bucket and returns its content
     as a Python dictionary (JSON object).
     """
     try:
         # Download the blob as a string
-        json_string = read_file(bucket_name, file_name)
+        json_string = read_file(file_name, bucket_name)
         # Parse the JSON string into a Python dictionary
         json_object = json.loads(json_string)
         logger.debug(f"Successfully read and parsed JSON from '{file_name}' in bucket '{bucket_name}'.")
         return json_object
     except json.JSONDecodeError as e:
         logger.error(f"Error: Could not decode JSON from '{file_name}'. Invalid JSON format: {e}")
-        return None
-    except Exception as e:
-        logger.error(f"An unexpected error occurred while reading '{file_name}': {e}")
         return None

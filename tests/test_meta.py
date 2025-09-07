@@ -43,7 +43,7 @@ def test_dead_urls_noshow():
     assert len(show["tracklist"]) == 0
 
 
-def test_other_urls():
+def test_other_urls2():
     mapi = MetaAPI.MetaAPI("SteveKimock")
     show = mapi.track_urls("2023-08-04")
     assert isinstance(show, dict)
@@ -107,8 +107,6 @@ def test_urls_mp3s():
     assert show["urls"][0].endswith(".mp3")
     assert show["tracklist"][0] == "Feel Like a Stranger"
     assert show["tracklist"][-1] == "Not Fade Away"
-    # assert "Set Break" in show.keys()
-    # assert len(show) == 17
 
 
 def test_get_tapes():
@@ -119,14 +117,32 @@ def test_get_tapes():
     assert tapes[0].track_urls is None  # because we haven't fetched them yet.
 
 
-def test_dead_urls_to_cloud():
-    assert False
+def test_get_meta_date_range():
+    # Find a show with mp3 instead of ogg files.
     mapi = MetaAPI.MetaAPI("GratefulDead")
+    metadata = mapi.api_dict["GratefulDead"]._get_meta_date_range("1992-06-25", "1993-01-01")
+    assert len(metadata["items"]) > 100
+
+
+def test_get_raw_meta_phish():
+    mapi = MetaAPI.MetaAPI("Phish")
+    raw_meta = mapi.api_dict["Phish"]._get_raw_meta("2025-06-24")
+
+
+def test_get_tapes_phish():
+    mapi = MetaAPI.MetaAPI("Phish")
+    tapes = mapi.get_tapes("2025-06-24")
+    assert tapes[0].vcs == "Petersen Events Center, Pittsburgh PA"
+    assert tapes[0].id == "phishin_2236"
+
+
+def test_dead_urls_to_cloud():
+    mapi = MetaAPI.MetaAPI("GratefulDead", save_to_cloud=True, bucket_name="spertilo-temporary")
     show = mapi.track_urls("1975-08-13")
-    assert isinstance(show, list)
-    assert show[0][0] == "Bill Graham Intro >"
-    assert show[-1][0] == "E: Blues For Allah"
-    assert show[0][1].endswith(".ogg")
+    assert isinstance(show, dict)
+    assert show["tracklist"][0] == "Bill Graham Intro >"
+    assert show["tracklist"][-1] == "E: Blues For Allah"
+    assert show["urls"][1].endswith(".ogg")
 
 
 def test_set_breaks():
@@ -180,13 +196,51 @@ def test_track_data():
 
     tracks = mapi.api_dict["GratefulDead"].get_track_data(tape)
     # The tape should be populated now.
-    assert tape.vcs == "Nassau Coliseum, Uniondale, NY"
-    assert tape.title == "Grateful Dead Live at Nassau Coliseum on 1990-03-29"
+    assert tape.vcs == "Oakland-Alameda County Coliseum, Oakland, CA"
 
 
 def test_date_meta():
     mapi = MetaAPI.MetaAPI("GratefulDead")
     date = "1990-03-29"
-    date_meta = mapi.api_dict["GratefulDead"]._get_date_meta(date)
+    date_meta = mapi.api_dict["GratefulDead"]._get_meta_date_range(date, date)
     for item in date_meta["items"]:
         assert "identifier" in item.keys()
+
+
+def test_all_collection_names():
+    mapi = MetaAPI.MetaAPI()
+    names = mapi.get_all_collection_names()
+    assert len(names) > 9000
+    assert "GratefulDead" in names
+    assert "Phish" in names
+    assert "DeadAndCompany" in names
+    assert "OteilAndFriends" in names
+    assert "SteveKimock" in names
+    assert "DarkStarOrchestra" in names
+    assert "Furthur" in names
+    assert "WidespreadPanic" in names
+    assert "moe" in names
+    assert "UmphreysMcGee" in names
+    assert "BillyAndTheKids" in names
+
+
+def test_get_vcs_phish():
+    mapi = MetaAPI.MetaAPI("Phish")
+    vcs = mapi.get_collection_vcs()
+
+
+def test_get_vcs_archive():
+    import datetime
+
+    mapi = MetaAPI.MetaAPI("BigFrog")
+    vcs_dict = mapi.get_collection_vcs()
+    assert vcs_dict["BigFrog"].get("2003-10-31", None) is not None
+
+    mapi = MetaAPI.MetaAPI(["BigFrog", "EricKrasno"], save_to_cloud=True, bucket_name="spertilo-temporary")
+    vcs_dict = mapi.get_collection_vcs()
+    assert "BigFrog" in vcs_dict.keys()
+    assert "EricKrasno" in vcs_dict.keys()
+    ek_dates = vcs_dict["EricKrasno"].keys()
+    for ek_date in ek_dates:
+        assert len(ek_date) == 10
+        datetime.date.fromisoformat(ek_date)  # will raise exception if not valid date
