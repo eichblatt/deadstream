@@ -214,9 +214,11 @@ class PhishinAPI:
         raw_meta = self._get_raw_meta(date)
         previous_set_name = "Set 1"
         track_urls = {"tracklist": [], "urls": []}
-        for m in raw_meta["tracks"]:
+        for i, m in enumerate(raw_meta["tracks"]):
             track_name = m.get("title", "unknown")
             set_name = m.get("set_name", "Set 1")
+            if i == 0:
+                previous_set_name = set_name
             url = m.get("mp3_url", "")
             if set_name != previous_set_name:
                 previous_set_name = set_name
@@ -293,7 +295,7 @@ class ArchiveAPI:
             "count": "10000",
         }
         self._lossy_formats = ["Ogg Vorbis", "VBR MP3", "MP3"]
-        self._audio_formats = ["Ogg Vorbis", "VBR MP3", "MP3", "Flac", "Shorten", "WAV"]
+        self._audio_formats = ["Ogg Vorbis", "VBR MP3", "MP3", "24bit Flac", "Flac", "Shorten", "WAV"]
         self.tapes = None
 
     def get_all_collection_names(self):

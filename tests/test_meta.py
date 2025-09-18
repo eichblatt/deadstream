@@ -16,6 +16,14 @@ def test_phish_urls():
     assert show.tracklist[-1] == "Ghost"
 
 
+def test_phish_pre_show():
+    """This show has a pre-show track that led to issues with the Set Break logic"""
+    mapi = MetaAPI.MetaAPI("Phish")
+    show = mapi.track_urls("2014-06-24")
+    # meta = mapi.api_dict["Phish"]._get_raw_meta("2014-06-24")
+    assert show.tracklist[0] != "Set Break"
+
+
 def test_dead_urls():
     mapi = MetaAPI.MetaAPI("GratefulDead")
     show = mapi.track_urls("1975-08-13")
@@ -191,6 +199,15 @@ def test_track_name_cleanup():
             break
     tracks = mapi.api_dict["GratefulDead"].get_track_urls(tape)
     assert not tracks["tracklist"][0].startswith("01")
+
+
+def test_get_tapes_trackname_issue():
+    mapi = MetaAPI.MetaAPI("EricKrasno")
+    date = "2017-05-25"
+    tape = mapi.get_tapes(date)[0]
+    track_urls = mapi.api_dict["EricKrasno"].get_track_urls(tape)
+    assert track_urls["tracklist"][0] == "Intro"
+    meta = mapi.api_dict["EricKrasno"]._get_track_data(tape.id)
 
 
 def test_track_data():
