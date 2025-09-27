@@ -445,6 +445,10 @@ class ArchiveAPI:
         city_state = data.get("metadata", {}).get("coverage", " , ")
         tape.vcs = f"{venue}, {city_state}"
         orig_files = [x for x in tape_files if x.get("source") == "original" and x.get("format") in self._audio_formats]
+        if len(orig_files) == 0:
+            logger.warning(f"No original files found for tape {tape.id}")
+            return {}
+
         for fileinfo in orig_files:
             name = fileinfo["name"]
             title = fileinfo.get("title", name)

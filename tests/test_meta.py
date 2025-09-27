@@ -229,6 +229,15 @@ def test_track_data():
     assert tape.vcs == "Oakland-Alameda County Coliseum, Oakland, CA"
 
 
+def test_king_gizzard():
+    mapi = MetaAPI.MetaAPI("KingGizzardAndTheLizardWizard")
+    date = "2024-08-30"
+    tapes = mapi.get_tapes(date)
+    tracks = mapi.api_dict["KingGizzardAndTheLizardWizard"].get_track_data(tapes[0])
+    show = mapi.track_urls("2024-08-30")
+    assert isinstance(show.track_urls["tracklist"][0], str)
+
+
 def test_date_meta():
     mapi = MetaAPI.MetaAPI("GratefulDead")
     date = "1990-03-29"
