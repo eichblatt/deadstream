@@ -42,6 +42,7 @@ def parse_args():
     parser.add_argument("--collections", nargs="+", default=["TedeschiTrucksBand"], type=str)
     parser.add_argument("--venue", default=1, type=int, help="Refresh vcs file with venue, city, state information")
     parser.add_argument("--save_cloud", default=1, type=int, help="Save to cloud storage")
+    parser.add_argument("--clobber", default=0, type=int)
     parser.add_argument("--debug", default=0, type=int)
     args, unknown = parser.parse_known_args()
     return args
@@ -49,12 +50,8 @@ def parse_args():
 
 def get_existing_collections():
     """Get a list of all existing collections from *_vcs.json files"""
-    collections = []
-    vcs_path = os.path.join("/home/steve/projects/deadstream/timemachine", "metadata/vcs")
-    for filename in os.listdir(vcs_path):
-        if filename.endswith("_vcs.json"):
-            collection = filename.replace("_vcs.json", "")
-            collections.append(collection)
+    collections = cloud_utils.list_bucket_contents(prefix="vcs/")[0]
+    collections = [c.replace("vcs/", "").replace("_vcs.json", "") for c in collections]
     return collections
 
 
@@ -70,7 +67,7 @@ def main(args):
 
     for collection in collections:
         mapi = MetaAPI.MetaAPI(collection, save_to_cloud=cloud_utils.SAVE_TO_CLOUD)
-        vcs_dict = mapi.get_collection_vcs(with_venue=True)
+        vcs_dict = mapi.get_collection_vcs(with_venue=True, clobber=args.clobber)
 
 
 def main_cli():

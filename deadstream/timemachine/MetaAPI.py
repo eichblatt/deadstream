@@ -558,6 +558,8 @@ class ArchiveAPI:
         logger.debug(f"getting vcs for {collection} from archive.org")
         max_date = "1900-01-01"
         if existing_data:
+            if with_venue:  # Remove any existing data with venue info, since we must repull it
+                existing_data = {k: v for k, v in existing_data.items() if len(v.split(",")) == 3}
             max_date = max(existing_data.keys())
             logger.debug(f"max date in existing data is {max_date}")
         start_date = (datetime.datetime.fromisoformat(max_date) + datetime.timedelta(days=1)).date().isoformat()
