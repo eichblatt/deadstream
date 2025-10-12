@@ -283,3 +283,10 @@ def test_get_vcs_archive():
     for ek_date in ek_dates:
         assert len(ek_date) == 10
         datetime.date.fromisoformat(ek_date)  # will raise exception if not valid date
+
+
+def test_get_vcs_archive_with_venue():
+    mapi = MetaAPI.MetaAPI("BigFrog")
+    vcs_dict = mapi.get_collection_vcs(clobber=True, with_venue=True)
+    vcs = vcs_dict["BigFrog"].get("2003-10-31", None)
+    assert vcs.split(",")[2].strip() == "Japan"

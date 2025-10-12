@@ -59,7 +59,7 @@ class MetaAPI:
     def collections(self):
         return list(self.api_dict.keys())
 
-    def get_collection_vcs(self, clobber=False):
+    def get_collection_vcs(self, clobber=False, with_venue=False):
         vcs_dict = {}
         for collection, api in self.api_dict.items():
             logger.info(f"Getting vcs for {collection}")
@@ -70,7 +70,7 @@ class MetaAPI:
                     existing_data = cloud_utils.read_json(cloudpath)
                 except Exception as e:
                     logger.info(f"No existing vcs data for {collection}: {e}")
-            new_vcs = api.get_collection_vcs(collection, existing_data)
+            new_vcs = api.get_collection_vcs(collection, existing_data, with_venue=with_venue)
             vcs = existing_data | new_vcs
             outpath = self.save_collection_vcs_to_cloud(collection, vcs)
             vcs_dict[collection] = vcs
@@ -243,7 +243,7 @@ class PhishinAPI:
     def get_all_collection_names(self):
         return [self.collection]
 
-    def get_collection_vcs(self, collection, existing_data):
+    def get_collection_vcs(self, collection, existing_data, with_venue=False):
         logger.debug(f"getting vcs for {collection} from phish.in")
 
         max_date = "1970-01-01"
@@ -550,7 +550,7 @@ class ArchiveAPI:
             logger.warning(f"Only {raw_meta['count']} of {raw_meta['total']} tapes found for {self.collection}")
         return raw_meta
 
-    def get_collection_vcs(self, collection, existing_data):
+    def get_collection_vcs(self, collection, existing_data, with_venue=False):
         """Get the venue, city, state (vcs) info for all shows in this collection.
         Because getting this info is so slow, we will initially only save the dates and tape_ids. We can
         update the vcs info later by getting the tape info for the first tape on each date"""
@@ -582,6 +582,13 @@ class ArchiveAPI:
                     continue
                 vcs_data[date] = item["identifier"]
 
+        if with_venue:  # This is very slow, so only do it if requested
+            for date, tape_id in vcs_data.items():
+                track_data = self._get_track_data(tape_id)
+                venue = track_data["metadata"].get("venue", "Unknown venue")
+                city_state = track_data["metadata"].get("coverage", "Unknown city, state")
+                vcs_data[date] = f"{venue}, {city_state}"
+                logger.info(f"Found vcs for {collection} on {date}: {vcs_data[date]}")
         logger.debug(f"in get_collection_vcs, found {len(vcs_data)} new vcs entries for {collection}")
         return vcs_data
 
