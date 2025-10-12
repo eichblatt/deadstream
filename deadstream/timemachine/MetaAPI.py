@@ -559,7 +559,7 @@ class ArchiveAPI:
         max_date = "1900-01-01"
         if existing_data:
             if with_venue:  # Remove any existing data with venue info, since we must repull it
-                existing_data = {k: v for k, v in existing_data.items() if len(v.split(",")) >= 2}
+                existing_data = {k: v for k, v in existing_data.items() if len(v.split(",")) > 1}
         if existing_data:
             max_date = max(existing_data.keys())
             logger.debug(f"max date in existing data is {max_date}")
@@ -588,8 +588,9 @@ class ArchiveAPI:
         if with_venue:  # This is very slow, so only do it if requested
             for date, tape_id in vcs_data.items():
                 track_data = self._get_track_data(tape_id)
-                venue = track_data["metadata"].get("venue", "Unknown venue")
-                city_state = track_data["metadata"].get("coverage", "Unknown city, state")
+                metadata = track_data.get("metadata", {})
+                venue = metadata.get("venue", "Unknown venue")
+                city_state = metadata.get("coverage", "Unknown city, state")
                 vcs_data[date] = f"{venue}, {city_state}"
                 logger.info(f"Found vcs for {collection} on {date}: {vcs_data[date]}")
         logger.debug(f"in get_collection_vcs, found {len(vcs_data)} new vcs entries for {collection}")
