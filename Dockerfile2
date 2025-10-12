@@ -13,9 +13,6 @@ RUN pip install --upgrade pip \
 # Copy your application code
 COPY deadstream/ ./deadstream/
 
-# Set environment variables for Google Cloud
-ENV GOOGLE_APPLICATION_CREDENTIALS=/secrets/service-account.json
-
 # Command to run your script
 ENTRYPOINT ["python", "-m", "deadstream.update_cloud_meta"]
 CMD ["--collections", "existing", "--save_cloud", "1"]
