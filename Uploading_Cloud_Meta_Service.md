@@ -25,6 +25,12 @@ Once the script is working locally, build a docker container and tag it with `de
 : /home/steve/.venv ~/projects/deadstream ; docker tag deadstream-update-cloud:test us-central1-docker.pkg.dev/able-folio-397115/deadstream-repo/deadstream-update-cloud:latest
 ```
 
+## Test the Docker Container Locally
+
+```{}
+: /home/steve/.venv ~/projects/deadstream ; docker run --rm deadstream-update-cloud:test --collections BigFrog --save_cloud 0 --debug 0
+```
+
 ## Push the Docker Container to the Google Cloud
 
 Authenticate:

@@ -290,3 +290,10 @@ def test_get_vcs_archive_with_venue():
     vcs_dict = mapi.get_collection_vcs(clobber=True, with_venue=True)
     vcs = vcs_dict["BigFrog"].get("2003-10-31", None)
     assert vcs.split(",")[2].strip() == "Japan"
+
+
+def test_get_vcs_311():
+    mapi = MetaAPI.MetaAPI("311")
+    vcs_dict = mapi.get_collection_vcs(clobber=False, with_venue=True)
+    vcs = vcs_dict["311"].get("1997-08-03", None)
+    assert vcs.split(",")[2].strip() == "HI"
