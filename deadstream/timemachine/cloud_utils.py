@@ -48,7 +48,7 @@ def write_json(data, filepath, bucket_name=BUCKET_NAME):
             logger.error(f"Error saving tape IDs to cloud: {str(e)}", exc_info=True)
 
     thread = threading.Thread(target=_save_to_cloud)
-    thread.daemon = True
+    # thread.daemon = True
     thread.start()
     return ""
 
