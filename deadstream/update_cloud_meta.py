@@ -1,17 +1,9 @@
 import argparse
 import logging
-import json
-import os
-import requests
-import tempfile
-import time
-
-from google.cloud import storage
 
 from deadstream.timemachine import MetaAPI
-from timemachine import Archivary
-from timemachine import config
-from timemachine import cloud_utils
+from deadstream.timemachine import config
+from deadstream.timemachine import cloud_utils
 
 config.load_options()
 
@@ -66,6 +58,8 @@ def main(args):
         collections = args.collections
 
     for collection in collections:
+        if collection == "GratefulDead":  # Don't update GratefulDead, it is too big and not changing
+            continue
         mapi = MetaAPI.MetaAPI(collection, save_to_cloud=cloud_utils.SAVE_TO_CLOUD)
         vcs_dict = mapi.get_collection_vcs(with_venue=True, clobber=args.clobber)
 
