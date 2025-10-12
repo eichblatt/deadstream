@@ -49,6 +49,10 @@ quickstart-python-repo   PYTHON  STANDARD_REPOSITORY  Python package repository 
 
 `: /home/steve/myenv ~/projects/deadstream ; docker build -t us-central1-docker.pkg.dev/able-folio-397115/deadstream-repo/deadstream:latest .`
 
+or run from a different Dockerfile:
+
+`: /home/steve/myenv ~/projects/deadstream ; docker build -t us-central1-docker.pkg.dev/able-folio-397115/deadstream-repo/deadstream:latest -f Dockerfile2 . `
+
 ### Upload the Image to the Cloud
 
 First, get permissions:

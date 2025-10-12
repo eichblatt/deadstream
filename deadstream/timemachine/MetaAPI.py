@@ -559,7 +559,7 @@ class ArchiveAPI:
         max_date = "1900-01-01"
         if existing_data:
             if with_venue:  # Remove any existing data with venue info, since we must repull it
-                existing_data = {k: v for k, v in existing_data.items() if len(v.split(",")) == 3}
+                existing_data = {k: v for k, v in existing_data.items() if len(v.split(",")) >= 2}
         if existing_data:
             max_date = max(existing_data.keys())
             logger.debug(f"max date in existing data is {max_date}")
