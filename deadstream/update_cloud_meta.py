@@ -47,6 +47,11 @@ def get_existing_collections():
 def main(args):
     cloud_utils.SAVE_TO_CLOUD = args.save_cloud
 
+    # Update the collections list
+    mapi = MetaAPI.MetaAPI(save_to_cloud=cloud_utils.SAVE_TO_CLOUD)
+    all_collections = mapi.get_all_collection_names()
+    logger.info(f"There are {len(all_collections)+1} collections")
+
     # Handle "existing" collections special case
     if len(args.collections) == 1 and args.collections[0].lower() == "existing":
         collections = get_existing_collections()

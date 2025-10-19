@@ -154,9 +154,11 @@ class MetaAPI:
 
     def get_all_collection_names(self):
         collection_names = []
-        for api in [PhishinAPI(), ArchiveAPI("GratefulDead")]:
+        # Because of how I originally saved the collection names, I need to exclude PhishinAPI here.
+        # for api in [PhishinAPI(), ArchiveAPI()]:
+        for api in [ArchiveAPI()]:
             collection_names.extend(api.get_all_collection_names())
-        # self.save_collection_names_to_cloud(collection_names)
+        self.save_collection_names_to_cloud(collection_names)
         return collection_names
 
     def save_collection_names_to_cloud(self, collection_names):
@@ -320,6 +322,7 @@ class ArchiveAPI:
             logger.debug(f"url is {response.url}")
             j = response.json()
             current_rows += j["count"]
+            total = j.get("total", 0)
             collection_names.extend([x["identifier"] for x in j["items"]])
 
         logger.info(f"Download {current_rows}/{total} collection names")

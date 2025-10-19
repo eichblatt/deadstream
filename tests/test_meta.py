@@ -248,7 +248,7 @@ def test_date_meta():
 
 def test_all_collection_names():
     mapi = MetaAPI.MetaAPI()
-    names = mapi.get_all_collection_names()
+    names = mapi.get_all_collection_names()["items"]
     assert len(names) > 9000
     assert "GratefulDead" in names
     assert "Phish" in names
