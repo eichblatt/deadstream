@@ -1,18 +1,18 @@
 #!/usr/bin/python3
 """
-    Grateful Dead Time Machine -- copyright 2021 Steve Eichblatt
+Grateful Dead Time Machine -- copyright 2021 Steve Eichblatt
 
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
-    along with this program.  If not, see <https://www.gnu.org/licenses/>.
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
 import logging
 import optparse
@@ -25,9 +25,7 @@ parser.add_option("--box", dest="box", type="string", default="v1", help="v0 box
 parser.add_option(
     "--test_update", action="store_true", default=False, help="test that software update succeeded[default %default]"
 )
-parser.add_option(
-    "--pid_to_kill", type="int", default=None, help="process id to kill during test_update [default %default]"
-)
+parser.add_option("--pid_to_kill", type="int", default=None, help="process id to kill during test_update [default %default]")
 parser.add_option(
     "-d", "--debug", type="int", default=0, help="If > 0, don't run the main script on loading [default %default]"
 )
@@ -74,8 +72,6 @@ def main_test_update():
 
 
 def main():
-    # archive = Archivary.Archivary(config.DB_PATH, reload_ids=reload_ids, with_latest=False, collection_list=config.optd['COLLECTIONS'])
-    # player = GD.GDPlayer()
     if config.optd["MODULE"] == "livemusic":
         from timemachine import livemusic as tm
     elif config.optd["MODULE"] == "78rpm":

@@ -10,7 +10,6 @@ logger = logging.getLogger(__name__)
 
 ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
 OPTIONS_PATH = os.path.join(os.getenv("HOME"), ".timemachine_options.txt")
-DB_PATH = os.path.join(ROOT_DIR, "metadata")
 
 optd = {}
 
