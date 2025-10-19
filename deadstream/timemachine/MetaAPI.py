@@ -71,6 +71,9 @@ class MetaAPI:
                 except Exception as e:
                     logger.info(f"No existing vcs data for {collection}: {e}")
             new_vcs = api.get_collection_vcs(collection, existing_data, with_venue=with_venue)
+            if len(new_vcs) == 0:
+                vcs_dict[collection] = existing_data
+                continue
             vcs = existing_data | new_vcs
             outpath = self.save_collection_vcs_to_cloud(collection, vcs)
             vcs_dict[collection] = vcs
