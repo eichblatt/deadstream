@@ -2,10 +2,7 @@ import argparse
 import logging
 
 from deadstream.timemachine import MetaAPI
-from deadstream.timemachine import config
 from deadstream.timemachine import cloud_utils
-
-config.load_options()
 
 logging.basicConfig(
     format="%(asctime)s.%(msec)03d %(levelname)s: %(name)s %(message)s",
