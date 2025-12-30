@@ -15,6 +15,11 @@ def test_phish_urls():
     assert show.tracklist[0] == "AC/DC Bag"
     assert show.tracklist[-1] == "Ghost"
 
+    show = mapi.track_urls("1990-10-08")
+    assert len(show.tracklist) == len(show.urls)
+    assert not None in show.tracklist
+    assert not None in show.urls
+
 
 def test_phish_pre_show():
     """This show has a pre-show track that led to issues with the Set Break logic"""
@@ -148,6 +153,7 @@ def test_get_meta_date_range():
 def test_get_raw_meta_phish():
     mapi = MetaAPI.MetaAPI("Phish")
     raw_meta = mapi.api_dict["Phish"]._get_raw_meta("2025-06-24")
+    raw_meta = mapi.api_dict["Phish"]._get_raw_meta("1990-10-08")
 
 
 def test_get_tapes_phish():

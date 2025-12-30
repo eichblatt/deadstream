@@ -158,6 +158,8 @@ class MetaAPI:
         # for api in [PhishinAPI(), ArchiveAPI()]:
         for api in [ArchiveAPI()]:
             collection_names.extend(api.get_all_collection_names())
+        if len(collection_names) < 7000:
+            raise ValueError("Too few collection names found! Bailing out before overwriting cloud data.")
         self.save_collection_names_to_cloud(collection_names)
         return collection_names
 
@@ -224,7 +226,9 @@ class PhishinAPI:
             set_name = m.get("set_name", "Set 1")
             if i == 0:
                 previous_set_name = set_name
-            url = m.get("mp3_url", "")
+            url = m.get("mp3_url", None)
+            if m.get("audio_status", "") == "missing" and url is None:
+                url = "https://storage.googleapis.com/spertilo-data/sundry/silence0.ogg"
             if set_name != previous_set_name:
                 previous_set_name = set_name
                 if set_name.startswith("Encore"):
