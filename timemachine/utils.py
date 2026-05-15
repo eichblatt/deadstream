@@ -77,11 +77,9 @@ def get_version():
         with open(latest_tag_path, "r") as tag:
             __version__ = tag.readline()
         __version__ = __version__.strip()
-        return __version__
     except Exception as e:
         logging.warning(f"get_version error {e}")
-    finally:
-        return __version__
+    return __version__
 
 def get_board_version():
     if get_os_name() == "Ubuntu":
@@ -169,7 +167,7 @@ def get_local_mode():
         if local_mode > 0:  # Are there any Local_ collections?
             config.load_options()
             opts_dict = config.optd
-            for coll in opts_dict["COLLECTIONS"].split(","):
+            for coll in opts_dict["COLLECTIONS"]:
                 if "Local_" in coll:
                     local_mode = 2
         if local_mode == 2:  # Are we disconnected from wifi?
