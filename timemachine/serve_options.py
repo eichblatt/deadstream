@@ -176,7 +176,133 @@ def disable_pulse():
         logger.warning("Pulse audio still working on this machine")
 
 
+STYLE = """
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Fredoka+One&family=Righteous&display=swap');
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    padding: 24px;
+    min-height: 100vh;
+    background-color: #0a0018;
+    background-image:
+      radial-gradient(ellipse at 20% 50%, rgba(120,0,200,0.35) 0%, transparent 55%),
+      radial-gradient(ellipse at 80% 15%, rgba(200,0,100,0.35) 0%, transparent 55%),
+      radial-gradient(ellipse at 55% 85%, rgba(0,80,200,0.25) 0%, transparent 55%);
+    color: #ffd700;
+    font-family: 'Fredoka One', 'Trebuchet MS', sans-serif;
+    font-size: 18px;
+    line-height: 1.6;
+  }
+
+  h1 {
+    font-family: 'Righteous', Georgia, serif;
+    font-size: 2.8em;
+    text-align: center;
+    color: #ff3dff;
+    text-shadow: 0 0 10px #ff3dff, 0 0 30px #ff3dff, 0 0 60px rgba(255,61,255,0.4);
+    margin-bottom: 4px;
+    letter-spacing: 3px;
+  }
+
+  h2 {
+    font-family: 'Righteous', Georgia, serif;
+    color: #39ff14;
+    text-shadow: 0 0 8px #39ff14;
+    font-size: 1.1em;
+    text-align: center;
+    margin-top: 0;
+    margin-bottom: 20px;
+  }
+
+  h3 { color: #ff9933; font-size: 1em; margin: 8px 0; }
+
+  .card {
+    background: rgba(20,0,50,0.75);
+    border: 2px solid #6600cc;
+    border-radius: 16px;
+    padding: 28px 32px;
+    max-width: 640px;
+    margin: 0 auto 24px;
+    box-shadow: 0 0 32px rgba(102,0,204,0.45), inset 0 0 24px rgba(0,0,0,0.4);
+  }
+
+  label {
+    display: block;
+    color: #ffd700;
+    margin-top: 14px;
+  }
+
+  input[type="text"],
+  input[type="number"],
+  select {
+    background-color: #12002e;
+    border: 2px solid #7722cc;
+    border-radius: 8px;
+    color: #ffd700;
+    font-family: 'Fredoka One', sans-serif;
+    font-size: 0.95em;
+    padding: 6px 12px;
+    margin-top: 4px;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    width: 100%;
+    max-width: 420px;
+  }
+
+  input[type="text"]:focus,
+  input[type="number"]:focus,
+  select:focus {
+    border-color: #ff3dff;
+    box-shadow: 0 0 8px rgba(255,61,255,0.55);
+  }
+
+  select option { background-color: #12002e; }
+
+  button, input[type="submit"] {
+    display: inline-block;
+    margin: 8px 8px 0 0;
+    padding: 10px 26px;
+    border: 2px solid #ff6600;
+    border-radius: 50px;
+    background: linear-gradient(135deg, #aa0055 0%, #5500aa 100%);
+    color: #ffee00;
+    font-family: 'Righteous', sans-serif;
+    font-size: 0.95em;
+    letter-spacing: 1px;
+    cursor: pointer;
+    text-transform: uppercase;
+    box-shadow: 0 0 12px rgba(200,0,100,0.5);
+    transition: all 0.18s;
+  }
+
+  button:hover, input[type="submit"]:hover {
+    background: linear-gradient(135deg, #ff0080 0%, #7700ff 100%);
+    box-shadow: 0 0 22px rgba(255,0,128,0.75), 0 0 44px rgba(119,0,255,0.35);
+    transform: translateY(-2px);
+  }
+
+  button[type="reset"] {
+    background: linear-gradient(135deg, #003366 0%, #001133 100%);
+    border-color: #0088ff;
+  }
+
+  .btn-row { margin-top: 20px; }
+
+  a { color: #39ff14; text-decoration: none; text-shadow: 0 0 6px rgba(57,255,20,0.4); }
+  a:hover { text-shadow: 0 0 14px #39ff14; }
+
+  p { margin: 4px 0; }
+</style>
+"""
+
+
 class OptionsServer(object):
+    def _head(self, title="Time Machine"):
+        return f"<head><title>{title}</title>{STYLE}</head>"
+
     @cherrypy.expose
     def index(self):
         opt_dict = read_optd()
@@ -229,27 +355,33 @@ class OptionsServer(object):
              <select id="audio-sink" name="audio-sink"> {audio_string} </select><p> """
 
         page_string = f"""<html>
-         <head></head>
+         {self._head("Time Machine Options")}
          <body>
-           <!-- <meta http-equiv="refresh" content="30"> -->
-           <h1> Time Machine Options </h1>
-           <h2> host: {hostname} -- Raspbian version {get_os_version()} </h2>
-           <form method="get" action="save_values"> 
-             <label for="module"> Module:</label>
-             <select id="module" name="MODULE"> {module_string} </select><p> 
-             {form_string}
-             <label for="timezone"> Choose a Time Zone:</label>
-             <select id="timezone" name="TIMEZONE"> {tz_string} </select><p> 
-             {pulse_string}
-             <button type="submit">Save Values</button>
-             <button type="reset">Restore</button>
-           </form> {bluetooth_button}
-           <form method="get" action="restart_tm_service">
-             <button type="submit">Restart Timemachine Service</button>
-           </form>
-           <form method="get" action="restart_options_service">
-             <button type="submit">Restart Options Service</button>
-           </form>
+           <h1>&#9760; Time Machine Options &#9760;</h1>
+           <h2>{hostname} &mdash; Raspbian {get_os_version()}</h2>
+           <div class="card">
+             <form method="get" action="save_values">
+               <label for="module">Module:</label>
+               <select id="module" name="MODULE"> {module_string} </select>
+               {form_string}
+               <label for="timezone">Time Zone:</label>
+               <select id="timezone" name="TIMEZONE"> {tz_string} </select>
+               {pulse_string}
+               <div class="btn-row">
+                 <button type="submit">Save Values</button>
+                 <button type="reset">Restore</button>
+               </div>
+             </form>
+           </div>
+           <div style="text-align:center">
+             {bluetooth_button}
+             <form method="get" action="restart_tm_service" style="display:inline">
+               <button type="submit">Restart Timemachine</button>
+             </form>
+             <form method="get" action="restart_options_service" style="display:inline">
+               <button type="submit">Restart Options Service</button>
+             </form>
+           </div>
          </body>
         </html>"""
         #  <form method="get" action="update_timemachine">
@@ -334,13 +466,18 @@ class OptionsServer(object):
             <h3> See <a href=https://www.spertilo.net/compatible-bluetooth-devices> https://www.spertilo.net/compatible-bluetooth-devices </a> for a list of known compatible devices </h3> """
         page_string = f"""
            <html>
-               <head></head>
+               {self._head("Bluetooth Settings")}
                <body>
-                     <h1> Time Machine Bluetooth Settings {hostname}</h1> 
-                     {notes_string} {connected_string} 
-                     {bluetooth_device_string} {rescan_bluetooth_string} {return_button}
+                 <h1>&#9760; Bluetooth Settings &#9760;</h1>
+                 <h2>{hostname}</h2>
+                 <div class="card">
+                   {notes_string}
+                   {connected_string}
+                   {bluetooth_device_string}
+                   <div class="btn-row">{rescan_bluetooth_string} {return_button}</div>
+                 </div>
                </body>
-           <html> """
+           </html>"""
         return page_string
 
     @cherrypy.expose
@@ -468,18 +605,24 @@ class OptionsServer(object):
         form_strings = [f"<label>{x[0]}:{x[1]}</label> <p>" for x in kwargs.items()]
         form_string = "\n".join(form_strings)
         page_string = f"""<html>
-         <head></head>
-             <body> Options set to <p> {form_string}
-               <form method="get" action="index">
+         {self._head("Options Saved")}
+         <body>
+           <h1>&#9760; Options Saved &#9760;</h1>
+           <div class="card">
+             {form_string}
+             <div class="btn-row">
+               <form method="get" action="index" style="display:inline">
                  <button type="submit">Return</button>
                </form>
-               <form method="get" action="restart_tm_service">
-                 <button type="submit">Start/Restart Timemachine Service</button>
+               <form method="get" action="restart_tm_service" style="display:inline">
+                 <button type="submit">Restart Timemachine</button>
                </form>
-               <form method="get" action="restart_options_service">
+               <form method="get" action="restart_options_service" style="display:inline">
                  <button type="submit">Restart Options Service</button>
                </form>
-             </body>
+             </div>
+           </div>
+         </body>
          </html>"""
 
         sleep(0.2 * parms.sleep_time)
@@ -489,15 +632,18 @@ class OptionsServer(object):
     def update_timemachine(self, *args, **kwargs):
         cmd = "sudo service update start"
         page_string = f"""<html>
-         <head></head>
-         <body> Updating Time Machine <p> Command: {cmd} 
-           <form method="get" action="index">
-#             <button type="submit">Return</button>
-             <input class="btn btn-primary" type="submit" name="submit"
-             onclick="return confirm('Are you sure?');">
-             />
-           </form>
-          </body>
+         {self._head("Updating Time Machine")}
+         <body>
+           <h1>&#9760; Updating Time Machine &#9760;</h1>
+           <div class="card">
+             <p>Command: <code>{cmd}</code></p>
+             <div class="btn-row">
+               <form method="get" action="index" style="display:inline">
+                 <input type="submit" value="Return" onclick="return confirm('Are you sure?');">
+               </form>
+             </div>
+           </div>
+         </body>
        </html>"""
         logger.debug(f"Update timemachine command {cmd}")
         sleep(parms.sleep_time)
@@ -517,11 +663,17 @@ class OptionsServer(object):
         action = kwargs.get("action", "restart")
         cmd = f"sudo service {kwargs['service_name']} {action}"
         page_string = f"""<html>
-         <head></head>
-         <body> Restarting Service <p> Command: {cmd}
-           <form method="get" action="index">
-             <button type="submit">Return</button>
-           </form>
+         {self._head("Restarting Service")}
+         <body>
+           <h1>&#9760; Restarting Service &#9760;</h1>
+           <div class="card">
+             <p>Command: <code>{cmd}</code></p>
+             <div class="btn-row">
+               <form method="get" action="index" style="display:inline">
+                 <button type="submit">Return</button>
+               </form>
+             </div>
+           </div>
          </body>
          </html>"""
         logger.info(f"Restart_service command {cmd}")
@@ -546,13 +698,18 @@ class OptionsServer(object):
             pass
 
         page_string = f"""<html>
-         <head></head>
-         <body> Rescanned for bluetooth devices <p>
-           <p> Found: {device_string} </p>
-           <form method="get" action="bluetooth_settings">
-             <button type="submit">Return</button>
-           </form>
-          </body>
+         {self._head("Bluetooth Scan")}
+         <body>
+           <h1>&#9760; Bluetooth Scan &#9760;</h1>
+           <div class="card">
+             <p>Found: {device_string}</p>
+             <div class="btn-row">
+               <form method="get" action="bluetooth_settings" style="display:inline">
+                 <button type="submit">Return</button>
+               </form>
+             </div>
+           </div>
+         </body>
         </html>"""
 
         return page_string
