@@ -954,6 +954,7 @@ def run_month_menu(current_state):
     global MENU_ACTIVE, MENU_SUPPRESS_UNTIL
     resume_playback_on_exit = False
     shutdown_or_restart = False
+    launched_update = False
     original_date = current_state.date_reader.date
     original_steps = TMB.y.steps
     saved_screen = TMB.scr.image.tobytes()
@@ -971,11 +972,17 @@ def run_month_menu(current_state):
             resume_playback_on_exit = True
 
         while True:
-            selection = _select_with_year_knob("Menu", ["Cancel", "Shutdown", "Restart", "Info"])
+            selection = _select_with_year_knob("Menu", ["Cancel", "Update code", "Shutdown", "Restart", "Info"])
             if selection in [None, "Cancel"]:
                 break
 
-            if selection == "Shutdown":
+            if selection == "Update code":
+                launched_update = True
+                TMB.scr.clear()
+                TMB.scr.show_text("Updating\nCode\n\nStand By...", force=True)
+                os.system("sudo service update start")
+                return
+            elif selection == "Shutdown":
                 shutdown_or_restart = True
                 TMB.scr.show_text("Shutting down...", force=True)
                 sleep(0.5)
@@ -1000,7 +1007,7 @@ def run_month_menu(current_state):
     finally:
         TMB.y.steps = original_steps
         current_state.date_reader.set_date(original_date)
-        if resume_playback_on_exit and not shutdown_or_restart:
+        if resume_playback_on_exit and not shutdown_or_restart and not launched_update:
             current = current_state.get_current()
             if current["PLAY_STATE"] == config.PAUSED:
                 current["PLAY_STATE"] = config.PLAYING
@@ -1011,7 +1018,7 @@ def run_month_menu(current_state):
         MENU_ACTIVE = False
         MENU_SUPPRESS_UNTIL = datetime.datetime.now() + datetime.timedelta(seconds=0.5)
         # Restore the screen exactly as it was before the menu
-        if not shutdown_or_restart:
+        if not shutdown_or_restart and not launched_update:
             TMB.scr.image.frombytes(saved_screen)
             TMB.scr.refresh(force=True)
         free_event.set()
