@@ -1,19 +1,20 @@
 #!/usr/bin/python3
 """
-    Grateful Dead Time Machine -- copyright 2021 Steve Eichblatt
+Grateful Dead Time Machine -- copyright 2021 Steve Eichblatt
 
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
-    along with this program.  If not, see <https://www.gnu.org/licenses/>.
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
+
 import datetime
 import json
 import logging
@@ -62,6 +63,8 @@ QUIESCENT_TIME = 20
 SLEEP_AFTER_SECONDS = 3600
 PWR_LED_ON = False
 AUTO_PLAY = True
+MENU_ACTIVE = False
+MENU_SUPPRESS_UNTIL = datetime.datetime.min
 
 random.seed(datetime.datetime.now().timestamp())  # to ensure that random show will be new each time.
 parms = None
@@ -255,6 +258,8 @@ def select_current_date(state, autoplay=True):
 
 @sequential
 def select_button(button, state):
+    if MENU_ACTIVE or datetime.datetime.now() < MENU_SUPPRESS_UNTIL:
+        return
     autoplay = AUTO_PLAY
     sleep(button._hold_time * 1.01)
     if button.is_pressed or button.is_held:
@@ -278,6 +283,8 @@ def select_button(button, state):
 
 @sequential
 def select_button_longpress(button, state):
+    if MENU_ACTIVE or datetime.datetime.now() < MENU_SUPPRESS_UNTIL:
+        return
     logger.debug("long pressing select")
     if not state.date_reader.tape_available():
         return
@@ -312,8 +319,6 @@ def select_button_longpress(button, state):
 @sequential
 def play_pause_button(button, state):
     current = state.get_current()
-    if current["EXPERIENCE"] and current["PLAY_STATE"] in [config.PLAYING, config.PAUSED]:
-        return
     if current["ON_TOUR"] and current["TOUR_STATE"] in [config.READY, config.PLAYING]:
         return
     logger.debug("pressing play_pause")
@@ -351,11 +356,7 @@ def play_pause_button_longpress(button, state):
     global venue_counter
     logger.debug(" longpress of play_pause -- choose random date and play it")
     current = state.get_current()
-    if current["EXPERIENCE"]:
-        current["EXPERIENCE"] = False
-    TMB.scr.show_playstate(
-        staged_play=True, force=True
-    )  # show that we've registered the button-press before blocking call.
+    TMB.scr.show_playstate(staged_play=True, force=True)  # show that we've registered the button-press before blocking call.
     new_date = random.choice(state.date_reader.archive.dates)
     tape = state.date_reader.archive.best_tape(new_date)
     current["DATE"] = to_date(new_date)
@@ -382,8 +383,6 @@ def play_pause_button_longpress(button, state):
 @sequential
 def stop_button(button, state):
     current = state.get_current()
-    if current["EXPERIENCE"]:
-        return
     if current["ON_TOUR"] and current["TOUR_STATE"] in [config.READY, config.PLAYING]:
         return
     if current["PLAY_STATE"] in [config.READY, config.INIT, config.STOPPED]:
@@ -426,7 +425,7 @@ def stop_button_longpress(button, state):
 def rewind_button(button, state):
     logger.debug("press of rewind")
     current = state.get_current()
-    if current["EXPERIENCE"] or (current["ON_TOUR"] and current["TOUR_STATE"] in [config.READY, config.PLAYING]):
+    if current["ON_TOUR"] and current["TOUR_STATE"] in [config.READY, config.PLAYING]:
         current_volume = state.player.get_prop("volume")
         state.player._set_property("volume", max(current_volume * 0.9, 40))
         return
@@ -451,7 +450,7 @@ def rewind_button_longpress(button, state):
 def ffwd_button(button, state):
     logger.debug("press of ffwd")
     current = state.get_current()
-    if current["EXPERIENCE"] or (current["ON_TOUR"] and current["TOUR_STATE"] in [config.READY, config.PLAYING]):
+    if current["ON_TOUR"] and current["TOUR_STATE"] in [config.READY, config.PLAYING]:
         current_volume = state.player.get_prop("volume")
         state.player._set_property("volume", min(current_volume * 1.1, 130))
         return
@@ -475,13 +474,7 @@ def ffwd_button_longpress(button, state):
 
 @sequential
 def month_button(button, state):
-    current = state.get_current()
-    if current["EXPERIENCE"]:
-        current["EXPERIENCE"] = False
-    else:
-        current["EXPERIENCE"] = True
-    state.set(current)
-    track_event.set()
+    run_month_menu(state)
 
 
 @sequential
@@ -513,11 +506,7 @@ def day_button(button, state):
     if button.is_pressed or button.is_held:
         return
     logger.debug("pressing day button")
-    current = state.get_current()
-    if current["EXPERIENCE"] and current["ARTIST"] is not None:
-        state.date_reader.set_date(*state.date_reader.next_show_by_artist(current["ARTIST"]))
-    else:
-        state.date_reader.set_date(*state.date_reader.next_show())
+    state.date_reader.set_date(*state.date_reader.next_show())
     stagedate_event.set()
 
 
@@ -590,9 +579,7 @@ def year_button_longpress(button, state):
 
 def update_tracks(state):
     current = state.get_current()
-    if current["EXPERIENCE"]:
-        TMB.scr.show_experience()
-    elif current["ON_TOUR"] and current["TOUR_STATE"] in [config.READY, config.PLAYING]:
+    if current["ON_TOUR"] and current["TOUR_STATE"] in [config.READY, config.PLAYING]:
         TMB.scr.show_experience(text=f"Hold Year to\nExit TOUR {current['TOUR_YEAR']}")
     else:
         TMB.scr.show_track(current["TRACK_TITLE"], 0)
@@ -902,9 +889,10 @@ def event_loop(state, lock):
                 playstate_event.set()
                 save_state(state)
                 if current["PLAY_STATE"] != config.PLAYING:  # deal with overnight pauses, which freeze the alsa player.
-                    if (now - config.PAUSED_AT).seconds > SLEEP_AFTER_SECONDS and state.player.get_prop(
-                        "audio-device"
-                    ) not in ["null", "pulse"]:
+                    if (now - config.PAUSED_AT).seconds > SLEEP_AFTER_SECONDS and state.player.get_prop("audio-device") not in [
+                        "null",
+                        "pulse",
+                    ]:
                         logger.info(f"Paused at {config.PAUSED_AT}, sleeping after {SLEEP_AFTER_SECONDS}, now {now}")
                         TMB.scr.sleep()
                         state.player._set_property("audio-device", "null")
@@ -954,6 +942,129 @@ def get_ip():
     ip = subprocess.check_output(cmd, shell=True)
     ip = ip.decode().split(" ")[0]
     return ip
+
+
+def get_mac_id():
+    try:
+        cmd = "ifconfig -a | awk '/ether/{print $2}'"
+        return subprocess.check_output(cmd, shell=True).decode().strip().split("\n")[0]
+    except Exception:
+        return "unknown"
+
+
+def _render_menu(title, options, selected_idx):
+    TMB.scr.clear()
+    TMB.scr.show_text(title, loc=(0, 0), font=TMB.scr.smallfont, color=(0, 255, 255), force=False)
+    y_start = 18
+    for i, option in enumerate(options):
+        color = (0, 0, 255) if i == selected_idx else (255, 255, 255)
+        prefix = ">" if i == selected_idx else " "
+        TMB.scr.show_text(f"{prefix}{option}", loc=(0, y_start + 12 * i), font=TMB.scr.smallfont, color=color, force=False)
+    TMB.scr.refresh(force=True)
+
+
+def _select_with_year_knob(current_state, title, options):
+    if len(options) == 0:
+        return None
+
+    # Preserve the staged date selection while using the year knob for menu navigation.
+    original_date = current_state.date_reader.date
+    original_steps = TMB.y.steps
+
+    selected_idx = 0
+    previous_steps = TMB.y.steps
+    _render_menu(title, options, selected_idx)
+
+    while True:
+        current_steps = TMB.y.steps
+        delta = current_steps - previous_steps
+        if delta != 0:
+            selected_idx = divmod(selected_idx + delta, len(options))[1]
+            previous_steps = current_steps
+            _render_menu(title, options, selected_idx)
+
+        if TMB.select.is_pressed:
+            while TMB.select.is_pressed:
+                sleep(0.01)
+            TMB.y.steps = original_steps
+            current_state.date_reader.set_date(original_date)
+            stagedate_event.set()
+            return options[selected_idx]
+
+        sleep(0.01)
+
+
+def _get_available_artists(current_state):
+    archive = current_state.date_reader.archive
+    return sorted(list(set([t.artist for t in archive.tapes if getattr(t, "artist", None)])))
+
+
+def _artists_menu(current_state):
+    while True:
+        selection = _select_with_year_knob(current_state, "Artists", ["Add", "Remove", "Cancel"])
+        if selection in [None, "Cancel"]:
+            return
+
+        current = current_state.get_current()
+        chosen = current.get("CHOSEN_ARTISTS", [])
+        chosen = chosen if isinstance(chosen, list) else [chosen]
+
+        if selection == "Add":
+            artists = _get_available_artists(current_state)
+            if len(artists) == 0:
+                TMB.scr.show_text("No artists", force=True)
+                sleep(1)
+                continue
+            artist = _select_with_year_knob(current_state, "Add Artist", artists + ["Cancel"])
+            if artist and artist != "Cancel":
+                if artist not in chosen:
+                    chosen.append(artist)
+                    current["CHOSEN_ARTISTS"] = chosen
+                    current_state.set(current)
+                TMB.scr.show_text(f"Added\n{artist[:18]}", force=True)
+                sleep(1)
+        elif selection == "Remove":
+            if len(chosen) == 0:
+                TMB.scr.show_text("No chosen\nartists", force=True)
+                sleep(1)
+                continue
+            artist = _select_with_year_knob(current_state, "Remove Artist", chosen + ["Cancel"])
+            if artist and artist != "Cancel":
+                current["CHOSEN_ARTISTS"] = [a for a in chosen if a != artist]
+                current_state.set(current)
+                TMB.scr.show_text(f"Removed\n{artist[:18]}", force=True)
+                sleep(1)
+
+
+def run_month_menu(current_state):
+    global MENU_ACTIVE, MENU_SUPPRESS_UNTIL
+    MENU_ACTIVE = True
+    while True:
+        selection = _select_with_year_knob(current_state, "Menu", ["Artists", "Shutdown", "Restart", "Info", "Cancel"])
+        if selection in [None, "Cancel"]:
+            MENU_ACTIVE = False
+            MENU_SUPPRESS_UNTIL = datetime.datetime.now() + datetime.timedelta(seconds=0.5)
+            track_event.set()
+            return
+
+        if selection == "Artists":
+            _artists_menu(current_state)
+        elif selection == "Shutdown":
+            MENU_ACTIVE = False
+            TMB.scr.show_text("Shutting down...", force=True)
+            sleep(0.5)
+            os.system("sudo poweroff")
+            return
+        elif selection == "Restart":
+            MENU_ACTIVE = False
+            TMB.scr.show_text("Restarting...", force=True)
+            sleep(0.5)
+            os.system("sudo reboot")
+            return
+        elif selection == "Info":
+            info_text = f"IP: {get_ip()}\nV: {controls.get_version()}\nMAC: {get_mac_id()}"
+            TMB.scr.show_text(info_text, force=True)
+            sleep(10)
 
 
 """
