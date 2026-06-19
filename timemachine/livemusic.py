@@ -908,48 +908,6 @@ def _select_with_year_knob(title, options):
         sleep(0.01)
 
 
-def _get_available_artists(current_state):
-    archive = current_state.date_reader.archive
-    return sorted(list(set([t.artist for t in archive.tapes if getattr(t, "artist", None)])))
-
-
-def _artists_menu(current_state):
-    while True:
-        selection = _select_with_year_knob("Artists", ["Cancel", "Add", "Remove"])
-        if selection in [None, "Cancel"]:
-            return
-
-        current = current_state.get_current()
-        chosen = current.get("CHOSEN_ARTISTS", [])
-        chosen = chosen if isinstance(chosen, list) else [chosen]
-
-        if selection == "Add":
-            artists = _get_available_artists(current_state)
-            if len(artists) == 0:
-                TMB.scr.show_text("No artists", force=True)
-                sleep(1)
-                continue
-            artist = _select_with_year_knob("Add Artist", ["Cancel"] + artists)
-            if artist and artist != "Cancel":
-                if artist not in chosen:
-                    chosen.append(artist)
-                    current["CHOSEN_ARTISTS"] = chosen
-                    current_state.set(current)
-                TMB.scr.show_text(f"Added\n{artist[:18]}", force=True)
-                sleep(1)
-        elif selection == "Remove":
-            if len(chosen) == 0:
-                TMB.scr.show_text("No chosen\nartists", force=True)
-                sleep(1)
-                continue
-            artist = _select_with_year_knob("Remove Artist", ["Cancel"] + chosen)
-            if artist and artist != "Cancel":
-                current["CHOSEN_ARTISTS"] = [a for a in chosen if a != artist]
-                current_state.set(current)
-                TMB.scr.show_text(f"Removed\n{artist[:18]}", force=True)
-                sleep(1)
-
-
 def run_month_menu(current_state):
     global MENU_ACTIVE, MENU_SUPPRESS_UNTIL
     resume_playback_on_exit = False
