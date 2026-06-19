@@ -982,12 +982,18 @@ def _select_with_year_knob(current_state, title, options):
     # Preserve the staged date selection while using the year knob for menu navigation.
     original_date = current_state.date_reader.date
     original_steps = TMB.y.steps
+    menu_center = int((TMB.y.threshold_steps[0] + TMB.y.threshold_steps[1]) / 2)
+    TMB.y.steps = menu_center
 
     selected_idx = 0
     previous_steps = TMB.y.steps
+    TMB.y_knob_event.clear()
     _render_menu(title, options, selected_idx)
 
     while True:
+        moved = TMB.y_knob_event.wait(timeout=0.05)
+        if moved:
+            TMB.y_knob_event.clear()
         current_steps = TMB.y.steps
         delta = current_steps - previous_steps
         if delta != 0:
