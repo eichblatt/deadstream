@@ -187,6 +187,18 @@ def save_state(state):
 
 
 def twist_knob(knob: RotaryEncoder, label, date_reader: controls.date_knob_reader):
+    if MENU_ACTIVE:
+        # While menu is active, avoid date_reader.update() because it can remap
+        # knob steps based on archive date availability and swallow menu motion.
+        if not knob.is_active:
+            if knob.steps < knob.threshold_steps[0]:
+                knob.steps = knob.threshold_steps[0]
+            if knob.steps > knob.threshold_steps[1]:
+                knob.steps = knob.threshold_steps[1]
+        if label == "year":
+            TMB.y_knob_event.set()
+        TMB.knob_event.set()
+        return
     TMB.twist_knob(knob, label, date_reader)
     TMB.knob_event.set()
     stagedate_event.set()
@@ -1001,7 +1013,7 @@ def _get_available_artists(current_state):
 
 def _artists_menu(current_state):
     while True:
-        selection = _select_with_year_knob(current_state, "Artists", ["Add", "Remove", "Cancel"])
+        selection = _select_with_year_knob(current_state, "Artists", ["Cancel", "Add", "Remove"])
         if selection in [None, "Cancel"]:
             return
 
@@ -1015,7 +1027,7 @@ def _artists_menu(current_state):
                 TMB.scr.show_text("No artists", force=True)
                 sleep(1)
                 continue
-            artist = _select_with_year_knob(current_state, "Add Artist", artists + ["Cancel"])
+            artist = _select_with_year_knob(current_state, "Add Artist", ["Cancel"] + artists)
             if artist and artist != "Cancel":
                 if artist not in chosen:
                     chosen.append(artist)
@@ -1028,7 +1040,7 @@ def _artists_menu(current_state):
                 TMB.scr.show_text("No chosen\nartists", force=True)
                 sleep(1)
                 continue
-            artist = _select_with_year_knob(current_state, "Remove Artist", chosen + ["Cancel"])
+            artist = _select_with_year_knob(current_state, "Remove Artist", ["Cancel"] + chosen)
             if artist and artist != "Cancel":
                 current["CHOSEN_ARTISTS"] = [a for a in chosen if a != artist]
                 current_state.set(current)
@@ -1040,7 +1052,7 @@ def run_month_menu(current_state):
     global MENU_ACTIVE, MENU_SUPPRESS_UNTIL
     MENU_ACTIVE = True
     while True:
-        selection = _select_with_year_knob(current_state, "Menu", ["Artists", "Shutdown", "Restart", "Info", "Cancel"])
+        selection = _select_with_year_knob(current_state, "Menu", ["Cancel", "Artists", "Shutdown", "Restart", "Info"])
         if selection in [None, "Cancel"]:
             MENU_ACTIVE = False
             MENU_SUPPRESS_UNTIL = datetime.datetime.now() + datetime.timedelta(seconds=0.5)
