@@ -12,6 +12,13 @@ TIMEMACHINE=$old_env/$timemachine_path
 echo "TIMEMACHINE var is $TIMEMACHINE"
 current_metadata_path=$TIMEMACHINE/metadata
 
+# Safe update mode (default): do not mutate system packages and do not upgrade
+# Python dependencies unless explicitly requested.
+ALLOW_SYSTEM_PACKAGE_CHANGES=${ALLOW_SYSTEM_PACKAGE_CHANGES:-0}
+PINNED_PYTHON_DEPS=${PINNED_PYTHON_DEPS:-1}
+PIN_FILE=${PIN_FILE:-$HOME/deadstream/requirements.lock.txt}
+TMP_PIN_FILE=/tmp/timemachine.requirements.$$.txt
+
 # define local functions
 system () {
    command=$1
@@ -63,24 +70,31 @@ if [[ $HOSTNAME == deadstream* ]]; then
    git_branch=dev
 elif [[ $HOSTNAME == project* ]]; then
    git_branch=projectM
+elif [[ $HOSTNAME == timemachinev5 ]]; then
+   git_branch=dev
 else
    system "sudo systemctl disable ssh"
 fi
 
 
-# Perform shell tasks which may require 2 updates to take effect
-[ ! -f $HOME/.phishinkey ] && echo '8003bcd8c378844cfb69aad8b0981309f289e232fb417df560f7192edd295f1d49226ef6883902e59b465991d0869c77' > $HOME/.phishinkey
+# Perform shell tasks which may require 2 updates to take effect.
+# In safe mode, skip all system-level package/config mutations.
+if [[ $ALLOW_SYSTEM_PACKAGE_CHANGES -eq 1 ]]; then
+   [ ! -f $HOME/.phishinkey ] && echo '8003bcd8c378844cfb69aad8b0981309f289e232fb417df560f7192edd295f1d49226ef6883902e59b465991d0869c77' > $HOME/.phishinkey
 
-system "sudo apt-get install -y pulseaudio pulseaudio-module-jack pulseaudio-module-bluetooth pulseaudio-utils bluetooth"
+   system "sudo apt-get install -y pulseaudio pulseaudio-module-jack pulseaudio-module-bluetooth pulseaudio-utils bluetooth"
 
-sudo grep -qF -- "enable_uart=1" /boot/config.txt || echo "enable_uart=1" | sudo tee -a /boot/config.txt
-sudo grep -q -- "^default-server = /var/run/pulse/native" /etc/pulse/client.conf || echo "default-server = /var/run/pulse/native" | sudo tee -a /etc/pulse/client.conf
-sudo grep -q -- "^autospawn = no" /etc/pulse/client.conf || echo "autospawn = no" | sudo tee -a /etc/pulse/client.conf
-sudo grep -q -- "^SystemMaxUse=200M" /etc/systemd/journald.conf || echo "SystemMaxUse=200M" | sudo tee -a /etc/systemd/journald.conf
-sudo usermod -a -G audio,video,bluetooth,spi,gpio,pulse,pulse-access deadhead
-sudo usermod -a -G audio,bluetooth pulse
-sudo usermod -a -G pulse,pulse-access root
-sudo usermod -a -G pulse bluetooth
+   sudo grep -qF -- "enable_uart=1" /boot/config.txt || echo "enable_uart=1" | sudo tee -a /boot/config.txt
+   sudo grep -q -- "^default-server = /var/run/pulse/native" /etc/pulse/client.conf || echo "default-server = /var/run/pulse/native" | sudo tee -a /etc/pulse/client.conf
+   sudo grep -q -- "^autospawn = no" /etc/pulse/client.conf || echo "autospawn = no" | sudo tee -a /etc/pulse/client.conf
+   sudo grep -q -- "^SystemMaxUse=200M" /etc/systemd/journald.conf || echo "SystemMaxUse=200M" | sudo tee -a /etc/systemd/journald.conf
+   sudo usermod -a -G audio,video,bluetooth,spi,gpio,pulse,pulse-access deadhead
+   sudo usermod -a -G audio,bluetooth pulse
+   sudo usermod -a -G pulse,pulse-access root
+   sudo usermod -a -G pulse bluetooth
+else
+   echo "Skipping system package/config changes (ALLOW_SYSTEM_PACKAGE_CHANGES=0)"
+fi
 
 # If no update is required, then exit.
 echo "git branch is $git_branch"
@@ -106,8 +120,20 @@ system "cd $HOME"
 env_name=env_`date +%Y%m%d`.`cat /dev/random | tr -cd 'a-f0-9' | head -c 8`
 system "python3 -m venv $env_name"
 system "source $env_name/bin/activate"
-system "pip3 install wheel"
-system "pip3 install git+https://github.com/eichblatt/deadstream.git@$git_branch"
+
+# Install pinned dependency set first, then install app code without pulling deps.
+if [[ $PINNED_PYTHON_DEPS -eq 1 ]]; then
+   if [[ -f $PIN_FILE ]]; then
+      echo "Using pinned Python deps from $PIN_FILE"
+      system "pip3 install -r $PIN_FILE"
+   else
+      echo "Pin file $PIN_FILE not found; freezing currently running env"
+      system "$old_env/bin/pip3 freeze > $TMP_PIN_FILE"
+      system "pip3 install -r $TMP_PIN_FILE"
+   fi
+fi
+
+system "pip3 install --no-deps git+https://github.com/eichblatt/deadstream.git@$git_branch"
 
 new_metadata_path=$HOME/$env_name/$timemachine_path/metadata
 
@@ -132,13 +158,15 @@ kill $help_on_the_way_pid
 system "cd $HOME" # NOTE: we should already be here.
 if [ $stat == 0 ]; then
    system "ln -sfn $env_name timemachine"
-   echo "echo $remote_tag > $env_name/$timemachine_path/.latest_tag"
-   sudo echo $remote_tag > $env_name/$timemachine_path/.latest_tag
+   echo "printf '%s\n' $remote_tag > $env_name/$timemachine_path/.latest_tag"
+   printf '%s\n' "$remote_tag" > "$env_name/$timemachine_path/.latest_tag"
 else
    system "rm -rf $env_name"
 fi
 
 restore_services
 cleanup_old_envs
+
+[ -f $TMP_PIN_FILE ] && rm -f $TMP_PIN_FILE
 
 exit $stat

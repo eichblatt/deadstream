@@ -72,14 +72,14 @@ if [ -f $wpa_supplicant_path ]; then
     sudo cp $wpa_supplicant_path $media_folder/rootfs/etc/wpa_supplicant/wpa_supplicant.conf 
 fi
 
-media_dirs="/dev/sdb1 /dev/sdb2"
+media_dirs="/dev/sda1 /dev/sda2"
 
 for dir in $media_dirs; do
     sudo umount $dir
 done
 
 sudo rm $image_file
-critical_command "sudo dd if=/dev/sdb of=$image_file bs=4M status=progress"
+critical_command "sudo dd if=/dev/sda of=$image_file bs=4M status=progress"
 
 sudo pishrink.sh $image_file
 echo "Replacing wpa_supplicant and knob_sense files"
@@ -89,5 +89,5 @@ sudo mv $HOME/.timemachine_options.txt $media_folder/rootfs/home/deadhead/.
 sudo mv $HOME/timemachine_dot_ssh $media_folder/rootfs/home/deadhead/.ssh
 
 # NOTE: to burn an image use the command (or similar):
-# sudo sh -c "pv v2_20210625.img > /dev/sdb"
+# sudo sh -c "pv v2_20210625.img > /dev/sda"
 # ./balenaEtcher-1.5.120-x64.AppImage > /dev/null 2>&1 &
