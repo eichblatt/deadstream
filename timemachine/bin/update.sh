@@ -133,7 +133,7 @@ if [[ $PINNED_PYTHON_DEPS -eq 1 ]]; then
    fi
 fi
 
-system "pip3 install --no-deps git+https://github.com/eichblatt/deadstream.git@$git_branch"
+system "pip3 install --no-deps --force-reinstall git+https://github.com/eichblatt/deadstream.git@$git_branch"
 
 new_metadata_path=$HOME/$env_name/$timemachine_path/metadata
 
