@@ -79,7 +79,48 @@ def default_options():
         d["BLUETOOTH_ENABLE"] = True
     d["DEFAULT_START_TIME"] = datetime.time(15, 0)
     d["TIMEZONE"] = "America/New_York"
+    d["PLEX_SERVERS"] = []
     return d
+
+
+def normalize_plex_servers(raw):
+    servers = []
+    if raw in [None, "", []]:
+        return servers
+    try:
+        if isinstance(raw, str):
+            raw = json.loads(raw)
+    except Exception:
+        logger.warning("Failed to parse PLEX_SERVERS as JSON. Using empty list")
+        return servers
+
+    if not isinstance(raw, list):
+        logger.warning("PLEX_SERVERS is not a list. Using empty list")
+        return servers
+
+    used_labels = set()
+    for row in raw:
+        if not isinstance(row, dict):
+            continue
+        label = str(row.get("label", "")).strip()
+        plex_user = str(row.get("plex_user", row.get("user", ""))).strip()
+        plex_password = str(row.get("plex_password", row.get("password", ""))).strip()
+        plex_server = str(row.get("plex_server", row.get("server", ""))).strip()
+        if not (label and plex_user and plex_password and plex_server):
+            continue
+        if label in used_labels:
+            logger.warning(f"Ignoring duplicate Plex server label {label}")
+            continue
+        used_labels.add(label)
+        servers.append(
+            {
+                "label": label,
+                "plex_user": plex_user,
+                "plex_password": plex_password,
+                "plex_server": plex_server,
+            }
+        )
+    return servers
 
 
 def save_options(optd_to_save):
@@ -91,7 +132,9 @@ def save_options(optd_to_save):
         optd_to_save["COLLECTIONS"] = tmpd["COLLECTIONS"]
     for arg in optd_to_save.keys():
         if arg == arg.upper():
-            if arg == "DEFAULT_START_TIME":
+            if arg == "PLEX_SERVERS":
+                optd_to_save[arg] = json.dumps(normalize_plex_servers(optd_to_save[arg]))
+            elif arg == "DEFAULT_START_TIME":
                 if isinstance(optd_to_save[arg], datetime.time):
                     optd_to_save[arg] = datetime.time.strftime(optd_to_save[arg], "%H:%M:%S")
             elif isinstance(optd_to_save[arg], (list, tuple)):
@@ -133,6 +176,8 @@ def load_options():
                     if k == "COLLECTIONS":
                         c = ["Phish" if x.lower() == "phish" else x for x in c]
                     tmpd[k] = c
+                if k in ["PLEX_SERVERS"]:
+                    tmpd[k] = normalize_plex_servers(tmpd[k])
                 if k in ["DEFAULT_START_TIME"]:  # make datetime
                     logger.debug(f"time k is {k}")
                     tmpd[k] = datetime.time.fromisoformat(tmpd[k])

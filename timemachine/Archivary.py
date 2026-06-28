@@ -150,6 +150,20 @@ def remove_none(lis):
     return [a for a in lis if a is not None]
 
 
+def parse_plex_collection_name(collection_name):
+    if not isinstance(collection_name, str) or not collection_name.startswith("Plex_"):
+        return (None, None)
+    remainder = collection_name.replace("Plex_", "", 1)
+    parts = remainder.split("_", 1)
+    if len(parts) == 1:
+        return (None, parts[0])
+    label = parts[0].strip()
+    section = parts[1].strip()
+    if section == "":
+        section = "Live Music"
+    return (label, section)
+
+
 class Archivary:
     """A collection of Archive objects"""
 
@@ -170,7 +184,7 @@ class Archivary:
         phishin_archive = None
         ia_archive = None
         local_archive = None
-        plex_archive = None
+        plex_archives = []
         ia_collections = [
             x for x in self.collection_list if ((x != "Phish") and (not x.startswith("Local_")) and (not x.startswith("Plex_")))
         ]
@@ -199,19 +213,40 @@ class Archivary:
                 date_range=date_range,
             )
         if len(plex_collections) > 0:
-            try:
-                plex_archive = PlexArchive(collection_list=plex_collections)
-            except Exception as e:
-                logger.error(f"Unable to initialize Plex archive: {e}")
+            plex_servers = config.normalize_plex_servers(config.optd.get("PLEX_SERVERS", []))
+            plex_server_map = {row["label"]: row for row in plex_servers}
+            grouped_collections = {}
+            for collection in plex_collections:
+                label, section = parse_plex_collection_name(collection)
+                if (label is None) or (section is None):
+                    logger.warning(
+                        f"Ignoring malformed Plex collection {collection}. Expected Plex_<label>_<section> format"
+                    )
+                    continue
+                if label not in plex_server_map:
+                    logger.warning(f"Ignoring Plex collection {collection}. No server config for label {label}")
+                    continue
+                grouped_collections.setdefault(label, []).append(collection)
+
+            for label, server_collections in grouped_collections.items():
+                try:
+                    plex_archive = PlexArchive(
+                        collection_list=server_collections,
+                        plex_server_config=plex_server_map[label],
+                    )
+                    if len(plex_archive.dates) > 0:
+                        plex_archives.append(plex_archive)
+                    else:
+                        logger.warning(f"Plex server {label} has no playable dates in {server_collections}")
+                except Exception as e:
+                    logger.error(f"Unable to initialize Plex archive for {label}: {e}")
 
         if (local_archive is not None) and len(local_archive.dates) == 0:  # eg, if the USB stick is not plugged in!
             local_archive = None
 
         if (ia_archive is not None) and len(ia_archive.dates) == 0:  # eg, if the only collection doesn't exist
             ia_archive = None
-        if (plex_archive is not None) and len(plex_archive.dates) == 0:
-            plex_archive = None
-        self.archives = remove_none([ia_archive, phishin_archive, local_archive, plex_archive])
+        self.archives = remove_none([ia_archive, phishin_archive, local_archive] + plex_archives)
         if len(self.archives) == 0:
             logger.warning(f"All archives for collections {collection_list} are empty -- check the system!")
             self.tape_dates = {}
@@ -1474,10 +1509,15 @@ class PlexArchive(BaseArchive):
         with_latest=False,
         collection_list=["Plex_Live Music"],
         date_range=None,
+        plex_server_config=None,
     ):
         super().__init__(url, dbpath, reload_ids, with_latest, collection_list, date_range)
         self.archive_type = "Plex Archive"
         self.plex = None
+        self.plex_server_config = plex_server_config if isinstance(plex_server_config, dict) else None
+        self.server_label = "unknown"
+        if self.plex_server_config:
+            self.server_label = self.plex_server_config.get("label", self.server_label)
         self.load_archive(reload_ids, with_latest)
 
     def _connect(self):
@@ -1488,19 +1528,22 @@ class PlexArchive(BaseArchive):
         except Exception as e:
             raise ImportError("plexapi is required for Plex archives") from e
 
-        plex_user = os.getenv("PLEX_USER")
-        plex_pwd = os.getenv("PLEX_PWD")
-        plex_server = os.getenv("PLEX_SERVER")
+        if not self.plex_server_config:
+            raise RuntimeError("Missing plex_server_config for Plex archive")
+
+        plex_user = self.plex_server_config.get("plex_user")
+        plex_pwd = self.plex_server_config.get("plex_password")
+        plex_server = self.plex_server_config.get("plex_server")
         if not (plex_user and plex_pwd and plex_server):
-            raise RuntimeError("PLEX_USER, PLEX_PWD, and PLEX_SERVER environment variables are required")
+            raise RuntimeError(f"Incomplete Plex config for label {self.server_label}")
 
         account = MyPlexAccount(plex_user, plex_pwd)
         self.plex = account.resource(plex_server).connect()
         return self.plex
 
     def _section_name(self, collection_name):
-        section_name = collection_name.replace("Plex_", "", 1)
-        return section_name if len(section_name) > 0 else "Live Music"
+        _, section_name = parse_plex_collection_name(collection_name)
+        return section_name if section_name else "Live Music"
 
     def load_archive(self, reload_ids=False, with_latest=False):
         self.tapes = self.load_tapes(reload_ids, with_latest)
@@ -1515,7 +1558,7 @@ class PlexArchive(BaseArchive):
             try:
                 music = plex.library.section(section_name)
             except Exception as e:
-                logger.warning(f"Unable to load Plex section '{section_name}': {e}")
+                logger.warning(f"Unable to load Plex section '{section_name}' for {self.server_label}: {e}")
                 continue
             for album in music.searchAlbums():
                 date_str = album.title[:10] if isinstance(album.title, str) else ""
@@ -1561,7 +1604,9 @@ class PlexTape(BaseTape):
         self.date = album.title[:10]
         self.identifier = f"plex_{album.ratingKey}"
         self.collection = [collection_name]
-        self.artist = album.parentTitle if getattr(album, "parentTitle", None) else collection_name.replace("Plex_", "")
+        _, section_name = parse_plex_collection_name(collection_name)
+        fallback_artist = section_name if section_name else collection_name.replace("Plex_", "")
+        self.artist = album.parentTitle if getattr(album, "parentTitle", None) else fallback_artist
         self.venue_name = album.title[11:].strip() if len(album.title) > 11 else "Unknown"
         self.venue_location = "Unknown"
         self.set_data = None
