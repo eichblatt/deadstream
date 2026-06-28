@@ -102,6 +102,7 @@ def default_options():
         d["BLUETOOTH_DEVICE"] = "None"
     d["DEFAULT_START_TIME"] = "15:00:00"
     d["TIMEZONE"] = "America/New_York"
+    d["PLEX_SERVERS"] = "[]"
     return d
 
 
@@ -182,7 +183,9 @@ class OptionsServer(object):
         opt_dict = read_optd()
         logger.debug(f"opt dict {opt_dict}")
         form_strings = [
-            self.get_form_item(x) for x in opt_dict.items() if x[0] not in ["TIMEZONE", "BLUETOOTH_DEVICE", "MODULE"]
+            self.get_form_item(x)
+            for x in opt_dict.items()
+            if x[0] not in ["TIMEZONE", "BLUETOOTH_DEVICE", "MODULE", "PLEX_SERVERS"]
         ]
         form_string = "\n".join(form_strings)
         logger.debug(f"form_string {form_string}")
@@ -199,9 +202,7 @@ class OptionsServer(object):
         tz_string = "\n".join(tz_strings)
         logger.debug(f"tz string {tz_string}")
         module_list = ["livemusic", "78rpm"]
-        module_strings = [
-            f'<option value="{x}" {self.current_choice(opt_dict,"MODULE",x)}>{x}</option>' for x in module_list
-        ]
+        module_strings = [f'<option value="{x}" {self.current_choice(opt_dict,"MODULE",x)}>{x}</option>' for x in module_list]
         module_string = "\n".join(module_strings)
         logger.debug(f"tz string {module_string}")
 
@@ -244,6 +245,9 @@ class OptionsServer(object):
              <button type="submit">Save Values</button>
              <button type="reset">Restore</button>
            </form> {bluetooth_button}
+                     <form method="get" action="plex_servers_settings">
+                         <button type="submit">Plex Servers</button>
+                     </form>
            <form method="get" action="restart_tm_service">
              <button type="submit">Restart Timemachine Service</button>
            </form>
@@ -305,9 +309,7 @@ class OptionsServer(object):
 
         bt_list = [bt_connected_device_name] + [x["name"] for x in bt_devices]
         bt_list = list(dict.fromkeys(bt_list))
-        bt_strings = [
-            f'<option value="{x}" {self.current_choice(opt_dict,"BLUETOOTH_DEVICE",x)}>{x}</option>' for x in bt_list
-        ]
+        bt_strings = [f'<option value="{x}" {self.current_choice(opt_dict,"BLUETOOTH_DEVICE",x)}>{x}</option>' for x in bt_list]
         bt_device = "\n".join(bt_strings)
         logger.debug(f"bluetooth devices {bt_device}")
 
@@ -365,9 +367,7 @@ class OptionsServer(object):
         bt_connected = bt.connect(mac_address)
         if bt_connected:
             opt_dict["BLUETOOTH_DEVICE"] = BLUETOOTH_DEVICE
-        return_string = (
-            f"Connected to {BLUETOOTH_DEVICE} :)" if bt_connected else f"Failed to connect to {BLUETOOTH_DEVICE} :("
-        )
+        return_string = f"Connected to {BLUETOOTH_DEVICE} :)" if bt_connected else f"Failed to connect to {BLUETOOTH_DEVICE} :("
         return_string = return_string + (return_button_success if bt_connected else return_button_fail)
         return return_string
 
@@ -389,13 +389,161 @@ class OptionsServer(object):
             if k == "COLLECTIONS":
                 outstring += '> see the <a href=https://archive.org/browse.php?collection=etree&field=creator target="_blank"> list of live music collection names </a>'
                 outstring += f"<p>Current Selection: {v} <p"
+                outstring += "<p>Plex format: Plex_&lt;label&gt;_&lt;section&gt; (example Plex_P1_Live Music)</p>"
             outstring += "> <p>"
         outstring += "</label>"
         return outstring
 
+    def normalize_plex_servers(self, raw):
+        rows = []
+        if raw in [None, "", []]:
+            return rows
+        try:
+            if isinstance(raw, str):
+                raw = json.loads(raw)
+        except Exception:
+            logger.warning("Failed to parse PLEX_SERVERS as JSON")
+            return rows
+        if not isinstance(raw, list):
+            return rows
+
+        labels = set()
+        for row in raw:
+            if not isinstance(row, dict):
+                continue
+            label = str(row.get("label", "")).strip()
+            plex_user = str(row.get("plex_user", row.get("user", ""))).strip()
+            plex_password = str(row.get("plex_password", row.get("password", ""))).strip()
+            plex_server = str(row.get("plex_server", row.get("server", ""))).strip()
+            if not (label and plex_user and plex_password and plex_server):
+                continue
+            if label in labels:
+                continue
+            labels.add(label)
+            rows.append(
+                {
+                    "label": label,
+                    "plex_user": plex_user,
+                    "plex_password": plex_password,
+                    "plex_server": plex_server,
+                }
+            )
+        return rows
+
+    def normalize_multi_value(self, value):
+        if value is None:
+            return []
+        if isinstance(value, list):
+            return value
+        return [value]
+
+    def render_plex_servers_page(self, message=""):
+        opt_dict = read_optd()
+        rows = self.normalize_plex_servers(opt_dict.get("PLEX_SERVERS", "[]"))
+        if len(rows) == 0:
+            rows = [{"label": "Plex1", "plex_user": "", "plex_password": "", "plex_server": ""}]
+
+        row_html = []
+        for row in rows:
+            row_html.append(f"""<tr>
+<td><input type="text" name="label" value="{row.get("label", "")}" required></td>
+<td><input type="text" name="plex_user" value="{row.get("plex_user", "")}" required></td>
+<td><input type="password" name="plex_password" value="{row.get("plex_password", "")}" required></td>
+<td><input type="text" name="plex_server" value="{row.get("plex_server", "")}" required></td>
+</tr>""")
+
+        message_html = f"<h3>{message}</h3>" if message else ""
+        page_string = f"""
+        <html>
+         <head>
+           <script>
+             function addRow() {{
+               const table = document.getElementById('plexTable').getElementsByTagName('tbody')[0];
+               const row = table.insertRow();
+               row.innerHTML = `
+                 <td><input type="text" name="label" value="Plex${{table.rows.length}}" required></td>
+                 <td><input type="text" name="plex_user" value="" required></td>
+                 <td><input type="password" name="plex_password" value="" required></td>
+                 <td><input type="text" name="plex_server" value="" required></td>
+               `;
+             }}
+           </script>
+         </head>
+         <body>
+           <h1>Plex Servers</h1>
+           {message_html}
+           <p>Configure one or more labeled Plex connections.</p>
+           <form method="post" action="save_plex_servers">
+             <table id="plexTable" border="1" cellpadding="6">
+               <thead>
+                 <tr>
+                   <th>plex_server_label</th>
+                   <th>plex_user</th>
+                   <th>plex_password</th>
+                   <th>plex_server</th>
+                 </tr>
+               </thead>
+               <tbody>
+                 {''.join(row_html)}
+               </tbody>
+             </table>
+             <p>
+               <button type="button" onclick="addRow()">Add Row</button>
+               <button type="submit">Save Plex Servers</button>
+             </p>
+           </form>
+           <form method="get" action="index">
+             <button type="submit">Return</button>
+           </form>
+         </body>
+        </html>
+        """
+        return page_string
+
+    @cherrypy.expose
+    def plex_servers_settings(self, message=""):
+        return self.render_plex_servers_page(message=message)
+
+    @cherrypy.expose
+    def save_plex_servers(self, label=None, plex_user=None, plex_password=None, plex_server=None):
+        labels = self.normalize_multi_value(label)
+        users = self.normalize_multi_value(plex_user)
+        passwords = self.normalize_multi_value(plex_password)
+        servers = self.normalize_multi_value(plex_server)
+
+        n_rows = max(len(labels), len(users), len(passwords), len(servers))
+        rows = []
+        used_labels = set()
+
+        for i in range(n_rows):
+            row = {
+                "label": (labels[i] if i < len(labels) else "").strip(),
+                "plex_user": (users[i] if i < len(users) else "").strip(),
+                "plex_password": (passwords[i] if i < len(passwords) else "").strip(),
+                "plex_server": (servers[i] if i < len(servers) else "").strip(),
+            }
+            if not any(row.values()):
+                continue
+            if not all(row.values()):
+                return self.render_plex_servers_page(message="Each Plex row needs label, user, password, and server")
+            if not row["label"].replace("_", "").replace("-", "").isalnum():
+                return self.render_plex_servers_page(message=f"Invalid label {row['label']}. Use letters, numbers, _ or -")
+            if row["label"] in used_labels:
+                return self.render_plex_servers_page(message=f"Duplicate label {row['label']}")
+            used_labels.add(row["label"])
+            rows.append(row)
+
+        if len(rows) == 0:
+            return self.render_plex_servers_page(message="Please add at least one Plex server")
+
+        opt_dict = read_optd()
+        opt_dict["PLEX_SERVERS"] = json.dumps(rows)
+        self.save_options(opt_dict)
+        return self.render_plex_servers_page(message="Saved Plex server settings")
+
     def save_options(self, kwargs):
         logger.debug(f"in save_options. kwargs {kwargs}")
-        options = {}
+        options = read_optd()
         for arg in kwargs.keys():
             if arg == arg.upper():
                 options[arg] = kwargs[arg]
@@ -427,7 +575,10 @@ class OptionsServer(object):
         proper_collections = []
 
         for artist in colls:
-            artist = artist.replace(" ", "")
+            # Keep internal spaces (e.g. Plex_Live Music), trim only outer whitespace.
+            artist = artist.strip()
+            if not artist.startswith("Plex"):
+                artist = artist.replace(" ", "")
             if artist in valid_collection_names:
                 proper_collections.append(artist)
             elif artist.lower().strip() == "phish":

@@ -1,19 +1,20 @@
 #!/usr/bin/python3
 """
-    Grateful Dead Time Machine -- copyright 2021 Steve Eichblatt
+Grateful Dead Time Machine -- copyright 2021 Steve Eichblatt
 
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
-    along with this program.  If not, see <https://www.gnu.org/licenses/>.
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
+
 import abc
 import codecs
 import csv
@@ -83,6 +84,20 @@ def to_decade(datestring):
     return 10 * divmod(to_date(datestring[:10]).year, 10)[0]
 
 
+def is_valid_iso_date(s):
+    if not isinstance(s, str):
+        return False
+    if len(s) != 10 or s[4] != "-" or s[7] != "-":
+        return False
+    if not (s[:4].isdigit() and s[5:7].isdigit() and s[8:10].isdigit()):
+        return False
+    try:
+        datetime.date.fromisoformat(s)
+        return True
+    except ValueError:
+        return False
+
+
 class BaseTapeDownloader(abc.ABC):
     """Abstract base class for a tape downloader.
 
@@ -135,6 +150,20 @@ def remove_none(lis):
     return [a for a in lis if a is not None]
 
 
+def parse_plex_collection_name(collection_name):
+    if not isinstance(collection_name, str) or not collection_name.startswith("Plex_"):
+        return (None, None)
+    remainder = collection_name.replace("Plex_", "", 1)
+    parts = remainder.split("_", 1)
+    if len(parts) == 1:
+        return (None, parts[0])
+    label = parts[0].strip()
+    section = parts[1].strip()
+    if section == "":
+        section = "Live Music"
+    return (label, section)
+
+
 class Archivary:
     """A collection of Archive objects"""
 
@@ -155,8 +184,12 @@ class Archivary:
         phishin_archive = None
         ia_archive = None
         local_archive = None
-        ia_collections = [x for x in self.collection_list if ((x != "Phish") and (not x.startswith("Local_")))]
+        plex_archives = []
+        ia_collections = [
+            x for x in self.collection_list if ((x != "Phish") and (not x.startswith("Local_")) and (not x.startswith("Plex_")))
+        ]
         local_collections = [x for x in self.collection_list if x.startswith("Local_")]
+        plex_collections = [x for x in self.collection_list if x.startswith("Plex_")]
 
         local_mode = utils.get_local_mode()
 
@@ -179,13 +212,41 @@ class Archivary:
                 collection_list=ia_collections,
                 date_range=date_range,
             )
+        if len(plex_collections) > 0:
+            plex_servers = config.normalize_plex_servers(config.optd.get("PLEX_SERVERS", []))
+            plex_server_map = {row["label"]: row for row in plex_servers}
+            grouped_collections = {}
+            for collection in plex_collections:
+                label, section = parse_plex_collection_name(collection)
+                if (label is None) or (section is None):
+                    logger.warning(
+                        f"Ignoring malformed Plex collection {collection}. Expected Plex_<label>_<section> format"
+                    )
+                    continue
+                if label not in plex_server_map:
+                    logger.warning(f"Ignoring Plex collection {collection}. No server config for label {label}")
+                    continue
+                grouped_collections.setdefault(label, []).append(collection)
+
+            for label, server_collections in grouped_collections.items():
+                try:
+                    plex_archive = PlexArchive(
+                        collection_list=server_collections,
+                        plex_server_config=plex_server_map[label],
+                    )
+                    if len(plex_archive.dates) > 0:
+                        plex_archives.append(plex_archive)
+                    else:
+                        logger.warning(f"Plex server {label} has no playable dates in {server_collections}")
+                except Exception as e:
+                    logger.error(f"Unable to initialize Plex archive for {label}: {e}")
 
         if (local_archive is not None) and len(local_archive.dates) == 0:  # eg, if the USB stick is not plugged in!
             local_archive = None
 
         if (ia_archive is not None) and len(ia_archive.dates) == 0:  # eg, if the only collection doesn't exist
             ia_archive = None
-        self.archives = remove_none([ia_archive, phishin_archive, local_archive])
+        self.archives = remove_none([ia_archive, phishin_archive, local_archive] + plex_archives)
         if len(self.archives) == 0:
             logger.warning(f"All archives for collections {collection_list} are empty -- check the system!")
             self.tape_dates = {}
@@ -1434,6 +1495,180 @@ class LocalTrack(BaseTrack):
                 self.title = "Set Break"
             d["format"] = "Ogg Vorbis"
             d["url"] = f'file://{d["path"]}'
+        self.files.append(d)
+
+
+class PlexArchive(BaseArchive):
+    """A Plex-backed Archive"""
+
+    def __init__(
+        self,
+        url="https://plex.tv",
+        dbpath=os.path.join(ROOT_DIR, "metadata"),
+        reload_ids=False,
+        with_latest=False,
+        collection_list=["Plex_Live Music"],
+        date_range=None,
+        plex_server_config=None,
+    ):
+        super().__init__(url, dbpath, reload_ids, with_latest, collection_list, date_range)
+        self.archive_type = "Plex Archive"
+        self.plex = None
+        self.plex_server_config = plex_server_config if isinstance(plex_server_config, dict) else None
+        self.server_label = "unknown"
+        if self.plex_server_config:
+            self.server_label = self.plex_server_config.get("label", self.server_label)
+        self.load_archive(reload_ids, with_latest)
+
+    def _connect(self):
+        if self.plex is not None:
+            return self.plex
+        try:
+            from plexapi.myplex import MyPlexAccount
+        except Exception as e:
+            raise ImportError("plexapi is required for Plex archives") from e
+
+        if not self.plex_server_config:
+            raise RuntimeError("Missing plex_server_config for Plex archive")
+
+        plex_user = self.plex_server_config.get("plex_user")
+        plex_pwd = self.plex_server_config.get("plex_password")
+        plex_server = self.plex_server_config.get("plex_server")
+        if not (plex_user and plex_pwd and plex_server):
+            raise RuntimeError(f"Incomplete Plex config for label {self.server_label}")
+
+        account = MyPlexAccount(plex_user, plex_pwd)
+        self.plex = account.resource(plex_server).connect()
+        return self.plex
+
+    def _section_name(self, collection_name):
+        _, section_name = parse_plex_collection_name(collection_name)
+        return section_name if section_name else "Live Music"
+
+    def load_archive(self, reload_ids=False, with_latest=False):
+        self.tapes = self.load_tapes(reload_ids, with_latest)
+        self.tape_dates = self.get_tape_dates()
+        self.dates = sorted(self.tape_dates.keys())
+
+    def load_tapes(self, reload_ids=False, with_latest=False):
+        plex = self._connect()
+        tapes = []
+        for collection in self.collection_list:
+            section_name = self._section_name(collection)
+            try:
+                music = plex.library.section(section_name)
+            except Exception as e:
+                logger.warning(f"Unable to load Plex section '{section_name}' for {self.server_label}: {e}")
+                continue
+            for album in music.searchAlbums():
+                date_str = album.title[:10] if isinstance(album.title, str) else ""
+                if not is_valid_iso_date(date_str):
+                    continue
+                if self.date_range:
+                    year = int(date_str[:4])
+                    if year < min(self.date_range) or year > max(self.date_range):
+                        continue
+                tapes.append(PlexTape(self.dbpath, album, plex, collection))
+        self.tapes = tapes
+        return self.tapes
+
+    def best_tape(self, date, resort=True):
+        if isinstance(date, datetime.date):
+            date = date.strftime("%Y-%m-%d")
+        if date not in self.dates:
+            return None
+        return self.tape_dates[date][0]
+
+    def year_artists(self, year, other_year=None):
+        id_dict = {}
+        other_year = other_year if other_year else year
+        start_year, end_year = sorted([year, other_year])
+        year_tapes = {k: v for k, v in self.tape_dates.items() if start_year <= int(k[:4]) <= end_year}
+        tapes = [item for sublist in year_tapes.values() for item in sublist]
+        for tape in tapes:
+            id_dict.setdefault(tape.artist, []).append(tape)
+        return id_dict
+
+    def get_all_collection_names(self):
+        plex = self._connect()
+        return [section.title for section in plex.library.sections()]
+
+
+class PlexTape(BaseTape):
+    """A Plex album represented as a tape"""
+
+    def __init__(self, dbpath, album, plex, collection_name):
+        super().__init__(dbpath, {}, set_data=None)
+        self._album = album
+        self._plex = plex
+        self.date = album.title[:10]
+        self.identifier = f"plex_{album.ratingKey}"
+        self.collection = [collection_name]
+        _, section_name = parse_plex_collection_name(collection_name)
+        fallback_artist = section_name if section_name else collection_name.replace("Plex_", "")
+        self.artist = album.parentTitle if getattr(album, "parentTitle", None) else fallback_artist
+        self.venue_name = album.title[11:].strip() if len(album.title) > 11 else "Unknown"
+        self.venue_location = "Unknown"
+        self.set_data = None
+        self.meta_loaded = False
+
+    def stream_only(self):
+        return False
+
+    def compute_score(self):
+        return 5
+
+    def venue(self, tracknum=0):
+        return f"{self.venue_name},{self.venue_location}"
+
+    def get_metadata(self, only_if_cached=False):
+        if self.meta_loaded:
+            return
+        self._tracks = []
+        tracks = self._album.tracks()
+        for i, track in enumerate(tracks):
+            self._tracks.append(PlexTrack(track, self.identifier, self._plex, i + 1))
+        self.meta_loaded = True
+
+
+class PlexTrack(BaseTrack):
+    """A track from a Plex album"""
+
+    def __init__(self, track, parent_id, plex, position):
+        self._track = track
+        self._plex = plex
+        self.title = track.title
+        self.track = position
+        self.original = track.title
+        self.files = []
+        super().__init__({}, parent_id)
+        self.add_file({}, break_track=False)
+
+    def add_file(self, tdict, break_track=False):
+        d = {
+            "source": "plex",
+            "name": self.title,
+            "format": "MP3",
+            "size": 1,
+            "path": "",
+            "url": "",
+        }
+        try:
+            media = self._track.media[0]
+            part = media.parts[0]
+            d["url"] = self._plex.url(part.key, includeToken=True)
+            if getattr(media, "container", None):
+                container = media.container.lower()
+                format_map = {
+                    "ogg": "Ogg Vorbis",
+                    "oga": "Ogg Vorbis",
+                    "vorbis": "Ogg Vorbis",
+                    "mp3": "MP3",
+                    "flac": "Flac",
+                }
+                d["format"] = format_map.get(container, d["format"])
+        except Exception:
+            pass
         self.files.append(d)
 
 
