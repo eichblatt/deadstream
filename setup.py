@@ -38,6 +38,7 @@ setup(
         "psutil",
         "pre-commit",
         "pulsectl",
+        "plexapi",
         "python-mpv==0.5.2",
         "requests",
         "RPi.GPIO",

@@ -199,9 +199,7 @@ class OptionsServer(object):
         tz_string = "\n".join(tz_strings)
         logger.debug(f"tz string {tz_string}")
         module_list = ["livemusic", "78rpm"]
-        module_strings = [
-            f'<option value="{x}" {self.current_choice(opt_dict,"MODULE",x)}>{x}</option>' for x in module_list
-        ]
+        module_strings = [f'<option value="{x}" {self.current_choice(opt_dict,"MODULE",x)}>{x}</option>' for x in module_list]
         module_string = "\n".join(module_strings)
         logger.debug(f"tz string {module_string}")
 
@@ -305,9 +303,7 @@ class OptionsServer(object):
 
         bt_list = [bt_connected_device_name] + [x["name"] for x in bt_devices]
         bt_list = list(dict.fromkeys(bt_list))
-        bt_strings = [
-            f'<option value="{x}" {self.current_choice(opt_dict,"BLUETOOTH_DEVICE",x)}>{x}</option>' for x in bt_list
-        ]
+        bt_strings = [f'<option value="{x}" {self.current_choice(opt_dict,"BLUETOOTH_DEVICE",x)}>{x}</option>' for x in bt_list]
         bt_device = "\n".join(bt_strings)
         logger.debug(f"bluetooth devices {bt_device}")
 
@@ -365,9 +361,7 @@ class OptionsServer(object):
         bt_connected = bt.connect(mac_address)
         if bt_connected:
             opt_dict["BLUETOOTH_DEVICE"] = BLUETOOTH_DEVICE
-        return_string = (
-            f"Connected to {BLUETOOTH_DEVICE} :)" if bt_connected else f"Failed to connect to {BLUETOOTH_DEVICE} :("
-        )
+        return_string = f"Connected to {BLUETOOTH_DEVICE} :)" if bt_connected else f"Failed to connect to {BLUETOOTH_DEVICE} :("
         return_string = return_string + (return_button_success if bt_connected else return_button_fail)
         return return_string
 
@@ -427,7 +421,10 @@ class OptionsServer(object):
         proper_collections = []
 
         for artist in colls:
-            artist = artist.replace(" ", "")
+            # Keep internal spaces (e.g. Plex_Live Music), trim only outer whitespace.
+            artist = artist.strip()
+            if not artist.startswith("Plex"):
+                artist = artist.replace(" ", "")
             if artist in valid_collection_names:
                 proper_collections.append(artist)
             elif artist.lower().strip() == "phish":
