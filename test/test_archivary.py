@@ -2,6 +2,8 @@ import os
 import time
 from threading import Event
 
+import pytest
+
 from timemachine import Archivary
 from timemachine import config
 from timemachine import GD
@@ -191,3 +193,41 @@ def test_format_1():
     os.system(f"rm {tape.meta_path}")
     tracks = tape.tracks()
     assert tracks[0].title == "Like A Rolling Stone"
+
+
+def test_plex_archive():
+    plex_user = os.getenv("PLEX_USER")
+    plex_password = os.getenv("PLEX_PASSWORD")
+    if not (plex_user and plex_password):
+        pytest.skip("Set PLEX_USER and PLEX_PASSWORD to run Plex archive tests")
+
+    existing_servers = config.normalize_plex_servers(config.optd.get("PLEX_SERVERS", []))
+    existing_server_map = {row["label"]: row for row in existing_servers}
+
+    # Optional overrides for custom server labels or music sections.
+    plex_label = os.getenv("PLEX_LABEL", "Plex1")
+    plex_server = os.getenv("PLEX_SERVER")
+    if not plex_server:
+        if plex_label in existing_server_map:
+            plex_server = existing_server_map[plex_label].get("plex_server")
+        elif len(existing_servers) > 0:
+            plex_server = existing_servers[0].get("plex_server")
+
+    if not plex_server:
+        pytest.skip("Set PLEX_SERVER or configure PLEX_SERVERS to run Plex archive tests")
+
+    plex_section = os.getenv("PLEX_SECTION", "Live Music")
+    collection = f"Plex_{plex_label}_{plex_section}"
+
+    plex_archive = Archivary.PlexArchive(
+        collection_list=[collection],
+        plex_server_config={
+            "label": plex_label,
+            "plex_user": plex_user,
+            "plex_password": plex_password,
+            "plex_server": plex_server,
+        },
+    )
+
+    assert plex_archive.archive_type == "Plex Archive"
+    assert isinstance(plex_archive.get_all_collection_names(), list)
