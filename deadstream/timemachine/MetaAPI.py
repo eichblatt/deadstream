@@ -14,6 +14,7 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
+
 import csv
 import difflib
 import logging
@@ -23,6 +24,7 @@ import re
 import datetime
 import requests
 import string
+from collections import Counter
 from functools import lru_cache
 
 from io import StringIO
@@ -160,6 +162,8 @@ class MetaAPI:
             collection_names.extend(api.get_all_collection_names())
         if len(collection_names) < 7000:
             raise ValueError("Too few collection names found! Bailing out before overwriting cloud data.")
+        collection_names.extend(ArchiveAPI().get_taperssection_collection_names())
+        collection_names = list(dict.fromkeys(collection_names))
         self.save_collection_names_to_cloud(collection_names)
         return collection_names
 
@@ -292,11 +296,18 @@ class PhishinAPI:
 
 
 class ArchiveAPI:
-    """This class queries the archive.org API for metadata, generally about a given collection"""
+    """Query Archive collections, including artist selectors like 'taperssection:Jerry Garcia'."""
 
     def __init__(self, collection="GratefulDead"):
         self.api = "https://archive.org/services/search/v1"
         self.collection = collection
+        self.collection_query = f"collection:{collection}"
+        if collection.startswith("taperssection:"):
+            artist = collection.split(":", 1)[1].strip()
+            if not artist:
+                raise ValueError("A taperssection selector must include an artist name")
+            artist = artist.replace("\\", "\\\\").replace('"', '\\"')
+            self.collection_query = f'creator:"{artist}" AND mediatype:"audio" AND collection:"taperssection"'
         self.params = {
             "debug": "false",
             "xvar": "production",
@@ -331,6 +342,24 @@ class ArchiveAPI:
 
         logger.info(f"Download {current_rows}/{total} collection names")
         return collection_names
+
+    def get_taperssection_collection_names(self):
+        """Return creators on >2 of the top 5000 audio items by downloads, each with >10 downloads."""
+        params = self.params | {
+            "q": "collection:taperssection AND mediatype:audio AND downloads:[11 TO *]",
+            "fields": "creator",
+            "sorts": "downloads desc",
+            "count": "5000",
+        }
+        response = requests.get(f"{self.api}/scrape", params=params)
+        response.raise_for_status()
+        counts = Counter()
+        for item in response.json().get("items", [])[:5000]:
+            creators = item.get("creator") or []
+            if isinstance(creators, str):
+                creators = [creators]
+            counts.update({name for name in creators if isinstance(name, str) and name.strip()})
+        return [f"taperssection:{name}" for name in sorted(counts, key=str.casefold) if counts[name] > 2]
 
     def get_tapes(self, date):
         raw_meta = self._get_meta_date_range(date, date)
@@ -550,7 +579,7 @@ class ArchiveAPI:
             ]
         )
         sorts = ",".join(["date asc", "avg_rating desc", "num_favorites desc", "downloads desc"])
-        query = f"collection:{self.collection} AND date:[{start_date} TO {end_date}]"
+        query = f"{self.collection_query} AND date:[{start_date} TO {end_date}]"
         params = self.params | {"sorts": sorts, "fields": fields, "q": query}
         logger.debug(f"in _get_meta_date_range, url is {url} with params {params}")
         response = requests.get(url, params=params)
