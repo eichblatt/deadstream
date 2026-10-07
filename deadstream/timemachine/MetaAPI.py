@@ -578,13 +578,34 @@ class ArchiveAPI:
                 "addeddate",
             ]
         )
-        sorts = ",".join(["date asc", "avg_rating desc", "num_favorites desc", "downloads desc"])
+        # Missing rating fields can produce unusable Archive cursors (-Infinity).
+        # Tapes are ranked by score locally in get_tapes().
+        sorts = "date asc"
         query = f"{self.collection_query} AND date:[{start_date} TO {end_date}]"
         params = self.params | {"sorts": sorts, "fields": fields, "q": query}
         logger.debug(f"in _get_meta_date_range, url is {url} with params {params}")
         response = requests.get(url, params=params)
         response.raise_for_status()
         raw_meta = response.json()
+        if raw_meta.get("request_error"):
+            raise RuntimeError(f"Archive search failed: {raw_meta['request_error']}")
+        items = list(raw_meta.get("items", []))
+        page = raw_meta
+        seen_cursors = set()
+        while page.get("cursor") and page.get("items"):
+            cursor = page["cursor"]
+            if cursor in seen_cursors:
+                raise RuntimeError(f"Archive returned a repeated pagination cursor for {self.collection}")
+            seen_cursors.add(cursor)
+            params = params | {"cursor": cursor}
+            response = requests.get(url, params=params)
+            response.raise_for_status()
+            page = response.json()
+            if page.get("request_error"):
+                raise RuntimeError(f"Archive pagination failed: {page['request_error']}")
+            items.extend(page.get("items", []))
+        raw_meta = raw_meta | {"items": items, "count": len(items), "total": raw_meta.get("total") or len(items)}
+        raw_meta.pop("cursor", None)
         if raw_meta["count"] < raw_meta["total"]:
             logger.warning(f"Only {raw_meta['count']} of {raw_meta['total']} tapes found for {self.collection}")
         return raw_meta
@@ -604,25 +625,20 @@ class ArchiveAPI:
             logger.debug(f"max date in existing data is {max_date}")
         start_date = (datetime.datetime.fromisoformat(max_date) + datetime.timedelta(days=1)).date().isoformat()
 
-        total = 1
-        count = 0
         vcs_data = {}
 
-        while count < total:
-            collection_meta = self._get_meta_date_range(start_date, datetime.date.max.isoformat())
-            total = collection_meta["total"]
-            count = collection_meta["count"]
-            for item in collection_meta.get("items", []):
-                date = item["date"]
-                if "T" in date:
-                    date = date.split("T")[0]
-                try:
-                    dt = datetime.datetime.fromisoformat(date)
-                    date = dt.date().isoformat()
-                except ValueError:
-                    logger.warning(f"Invalid date format: {date}")
-                    continue
-                vcs_data[date] = item["identifier"]
+        collection_meta = self._get_meta_date_range(start_date, datetime.date.max.isoformat())
+        for item in collection_meta.get("items", []):
+            date = item["date"]
+            if "T" in date:
+                date = date.split("T")[0]
+            try:
+                dt = datetime.datetime.fromisoformat(date)
+                date = dt.date().isoformat()
+            except ValueError:
+                logger.warning(f"Invalid date format: {date}")
+                continue
+            vcs_data[date] = item["identifier"]
 
         if with_venue:  # This is very slow, so only do it if requested
             for date, tape_id in vcs_data.items():
